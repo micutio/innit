@@ -1,0 +1,6 @@
+[package]
+name = "roguelike"
+version = "0.1.0"
+authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
+
+[dependencies]
