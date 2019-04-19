@@ -1,6 +1,8 @@
 extern crate tcod;
+extern crate rand;
 
 use std::cmp;
+use rand::Rng;
 use tcod::console::*;
 use tcod::colors::{self, Color};
 
@@ -77,19 +79,65 @@ impl Tile {
 
 type Map = Vec<Vec<Tile>>;
 
-fn make_map() -> Map {
+fn make_map() -> (Map, (i32, i32)) {
     // fill the map with `unblocked` tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
     
-    // create two rooms
-    let room1 = Rect::new(20, 15, 10, 15);
-    let room2 = Rect::new(50, 15, 10, 15);
-    create_room(room1, &mut map);
-    create_room(room2, &mut map);
-    create_h_tunnel(25, 55, 23, &mut map);
+    // create rooms randomly
+    let mut rooms = vec![];
+    let mut starting_position = (0, 0);
+
+    for _ in 0..MAX_ROOMS {
+        // random width and height
+        let w = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+        let h = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+        
+        // random position without exceeding the boundaries of the map
+        let x = rand::thread_rng().gen_range(0, MAP_WIDTH - w);
+        let y = rand::thread_rng().gen_range(0, MAP_HEIGHT - h);
+
+        // create room and store in vector
+        let new_room = Rect::new(x, y, w, h);
+        let failed = rooms.iter().any(|other_room| new_room.intersects_with(other_room));
+
+        if !failed {
+            // no intersections, we have a valid room.
+            create_room(new_room, &mut map);
+            let (new_x, new_y) = new_room.center();
+            if rooms.is_empty() {
+                // this is the first room, save position as starting point for the player
+                starting_position = (new_x, new_y);
+            } else {
+                // all rooms after the first:
+                // connect it to the previous room with a tunnel
+
+                // center coordinates of the previous room
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
+
+                // connect both rooms with a horizontal and a vertical tunnel - in random order
+                if rand::random() {
+                    // move horizontally, then vertically
+                    create_h_tunnel(prev_x, new_x, prev_y, &mut map);
+                    create_v_tunnel(prev_y, new_y, new_x, &mut map);
+                } else {
+                    // move vertically, then horizontally
+                    create_v_tunnel(prev_y, new_y, prev_x, &mut map);
+                    create_h_tunnel(prev_x, new_x, new_y, &mut map);
+                }
+            }
+            // finally, append new room to list
+            rooms.push(new_room);
+        }
+    }
     
-    map
+    (map, starting_position)
 }
+
+
+// Room generation constraints
+const ROOM_MAX_SIZE: i32 = 10;
+const ROOM_MIN_SIZE: i32 = 6;
+const MAX_ROOMS: i32 = 30;
 
 // data structures for room generation
 #[derive(Clone, Copy, Debug)]
@@ -101,8 +149,21 @@ struct Rect {
 }
 
 impl Rect {
+    
     pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
         Rect { x1: x, y1: y, x2: x + w, y2: y + h}
+    }
+
+    pub fn center(&self) -> (i32, i32) {
+        let center_x = (self.x1 + self.x2) / 2;
+        let center_y = (self.y1 + self.y2) / 2;
+        (center_x, center_y)
+    }
+
+    /// Return true if this rect intersects with another one.
+    pub fn intersects_with(&self, other: &Rect) -> bool {
+        (self.x1 <= other.x2) && ( self.x2 >= other.x1) &&
+            (self.y1 <= other.y2) && (self.y2 >= other.y1)
     }
 }
 
@@ -188,17 +249,17 @@ fn main() {
 
     tcod::system::set_fps(LIMIT_FPS);
 
+    // create map and player starting position
+    let (map, (player_x, player_y)) = make_map();
+
     // create object representing the player
-    let player = Object::new(25, 23, '@', colors::WHITE);
+    let player = Object::new(player_x, player_y, '@', colors::WHITE);
 
     // create an NPC object
     let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
 
     // create array holding all objects
     let mut objects = [player, npc];
-
-    // create map
-    let map = make_map();
 
     while !root.window_closed() {
         // render objects and map
