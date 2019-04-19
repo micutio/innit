@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 
 [dependencies]
+tcod = "0.12"
