@@ -66,16 +66,17 @@ const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
 struct Tile {
     blocked: bool,
     block_sight: bool,
+    explored: bool,
 }
 
 impl Tile {
 
     pub fn empty() -> Self {
-        Tile { blocked: false, block_sight: false }
+        Tile { blocked: false, block_sight: false, explored: false }
     }
 
     pub fn wall() -> Self {
-        Tile { blocked: true, block_sight: true }
+        Tile { blocked: true, block_sight: true, explored: false }
     }
 
 }
@@ -197,7 +198,7 @@ const FOV_LIGHT_WALLS: bool = true;
 const TORCH_RADIUS: i32 = 10;
 
 /// Render all objects and tiles.
-fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map, fov_map: &mut FovMap, fov_recompute: bool) {
+fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mut Map, fov_map: &mut FovMap, fov_recompute: bool) {
     
     if fov_recompute {
         // recompute fov if needed (the player moved or something)
@@ -215,8 +216,15 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Ma
                     (true, true) => COLOR_LIGHT_WALL,
                     (true, false) => COLOR_LIGHT_GROUND,
                 };
-                con.set_char_background(x, y, tile_color, BackgroundFlag::Set);
-                
+
+                let explored = &mut map[x as usize][y as usize].explored;
+                if visible {
+                    *explored = true;
+                }
+                if *explored {
+                    // show explored tiles only (any visible tile is explored already)
+                    con.set_char_background(x, y, tile_color, BackgroundFlag::Set);
+                }
             }
         }
     }
@@ -273,7 +281,7 @@ fn main() {
     tcod::system::set_fps(LIMIT_FPS);
 
     // create map and player starting position
-    let (map, (player_x, player_y)) = make_map();
+    let (mut map, (player_x, player_y)) = make_map();
 
     // create object representing the player
     let player = Object::new(player_x, player_y, '@', colors::WHITE);
@@ -299,7 +307,7 @@ fn main() {
     while !root.window_closed() {
         // render objects and map
         let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
-        render_all(&mut root, &mut con, &objects, &map, &mut fov_map, fov_recompute);
+        render_all(&mut root, &mut con, &objects, &mut map, &mut fov_map, fov_recompute);
 
         root.flush(); // draw everything on the window at once
         
