@@ -78,14 +78,38 @@ type Map = Vec<Vec<Tile>>;
 
 fn make_map() -> Map {
     // fill the map with `unblocked` tiles
-    let mut map = vec![vec![Tile::empty(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
+    let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
     
-    // add two pillars to test, two different ways to do that
-    map[30][22] = Tile::wall();
-    map[50][22].blocked = true;
-    map[50][22].block_sight = true;
-
+    // create two rooms
+    let room1 = Rect::new(20, 15, 10, 15);
+    let room2 = Rect::new(50, 15, 10, 15);
+    create_room(room1, &mut map);
+    create_room(room2, &mut map);
+    
     map
+}
+
+// data structures for room generation
+#[derive(Clone, Copy, Debug)]
+struct Rect {
+    x1: i32,
+    y1: i32,
+    x2: i32,
+    y2: i32,
+}
+
+impl Rect {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
+        Rect { x1: x, y1: y, x2: x + w, y2: y + h}
+    }
+}
+
+fn create_room(room: Rect, map: &mut Map) {
+    for x in (room.x1 + 1)..room.x2 {
+        for y in (room.y1 + 1)..room.y2 {
+            map[x as usize][y as usize] = Tile::empty();
+        }
+    }
 }
 
 fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &Map) {
@@ -150,7 +174,7 @@ fn main() {
     tcod::system::set_fps(LIMIT_FPS);
 
     // create object representing the player
-    let player = Object::new(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', colors::WHITE);
+    let player = Object::new(25, 23, '@', colors::WHITE);
 
     // create an NPC object
     let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
