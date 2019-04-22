@@ -5,3 +5,4 @@ authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 
 [dependencies]
 tcod = "0.12"
+rand = "0.3.9"
