@@ -12,38 +12,73 @@ const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 // target fps
 const LIMIT_FPS: i32 = 20;
+// constraints for field of view computing and rendering
+const FOV_ALG: FovAlgorithm = FovAlgorithm::Shadow;
+const FOV_LIGHT_WALLS: bool = true;
+const TORCH_RADIUS: i32 = 10;
+// player object
+const PLAYER: usize = 0;
+// object generation constraints
+const MAX_ROOM_MONSTERS: i32 = 3;
+// map constraints
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 45;
+const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
+const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b: 50 };
+const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
+const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
+// room generation constraints
+const ROOM_MAX_SIZE: i32 = 10;
+const ROOM_MIN_SIZE: i32 = 6;
+const MAX_ROOMS: i32 = 30;
+
+// objects and player
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit
+}
 
 #[derive(Debug)]
 struct Object {
     x: i32,
     y: i32,
-    character: char,
+    name: String,
+    blocks: bool,
+    alive: bool,
+    chr: char,
     color: Color,
 }
 
 impl Object {
 
-    pub fn new(x: i32, y: i32, character: char, color: Color) -> Self {
+    pub fn new(x: i32, y: i32, name: &str, blocks: bool, chr: char, color: Color) -> Self {
         Object {
             x: x,
             y: y,
-            character: character,
+            name: name.into(),
+            blocks: blocks,
+            alive: false,
+            chr: chr,
             color: color,
         }
     }
 
-    pub fn move_by(&mut self, map: &Map, dx: i32, dy: i32) {
-        // move by the given amount
-        if !map[(self.x + dx) as usize][(self.y + dy) as usize].blocked {
-            self.x += dx;
-            self.y += dy;
-        }
+    pub fn pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
+
+    pub fn set_pos(&mut self, x: i32, y: i32) {
+        self.x = x;
+        self.y = y;
     }
 
     /// Set the color and then draw the char that represents this object at its position.
     pub fn draw(&self, con: &mut Console) {
         con.set_default_foreground(self.color);
-        con.put_char(self.x, self.y, self.character, BackgroundFlag::None);
+        con.put_char(self.x, self.y, self.chr, BackgroundFlag::None);
     }
 
     /// Erase the character that represents this object
@@ -53,14 +88,36 @@ impl Object {
 
 }
 
+fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut[Object]) {
+    // move by the given amount
+    let (x, y) = objects[id].pos();
+    if !is_blocked(x + dx, y + dy, map, objects) {
+        objects[id].set_pos(x + dx, y + dy);
+    }
+}
 
-// map constraints
-const MAP_WIDTH: i32 = 80;
-const MAP_HEIGHT: i32 = 45;
-const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_LIGHT_WALL: Color = Color { r: 130, g: 110, b: 50 };
-const COLOR_DARK_GROUND: Color = Color { r: 50, g: 50, b: 150 };
-const COLOR_LIGHT_GROUND: Color = Color { r: 200, g: 180, b: 50 };
+fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut[Object]) {
+    // the coordinate the player is moving to/attacking
+    let x = objects[PLAYER].x + dx;
+    let y = objects[PLAYER].y + dy;
+    
+    // try to find an attackable object there
+    let target_id = objects.iter().position(|object| {
+        object.pos() == (x, y)
+    });
+
+    // attack if target found, move otherwise
+    match target_id {
+        Some(target_id) => {
+            println!("The {} laughs at your puny efforts to attack him!", objects[target_id].name);
+        }
+        None => {
+            move_by(PLAYER, dx, dy, map, objects);
+        }
+    }
+}
+
+// tiles, map and rooms
 
 #[derive(Clone, Copy, Debug)]
 struct Tile {
@@ -83,13 +140,12 @@ impl Tile {
 
 type Map = Vec<Vec<Tile>>;
 
-fn make_map() -> (Map, (i32, i32)) {
+fn make_map(objects: &mut Vec<Object>) -> Map {
     // fill the map with `unblocked` tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
     
     // create rooms randomly
     let mut rooms = vec![];
-    let mut starting_position = (0, 0);
 
     for _ in 0..MAX_ROOMS {
         // random width and height
@@ -107,10 +163,14 @@ fn make_map() -> (Map, (i32, i32)) {
         if !failed {
             // no intersections, we have a valid room.
             create_room(new_room, &mut map);
+
+            // add some content to the room
+            place_objects(new_room, &map, objects);
+
             let (new_x, new_y) = new_room.center();
             if rooms.is_empty() {
                 // this is the first room, save position as starting point for the player
-                starting_position = (new_x, new_y);
+                objects[PLAYER].set_pos(new_x, new_y);
             } else {
                 // all rooms after the first:
                 // connect it to the previous room with a tunnel
@@ -134,14 +194,8 @@ fn make_map() -> (Map, (i32, i32)) {
         }
     }
     
-    (map, starting_position)
+    map
 }
-
-
-// Room generation constraints
-const ROOM_MAX_SIZE: i32 = 10;
-const ROOM_MIN_SIZE: i32 = 6;
-const MAX_ROOMS: i32 = 30;
 
 // data structures for room generation
 #[derive(Clone, Copy, Debug)]
@@ -191,18 +245,44 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
     }
 }
 
+fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
+    // choose random number of monsters
+    let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS + 1);
+    for _ in 0..num_monsters {
+        // choose random spot for this monster
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
+        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+        
+        if !is_blocked(x, y, map, objects) {
+            let mut monster = if rand::random::<f32>() < 0.8 {
+                Object::new(x, y, "orc", true ,'o', colors::DESATURATED_GREEN)
+            } else {
+                Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN)
+            };
 
-// constraints for field of view computing and rendering
-const FOV_ALG: FovAlgorithm = FovAlgorithm::Shadow;
-const FOV_LIGHT_WALLS: bool = true;
-const TORCH_RADIUS: i32 = 10;
+            monster.alive = true;
+            objects.push(monster);
+        }
+    }
+}
+
+fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
+    // first test the map tile
+    if map[x as usize][y as usize].blocked {
+        return true;
+    }
+    // now check for any blocking objects
+    objects.iter().any(|object| {
+        object.blocks && object.pos() == (x, y)
+    })
+}
 
 /// Render all objects and tiles.
 fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mut Map, fov_map: &mut FovMap, fov_recompute: bool) {
     
     if fov_recompute {
         // recompute fov if needed (the player moved or something)
-        let player = &objects[0];
+        let player = &objects[PLAYER];
         fov_map.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
         for y in 0..MAP_HEIGHT {
             for x in  0..MAP_WIDTH {
@@ -241,31 +321,44 @@ fn render_all(root: &mut Root, con: &mut Offscreen, objects: &[Object], map: &mu
 
 
 /// Handle user input
-fn handle_keys(root: &mut Root, player: &mut Object, map: &Map) -> bool {
+fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object]) -> PlayerAction {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
+    use PlayerAction::*;
     
     let key = root.wait_for_keypress(true);
-    match key {
+    let player_alive = objects[PLAYER].alive;
+    match (key, player_alive) {
         // toggle fullscreen
-        Key { code: Enter, alt: true, .. } => {
+        (Key { code: Enter, alt: true, .. }, _) => {
             let fullscreen = root.is_fullscreen();
             root.set_fullscreen(!fullscreen);
+            DidntTakeTurn
         }
  
         // exit game
-        Key { code: Escape, .. } => return true,
+        (Key { code: Escape, .. }, _) => return Exit,
 
         // handle movement
-        Key { code: Up, .. } => player.move_by(map, 0, -1),
-        Key { code: Down, .. } => player.move_by(map, 0, 1),
-        Key { code: Left, .. } => player.move_by(map, -1, 0),
-        Key { code: Right, ..} => player.move_by(map, 1, 0),
+        (Key { code: Up, .. }, true) => {
+            player_move_or_attack(0, -1, map, objects);
+            TookTurn
+        }
+        (Key { code: Down, .. }, true) => {
+            player_move_or_attack(0, 1, map, objects);
+            TookTurn
+        }
+        (Key { code: Left, .. }, true) => {
+            player_move_or_attack(-1, 0, map, objects);
+            TookTurn
+        }
+        (Key { code: Right, ..}, true) => {
+            player_move_or_attack(1, 0, map, objects);
+            TookTurn
+        }
         
-        _ => {},
+        _ => DidntTakeTurn
     }
-
-    false
 }
 
 fn main() {
@@ -280,17 +373,15 @@ fn main() {
 
     tcod::system::set_fps(LIMIT_FPS);
 
-    // create map and player starting position
-    let (mut map, (player_x, player_y)) = make_map();
-
     // create object representing the player
-    let player = Object::new(player_x, player_y, '@', colors::WHITE);
-
-    // create an NPC object
-    let npc = Object::new(SCREEN_WIDTH / 2 - 5, SCREEN_HEIGHT / 2, '@', colors::YELLOW);
+    let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
+    player.alive = true;
 
     // create array holding all objects
-    let mut objects = [player, npc];
+    let mut objects = vec![player];
+
+    // create map and player starting position
+    let mut map = make_map(&mut objects);
 
     // init fov map
     let mut fov_map = FovMap::new(MAP_WIDTH, MAP_HEIGHT);
@@ -306,7 +397,7 @@ fn main() {
 
     while !root.window_closed() {
         // render objects and map
-        let fov_recompute = previous_player_position != (objects[0].x, objects[0].y);
+        let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
         render_all(&mut root, &mut con, &objects, &mut map, &mut fov_map, fov_recompute);
 
         root.flush(); // draw everything on the window at once
@@ -317,11 +408,20 @@ fn main() {
         }
 
         // handle keys and exit game if needed
-        let player = &mut objects[0];
-        previous_player_position = (player.x, player.y);
-        let exit = handle_keys(&mut root, player, &map);
-        if exit {
+        previous_player_position = objects[PLAYER].pos();
+        let player_action = handle_keys(&mut root, &map, &mut objects);        
+        if player_action == PlayerAction::Exit {
             break
         }
+        
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for object in &objects {
+                // only if object is not player
+                if (object as *const _) != (&objects[PLAYER] as *const _) {
+                    println!("The {} growls!", object.name)
+                }
+            }
+        }
+
     }
 }
