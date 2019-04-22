@@ -193,7 +193,7 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
 
 
 // constraints for field of view computing and rendering
-const FOV_ALG: FovAlgorithm = FovAlgorithm::Basic;
+const FOV_ALG: FovAlgorithm = FovAlgorithm::Shadow;
 const FOV_LIGHT_WALLS: bool = true;
 const TORCH_RADIUS: i32 = 10;
 
