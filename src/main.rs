@@ -50,6 +50,8 @@ struct Object {
     alive: bool,
     chr: char,
     color: Color,
+    fighter: Option<Fighter>,
+    ai: Option<Ai>,
 }
 
 impl Object {
@@ -63,6 +65,8 @@ impl Object {
             alive: false,
             chr: chr,
             color: color,
+            fighter: None,
+            ai: None,
         }
     }
 
@@ -86,7 +90,25 @@ impl Object {
         con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
     }
 
+    pub fn distance_to(&self, other: &Object) -> f32 {
+        let dx = other.x - self.x;
+        let dy = other.y - self.y;
+        ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
+    }
+
 }
+
+// combat related poperties and methods (monster, player, NPC)
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Fighter {
+    max_hp: i32,
+    hp: i32,
+    defense: i32,
+    power: i32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Ai;
 
 fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut[Object]) {
     // move by the given amount
@@ -113,6 +135,35 @@ fn player_move_or_attack(dx: i32, dy: i32, map: &Map, objects: &mut[Object]) {
         }
         None => {
             move_by(PLAYER, dx, dy, map, objects);
+        }
+    }
+}
+
+fn move_towards(id: usize, target_x: i32, target_y: i32, map: &Map, objects: &mut [Object]){
+    // vector from this object to the target, and distance
+    let dx = target_x - objects[id].x;
+    let dy = target_y - objects[id].y;
+    let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
+
+    // normalize it to length 1 (preserving direction), then round it and
+    // convert to integer so the movement is restricted to the map grid
+    let dx = (dx as f32 / distance).round() as i32;
+    let dy = (dy as f32 / distance).round() as i32;
+    move_by(id, dx, dy, map, objects);
+}
+
+fn ai_take_turn(monster_id: usize, map: &Map, objects: &mut [Object], fov_map: &FovMap) {
+    // A basic monster takes its turn. If you can see it, it can see you.
+    let (monster_x, monster_y) = objects[monster_id].pos();
+    if fov_map.is_in_fov(monster_x, monster_y) {
+        if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
+            // move towards player if far away
+            let (player_x, player_y) = objects[PLAYER].pos();
+            move_towards(monster_id, player_x, player_y, map, objects);
+        } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+            // Close enough, attack! (if player is still alive)
+            let monster = &objects[monster_id];
+            println!("The attack of the {} bounces off you shiny metal armor!", monster.name);
         }
     }
 }
@@ -255,9 +306,15 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
         
         if !is_blocked(x, y, map, objects) {
             let mut monster = if rand::random::<f32>() < 0.8 {
-                Object::new(x, y, "orc", true ,'o', colors::DESATURATED_GREEN)
+                let mut orc = Object::new(x, y, "orc", true ,'o', colors::DESATURATED_GREEN);
+                orc.fighter = Some(Fighter{max_hp: 10, hp: 10, defense: 0, power: 3});
+                orc.ai = Some(Ai);
+                orc
             } else {
-                Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN)
+                let mut troll = Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN);
+                troll.fighter = Some(Fighter{max_hp: 16, hp: 16, defense: 1, power: 4});
+                troll.ai = Some(Ai);
+                troll
             };
 
             monster.alive = true;
@@ -376,6 +433,7 @@ fn main() {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
+    player.fighter = Some(Fighter{max_hp: 30, hp: 30, defense: 2, power: 5});
 
     // create array holding all objects
     let mut objects = vec![player];
@@ -415,10 +473,9 @@ fn main() {
         }
         
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for object in &objects {
-                // only if object is not player
-                if (object as *const _) != (&objects[PLAYER] as *const _) {
-                    println!("The {} growls!", object.name)
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, &map, &mut objects, &fov_map);
                 }
             }
         }
