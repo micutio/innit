@@ -6,6 +6,7 @@ use rand::Rng;
 use tcod::console::*;
 use tcod::colors::{self, Color};
 use tcod::map::{Map as FovMap, FovAlgorithm};
+use tcod::input::{self, Event, Mouse, Key};
 
 // window size
 const SCREEN_WIDTH: i32 = 80;
@@ -469,6 +470,7 @@ fn render_all(root: &mut Root,
               map: &mut Map,
               fov_map: &mut FovMap,
               messages: &Messages,
+              mouse: Mouse,
               fov_recompute: bool,) {
     
     if fov_recompute {
@@ -521,6 +523,10 @@ fn render_all(root: &mut Root,
     let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.max_hp);
     render_bar(panel, 1, 1, BAR_WIDTH, "HP", hp, max_hp, colors::LIGHT_RED, colors::DARKER_RED);
 
+    // show names of objects under the mouse
+    panel.set_default_foreground(colors::LIGHT_GREY);
+    panel.print_ex(1, 0, BackgroundFlag::None, TextAlignment::Left, get_names_under_mouse(mouse, objects, fov_map));
+
     // print game messages, one line at a time
     let mut y = MSG_HEIGHT as i32;
     for &(ref msg, color) in messages.iter().rev() {
@@ -541,12 +547,11 @@ fn render_all(root: &mut Root,
 }
 
 /// Handle user input
-fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object], messages: &mut Messages) -> PlayerAction {
+fn handle_keys(key: Key, root: &mut Root, map: &Map, objects: &mut [Object], messages: &mut Messages) -> PlayerAction {
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
     use PlayerAction::*;
     
-    let key = root.wait_for_keypress(true);
     let player_alive = objects[PLAYER].alive;
     match (key, player_alive) {
         // toggle fullscreen
@@ -557,7 +562,7 @@ fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object], messages: &mu
         }
  
         // exit game
-        (Key { code: Escape, .. }, _) => return Exit,
+        (Key { code: Escape, .. }, _) => Exit,
 
         // handle movement
         (Key { code: Up, .. }, true) => {
@@ -579,6 +584,19 @@ fn handle_keys(root: &mut Root, map: &Map, objects: &mut [Object], messages: &mu
         
         _ => DidntTakeTurn
     }
+}
+
+fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> String {
+    let (x, y) = (mouse.cx as i32, mouse.cy as i32);
+
+    // create a list with the names of all objects at the mouse's coordinates and in FOV
+    let names = objects
+        .iter()
+        .filter(|obj| {obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y)})
+        .map(|obj| obj.name.clone())
+        .collect::<Vec<_>>();
+
+    names.join(", ") // return names separated by commas
 }
 
 fn main() {
@@ -622,10 +640,22 @@ fn main() {
 
     message(&mut messages, "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.", colors::RED);
 
+    // input processing
+    let mut mouse: Mouse = Default::default();
+    let mut key: Key = Default::default();
+
     while !root.window_closed() {
+
+        // check for input events
+    match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+        Some((_, Event::Mouse(m))) => mouse = m,
+        Some((_, Event::Key(k))) => key = k,
+        _ => key = Default::default(),
+    }
+
         // render objects and map
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(&mut root, &mut con, &mut panel, &objects, &mut map, &mut fov_map, &messages, fov_recompute);
+        render_all(&mut root, &mut con, &mut panel, &objects, &mut map, &mut fov_map, &messages, mouse, fov_recompute);
 
         root.flush(); // draw everything on the window at once
         
@@ -636,7 +666,7 @@ fn main() {
 
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(&mut root, &map, &mut objects, &mut messages);        
+        let player_action = handle_keys(key, &mut root, &map, &mut objects, &mut messages);        
         if player_action == PlayerAction::Exit {
             break
         }
