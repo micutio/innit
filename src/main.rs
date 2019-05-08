@@ -189,6 +189,7 @@ impl Object {
 enum Item {
     Heal,
     Lightning,
+    Confuse,
 }
 
 /// Add given item to the player's inventory and remove from the map.
@@ -223,13 +224,20 @@ enum UseResult {
     Cancelled,
 }
 
-fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod) {
+fn use_item(
+    inventory_id: usize,
+    inventory: &mut Vec<Object>,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    tcod: &mut Tcod,
+) {
     use Item::*;
     // just call the use_function, if it is defined
     if let Some(item) = inventory[inventory_id].item {
         let on_use = match item {
             Heal => cast_heal,
             Lightning => cast_lightning,
+            Confuse => cast_confuse,
         };
         match on_use(inventory_id, objects, messages, tcod) {
             UseResult::UsedUp => {
@@ -241,35 +249,78 @@ fn use_item(inventory_id: usize, inventory: &mut Vec<Object>, objects: &mut [Obj
             }
         }
     } else {
-        message(messages,
-                format!("The {} cannot be used.", inventory[inventory_id].name),
-                colors::WHITE);
+        message(
+            messages,
+            format!("The {} cannot be used.", inventory[inventory_id].name),
+            colors::WHITE,
+        );
     }
 }
 
-fn cast_heal(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod) -> UseResult {
+fn cast_heal(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    tcod: &mut Tcod,
+) -> UseResult {
     // heal the player
     if let Some(fighter) = objects[PLAYER].fighter {
         if fighter.hp == fighter.max_hp {
             message(messages, "You are already at full health.", colors::RED);
             return UseResult::Cancelled;
         }
-        message(messages, "Your wounds start to feel better!", colors::LIGHT_VIOLET);
+        message(
+            messages,
+            "Your wounds start to feel better!",
+            colors::LIGHT_VIOLET,
+        );
         objects[PLAYER].heal(HEAL_AMOUNT);
         return UseResult::UsedUp;
     }
     UseResult::Cancelled
 }
 
-fn cast_lightning(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod) -> UseResult {
+fn cast_lightning(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    tcod: &mut Tcod,
+) -> UseResult {
     // find closest enemy (inside a maximum range) and damage it
     let monster_id = closest_monster(LIGHTNING_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
         // zap it!
-        message(messages, format!("A lightning bolt strikes the {} with a loud thunder! The damage is {} hit points.", objects[monster_id].name, LIGHTNING_DAMAGE), colors::LIGHT_BLUE);
+        message(
+            messages,
+            format!(
+                "A lightning bolt strikes the {} with a loud thunder! The damage is {} hit points.",
+                objects[monster_id].name, LIGHTNING_DAMAGE
+            ),
+            colors::LIGHT_BLUE,
+        );
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, messages);
         UseResult::UsedUp
-    } else { // no enemy found withing maximum range
+    } else {
+        // no enemy found withing maximum range
+        message(messages, "No enemy is close enough to strike.", colors::RED);
+        UseResult::Cancelled
+    }
+}
+
+fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod) -> UseResult {
+    // find closest enemy in range and confuse it
+    let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
+    if let Some(monster_id) = monster_id {
+        let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
+        // replace monster's AI with a `confused` one
+        // after some turns it will restore the old AI
+        objects[monster_id].ai = Some(Ai::Confused {
+            previous_ai: Box::new(old_ai),
+            num_turns: CONFUSE_NUM_TURNS,
+        })
+        message(messages, format!("The eyes of {} look vacant, as it starts to stumble around!", objects[monster_id].name), colors::LIGHT_GREEN);
+        UseResult::UsedUp
+    } else { // no enemy found in maximum range
         message(messages, "No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
@@ -277,13 +328,18 @@ fn cast_lightning(_inventory_id: usize, objects: &mut [Object], messages: &mut M
 
 fn closest_monster(max_range: i32, objects: &mut [Object], tcod: &Tcod) -> Option<usize> {
     let mut closest_enemy = None;
-    let mut closest_dist = (max_range + 1)  as f32;
+    let mut closest_dist = (max_range + 1) as f32;
 
     for (id, object) in objects.iter().enumerate() {
-        if (id != PLAYER) && object.fighter.is_some() && object.ai.is_some() && tcod.fov.is_in_fov(object.x, object.y) {
+        if (id != PLAYER)
+            && object.fighter.is_some()
+            && object.ai.is_some()
+            && tcod.fov.is_in_fov(object.x, object.y)
+        {
             // calculate distance between this object and the player
             let dist = objects[PLAYER].distance_to(object);
-            if dist < closest_dist { // it's closer, so remember it
+            if dist < closest_dist {
+                // it's closer, so remember it
                 closest_enemy = Some(id);
                 closest_dist = dist;
             }
@@ -344,7 +400,13 @@ fn monster_death(monster: &mut Object, messages: &mut Messages) {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Ai;
+enum Ai {
+    Basic,
+    Confused {
+        previous_ai: Box<Ai>,
+        num_turns: i32,
+    },
+}
 
 fn move_by(id: usize, dx: i32, dy: i32, map: &Map, objects: &mut [Object]) {
     // move by the given amount
@@ -402,6 +464,26 @@ fn ai_take_turn(
     messages: &mut Messages,
     fov_map: &FovMap,
 ) {
+    use Ai::*;
+    if let Some(ai) = objects[monster_ai].ai.take() {
+        let new_ai = match ai {
+            Basic => ai_basic(monster_id, map, objects, fov_map, messages),
+            Confused {
+                previous,
+                num_turns,
+            } => ai_confused(monster_id, map, objects, messages, previous_ai, num_turns),
+        };
+        objects[monster_id].ai = Some(new_ai);
+    }
+}
+
+fn ai_basic(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    fov_map: &FovMap,
+    messages: &mut Messages,
+) -> Ai {
     // A basic monster takes its turn. If you can see it, it can see you.
     let (monster_x, monster_y) = objects[monster_id].pos();
     if fov_map.is_in_fov(monster_x, monster_y) {
@@ -414,6 +496,39 @@ fn ai_take_turn(
             let (monster, player) = mut_two(monster_id, PLAYER, objects);
             monster.attack(player, messages);
         }
+    }
+}
+
+fn ai_confused(
+    monster_id: usize,
+    map: &Map,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    previous_ai: Box<Ai>,
+    num_turns: i32,
+) -> Ai {
+    if num_turns >= 0 {
+        // still confused...
+        // move in a random direction, and decrease the number of tuns confused
+        move_by(
+            monster_id,
+            rand::thread_rng().gen_range(-1, 2),
+            rand::thread_rng().gen_range(-1, 2),
+            map,
+            objects,
+        );
+        Ai::Confused {
+            previous_ai: previous_ai,
+            num_turns: num_turns - 1,
+        }
+    } else {
+        // restor the previous AI (this one will be deleted)
+        message(
+            messages,
+            format!("The {} is no longer confused!", objects[monster_id].name),
+            colors::RED,
+        );
+        *previous_ai
     }
 }
 
@@ -577,7 +692,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 3,
                     on_death: DeathCallback::Monster,
                 });
-                orc.ai = Some(Ai);
+                orc.ai = Some(Ai::Basic);
                 orc
             } else {
                 let mut troll = Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN);
@@ -588,7 +703,7 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                     power: 4,
                     on_death: DeathCallback::Monster,
                 });
-                troll.ai = Some(Ai);
+                troll.ai = Some(Ai::Basic);
                 troll
             };
 
@@ -612,10 +727,22 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 let mut object = Object::new(x, y, "healing potion", false, '!', colors::VIOLET);
                 object.item = Some(Item::Heal);
                 object
-            } else {
-                // create lightning bolt scroll (30% chance)
-                let mut object = Object::new(x, y, "scroll of lightning bolt", false, '#', colors::LIGHT_YELLOW);
+            } else if dice < 0.7 + 0.15 {
+                // create lightning bolt scroll (15% chance)
+                let mut object = Object::new(
+                    x,
+                    y,
+                    "scroll of lightning bolt",
+                    false,
+                    '#',
+                    colors::LIGHT_YELLOW,
+                );
                 object.item = Some(Item::Lightning);
+                object
+            } else {
+                // create a confuse scroll (15% change)
+                let mut object = Object::new(x, y, '#', "scroll of confusion", colors::LIGHT_YELLOW, false);
+                object.item = Some(Item::Confuse);
                 object
             };
             objects.push(item);
@@ -702,7 +829,8 @@ fn render_all(
     if fov_recompute {
         // recompute fov if needed (the player moved or something)
         let player = &objects[PLAYER];
-        tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+        tcod.fov
+            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
     }
 
     // go through all tiles and set their background color
@@ -725,7 +853,8 @@ fn render_all(
             }
             if *explored {
                 // show explored tiles only (any visible tile is explored already)
-                tcod.con.set_char_background(x, y, tile_color, BackgroundFlag::Set);
+                tcod.con
+                    .set_char_background(x, y, tile_color, BackgroundFlag::Set);
             }
         }
     }
@@ -796,7 +925,15 @@ fn render_all(
     );
 
     // blit contents of offscreen console to root console and present it
-    blit(&tcod.con, (0, 0), (MAP_WIDTH, MAP_HEIGHT), &mut tcod.root, (0, 0), 1.0, 1.0);
+    blit(
+        &tcod.con,
+        (0, 0),
+        (MAP_WIDTH, MAP_HEIGHT),
+        &mut tcod.root,
+        (0, 0),
+        1.0,
+        1.0,
+    );
 }
 
 /// Handle user input
@@ -863,7 +1000,8 @@ fn handle_keys(
             let inventory_index = inventory_menu(
                 inventory,
                 "Press the key next to an item to use it, or any other to cancel.\n",
-                &mut tcod.root);
+                &mut tcod.root,
+            );
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, inventory, objects, messages, tcod);
             }
@@ -888,7 +1026,10 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
 }
 
 fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root) -> Option<usize> {
-    assert!(options.len() <= 26, "Cannot have a mnu with more than 26 options.");
+    assert!(
+        options.len() <= 26,
+        "Cannot have a mnu with more than 26 options."
+    );
 
     // calculate total height for the header (after auto-wrap) and one line per option
     let header_height = root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
@@ -899,13 +1040,27 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
 
     // print the header, with auto-wrap
     window.set_default_foreground(colors::WHITE);
-    window.print_rect_ex(0, 0, width, height, BackgroundFlag::None, TextAlignment::Left, header);
+    window.print_rect_ex(
+        0,
+        0,
+        width,
+        height,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        header,
+    );
 
     // print all the options
     for (index, option_text) in options.iter().enumerate() {
         let menu_letter = (b'a' + index as u8) as char;
         let text = format!("({}) {}", menu_letter, option_text.as_ref());
-        window.print_ex(0, header_height + index as i32, BackgroundFlag::None, TextAlignment::Left, text);
+        window.print_ex(
+            0,
+            header_height + index as i32,
+            BackgroundFlag::None,
+            TextAlignment::Left,
+            text,
+        );
     }
 
     // blit contents of "window" to the root console
@@ -935,7 +1090,7 @@ fn inventory_menu(inventory: &[Object], header: &str, root: &mut Root) -> Option
     let options = if inventory.is_empty() {
         vec!["Inventory is empty.".into()]
     } else {
-        inventory.iter().map(|item| { item.name.clone() }).collect()
+        inventory.iter().map(|item| item.name.clone()).collect()
     };
 
     let inventory_index = menu(header, &options, INVENTORY_WIDTH, root);
@@ -1019,13 +1174,7 @@ fn main() {
 
         // render objects and map
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(
-            &mut tcod,
-            &objects,
-            &mut map,
-            &messages,
-            fov_recompute,
-        );
+        render_all(&mut tcod, &objects, &mut map, &messages, fov_recompute);
 
         tcod.root.flush(); // draw everything on the window at once
 
