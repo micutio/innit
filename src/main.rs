@@ -22,6 +22,8 @@ const PLAYER: usize = 0;
 const HEAL_AMOUNT: i32 = 4;
 const LIGHTNING_DAMAGE: i32 = 20;
 const LIGHTNING_RANGE: i32 = 5;
+const CONFUSE_RANGE: i32 = 8;
+const CONFUSE_NUM_TURNS: i32 = 10;
 // object generation constraints
 const MAX_ROOM_MONSTERS: i32 = 3;
 const MAX_ROOM_ITEMS: i32 = 2;
@@ -307,7 +309,12 @@ fn cast_lightning(
     }
 }
 
-fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Messages, tcod: &mut Tcod) -> UseResult {
+fn cast_confuse(
+    _inventory_id: usize,
+    objects: &mut [Object],
+    messages: &mut Messages,
+    tcod: &mut Tcod,
+) -> UseResult {
     // find closest enemy in range and confuse it
     let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
     if let Some(monster_id) = monster_id {
@@ -317,10 +324,18 @@ fn cast_confuse(_inventory_id: usize, objects: &mut [Object], messages: &mut Mes
         objects[monster_id].ai = Some(Ai::Confused {
             previous_ai: Box::new(old_ai),
             num_turns: CONFUSE_NUM_TURNS,
-        })
-        message(messages, format!("The eyes of {} look vacant, as it starts to stumble around!", objects[monster_id].name), colors::LIGHT_GREEN);
+        });
+        message(
+            messages,
+            format!(
+                "The eyes of {} look vacant, as it starts to stumble around!",
+                objects[monster_id].name
+            ),
+            colors::LIGHT_GREEN,
+        );
         UseResult::UsedUp
-    } else { // no enemy found in maximum range
+    } else {
+        // no enemy found in maximum range
         message(messages, "No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
@@ -399,7 +414,7 @@ fn monster_death(monster: &mut Object, messages: &mut Messages) {
     monster.name = format!("remains of {}", monster.name);
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Ai {
     Basic,
     Confused {
@@ -465,11 +480,11 @@ fn ai_take_turn(
     fov_map: &FovMap,
 ) {
     use Ai::*;
-    if let Some(ai) = objects[monster_ai].ai.take() {
+    if let Some(ai) = objects[monster_id].ai.take() {
         let new_ai = match ai {
             Basic => ai_basic(monster_id, map, objects, fov_map, messages),
             Confused {
-                previous,
+                previous_ai,
                 num_turns,
             } => ai_confused(monster_id, map, objects, messages, previous_ai, num_turns),
         };
@@ -497,6 +512,7 @@ fn ai_basic(
             monster.attack(player, messages);
         }
     }
+    Ai::Basic
 }
 
 fn ai_confused(
@@ -741,7 +757,14 @@ fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
                 object
             } else {
                 // create a confuse scroll (15% change)
-                let mut object = Object::new(x, y, '#', "scroll of confusion", colors::LIGHT_YELLOW, false);
+                let mut object = Object::new(
+                    x,
+                    y,
+                    "scroll of confusion",
+                    false,
+                    '#',
+                    colors::LIGHT_YELLOW,
+                );
                 object.item = Some(Item::Confuse);
                 object
             };
