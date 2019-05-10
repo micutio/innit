@@ -269,6 +269,22 @@ fn use_item(
     }
 }
 
+fn drop_item(
+    inventory_id: usize,
+    inventory: &mut Vec<Object>,
+    objects: &mut Vec<Object>,
+    messages: &mut Messages,
+) {
+    let mut item = inventory.remove(inventory_id);
+    item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
+    message(
+        messages,
+        format!("You dropped a {}.", item.name),
+        colors::YELLOW,
+    );
+    objects.push(item);
+}
+
 fn cast_heal(
     _inventory_id: usize,
     objects: &mut [Object],
@@ -331,7 +347,11 @@ fn cast_confuse(
     // find closest enemy in range and confuse it
     // let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
     // ask the player for a target to confuse
-    message(messages, "Left-click an enemy to confuse, or right-click to cancel", colors::LIGHT_CYAN);
+    message(
+        messages,
+        "Left-click an enemy to confuse, or right-click to cancel",
+        colors::LIGHT_CYAN,
+    );
     let monster_id = target_monster(tcod, objects, map, messages, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
@@ -1092,6 +1112,18 @@ fn handle_keys(
             );
             if let Some(inventory_index) = inventory_index {
                 use_item(inventory_index, inventory, objects, messages, map, tcod);
+            }
+            DidntTakeTurn
+        }
+        (Key { printable: 'd', .. }, true) => {
+            // show_inventory; if an item is selected, drop it
+            let inventory_index = inventory_menu(
+                inventory,
+                "Press the key enxt to an item to drop it, or any other to cancel.\n",
+                &mut tcod.root,
+            );
+            if let Some(inventory_index) = inventory_index {
+                drop_item(inventory_index, inventory, objects, messages);
             }
             DidntTakeTurn
         }
