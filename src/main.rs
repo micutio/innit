@@ -312,16 +312,15 @@ fn cast_lightning(
                 "A lightning bolt strikes the {} with a loud thunder! The damage is {} hit points.",
                 objects[monster_id].name, LIGHTNING_DAMAGE
             ),
-            colors::LIGHT_BLUE
+            colors::LIGHT_BLUE,
         );
         objects[monster_id].take_damage(LIGHTNING_DAMAGE, &mut game_state.log);
         UseResult::UsedUp
     } else {
         // no enemy found withing maximum range
-        game_state.log.add(
-            "No enemy is close enough to strike.",
-            colors::RED,
-        );
+        game_state
+            .log
+            .add("No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
 }
@@ -358,10 +357,9 @@ fn cast_confuse(
         UseResult::UsedUp
     } else {
         // no enemy found in maximum range
-        game_state.log.add(
-            "No enemy is close enough to strike.",
-            colors::RED,
-        );
+        game_state
+            .log
+            .add("No enemy is close enough to strike.", colors::RED);
         UseResult::Cancelled
     }
 }
@@ -465,10 +463,7 @@ fn player_death(player: &mut Object, messages: &mut Messages) {
 }
 
 fn monster_death(monster: &mut Object, messages: &mut Messages) {
-    messages.add(
-        format!("{} is dead!", monster.name),
-        colors::ORANGE,
-    );
+    messages.add(format!("{} is dead!", monster.name), colors::ORANGE);
     monster.chr = '%';
     monster.color = colors::DARK_RED;
     monster.blocks = false;
@@ -1255,24 +1250,7 @@ fn inventory_menu(root: &mut Root, inventory: &[Object], header: &str) -> Option
     }
 }
 
-fn main() {
-    let root = Root::initializer()
-        .font("arial10x10.png", FontLayout::Tcod)
-        .font_type(FontType::Greyscale)
-        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("roguelike")
-        .init();
-
-    tcod::system::set_fps(LIMIT_FPS);
-
-    let mut tcod = Tcod {
-        root: root,
-        con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
-        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
-        mouse: Default::default(),
-    };
-
+fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -1297,29 +1275,42 @@ fn main() {
         inventory: vec![],
     };
 
+    initialise_fov(&game_state.map, tcod);
+
+    // a warm welcoming message
+    game_state.log.add(
+        "Welcome stranger! prepare to perish in the Tombs of the Ancient Kings.",
+        colors::RED,
+    );
+
+    (objects, game_state)
+}
+
+fn initialise_fov(map: &Map, tcod: &mut Tcod) {
     // init fov map
     for y in 0..MAP_HEIGHT {
         for x in 0..MAP_WIDTH {
             tcod.fov.set(
                 x,
                 y,
-                !game_state.map[x as usize][y as usize].block_sight,
-                !game_state.map[x as usize][y as usize].blocked,
+                !map[x as usize][y as usize].block_sight,
+                !map[x as usize][y as usize].blocked,
             );
         }
     }
+}
 
+fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut Tcod) {
+    // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);
-
-    game_state.log.add(
-        "Welcome stranger! Prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
-    );
 
     // input processing
     let mut key: Key = Default::default();
 
     while !tcod.root.window_closed() {
+        // clear the screen of the previous frame
+        tcod.con.clear();
+
         // check for input events
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => tcod.mouse = m,
@@ -1329,28 +1320,46 @@ fn main() {
 
         // render objects and map
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(&mut tcod, &mut game_state, &objects, fov_recompute);
+        render_all(tcod, game_state, &objects, fov_recompute);
 
         tcod.root.flush(); // draw everything on the window at once
 
-        // erase all objects from their old locations before they move
-        for object in &objects {
-            object.clear(&mut tcod.con);
-        }
-
         // handle keys and exit game if needed
         previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(&mut tcod, &mut game_state, &mut objects, key);
+        let player_action = handle_keys(tcod, game_state, objects, key);
         if player_action == PlayerAction::Exit {
             break;
         }
 
+        // let monsters take their turn
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
-                    ai_take_turn(&mut game_state, &mut objects, &tcod.fov, id);
+                    ai_take_turn(game_state, objects, &tcod.fov, id);
                 }
             }
         }
     }
+}
+
+fn main() {
+    let root = Root::initializer()
+        .font("arial10x10.png", FontLayout::Tcod)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("roguelike")
+        .init();
+
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let mut tcod = Tcod {
+        root: root,
+        con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        mouse: Default::default(),
+    };
+
+    let (mut objects, mut game_state) = new_game(&mut tcod);
+    game_loop(&mut objects, &mut game_state, &mut tcod);
 }
