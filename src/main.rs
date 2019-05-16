@@ -1179,7 +1179,12 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     );
 
     // calculate total height for the header (after auto-wrap) and one line per option
-    let header_height = root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
+    let header_height = if header.is_empty() {
+        0
+    } else {
+        root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
+    };
+
     let height = options.len() as i32 + header_height;
 
     // create an off-screen console that represents the menu's window
@@ -1298,6 +1303,7 @@ fn initialise_fov(map: &Map, tcod: &mut Tcod) {
             );
         }
     }
+    tcod.con.clear(); // unexplored areas start black (which is the default background color)
 }
 
 fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut Tcod) {
@@ -1348,6 +1354,22 @@ fn main_menu(tcod: &mut Tcod) {
     while !tcod.root.window_closed() {
         // show the background image, at twice the regular console resolution
         tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
+
+        tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
+        tcod.root.print_ex(
+            SCREEN_WIDTH / 2,
+            SCREEN_HEIGHT / 2 - 4,
+            BackgroundFlag::None,
+            TextAlignment::Center,
+            "TOMBS OF THE ANCIENT KINGS",
+        );
+        tcod.root.print_ex(
+            SCREEN_WIDTH / 2,
+            SCREEN_HEIGHT -2,
+            BackgroundFlag::None,
+            TextAlignment::Center,
+            "By Michael Wagner",
+        );
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
