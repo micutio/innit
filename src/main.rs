@@ -1,8 +1,15 @@
 extern crate rand;
+extern crate serde;
 extern crate tcod;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 use rand::Rng;
 use std::cmp;
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
@@ -70,6 +77,7 @@ struct Tcod {
     mouse: Mouse,
 }
 
+#[derive(Serialize, Deserialize)]
 struct GameState {
     map: Map,
     log: Messages,
@@ -85,7 +93,7 @@ enum PlayerAction {
     Exit,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Object {
     x: i32,
     y: i32,
@@ -198,7 +206,7 @@ impl Object {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 enum Item {
     Heal,
     Lightning,
@@ -427,7 +435,7 @@ fn closest_monster(tcod: &Tcod, objects: &mut [Object], max_range: i32) -> Optio
 }
 
 // combat related poperties and methods (monster, player, NPC)
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 struct Fighter {
     max_hp: i32,
     hp: i32,
@@ -436,7 +444,7 @@ struct Fighter {
     on_death: DeathCallback,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 enum DeathCallback {
     Player,
     Monster,
@@ -472,7 +480,7 @@ fn monster_death(monster: &mut Object, messages: &mut Messages) {
     monster.name = format!("remains of {}", monster.name);
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 enum Ai {
     Basic,
     Confused {
@@ -598,7 +606,7 @@ fn ai_confused(
 
 // tiles, map and rooms
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 struct Tile {
     blocked: bool,
     block_sight: bool,
@@ -1237,6 +1245,11 @@ fn menu<T: AsRef<str>>(header: &str, options: &[T], width: i32, root: &mut Root)
     }
 }
 
+fn msgbox(text: &str, width: i32, root: &mut Root) {
+    let options: &[&str] = &[];
+    menu(text, options, width, root);
+}
+
 fn inventory_menu(root: &mut Root, inventory: &[Object], header: &str) -> Option<usize> {
     // how a menu with each item of the inventory as an option
     let options = if inventory.is_empty() {
@@ -1334,6 +1347,7 @@ fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut T
         previous_player_position = objects[PLAYER].pos();
         let player_action = handle_keys(tcod, game_state, objects, key);
         if player_action == PlayerAction::Exit {
+            save_game(objects, game_state).unwrap();
             break;
         }
 
@@ -1349,7 +1363,9 @@ fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut T
 }
 
 fn main_menu(tcod: &mut Tcod) {
-    let img = tcod::image::Image::from_file("menu_background.png").ok().expect("Background image not found");
+    let img = tcod::image::Image::from_file("menu_background.png")
+        .ok()
+        .expect("Background image not found");
 
     while !tcod.root.window_closed() {
         // show the background image, at twice the regular console resolution
@@ -1365,7 +1381,7 @@ fn main_menu(tcod: &mut Tcod) {
         );
         tcod.root.print_ex(
             SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT -2,
+            SCREEN_HEIGHT - 2,
             BackgroundFlag::None,
             TextAlignment::Center,
             "By Michael Wagner",
@@ -1377,15 +1393,45 @@ fn main_menu(tcod: &mut Tcod) {
 
         match choice {
             Some(0) => {
+                // start new game
                 let (mut objects, mut game_state) = new_game(tcod);
                 game_loop(&mut objects, &mut game_state, tcod);
             }
-            Some(2) => { //quit
+            Some(1) => {
+                // load game from file
+                match load_game() {
+                    Ok((mut objects, mut game_state)) => {
+                        initialise_fov(&game_state.map, tcod);
+                        game_loop(&mut objects, &mut game_state, tcod);
+                    }
+                    Err(_e) => {
+                        msgbox("\nNo saved game to load\n", 24, &mut tcod.root);
+                        continue;
+                    }
+                }
+            }
+            Some(2) => {
+                //quit
                 break;
             }
             _ => {}
         }
     }
+}
+
+fn save_game(objects: &[Object], game_state: &GameState) -> Result<(), Box<Error>> {
+    let save_data = serde_json::to_string(&(objects, game_state))?;
+    let mut file = File::create("savegame")?;
+    file.write_all(save_data.as_bytes())?;
+    Ok(())
+}
+
+fn load_game() -> Result<(Vec<Object>, GameState), Box<Error>> {
+    let mut json_save_state = String::new();
+    let mut file = File::open("savegame")?;
+    file.read_to_string(&mut json_save_state)?;
+    let result = serde_json::from_str::<(Vec<Object>, GameState)>(&json_save_state)?;
+    Ok(result)
 }
 
 fn main() {

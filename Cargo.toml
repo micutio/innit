@@ -4,5 +4,8 @@ version = "0.1.0"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 
 [dependencies]
-tcod = "0.12"
-rand = "0.3.9"
+tcod = { version = "0.14.0", features = ["serialization"] }
+rand = "0.6.5"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
