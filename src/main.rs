@@ -545,10 +545,14 @@ fn player_death(player: &mut Object, messages: &mut Messages) {
 }
 
 fn monster_death(monster: &mut Object, messages: &mut Messages) {
-    messages.add(format!("{} is dead! You gain {} XP",
-                         monster.name,
-                         monster.fighter.unwrap().xp),
-                 colors::ORANGE);
+    messages.add(
+        format!(
+            "{} is dead! You gain {} XP",
+            monster.name,
+            monster.fighter.unwrap().xp
+        ),
+        colors::ORANGE,
+    );
     monster.chr = '%';
     monster.color = colors::DARK_RED;
     monster.blocks = false;
@@ -860,8 +864,8 @@ fn create_v_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
 }
 
 fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
-    use rand::prelude::*;
     use rand::distributions::WeightedIndex;
+    use rand::prelude::*;
 
     // mosnter random table
     let monster_chances = [("orc", 80), ("troll", 20)];
@@ -875,7 +879,8 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
         if !is_blocked(map, objects, x, y) {
-            let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0 {
+            let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
+            {
                 "orc" => {
                     let mut orc = Object::new(x, y, "orc", true, 'o', colors::DESATURATED_GREEN);
                     orc.fighter = Some(Fighter {
@@ -884,6 +889,7 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
                         defense: 0,
                         power: 3,
                         on_death: DeathCallback::Monster,
+                        xp: 35,
                     });
                     orc.ai = Some(Ai::Basic);
                     orc
@@ -896,6 +902,7 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
                         defense: 1,
                         power: 4,
                         on_death: DeathCallback::Monster,
+                        xp: 100,
                     });
                     troll.ai = Some(Ai::Basic);
                     troll
@@ -1073,8 +1080,8 @@ fn render_all(
     let mut to_draw: Vec<_> = objects
         .iter()
         .filter(|o| {
-            tcod.fov.is_in_fov(o.x, o.y) ||
-                (o.always_visible && game_state.map[o.x as usize][o.y as usize].explored)
+            tcod.fov.is_in_fov(o.x, o.y)
+                || (o.always_visible && game_state.map[o.x as usize][o.y as usize].explored)
         })
         .collect();
     // sort, so that non-blocking objects com first
@@ -1194,7 +1201,7 @@ fn handle_keys(
             player_move_or_attack(game_state, objects, 0, 1);
             TookTurn
         }
-        (Key { code: Left, .. }, true) | (Key { printable: 'a',  .. }, true) => {
+        (Key { code: Left, .. }, true) | (Key { printable: 'a', .. }, true) => {
             player_move_or_attack(game_state, objects, -1, 0);
             TookTurn
         }
@@ -1251,7 +1258,7 @@ fn handle_keys(
             }
             DidntTakeTurn
         }
-        (Key { printable:'c', .. }, true) => {
+        (Key { printable: 'c', .. }, true) => {
             // show character information
             let player = &objects[PLAYER];
             let level = player.level;
@@ -1515,8 +1522,8 @@ fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut T
         render_all(tcod, game_state, &objects, fov_recompute);
 
         // draw everything on the window at once
-        tcod.root.flush(); 
-        
+        tcod.root.flush();
+
         // level up if needed
         level_up(objects, game_state, tcod);
 
