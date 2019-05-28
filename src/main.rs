@@ -26,16 +26,13 @@ const FOV_LIGHT_WALLS: bool = true;
 const TORCH_RADIUS: i32 = 10;
 // player object
 const PLAYER: usize = 0;
-const HEAL_AMOUNT: i32 = 4;
-const LIGHTNING_DAMAGE: i32 = 20;
+const HEAL_AMOUNT: i32 = 40;
+const LIGHTNING_DAMAGE: i32 = 40;
 const LIGHTNING_RANGE: i32 = 5;
 const CONFUSE_RANGE: i32 = 8;
 const CONFUSE_NUM_TURNS: i32 = 10;
 const FIREBALL_RADIUS: i32 = 3;
-const FIREBALL_DAMAGE: i32 = 12;
-// object generation constraints
-const MAX_ROOM_MONSTERS: i32 = 3;
-const MAX_ROOM_ITEMS: i32 = 2;
+const FIREBALL_DAMAGE: i32 = 25;
 // experience and level-ups
 const LEVEL_UP_BASE: i32 = 200;
 const LEVEL_UP_FACTOR: i32 = 150;
@@ -714,7 +711,7 @@ impl Tile {
 
 type Map = Vec<Vec<Tile>>;
 
-fn make_map(objects: &mut Vec<Object>) -> Map {
+fn make_map(objects: &mut Vec<Object>, level: u32) -> Map {
     // fill the map with `unblocked` tiles
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
@@ -746,7 +743,7 @@ fn make_map(objects: &mut Vec<Object>) -> Map {
             create_room(&mut map, new_room);
 
             // add some content to the room
-            place_objects(&map, objects, new_room);
+            place_objects(&map, objects, new_room, level);
 
             let (new_x, new_y) = new_room.center();
             if rooms.is_empty() {
@@ -805,8 +802,19 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game_state: &mut GameS
         colors::RED,
     );
     game_state.dungeon_level += 1;
-    game_state.map = make_map(objects);
+    game_state.map = make_map(objects, game_state.dungeon_level);
     initialise_fov(&game_state.map, tcod);
+}
+
+struct Transition {
+    level: u32,
+    value: u32,
+}
+
+/// Return a value that depends on level.
+/// The table specifies what value occurs after each level, default is 0.
+fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
+    table.iter().rev().find(|transition| level >= transition.level).map_or(0, |transition| transition.value)
 }
 
 // data structures for room generation
@@ -863,16 +871,34 @@ fn create_v_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
+fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
-    // mosnter random table
-    let monster_chances = [("orc", 80), ("troll", 20)];
+    let max_monsters = from_dungeon_level(
+        &[
+            Transition { level: 1, value: 2},
+            Transition { level: 4, value: 3},
+            Transition { level: 6, value: 5},
+        ],
+        level,
+    );
+
+    // monster random table
+    let troll_chance = from_dungeon_level(
+        &[
+            Transition { level: 3, value: 15},
+            Transition { level: 5, value: 30},
+            Transition { level: 7, value: 60},
+        ],
+        level,
+    );
+
+    let monster_chances = [("orc", 80), ("troll", troll_chance)];
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS + 1);
+    let num_monsters = rand::thread_rng().gen_range(0, max_monsters + 1);
     for _ in 0..num_monsters {
         // choose random spot for this monster
         let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
@@ -914,17 +940,27 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect) {
         }
     }
 
+    // maximum number of items per room
+    let max_items = from_dungeon_level(
+        &[
+            Transition { level: 1, value: 1},
+            Transition { level: 4, value: 2},
+        ],
+        level,
+    );
+
     // item random table
     let item_chances = &mut [
-        (Item::Heal, 70),
-        (Item::Lightning, 10),
-        (Item::Fireball, 10),
-        (Item::Confuse, 10),
+        // healing potion always shows up, even if all other items have 0 chance
+        (Item::Heal, 35),
+        (Item::Lightning, from_dungeon_level(&[Transition{level: 4, value: 25}], level)),
+        (Item::Fireball, from_dungeon_level(&[Transition{level: 6, value: 25}], level)),
+        (Item::Confuse, from_dungeon_level(&[Transition{level: 4, value: 25}], level)),
     ];
     let item_dist = WeightedIndex::new(item_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of items
-    let num_items = rand::thread_rng().gen_range(0, MAX_ROOM_ITEMS + 1);
+    let num_items = rand::thread_rng().gen_range(0, max_items + 1);
     for _ in 0..num_items {
         // choose random spot for this item
         let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
@@ -1474,12 +1510,13 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
 
     // create array holding all objects
     let mut objects = vec![player];
+    let level = 1;
 
     // create game state holding most game-relevant information
     //  - also creates map and player starting position
     let mut game_state = GameState {
         // generate map (at this point it's not drawn on screen)
-        map: make_map(&mut objects),
+        map: make_map(&mut objects, level),
         // create the list of game messages and their colors, starts empty
         log: vec![],
         inventory: vec![],
