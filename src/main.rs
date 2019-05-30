@@ -233,7 +233,7 @@ impl Object {
             if !equipment.equipped {
                 equipment.equipped = true;
                 log.add(
-                    format!("Equipped {} on {:?}.", self.name, equipment.slot),
+                    format!("Equipped {:?} on {}.", self.name, equipment.slot),
                     colors::LIGHT_GREEN,
                 );
             }
@@ -258,7 +258,7 @@ impl Object {
             if equipment.equipped {
                 equipment.equipped = false;
                 log.add(
-                    format!("Unequipped {} from {:?}.", self.name, equipment.slot),
+                    format!("Unequipped {} from {}.", self.name, equipment.slot),
                     colors::LIGHT_YELLOW,
                 );
             }
@@ -285,6 +285,28 @@ enum Slot {
     Head,
 }
 
+impl std::fmt::Display for Slot {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            Slot::LeftHand => write!(f, "left hand"),
+            Slot::RightHand => write!(f, "right hand"),
+            Slot::Head => write!(f, "head"),
+            _ => unreachable!(),
+        }
+    }
+}
+
+fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
+    for (inventory_id, item) in inventory.iter().enumerate() {
+        if item
+            .equipment
+            .as_ref()
+            .map_or(false, |e| e.equipped && e.slot == slot) {
+                return Some(inventory_id);
+            }
+    }
+    None
+}
 
 fn level_up(objects: &mut [Object], game_state: &mut GameState, tcod: &mut Tcod) {
     let player = &mut objects[PLAYER];
@@ -357,7 +379,16 @@ fn pick_item_up(game_state: &mut GameState, objects: &mut Vec<Object>, object_id
         game_state
             .log
             .add(format!("You picked up a {}!", item.name), colors::GREEN);
+        let index = game_state.inventory.len();
+        let slot = item.equipment.map(|e| e.slot);
         game_state.inventory.push(item);
+
+        // automatically equip, if the corresponding equipment slot is unused
+        if let Some(slot) = slot {
+            if get_equipped_in_slot(slot, &game_state.inventory).is_none() {
+                game_state.inventory[index].equip(&mut game_state.log);
+            }
+        }
     }
 }
 
@@ -406,6 +437,11 @@ fn use_item(
 
 fn drop_item(game_state: &mut GameState, objects: &mut Vec<Object>, inventory_id: usize) {
     let mut item = game_state.inventory.remove(inventory_id);
+
+    if item.equipment.is_some() {
+        item.unequip(&mut game_state.log);
+    }
+
     item.set_pos(objects[PLAYER].x, objects[PLAYER].y);
     game_state
         .log
@@ -562,6 +598,12 @@ fn toggle_equipment(
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
     };
+    
+    // if the slot is already being used, unequip whatever is there first
+    if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game_state.inventory) {
+        game_state.inventory[old_equipment].unequip(&mut game_state.log);
+    }
+
     if equipment.equipped {
         game_state.inventory[_inventory_id].unequip(&mut game_state.log);
     } else {
@@ -1579,7 +1621,19 @@ fn inventory_menu(root: &mut Root, inventory: &[Object], header: &str) -> Option
     let options = if inventory.is_empty() {
         vec!["Inventory is empty.".into()]
     } else {
-        inventory.iter().map(|item| item.name.clone()).collect()
+        // inventory.iter().map(|item| item.name.clone()).collect()
+        inventory
+            .iter()
+            .map(|item| {
+                // show additional information, in case it's equipped
+                match item.equipment {
+                    Some(equipment) if equipment.equipped => {
+                        format!("{} (on {})", item.name, equipment.slot)
+                    }
+                    _ => item.name.clone(),
+                }
+            })
+            .collect()
     };
 
     let inventory_index = menu(header, &options, INVENTORY_WIDTH, root);
