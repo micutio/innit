@@ -301,9 +301,10 @@ fn get_equipped_in_slot(slot: Slot, inventory: &[Object]) -> Option<usize> {
         if item
             .equipment
             .as_ref()
-            .map_or(false, |e| e.equipped && e.slot == slot) {
-                return Some(inventory_id);
-            }
+            .map_or(false, |e| e.equipped && e.slot == slot)
+        {
+            return Some(inventory_id);
+        }
     }
     None
 }
@@ -419,7 +420,7 @@ fn use_item(
                 // destroy after use, unless it was cancelled for some reason
                 game_state.inventory.remove(inventory_id);
             }
-            UseResult::UsedAndKept => {}, // do nothing
+            UseResult::UsedAndKept => {} // do nothing
             UseResult::Cancelled => {
                 game_state.log.add("Cancelled", colors::WHITE);
             }
@@ -598,7 +599,7 @@ fn toggle_equipment(
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
     };
-    
+
     // if the slot is already being used, unequip whatever is there first
     if let Some(old_equipment) = get_equipped_in_slot(equipment.slot, &game_state.inventory) {
         game_state.inventory[old_equipment].unequip(&mut game_state.log);
@@ -945,7 +946,11 @@ struct Transition {
 /// Return a value that depends on level.
 /// The table specifies what value occurs after each level, default is 0.
 fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
-    table.iter().rev().find(|transition| level >= transition.level).map_or(0, |transition| transition.value)
+    table
+        .iter()
+        .rev()
+        .find(|transition| level >= transition.level)
+        .map_or(0, |transition| transition.value)
 }
 
 // data structures for room generation
@@ -1008,9 +1013,9 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
 
     let max_monsters = from_dungeon_level(
         &[
-            Transition { level: 1, value: 2},
-            Transition { level: 4, value: 3},
-            Transition { level: 6, value: 5},
+            Transition { level: 1, value: 2 },
+            Transition { level: 4, value: 3 },
+            Transition { level: 6, value: 5 },
         ],
         level,
     );
@@ -1018,9 +1023,18 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
     // monster random table
     let troll_chance = from_dungeon_level(
         &[
-            Transition { level: 3, value: 15},
-            Transition { level: 5, value: 30},
-            Transition { level: 7, value: 60},
+            Transition {
+                level: 3,
+                value: 15,
+            },
+            Transition {
+                level: 5,
+                value: 30,
+            },
+            Transition {
+                level: 7,
+                value: 60,
+            },
         ],
         level,
     );
@@ -1036,7 +1050,8 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
         if !is_blocked(map, objects, x, y) {
-            let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0 {
+            let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
+            {
                 "orc" => {
                     let mut orc = Object::new(x, y, "orc", true, 'o', colors::DESATURATED_GREEN);
                     orc.fighter = Some(Fighter {
@@ -1074,8 +1089,8 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
     // maximum number of items per room
     let max_items = from_dungeon_level(
         &[
-            Transition { level: 1, value: 1},
-            Transition { level: 4, value: 2},
+            Transition { level: 1, value: 1 },
+            Transition { level: 4, value: 2 },
         ],
         level,
     );
@@ -1084,9 +1099,36 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
     let item_chances = &mut [
         // healing potion always shows up, even if all other items have 0 chance
         (Item::Heal, 35),
-        (Item::Lightning, from_dungeon_level(&[Transition{level: 4, value: 25}], level)),
-        (Item::Fireball, from_dungeon_level(&[Transition{level: 6, value: 25}], level)),
-        (Item::Confuse, from_dungeon_level(&[Transition{level: 4, value: 25}], level)),
+        (
+            Item::Lightning,
+            from_dungeon_level(
+                &[Transition {
+                    level: 4,
+                    value: 25,
+                }],
+                level,
+            ),
+        ),
+        (
+            Item::Fireball,
+            from_dungeon_level(
+                &[Transition {
+                    level: 6,
+                    value: 25,
+                }],
+                level,
+            ),
+        ),
+        (
+            Item::Confuse,
+            from_dungeon_level(
+                &[Transition {
+                    level: 4,
+                    value: 25,
+                }],
+                level,
+            ),
+        ),
         (Item::Equipment, 1000),
     ];
     let item_dist = WeightedIndex::new(item_chances.iter().map(|item| item.1)).unwrap();
@@ -1103,7 +1145,8 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
             let mut item = match item_chances[item_dist.sample(&mut rand::thread_rng())].0 {
                 Item::Heal => {
                     // create healing potion
-                    let mut object = Object::new(x, y, "healing potion", false, '!', colors::VIOLET);
+                    let mut object =
+                        Object::new(x, y, "healing potion", false, '!', colors::VIOLET);
                     object.item = Some(Item::Heal);
                     object
                 }
@@ -1144,7 +1187,10 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
                     // create a sword
                     let mut object = Object::new(x, y, "sword", false, '/', colors::SKY);
                     object.item = Some(Item::Equipment);
-                    object.equipment = Some(Equipment { equipped: false, slot: Slot::RightHand });
+                    object.equipment = Some(Equipment {
+                        equipped: false,
+                        slot: Slot::RightHand,
+                    });
                     object
                 }
                 _ => unreachable!(),
