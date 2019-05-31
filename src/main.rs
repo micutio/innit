@@ -182,6 +182,16 @@ impl Object {
         None
     }
 
+    pub fn power(&self, game_state: &GameState) -> i32 {
+        let base_power = self.fighter.map_or(0, |f| f.power);
+        let bonus: i32 = self
+            .get_all_equipped(game_state)
+            .iter()
+            .map(|e| e.power_bonus)
+            .sum();
+        base_power + bonus
+    }
+
     pub fn attack(&mut self, target: &mut Object, game_state: &mut GameState) {
         // simple formula for attack damage
         let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
@@ -269,6 +279,20 @@ impl Object {
             );
         }
     }
+
+    /// Return a list of all equipped items
+    pub fn get_all_equipped(&self, game_state: &GameState) -> Vec<Equipment> {
+        if self.name == "player" {
+            game_state
+                .inventory
+                .iter()
+                .filter(|item| item.equipment.map_or(false, |e| e.equipped))
+                .map(|item| item.equipment.unwrap())
+                .collect()
+        } else {
+            vec![] // other objects have no equipment
+        }
+    }
 }
 
 /// An object that can be equipped for bonuses.
@@ -276,6 +300,7 @@ impl Object {
 struct Equipment {
     slot: Slot,
     equipped: bool,
+    power_bonus: i32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -1190,6 +1215,7 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
                     object.equipment = Some(Equipment {
                         equipped: false,
                         slot: Slot::RightHand,
+                        power_bonus: 0,
                     });
                     object
                 }
