@@ -411,7 +411,8 @@ enum Item {
     Lightning,
     Fireball,
     Confuse,
-    Equipment,
+    Sword,
+    Shield,
 }
 
 /// Add given item to the player's inventory and remove from the map.
@@ -462,7 +463,9 @@ fn use_item(
             Lightning => cast_lightning,
             Fireball => cast_fireball,
             Confuse => cast_confuse,
-            Equipment => toggle_equipment,
+            Sword => toggle_equipment,
+            Shield => toggle_equipment,
+            _ => unreachable!(),
         };
         match on_use(tcod, game_state, objects, inventory_id) {
             UseResult::UsedUp => {
@@ -1179,7 +1182,20 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
                 level,
             ),
         ),
-        (Item::Equipment, 1000),
+        (
+            Item::Sword,
+            from_dungeon_level(&[Transition { level: 4, value: 5 }], level),
+        ),
+        (
+            Item::Shield,
+            from_dungeon_level(
+                &[Transition {
+                    level: 8,
+                    value: 15,
+                }],
+                level,
+            ),
+        ),
     ];
     let item_dist = WeightedIndex::new(item_chances.iter().map(|item| item.1)).unwrap();
 
@@ -1233,16 +1249,29 @@ fn place_objects(map: &Map, objects: &mut Vec<Object>, room: Rect, level: u32) {
                     object.item = Some(Item::Confuse);
                     object
                 }
-                Item::Equipment => {
+                Item::Sword => {
                     // create a sword
                     let mut object = Object::new(x, y, "sword", false, '/', colors::SKY);
-                    object.item = Some(Item::Equipment);
+                    object.item = Some(Item::Sword);
                     object.equipment = Some(Equipment {
                         equipped: false,
                         slot: Slot::RightHand,
                         max_hp_bonus: 0,
                         power_bonus: 3,
                         defense_bonus: 0,
+                    });
+                    object
+                }
+                Item::Shield => {
+                    // create a sword
+                    let mut object = Object::new(x, y, "shield", false, 'D', colors::SKY);
+                    object.item = Some(Item::Shield);
+                    object.equipment = Some(Equipment {
+                        equipped: false,
+                        slot: Slot::LeftHand,
+                        max_hp_bonus: 0,
+                        power_bonus: 0,
+                        defense_bonus: 1,
                     });
                     object
                 }
@@ -1758,7 +1787,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
         base_max_hp: 30,
         hp: 30,
         base_defense: 2,
-        base_power: 5,
+        base_power: 2,
         on_death: DeathCallback::Player,
         xp: 0,
     });
