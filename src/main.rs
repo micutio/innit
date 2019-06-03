@@ -1784,9 +1784,9 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
     player.fighter = Some(Fighter {
-        base_max_hp: 30,
-        hp: 30,
-        base_defense: 2,
+        base_max_hp: 100,
+        hp: 100,
+        base_defense: 1,
         base_power: 2,
         on_death: DeathCallback::Player,
         xp: 0,
@@ -1806,6 +1806,18 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
         inventory: vec![],
         dungeon_level: 1,
     };
+
+    // initial equipment: a dagger
+    let mut dagger = Object::new(0, 0, "dagger", false, '-', colors::SKY);
+    dagger.item = Some(Item::Sword);
+    dagger.equipment = Some(Equipment {
+        equipped: true,
+        slot: Slot::LeftHand,
+        max_hp_bonus: 0,
+        defense_bonus: 0,
+        power_bonus: 2,
+    });
+    game_state.inventory.push(dagger);
 
     initialise_fov(&game_state.map, tcod);
 
