@@ -1377,8 +1377,18 @@ fn render_all(
                 (false, true) => COLOR_DARK_WALL,
                 (false, false) => COLOR_DARK_GROUND,
                 // inside fov:
-                (true, true) => COLOR_LIGHT_WALL,
-                (true, false) => COLOR_LIGHT_GROUND,
+                // (true, true) => COLOR_LIGHT_WALL,
+                (true, true) => colors::lerp(
+                    COLOR_LIGHT_WALL,
+                    COLOR_DARK_WALL,
+                    objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
+                ),
+                // (true, false) => COLOR_LIGHT_GROUND,
+                (true, false) => colors::lerp(
+                    COLOR_LIGHT_GROUND,
+                    COLOR_DARK_GROUND,
+                    objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
+                ),
             };
 
             let explored = &mut game_state.map[x as usize][y as usize].explored;
