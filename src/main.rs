@@ -1976,7 +1976,7 @@ fn load_game() -> Result<(Vec<Object>, GameState), Box<Error>> {
 
 fn main() {
     let root = Root::initializer()
-        .font("arial10x10.png", FontLayout::Tcod)
+        .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("roguelike")
