@@ -2,7 +2,9 @@
 //!
 //! An Object represents the base structure for all entities in the game.
 
-use crate::{Ai, Equipment, Fighter, GameState, Item, MessageLog};
+use crate::{Ai, Equipment, Fighter, GameState, Item};
+
+use gui::MessageLog;
 
 use tcod::colors::{self, Color};
 use tcod::console::*;
