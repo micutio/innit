@@ -2,9 +2,9 @@
 //!
 //! The world contains all structures and methods for terrain/dungeon generation
 
-use crate::from_dungeon_level;
-use crate::Transition;
-use crate::PLAYER;
+use crate::{
+    from_dungeon_level, Ai, DeathCallback, Equipment, Fighter, Item, Slot, Transition, PLAYER,
+};
 
 use object::Object;
 
@@ -21,10 +21,10 @@ const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-struct Tile {
-    blocked: bool,
-    block_sight: bool,
-    explored: bool,
+pub struct Tile {
+    pub blocked: bool,
+    pub block_sight: bool,
+    pub explored: bool,
 }
 
 impl Tile {
@@ -47,7 +47,7 @@ impl Tile {
 
 pub type World = Vec<Vec<Tile>>;
 
-fn make_world(objects: &mut Vec<Object>, level: u32) -> World {
+pub fn make_world(objects: &mut Vec<Object>, level: u32) -> World {
     // fill the world with `unblocked` tiles
     let mut world = vec![vec![Tile::wall(); WORLD_HEIGHT as usize]; WORLD_WIDTH as usize];
 
@@ -325,7 +325,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
 
         // only place it if the tile is not blocked
-        if !is_blocked(map, objects, x, y) {
+        if !is_blocked(world, objects, x, y) {
             let mut item = match item_chances[item_dist.sample(&mut rand::thread_rng())].0 {
                 Item::Heal => {
                     // create healing potion
@@ -398,19 +398,6 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
             item.always_visible = true;
             objects.push(item);
         }
-    }
-}
-
-/// Mutably borrow two *separate* elements from the given slice.
-/// Panics when the indexes are equal or out of bounds.
-fn mut_two<T>(items: &mut [T], first_index: usize, second_index: usize) -> (&mut T, &mut T) {
-    assert!(first_index != second_index);
-    let split_at_index = cmp::max(first_index, second_index);
-    let (first_slice, second_slice) = items.split_at_mut(split_at_index);
-    if first_index < second_index {
-        (&mut first_slice[first_index], &mut second_slice[0])
-    } else {
-        (&mut second_slice[0], &mut first_slice[second_index])
     }
 }
 

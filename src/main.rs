@@ -9,10 +9,10 @@ mod object;
 mod world;
 
 use object::Object;
-use world::World;
+use world::{is_blocked, make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use rand::Rng;
-
+use std::cmp;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -60,6 +60,19 @@ const COLOR_LIGHT_GROUND: Color = Color {
     g: 180,
     b: 50,
 };
+
+/// Mutably borrow two *separate* elements from the given slice.
+/// Panics when the indexes are equal or out of bounds.
+fn mut_two<T>(items: &mut [T], first_index: usize, second_index: usize) -> (&mut T, &mut T) {
+    assert!(first_index != second_index);
+    let split_at_index = cmp::max(first_index, second_index);
+    let (first_slice, second_slice) = items.split_at_mut(split_at_index);
+    if first_index < second_index {
+        (&mut first_slice[first_index], &mut second_slice[0])
+    } else {
+        (&mut second_slice[0], &mut first_slice[second_index])
+    }
+}
 
 // UI constraints
 const BAR_WIDTH: i32 = 20;
@@ -557,7 +570,7 @@ fn player_move_or_attack(game_state: &mut GameState, objects: &mut [Object], dx:
             player.attack(target, game_state);
         }
         None => {
-            move_by(&game_state.map, objects, PLAYER, dx, dy);
+            move_by(&game_state.world, objects, PLAYER, dx, dy);
         }
     }
 }
@@ -606,7 +619,7 @@ fn ai_basic(
         if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
             // move towards player if far away
             let (player_x, player_y) = objects[PLAYER].pos();
-            move_towards(&game_state.map, objects, monster_id, player_x, player_y);
+            move_towards(&game_state.world, objects, monster_id, player_x, player_y);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
             // Close enough, attack! (if player is still alive)
             let (monster, player) = mut_two(objects, monster_id, PLAYER);
@@ -627,7 +640,7 @@ fn ai_confused(
         // still confused...
         // move in a random direction, and decrease the number of tuns confused
         move_by(
-            &game_state.map,
+            &game_state.world,
             objects,
             monster_id,
             rand::thread_rng().gen_range(-1, 2),
@@ -661,8 +674,8 @@ fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game_state: &mut GameS
         colors::RED,
     );
     game_state.dungeon_level += 1;
-    game_state.map = make_map(objects, game_state.dungeon_level);
-    initialise_fov(&game_state.map, tcod);
+    game_state.world = make_world(objects, game_state.dungeon_level);
+    initialise_fov(&game_state.world, tcod);
 }
 
 pub struct Transition {
@@ -741,10 +754,10 @@ fn render_all(
     }
 
     // go through all tiles and set their background color
-    for y in 0..MAP_HEIGHT {
-        for x in 0..MAP_WIDTH {
+    for y in 0..WORLD_HEIGHT {
+        for x in 0..WORLD_WIDTH {
             let visible = tcod.fov.is_in_fov(x, y);
-            let wall = game_state.map[x as usize][y as usize].block_sight;
+            let wall = game_state.world[x as usize][y as usize].block_sight;
             let tile_color = match (visible, wall) {
                 // outside field of view:
                 (false, true) => COLOR_DARK_WALL,
@@ -764,7 +777,7 @@ fn render_all(
                 ),
             };
 
-            let explored = &mut game_state.map[x as usize][y as usize].explored;
+            let explored = &mut game_state.world[x as usize][y as usize].explored;
             if visible {
                 *explored = true;
             }
@@ -780,7 +793,7 @@ fn render_all(
         .iter()
         .filter(|o| {
             tcod.fov.is_in_fov(o.x, o.y)
-                || (o.always_visible && game_state.map[o.x as usize][o.y as usize].explored)
+                || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
         })
         .collect();
     // sort, so that non-blocking objects com first
@@ -853,7 +866,7 @@ fn render_all(
     blit(
         &tcod.con,
         (0, 0),
-        (MAP_WIDTH, MAP_HEIGHT),
+        (WORLD_WIDTH, WORLD_HEIGHT),
         &mut tcod.root,
         (0, 0),
         1.0,
@@ -1027,7 +1040,7 @@ fn target_tile(
         let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
 
         // accept the target if the player clicked in FOV, and in case a range is specified, if it's in that range
-        let in_fov = (x < MAP_WIDTH) && (y < MAP_HEIGHT) && tcod.fov.is_in_fov(x, y);
+        let in_fov = (x < WORLD_WIDTH) && (y < WORLD_HEIGHT) && tcod.fov.is_in_fov(x, y);
         let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
 
         if tcod.mouse.lbutton_pressed && in_fov && in_range {
@@ -1183,7 +1196,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
     //  - also creates map and player starting position
     let mut game_state = GameState {
         // generate map (at this point it's not drawn on screen)
-        map: make_map(&mut objects, level),
+        world: make_world(&mut objects, level),
         // create the list of game messages and their colors, starts empty
         log: vec![],
         inventory: vec![],
@@ -1202,7 +1215,7 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
     });
     game_state.inventory.push(dagger);
 
-    initialise_fov(&game_state.map, tcod);
+    initialise_fov(&game_state.world, tcod);
 
     // a warm welcoming message
     game_state.log.add(
@@ -1213,15 +1226,15 @@ fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
     (objects, game_state)
 }
 
-fn initialise_fov(map: &Map, tcod: &mut Tcod) {
+fn initialise_fov(world: &World, tcod: &mut Tcod) {
     // init fov map
-    for y in 0..MAP_HEIGHT {
-        for x in 0..MAP_WIDTH {
+    for y in 0..WORLD_HEIGHT {
+        for x in 0..WORLD_WIDTH {
             tcod.fov.set(
                 x,
                 y,
-                !map[x as usize][y as usize].block_sight,
-                !map[x as usize][y as usize].blocked,
+                !world[x as usize][y as usize].block_sight,
+                !world[x as usize][y as usize].blocked,
             );
         }
     }
@@ -1314,7 +1327,7 @@ fn main_menu(tcod: &mut Tcod) {
                 // load game from file
                 match load_game() {
                     Ok((mut objects, mut game_state)) => {
-                        initialise_fov(&game_state.map, tcod);
+                        initialise_fov(&game_state.world, tcod);
                         game_loop(&mut objects, &mut game_state, tcod);
                     }
                     Err(_e) => {
@@ -1361,7 +1374,7 @@ fn main() {
         root: root,
         con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(MAP_WIDTH, MAP_HEIGHT),
+        fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
         mouse: Default::default(),
     };
 
