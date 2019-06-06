@@ -3,10 +3,12 @@
 //! This module contains all structures and methods pertaining to the user interface.
 
 use crate::{
-    ai_take_turn, drop_item, level_up, next_level, pick_item_up, player_move_or_attack, use_item,
-    DeathCallback, Equipment, Fighter, FovMap, GameState, Item, PlayerAction, Slot, LEVEL_UP_BASE,
+    drop_item, level_up, next_level, pick_item_up, player_move_or_attack, use_item, DeathCallback,
+    Equipment, Fighter, FovMap, GameState, Item, PlayerAction, Slot, LEVEL_UP_BASE,
     LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
+
+use ai::ai_take_turn;
 use object::Object;
 use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
 

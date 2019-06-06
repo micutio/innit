@@ -3,9 +3,10 @@
 //! The world contains all structures and methods for terrain/dungeon generation
 
 use crate::{
-    from_dungeon_level, Ai, DeathCallback, Equipment, Fighter, Item, Slot, Transition, PLAYER,
+    from_dungeon_level, DeathCallback, Equipment, Fighter, Item, Slot, Transition, PLAYER,
 };
 
+use ai::Ai;
 use object::Object;
 
 use rand::Rng;

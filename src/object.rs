@@ -2,8 +2,9 @@
 //!
 //! An Object represents the base structure for all entities in the game.
 
-use crate::{Ai, Equipment, Fighter, GameState, Item};
+use crate::{Equipment, Fighter, GameState, Item};
 
+use ai::Ai;
 use gui::MessageLog;
 
 use tcod::colors::{self, Color};
@@ -18,11 +19,11 @@ pub struct Object {
     pub alive: bool,
     pub chr: char,
     pub color: Color,
+    pub always_visible: bool,
+    pub level: i32,
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
     pub item: Option<Item>,
-    pub always_visible: bool,
-    pub level: i32,
     pub equipment: Option<Equipment>,
 }
 
@@ -36,11 +37,11 @@ impl Object {
             alive: false,
             chr: chr,
             color: color,
+            always_visible: false,
+            level: 1,
             fighter: None,
             ai: None,
             item: None,
-            always_visible: false,
-            level: 1,
             equipment: None,
         }
     }
