@@ -3,13 +3,13 @@
 //! This module contains all structures and methods pertaining to the user interface.
 
 use crate::{
-    drop_item, level_up, next_level, pick_item_up, player_move_or_attack, use_item, DeathCallback,
-    Equipment, Fighter, FovMap, GameState, Item, PlayerAction, Slot, LEVEL_UP_BASE,
-    LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
+    next_level, player_move_or_attack, DeathCallback, Fighter, FovMap, GameState, PlayerAction,
+    PLAYER, TORCH_RADIUS,
 };
 
 use ai::ai_take_turn;
-use object::Object;
+use item::{drop_item, pick_item_up, use_item, Equipment, Item, Slot};
+use object::{level_up, Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
 use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use std::error::Error;

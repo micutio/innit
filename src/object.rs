@@ -2,13 +2,19 @@
 //!
 //! An Object represents the base structure for all entities in the game.
 
-use crate::{Equipment, Fighter, GameState, Item};
+use crate::{Fighter, GameState, PLAYER};
 
 use ai::Ai;
-use gui::MessageLog;
+use gui::{menu, MessageLog, Tcod};
+use item::{Equipment, Item};
 
 use tcod::colors::{self, Color};
 use tcod::console::*;
+
+// experience and level-ups
+pub const LEVEL_UP_BASE: i32 = 200;
+pub const LEVEL_UP_FACTOR: i32 = 150;
+pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
@@ -227,6 +233,53 @@ impl Object {
                 .collect()
         } else {
             vec![] // other objects have no equipment
+        }
+    }
+}
+
+pub fn level_up(objects: &mut [Object], game_state: &mut GameState, tcod: &mut Tcod) {
+    let player = &mut objects[PLAYER];
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+    // see if the player's experience is enough to level up
+    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+        // exp is enough, lvl up
+        player.level += 1;
+        game_state.log.add(
+            format!(
+                "Your battle skills grow stringer! You reached level {}!",
+                player.level
+            ),
+            colors::YELLOW,
+        );
+        // TODO: increase player's stats
+        let fighter = player.fighter.as_mut().unwrap();
+        let mut choice = None;
+        while choice.is_none() {
+            // keep asking until a choice is made
+            choice = menu(
+                "Level up! Chose a stat to raise:\n",
+                &[
+                    format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
+                    format!("Strength (+1 attack, from {})", fighter.base_power),
+                    format!("Agility (+1 defense, from {})", fighter.base_defense),
+                ],
+                LEVEL_SCREEN_WIDTH,
+                &mut tcod.root,
+            );
+        }
+        fighter.xp -= level_up_xp;
+        match choice.unwrap() {
+            0 => {
+                fighter.base_max_hp += 20;
+                fighter.hp += 20;
+            }
+            1 => {
+                fighter.base_power += 1;
+            }
+            2 => {
+                fighter.base_defense += 1;
+            }
+            _ => unreachable!(),
         }
     }
 }
