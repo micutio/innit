@@ -669,8 +669,7 @@ fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut T
 }
 
 pub fn main_menu(tcod: &mut Tcod) {
-    let img = tcod::image::Image::from_file("menu_background.png")
-        .ok()
+    let img = tcod::image::Image::from_file("assets/menu_background.png")
         .expect("Background image not found");
 
     while !tcod.root.window_closed() {
