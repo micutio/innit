@@ -2,12 +2,10 @@
 //!
 //! This module contains all structures and methods pertaining to the user interface.
 
-use crate::{
-    next_level, player_move_or_attack, DeathCallback, Fighter, FovMap, GameState, PlayerAction,
-    PLAYER, TORCH_RADIUS,
-};
-
+use crate::FovMap;
 use ai::ai_take_turn;
+use fighter::{DeathCallback, Fighter};
+use game_state::{next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS};
 use item::{drop_item, pick_item_up, use_item, Equipment, Item, Slot};
 use object::{level_up, Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
 use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
@@ -249,6 +247,13 @@ fn render_all(
     );
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit,
+}
+
 /// Handle user input
 fn handle_keys(
     tcod: &mut Tcod,
@@ -256,9 +261,9 @@ fn handle_keys(
     objects: &mut Vec<Object>,
     key: Key,
 ) -> PlayerAction {
+    use gui::PlayerAction::*;
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
-    use PlayerAction::*;
 
     let player_alive = objects[PLAYER].alive;
     match (key, player_alive) {

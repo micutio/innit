@@ -2,8 +2,8 @@
 //!
 //! The world contains all structures and methods for terrain/dungeon generation
 
-use crate::{from_dungeon_level, DeathCallback, Fighter, Transition, PLAYER};
-
+use game_state::{from_dungeon_level, Transition, PLAYER};
+use fighter::{DeathCallback, Fighter};
 use ai::Ai;
 use item::{Equipment, Item, Slot};
 use object::Object;

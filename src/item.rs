@@ -3,9 +3,8 @@
 //! This module contains all structures and methods pertaining to items
 //! which can be equipped, used and casted.
 
-use crate::{GameState, PLAYER};
-
 use ai::Ai;
+use game_state::{GameState, PLAYER};
 use gui::{target_monster, target_tile, MessageLog, Tcod};
 use object::Object;
 

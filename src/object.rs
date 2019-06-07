@@ -2,9 +2,9 @@
 //!
 //! An Object represents the base structure for all entities in the game.
 
-use crate::{Fighter, GameState, PLAYER};
-
 use ai::Ai;
+use fighter::Fighter;
+use game_state::{GameState, PLAYER};
 use gui::{menu, MessageLog, Tcod};
 use item::{Equipment, Item};
 

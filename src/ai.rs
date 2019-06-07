@@ -2,8 +2,9 @@
 //!
 //! Structures and methods for constructing the game ai.
 
-use crate::{move_by, move_towards, mut_two, FovMap, GameState, PLAYER};
+use crate::FovMap;
 
+use game_state::{move_by, move_towards, mut_two, GameState, PLAYER};
 use gui::MessageLog;
 use object::Object;
 
