@@ -18,31 +18,9 @@ mod object;
 mod util;
 mod world;
 
-// external libraries
-use tcod::console::*;
-use tcod::map::Map as FovMap;
-
 // internal modules
-use gui::{main_menu, Tcod, LIMIT_FPS, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
-use world::{WORLD_HEIGHT, WORLD_WIDTH};
+use gui::launch_game;
 
 fn main() {
-    let root = Root::initializer()
-        .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
-        .font_type(FontType::Greyscale)
-        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("roguelike")
-        .init();
-
-    tcod::system::set_fps(LIMIT_FPS);
-
-    let mut tcod = Tcod {
-        root: root,
-        con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
-        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
-        fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
-        mouse: Default::default(),
-    };
-
-    main_menu(&mut tcod);
+    launch_game();
 }

@@ -5,10 +5,8 @@
 use rand::Rng;
 use tcod::colors;
 
-use crate::FovMap;
-
 use game_state::{move_by, move_towards, GameState, PLAYER};
-use gui::MessageLog;
+use gui::{FovMap, MessageLog};
 use object::Object;
 use util::mut_two;
 

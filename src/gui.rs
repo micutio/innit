@@ -12,7 +12,6 @@ use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::FovAlgorithm;
 
 // internal modules
-use crate::FovMap;
 use ai::ai_take_turn;
 use fighter::{DeathCallback, Fighter};
 use game_state::{next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS};
@@ -57,6 +56,34 @@ const COLOR_LIGHT_GROUND: Color = Color {
     g: 180,
     b: 50,
 };
+
+pub use tcod::map::Map as FovMap;
+
+pub fn initialize_system() -> Tcod {
+    let root = Root::initializer()
+        .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
+        .font_type(FontType::Greyscale)
+        .size(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .title("roguelike")
+        .init();
+
+    tcod::system::set_fps(LIMIT_FPS);
+
+    let mut tcod = Tcod {
+        root: root,
+        con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
+        panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+        fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
+        mouse: Default::default(),
+    };
+
+    tcod
+}
+
+pub fn launch_game() {
+    let tcod: Tcod = initialize_system();
+    main_menu(&mut tcod);
+}
 
 pub type Messages = Vec<(String, Color)>;
 
