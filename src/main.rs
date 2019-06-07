@@ -15,13 +15,16 @@ mod game_state;
 mod gui;
 mod item;
 mod object;
+mod util;
 mod world;
 
-use gui::{main_menu, Tcod, LIMIT_FPS, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
-use world::{WORLD_HEIGHT, WORLD_WIDTH};
-
+// external libraries
 use tcod::console::*;
 use tcod::map::Map as FovMap;
+
+// internal modules
+use gui::{main_menu, Tcod, LIMIT_FPS, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
+use world::{WORLD_HEIGHT, WORLD_WIDTH};
 
 fn main() {
     let root = Root::initializer()

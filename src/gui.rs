@@ -2,14 +2,7 @@
 //!
 //! This module contains all structures and methods pertaining to the user interface.
 
-use crate::FovMap;
-use ai::ai_take_turn;
-use fighter::{DeathCallback, Fighter};
-use game_state::{next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS};
-use item::{drop_item, pick_item_up, use_item, Equipment, Item, Slot};
-use object::{level_up, Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
-use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
-
+// external libraries
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -17,6 +10,15 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::FovAlgorithm;
+
+// internal modules
+use crate::FovMap;
+use ai::ai_take_turn;
+use fighter::{DeathCallback, Fighter};
+use game_state::{next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS};
+use item::{drop_item, pick_item_up, use_item, Equipment, Item, Slot};
+use object::{level_up, Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
+use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // GUI constraints
 // window size

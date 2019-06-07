@@ -2,14 +2,15 @@
 //!
 //! Structures and methods for constructing the game ai.
 
-use crate::FovMap;
-
-use game_state::{move_by, move_towards, mut_two, GameState, PLAYER};
-use gui::MessageLog;
-use object::Object;
-
 use rand::Rng;
 use tcod::colors;
+
+use crate::FovMap;
+
+use game_state::{move_by, move_towards, GameState, PLAYER};
+use gui::MessageLog;
+use object::Object;
+use util::mut_two;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Ai {

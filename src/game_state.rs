@@ -3,30 +3,18 @@
 //! This module contains all structures and methods to represent
 //! and modify the state of the game.
 
-use gui::{initialize_fov, MessageLog, Messages, Tcod};
-use object::Object;
-use world::{is_blocked, make_world, World};
-
-use std::cmp;
-
+// external libraries
 use tcod::colors;
 
-pub const TORCH_RADIUS: i32 = 10;
-// player object
-pub const PLAYER: usize = 0;
+// internal modules
+use gui::{initialize_fov, MessageLog, Messages, Tcod};
+use object::Object;
+use util::mut_two;
+use world::{is_blocked, make_world, World};
 
-/// Mutably borrow two *separate* elements from the given slice.
-/// Panics when the indexes are equal or out of bounds.
-pub fn mut_two<T>(items: &mut [T], first_index: usize, second_index: usize) -> (&mut T, &mut T) {
-    assert!(first_index != second_index);
-    let split_at_index = cmp::max(first_index, second_index);
-    let (first_slice, second_slice) = items.split_at_mut(split_at_index);
-    if first_index < second_index {
-        (&mut first_slice[first_index], &mut second_slice[0])
-    } else {
-        (&mut second_slice[0], &mut first_slice[second_index])
-    }
-}
+// player object reference, index of the object vector
+pub const PLAYER: usize = 0;
+pub const TORCH_RADIUS: i32 = 10;
 
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
@@ -34,32 +22,6 @@ pub struct GameState {
     pub log: Messages,
     pub inventory: Vec<Object>,
     pub dungeon_level: u32,
-}
-
-pub fn player_death(player: &mut Object, messages: &mut Messages) {
-    // the game ended!
-    messages.add("You died!", colors::RED);
-
-    // for added effect, transform the player into a corpse
-    player.chr = '%';
-    player.color = colors::DARK_RED;
-}
-
-pub fn monster_death(monster: &mut Object, messages: &mut Messages) {
-    messages.add(
-        format!(
-            "{} is dead! You gain {} XP",
-            monster.name,
-            monster.fighter.unwrap().xp
-        ),
-        colors::ORANGE,
-    );
-    monster.chr = '%';
-    monster.color = colors::DARK_RED;
-    monster.blocks = false;
-    monster.fighter = None;
-    monster.ai = None;
-    monster.name = format!("remains of {}", monster.name);
 }
 
 pub fn move_by(world: &World, objects: &mut [Object], id: usize, dx: i32, dy: i32) {

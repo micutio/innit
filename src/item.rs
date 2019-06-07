@@ -3,12 +3,14 @@
 //! This module contains all structures and methods pertaining to items
 //! which can be equipped, used and casted.
 
+// external libraries
+use tcod::colors;
+
+// internal modules
 use ai::Ai;
 use game_state::{GameState, PLAYER};
 use gui::{target_monster, target_tile, MessageLog, Tcod};
 use object::Object;
-
-use tcod::colors;
 
 const HEAL_AMOUNT: i32 = 40;
 const LIGHTNING_DAMAGE: i32 = 40;

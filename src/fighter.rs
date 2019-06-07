@@ -1,8 +1,12 @@
 //! Module Fighter
 //!
 //! This module contains the structures and methods that make up the combat system.
-use game_state::{monster_death, player_death};
-use gui::Messages;
+
+// external libraries
+use tcod::colors;
+
+// internal modules
+use gui::{MessageLog, Messages};
 use object::Object;
 
 // combat related poperties and methods (monster, player, NPC)
@@ -31,4 +35,30 @@ impl DeathCallback {
         };
         callback(object, messages);
     }
+}
+
+pub fn player_death(player: &mut Object, messages: &mut Messages) {
+    // the game ended!
+    messages.add("You died!", colors::RED);
+
+    // for added effect, transform the player into a corpse
+    player.chr = '%';
+    player.color = colors::DARK_RED;
+}
+
+pub fn monster_death(monster: &mut Object, messages: &mut Messages) {
+    messages.add(
+        format!(
+            "{} is dead! You gain {} XP",
+            monster.name,
+            monster.fighter.unwrap().xp
+        ),
+        colors::ORANGE,
+    );
+    monster.chr = '%';
+    monster.color = colors::DARK_RED;
+    monster.blocks = false;
+    monster.fighter = None;
+    monster.ai = None;
+    monster.name = format!("remains of {}", monster.name);
 }

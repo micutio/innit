@@ -2,14 +2,16 @@
 //!
 //! An Object represents the base structure for all entities in the game.
 
+// external libraries
+use tcod::colors::{self, Color};
+use tcod::console::*;
+
+// internal modules
 use ai::Ai;
 use fighter::Fighter;
 use game_state::{GameState, PLAYER};
 use gui::{menu, MessageLog, Tcod};
 use item::{Equipment, Item};
-
-use tcod::colors::{self, Color};
-use tcod::console::*;
 
 // experience and level-ups
 pub const LEVEL_UP_BASE: i32 = 200;

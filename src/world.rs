@@ -2,15 +2,17 @@
 //!
 //! The world contains all structures and methods for terrain/dungeon generation
 
-use game_state::{from_dungeon_level, Transition, PLAYER};
-use fighter::{DeathCallback, Fighter};
-use ai::Ai;
-use item::{Equipment, Item, Slot};
-use object::Object;
-
+// external libraries
 use rand::Rng;
 use std::cmp;
 use tcod::colors;
+
+// internal modules
+use ai::Ai;
+use fighter::{DeathCallback, Fighter};
+use game_state::{from_dungeon_level, Transition, PLAYER};
+use item::{Equipment, Item, Slot};
+use object::Object;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -45,7 +47,6 @@ impl Tile {
     }
 }
 
-// pub type World = Vec<Vec<Tile>>;
 pub type World = Vec<Vec<Tile>>;
 
 pub fn make_world(objects: &mut Vec<Object>, level: u32) -> World {
