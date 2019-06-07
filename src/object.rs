@@ -67,11 +67,6 @@ impl Object {
         con.put_char(self.x, self.y, self.chr, BackgroundFlag::None);
     }
 
-    /// Erase the character that represents this object
-    pub fn clear(&self, con: &mut Console) {
-        con.put_char(self.x, self.y, ' ', BackgroundFlag::None);
-    }
-
     pub fn distance_to(&self, other: &Object) -> f32 {
         let dx = other.x - self.x;
         let dy = other.y - self.y;

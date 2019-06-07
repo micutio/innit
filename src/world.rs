@@ -45,6 +45,7 @@ impl Tile {
     }
 }
 
+// pub type World = Vec<Vec<Tile>>;
 pub type World = Vec<Vec<Tile>>;
 
 pub fn make_world(objects: &mut Vec<Object>, level: u32) -> World {

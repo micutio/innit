@@ -110,6 +110,7 @@ pub fn use_item(
     objects: &mut [Object],
     inventory_id: usize,
 ) {
+    use item::Item::*;
     // just call the use_function, if it is defined
     if let Some(item) = game_state.inventory[inventory_id].item {
         let on_use = match item {
@@ -297,12 +298,12 @@ fn cast_fireball(
 }
 
 fn toggle_equipment(
-    tcod: &mut Tcod,
+    _tcod: &mut Tcod,
     game_state: &mut GameState,
-    objects: &mut [Object],
-    _inventory_id: usize,
+    _objects: &mut [Object],
+    inventory_id: usize,
 ) -> UseResult {
-    let equipment = match game_state.inventory[_inventory_id].equipment {
+    let equipment = match game_state.inventory[inventory_id].equipment {
         Some(equipment) => equipment,
         None => return UseResult::Cancelled,
     };
@@ -313,9 +314,9 @@ fn toggle_equipment(
     }
 
     if equipment.equipped {
-        game_state.inventory[_inventory_id].unequip(&mut game_state.log);
+        game_state.inventory[inventory_id].unequip(&mut game_state.log);
     } else {
-        game_state.inventory[_inventory_id].equip(&mut game_state.log);
+        game_state.inventory[inventory_id].equip(&mut game_state.log);
     }
     UseResult::UsedAndKept
 }

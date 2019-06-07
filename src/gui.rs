@@ -280,19 +280,19 @@ fn handle_keys(
         (Key { code: Escape, .. }, _) => Exit,
 
         // handle movement
-        (Key { code: Up, .. }, true) | (Key { printable: 'w', .. }, true) => {
+        (Key { code: Up, .. }, true) => {
             player_move_or_attack(game_state, objects, 0, -1);
             TookTurn
         }
-        (Key { code: Down, .. }, true) | (Key { printable: 's', .. }, true) => {
+        (Key { code: Down, .. }, true) => {
             player_move_or_attack(game_state, objects, 0, 1);
             TookTurn
         }
-        (Key { code: Left, .. }, true) | (Key { printable: 'a', .. }, true) => {
+        (Key { code: Left, .. }, true) => {
             player_move_or_attack(game_state, objects, -1, 0);
             TookTurn
         }
-        (Key { code: Right, .. }, true) | (Key { printable: 'd', .. }, true) => {
+        (Key { code: Right, .. }, true) => {
             player_move_or_attack(game_state, objects, 1, 0);
             TookTurn
         }
