@@ -69,7 +69,7 @@ pub fn initialize_system() -> Tcod {
 
     tcod::system::set_fps(LIMIT_FPS);
 
-    let mut tcod = Tcod {
+    let tcod = Tcod {
         root: root,
         con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
@@ -81,7 +81,7 @@ pub fn initialize_system() -> Tcod {
 }
 
 pub fn launch_game() {
-    let tcod: Tcod = initialize_system();
+    let mut tcod: Tcod = initialize_system();
     main_menu(&mut tcod);
 }
 

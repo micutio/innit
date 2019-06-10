@@ -82,7 +82,7 @@ fn ai_confused(
             num_turns: num_turns - 1,
         }
     } else {
-        // restor the previous AI (this one will be deleted)
+        // restore the previous AI (this one will be deleted)
         game_state.log.add(
             format!("The {} is no longer confused!", objects[monster_id].name),
             colors::RED,
