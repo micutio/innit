@@ -1,12 +1,11 @@
-//! Module Utilites
-//!
-//! This module contains useful utility functions that are unrelated
-//! to any of the main game modules.
-
+/// Module Utilites
+///
+/// This module contains useful utility functions that are unrelated
+/// to any of the main game modules.
 use std::cmp;
 
 /// Mutably borrow two *separate* elements from the given slice.
-/// Panics when the indexes are equal or out of bounds.
+/// Panics when the indices are equal or out of bounds.
 pub fn mut_two<T>(items: &mut [T], first_index: usize, second_index: usize) -> (&mut T, &mut T) {
     assert!(first_index != second_index);
     let split_at_index = cmp::max(first_index, second_index);

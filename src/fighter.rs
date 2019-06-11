@@ -1,12 +1,10 @@
-//! Module Fighter
-//!
-//! This module contains the structures and methods that make up the combat system.
-
-// external libraries
+/// Module Fighter
+///
+/// This module contains the structures and methods that make up the combat system.
 use tcod::colors;
 
 // internal modules
-use gui::{MessageLog, Messages};
+use game_io::{MessageLog, Messages};
 use object::Object;
 
 // combat related poperties and methods (monster, player, NPC)

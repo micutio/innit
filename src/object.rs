@@ -1,16 +1,14 @@
-//! Module Object
-//!
-//! An Object represents the base structure for all entities in the game.
-
-// external libraries
+/// Module Object
+///
+/// An Object represents the base structure for all entities in the game.
 use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal modules
 use ai::Ai;
 use fighter::Fighter;
+use game_io::{menu, GameIO, MessageLog};
 use game_state::{GameState, PLAYER};
-use gui::{menu, MessageLog, Tcod};
 use item::{Equipment, Item};
 
 // experience and level-ups
@@ -234,7 +232,7 @@ impl Object {
     }
 }
 
-pub fn level_up(objects: &mut [Object], game_state: &mut GameState, tcod: &mut Tcod) {
+pub fn level_up(objects: &mut [Object], game_state: &mut GameState, game_io: &mut GameIO) {
     let player = &mut objects[PLAYER];
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     // see if the player's experience is enough to level up
@@ -261,7 +259,7 @@ pub fn level_up(objects: &mut [Object], game_state: &mut GameState, tcod: &mut T
                     format!("Agility (+1 defense, from {})", fighter.base_defense),
                 ],
                 LEVEL_SCREEN_WIDTH,
-                &mut tcod.root,
+                &mut game_io.root,
             );
         }
         fighter.xp -= level_up_xp;

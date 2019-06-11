@@ -1,8 +1,6 @@
-//! Module GUI
-//!
-//! This module contains all structures and methods pertaining to the user interface.
-
-// external libraries
+/// Module GUI
+///
+/// This module contains all structures and methods pertaining to the user interface.
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -12,12 +10,12 @@ use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::FovAlgorithm;
 
 // internal modules
-use ai::ai_take_turn;
-use fighter::{DeathCallback, Fighter};
-use game_state::{next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS};
-use item::{drop_item, pick_item_up, use_item, Equipment, Item, Slot};
-use object::{level_up, Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
-use world::{make_world, World, WORLD_HEIGHT, WORLD_WIDTH};
+use game_state::{
+    game_loop, new_game, next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS,
+};
+use item::{drop_item, pick_item_up, use_item};
+use object::{Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
+use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // GUI constraints
 // window size
@@ -57,9 +55,31 @@ const COLOR_LIGHT_GROUND: Color = Color {
     b: 50,
 };
 
+/// Field of view mapping
 pub use tcod::map::Map as FovMap;
 
-pub fn initialize_system() -> Tcod {
+/// GameIO holds he core components for game's input and output processing.
+pub struct GameIO {
+    pub root: Root,
+    pub con: Offscreen,
+    pub panel: Offscreen,
+    pub fov: FovMap,
+    pub mouse: Mouse,
+}
+
+pub type Messages = Vec<(String, Color)>;
+
+pub trait MessageLog {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color);
+}
+
+impl MessageLog for Vec<(String, Color)> {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.push((message.into(), color));
+    }
+}
+
+pub fn initialize_io() -> GameIO {
     let root = Root::initializer()
         .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
         .font_type(FontType::Greyscale)
@@ -69,30 +89,28 @@ pub fn initialize_system() -> Tcod {
 
     tcod::system::set_fps(LIMIT_FPS);
 
-    let tcod = Tcod {
+    GameIO {
         root: root,
         con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
         fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
         mouse: Default::default(),
-    };
-
-    tcod
+    }
 }
 
-pub fn launch_game() {
-    let mut tcod: Tcod = initialize_system();
-    main_menu(&mut tcod);
-}
-
-pub type Messages = Vec<(String, Color)>;
-
-pub struct Tcod {
-    pub root: Root,
-    pub con: Offscreen,
-    pub panel: Offscreen,
-    pub fov: FovMap,
-    pub mouse: Mouse,
+pub fn initialize_fov(world: &World, game_io: &mut GameIO) {
+    // init fov map
+    for y in 0..WORLD_HEIGHT {
+        for x in 0..WORLD_WIDTH {
+            game_io.fov.set(
+                x,
+                y,
+                !world[x as usize][y as usize].block_sight,
+                !world[x as usize][y as usize].blocked,
+            );
+        }
+    }
+    game_io.con.clear(); // unexplored areas start black (which is the default background color)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -131,19 +149,9 @@ fn render_bar(
     );
 }
 
-pub trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color);
-}
-
-impl MessageLog for Vec<(String, Color)> {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
-        self.push((message.into(), color));
-    }
-}
-
 /// Render all objects and tiles.
-fn render_all(
-    tcod: &mut Tcod,
+pub fn render_all(
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &[Object],
     fov_recompute: bool,
@@ -151,14 +159,15 @@ fn render_all(
     if fov_recompute {
         // recompute fov if needed (the player moved or something)
         let player = &objects[PLAYER];
-        tcod.fov
+        game_io
+            .fov
             .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
     }
 
     // go through all tiles and set their background color
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
-            let visible = tcod.fov.is_in_fov(x, y);
+            let visible = game_io.fov.is_in_fov(x, y);
             let wall = game_state.world[x as usize][y as usize].block_sight;
             let tile_color = match (visible, wall) {
                 // outside field of view:
@@ -185,16 +194,17 @@ fn render_all(
             }
             if *explored {
                 // show explored tiles only (any visible tile is explored already)
-                tcod.con
+                game_io
+                    .con
                     .set_char_background(x, y, tile_color, BackgroundFlag::Set);
             }
         }
     }
 
-    let mut to_draw: Vec<_> = objects
+    let mut to_draw: Vec<&Object> = objects
         .iter()
         .filter(|o| {
-            tcod.fov.is_in_fov(o.x, o.y)
+            game_io.fov.is_in_fov(o.x, o.y)
                 || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
         })
         .collect();
@@ -202,18 +212,18 @@ fn render_all(
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
     // draw the objects in the list
     for object in &to_draw {
-        object.draw(&mut tcod.con);
+        object.draw(&mut game_io.con);
     }
 
     // prepare to render the GUI panel
-    tcod.panel.set_default_background(colors::BLACK);
-    tcod.panel.clear();
+    game_io.panel.set_default_background(colors::BLACK);
+    game_io.panel.clear();
 
     // show player's stats
     let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
     let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.base_max_hp);
     render_bar(
-        &mut tcod.panel,
+        &mut game_io.panel,
         1,
         1,
         BAR_WIDTH,
@@ -223,7 +233,7 @@ fn render_all(
         colors::LIGHT_RED,
         colors::DARKER_RED,
     );
-    tcod.panel.print_ex(
+    game_io.panel.print_ex(
         1,
         2,
         BackgroundFlag::None,
@@ -232,33 +242,33 @@ fn render_all(
     );
 
     // show names of objects under the mouse
-    tcod.panel.set_default_foreground(colors::LIGHT_GREY);
-    tcod.panel.print_ex(
+    game_io.panel.set_default_foreground(colors::LIGHT_GREY);
+    game_io.panel.print_ex(
         1,
         0,
         BackgroundFlag::None,
         TextAlignment::Left,
-        get_names_under_mouse(tcod.mouse, objects, &tcod.fov),
+        get_names_under_mouse(game_io.mouse, objects, &game_io.fov),
     );
 
     // print game messages, one line at a time
     let mut y = MSG_HEIGHT as i32;
     for &(ref msg, color) in &mut game_state.log.iter().rev() {
-        let msg_height = tcod.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+        let msg_height = game_io.panel.get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         y -= msg_height;
         if y < 0 {
             break;
         }
-        tcod.panel.set_default_foreground(color);
-        tcod.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+        game_io.panel.set_default_foreground(color);
+        game_io.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
     }
 
-    // blit contents of `tcod.panel` to the root console
+    // blit contents of `game_io.panel` to the root console
     blit(
-        &tcod.panel,
+        &game_io.panel,
         (0, 0),
         (SCREEN_WIDTH, SCREEN_HEIGHT),
-        &mut tcod.root,
+        &mut game_io.root,
         (0, PANEL_Y),
         1.0,
         1.0,
@@ -266,10 +276,10 @@ fn render_all(
 
     // blit contents of offscreen console to root console and present it
     blit(
-        &tcod.con,
+        &game_io.con,
         (0, 0),
         (WORLD_WIDTH, WORLD_HEIGHT),
-        &mut tcod.root,
+        &mut game_io.root,
         (0, 0),
         1.0,
         1.0,
@@ -277,20 +287,20 @@ fn render_all(
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum PlayerAction {
+pub enum PlayerAction {
     TookTurn,
     DidntTakeTurn,
     Exit,
 }
 
 /// Handle user input
-fn handle_keys(
-    tcod: &mut Tcod,
+pub fn handle_keys(
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut Vec<Object>,
     key: Key,
 ) -> PlayerAction {
-    use gui::PlayerAction::*;
+    use game_io::PlayerAction::*;
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
@@ -305,8 +315,8 @@ fn handle_keys(
             },
             _,
         ) => {
-            let fullscreen = tcod.root.is_fullscreen();
-            tcod.root.set_fullscreen(!fullscreen);
+            let fullscreen = game_io.root.is_fullscreen();
+            game_io.root.set_fullscreen(!fullscreen);
             DidntTakeTurn
         }
 
@@ -347,19 +357,19 @@ fn handle_keys(
         (Key { printable: 'i', .. }, true) => {
             // show the inventory: if an item is selected, use it
             let inventory_index = inventory_menu(
-                &mut tcod.root,
+                &mut game_io.root,
                 &game_state.inventory,
                 "Press the key next to an item to use it, or any other to cancel.\n",
             );
             if let Some(inventory_index) = inventory_index {
-                use_item(tcod, game_state, objects, inventory_index);
+                use_item(game_io, game_state, objects, inventory_index);
             }
             DidntTakeTurn
         }
         (Key { printable: 'd', .. }, true) => {
             // show_inventory; if an item is selected, drop it
             let inventory_index = inventory_menu(
-                &mut tcod.root,
+                &mut game_io.root,
                 &game_state.inventory,
                 "Press the key enxt to an item to drop it, or any other to cancel.\n",
             );
@@ -375,7 +385,7 @@ fn handle_keys(
                 .iter()
                 .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
             if player_on_stairs {
-                next_level(tcod, objects, game_state);
+                next_level(game_io, objects, game_state);
             }
             DidntTakeTurn
         }
@@ -402,7 +412,7 @@ fn handle_keys(
                     player.power(game_state),
                     player.defense(game_state),
                 );
-                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut tcod.root);
+                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_io.root);
             }
 
             DidntTakeTurn
@@ -428,7 +438,7 @@ fn get_names_under_mouse(mouse: Mouse, objects: &[Object], fov_map: &FovMap) -> 
 /// return the position of a tile left-clicked in player's FOV (optionally in a range),
 /// or (None, None) if right-clicked.
 pub fn target_tile(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &[Object],
     max_range: Option<f32>,
@@ -436,41 +446,41 @@ pub fn target_tile(
     use tcod::input::KeyCode::Escape;
     loop {
         // render the screen. this erases the inventory and shows the names of objects under the mouse
-        tcod.root.flush();
+        game_io.root.flush();
         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
         let mut key = None;
         match event {
-            Some(Event::Mouse(m)) => tcod.mouse = m,
+            Some(Event::Mouse(m)) => game_io.mouse = m,
             Some(Event::Key(k)) => key = Some(k),
             None => {}
         }
-        render_all(tcod, game_state, objects, false);
+        render_all(game_io, game_state, objects, false);
 
-        let (x, y) = (tcod.mouse.cx as i32, tcod.mouse.cy as i32);
+        let (x, y) = (game_io.mouse.cx as i32, game_io.mouse.cy as i32);
 
         // accept the target if the player clicked in FOV, and in case a range is specified, if it's in that range
-        let in_fov = (x < WORLD_WIDTH) && (y < WORLD_HEIGHT) && tcod.fov.is_in_fov(x, y);
+        let in_fov = (x < WORLD_WIDTH) && (y < WORLD_HEIGHT) && game_io.fov.is_in_fov(x, y);
         let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
 
-        if tcod.mouse.lbutton_pressed && in_fov && in_range {
+        if game_io.mouse.lbutton_pressed && in_fov && in_range {
             return Some((x, y));
         }
 
         let escape = key.map_or(false, |k| k.code == Escape);
-        if tcod.mouse.rbutton_pressed || escape {
+        if game_io.mouse.rbutton_pressed || escape {
             return None; // cancel if the player right-clicked or pressed Escape
         }
     }
 }
 
 pub fn target_monster(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &[Object],
     max_range: Option<f32>,
 ) -> Option<usize> {
     loop {
-        match target_tile(tcod, game_state, objects, max_range) {
+        match target_tile(game_io, game_state, objects, max_range) {
             Some((x, y)) => {
                 // return the first clicked monster, otherwise continue looping
                 for (id, obj) in objects.iter().enumerate() {
@@ -589,136 +599,23 @@ fn inventory_menu(root: &mut Root, inventory: &[Object], header: &str) -> Option
     }
 }
 
-fn new_game(tcod: &mut Tcod) -> (Vec<Object>, GameState) {
-    // create object representing the player
-    let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
-    player.alive = true;
-    player.fighter = Some(Fighter {
-        base_max_hp: 100,
-        hp: 100,
-        base_defense: 1,
-        base_power: 2,
-        on_death: DeathCallback::Player,
-        xp: 0,
-    });
-
-    // create array holding all objects
-    let mut objects = vec![player];
-    let level = 1;
-
-    // create game state holding most game-relevant information
-    //  - also creates map and player starting position
-    let mut game_state = GameState {
-        // generate map (at this point it's not drawn on screen)
-        world: make_world(&mut objects, level),
-        // create the list of game messages and their colors, starts empty
-        log: vec![],
-        inventory: vec![],
-        dungeon_level: 1,
-    };
-
-    // initial equipment: a dagger
-    let mut dagger = Object::new(0, 0, "dagger", false, '-', colors::SKY);
-    dagger.item = Some(Item::Sword);
-    dagger.equipment = Some(Equipment {
-        equipped: true,
-        slot: Slot::LeftHand,
-        max_hp_bonus: 0,
-        defense_bonus: 0,
-        power_bonus: 2,
-    });
-    game_state.inventory.push(dagger);
-
-    initialize_fov(&game_state.world, tcod);
-
-    // a warm welcoming message
-    game_state.log.add(
-        "Welcome stranger! prepare to perish in the Tombs of the Ancient Kings.",
-        colors::RED,
-    );
-
-    (objects, game_state)
-}
-
-pub fn initialize_fov(world: &World, tcod: &mut Tcod) {
-    // init fov map
-    for y in 0..WORLD_HEIGHT {
-        for x in 0..WORLD_WIDTH {
-            tcod.fov.set(
-                x,
-                y,
-                !world[x as usize][y as usize].block_sight,
-                !world[x as usize][y as usize].blocked,
-            );
-        }
-    }
-    tcod.con.clear(); // unexplored areas start black (which is the default background color)
-}
-
-fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, tcod: &mut Tcod) {
-    // force FOV "recompute" first time through the game loop
-    let mut previous_player_position = (-1, -1);
-
-    // input processing
-    let mut key: Key = Default::default();
-
-    while !tcod.root.window_closed() {
-        // clear the screen of the previous frame
-        tcod.con.clear();
-
-        // check for input events
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => tcod.mouse = m,
-            Some((_, Event::Key(k))) => key = k,
-            _ => key = Default::default(),
-        }
-
-        // render objects and map
-        let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(tcod, game_state, &objects, fov_recompute);
-
-        // draw everything on the window at once
-        tcod.root.flush();
-
-        // level up if needed
-        level_up(objects, game_state, tcod);
-
-        // handle keys and exit game if needed
-        previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(tcod, game_state, objects, key);
-        if player_action == PlayerAction::Exit {
-            save_game(objects, game_state).unwrap();
-            break;
-        }
-
-        // let monsters take their turn
-        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..objects.len() {
-                if objects[id].ai.is_some() {
-                    ai_take_turn(game_state, objects, &tcod.fov, id);
-                }
-            }
-        }
-    }
-}
-
-pub fn main_menu(tcod: &mut Tcod) {
+pub fn main_menu(game_io: &mut GameIO) {
     let img = tcod::image::Image::from_file("assets/menu_background.png")
         .expect("Background image not found");
 
-    while !tcod.root.window_closed() {
+    while !game_io.root.window_closed() {
         // show the background image, at twice the regular console resolution
-        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut tcod.root, (0, 0));
+        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut game_io.root, (0, 0));
 
-        tcod.root.set_default_foreground(colors::LIGHT_YELLOW);
-        tcod.root.print_ex(
+        game_io.root.set_default_foreground(colors::LIGHT_YELLOW);
+        game_io.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT / 2 - 4,
             BackgroundFlag::None,
             TextAlignment::Center,
-            "TOMBS OF THE ANCIENT KINGS",
+            "GENERIC DUNGEONS OF MEDIOCRITY",
         );
-        tcod.root.print_ex(
+        game_io.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT - 2,
             BackgroundFlag::None,
@@ -728,23 +625,23 @@ pub fn main_menu(tcod: &mut Tcod) {
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu("", choices, 24, &mut tcod.root);
+        let choice = menu("", choices, 24, &mut game_io.root);
 
         match choice {
             Some(0) => {
                 // start new game
-                let (mut objects, mut game_state) = new_game(tcod);
-                game_loop(&mut objects, &mut game_state, tcod);
+                let (mut objects, mut game_state) = new_game(game_io);
+                game_loop(&mut objects, &mut game_state, game_io);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut objects, mut game_state)) => {
-                        initialize_fov(&game_state.world, tcod);
-                        game_loop(&mut objects, &mut game_state, tcod);
+                        initialize_fov(&game_state.world, game_io);
+                        game_loop(&mut objects, &mut game_state, game_io);
                     }
                     Err(_e) => {
-                        msgbox("\nNo saved game to load\n", 24, &mut tcod.root);
+                        msgbox("\nNo saved game to load\n", 24, &mut game_io.root);
                         continue;
                     }
                 }
@@ -758,14 +655,14 @@ pub fn main_menu(tcod: &mut Tcod) {
     }
 }
 
-fn save_game(objects: &[Object], game_state: &GameState) -> Result<(), Box<Error>> {
+pub fn save_game(objects: &[Object], game_state: &GameState) -> Result<(), Box<Error>> {
     let save_data = serde_json::to_string(&(objects, game_state))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
-fn load_game() -> Result<(Vec<Object>, GameState), Box<Error>> {
+pub fn load_game() -> Result<(Vec<Object>, GameState), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;

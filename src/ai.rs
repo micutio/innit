@@ -1,12 +1,11 @@
-//! Module Ai
-//!
-//! Structures and methods for constructing the game ai.
-
+/// Module Ai
+///
+/// Structures and methods for constructing the game ai.
 use rand::Rng;
 use tcod::colors;
 
 use game_state::{move_by, move_towards, GameState, PLAYER};
-use gui::{FovMap, MessageLog};
+use game_io::{FovMap, MessageLog};
 use object::Object;
 use util::mut_two;
 

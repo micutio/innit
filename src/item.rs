@@ -1,15 +1,13 @@
-//! Module Item
-//!
-//! This module contains all structures and methods pertaining to items
-//! which can be equipped, used and casted.
-
-// external libraries
+/// Module Item
+///
+/// This module contains all structures and methods pertaining to items
+/// which can be equipped, used and casted.
 use tcod::colors;
 
 // internal modules
 use ai::Ai;
+use game_io::{target_monster, target_tile, GameIO, MessageLog};
 use game_state::{GameState, PLAYER};
-use gui::{target_monster, target_tile, MessageLog, Tcod};
 use object::Object;
 
 const HEAL_AMOUNT: i32 = 40;
@@ -106,7 +104,7 @@ enum UseResult {
 }
 
 pub fn use_item(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut [Object],
     inventory_id: usize,
@@ -123,7 +121,7 @@ pub fn use_item(
             Shield => toggle_equipment,
             _ => unreachable!(),
         };
-        match on_use(tcod, game_state, objects, inventory_id) {
+        match on_use(game_io, game_state, objects, inventory_id) {
             UseResult::UsedUp => {
                 // destroy after use, unless it was cancelled for some reason
                 game_state.inventory.remove(inventory_id);
@@ -160,7 +158,7 @@ pub fn drop_item(game_state: &mut GameState, objects: &mut Vec<Object>, inventor
 
 #[allow(unused_variables)]
 fn cast_heal(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut [Object],
     _inventory_id: usize,
@@ -184,13 +182,13 @@ fn cast_heal(
 }
 
 fn cast_lightning(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut [Object],
     _inventory_id: usize,
 ) -> UseResult {
     // find closest enemy (inside a maximum range) and damage it
-    let monster_id = closest_monster(tcod, objects, LIGHTNING_RANGE);
+    let monster_id = closest_monster(game_io, objects, LIGHTNING_RANGE);
     if let Some(monster_id) = monster_id {
         // zap it!
         game_state.log.add(
@@ -214,19 +212,19 @@ fn cast_lightning(
 }
 
 fn cast_confuse(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut [Object],
     _inventory_id: usize,
 ) -> UseResult {
     // find closest enemy in range and confuse it
-    // let monster_id = closest_monster(CONFUSE_RANGE, objects, tcod);
+    // let monster_id = closest_monster(CONFUSE_RANGE, objects, game_io);
     // ask the player for a target to confuse
     game_state.log.add(
         "Left-click an enemy to confuse, or right-click to cancel",
         colors::LIGHT_CYAN,
     );
-    let monster_id = target_monster(tcod, game_state, objects, Some(CONFUSE_RANGE as f32));
+    let monster_id = target_monster(game_io, game_state, objects, Some(CONFUSE_RANGE as f32));
     if let Some(monster_id) = monster_id {
         let old_ai = objects[monster_id].ai.take().unwrap_or(Ai::Basic);
         // replace monster's AI with a `confused` one
@@ -253,7 +251,7 @@ fn cast_confuse(
 }
 
 fn cast_fireball(
-    tcod: &mut Tcod,
+    game_io: &mut GameIO,
     game_state: &mut GameState,
     objects: &mut [Object],
     _inventory_id: usize,
@@ -263,7 +261,7 @@ fn cast_fireball(
         "Left-click a target tile for the fireball, or right-click to cancel.",
         colors::LIGHT_CYAN,
     );
-    let (x, y) = match target_tile(tcod, game_state, objects, None) {
+    let (x, y) = match target_tile(game_io, game_state, objects, None) {
         Some(tile_pos) => tile_pos,
         None => return UseResult::Cancelled,
     };
@@ -299,7 +297,7 @@ fn cast_fireball(
 }
 
 fn toggle_equipment(
-    _tcod: &mut Tcod,
+    _game_io: &mut GameIO,
     game_state: &mut GameState,
     _objects: &mut [Object],
     inventory_id: usize,
@@ -322,7 +320,7 @@ fn toggle_equipment(
     UseResult::UsedAndKept
 }
 
-fn closest_monster(tcod: &Tcod, objects: &mut [Object], max_range: i32) -> Option<usize> {
+fn closest_monster(game_io: &GameIO, objects: &mut [Object], max_range: i32) -> Option<usize> {
     let mut closest_enemy = None;
     let mut closest_dist = (max_range + 1) as f32;
 
@@ -330,7 +328,7 @@ fn closest_monster(tcod: &Tcod, objects: &mut [Object], max_range: i32) -> Optio
         if (id != PLAYER)
             && object.fighter.is_some()
             && object.ai.is_some()
-            && tcod.fov.is_in_fov(object.x, object.y)
+            && game_io.fov.is_in_fov(object.x, object.y)
         {
             // calculate distance between this object and the player
             let dist = objects[PLAYER].distance_to(object);

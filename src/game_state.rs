@@ -1,14 +1,18 @@
-//! Module Game_State
-//!
-//! This module contains all structures and methods to represent
-//! and modify the state of the game.
-
-// external libraries
-use tcod::colors;
+/// Module Game_State
+///
+/// This module contains the struct that encompasses all parts of the game state:
+///
+use tcod::input::{self, Event, Key};
+use tcod::{colors, Console};
 
 // internal modules
-use gui::{initialize_fov, MessageLog, Messages, Tcod};
-use object::Object;
+use ai::ai_take_turn;
+use fighter::{DeathCallback, Fighter};
+use game_io::{
+    handle_keys, initialize_fov, render_all, save_game, GameIO, MessageLog, Messages, PlayerAction,
+};
+use item::{Equipment, Item, Slot};
+use object::{level_up, Object};
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 
@@ -22,6 +26,104 @@ pub struct GameState {
     pub log: Messages,
     pub inventory: Vec<Object>,
     pub dungeon_level: u32,
+}
+
+pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
+    // create object representing the player
+    let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
+    player.alive = true;
+    player.fighter = Some(Fighter {
+        base_max_hp: 100,
+        hp: 100,
+        base_defense: 1,
+        base_power: 2,
+        on_death: DeathCallback::Player,
+        xp: 0,
+    });
+
+    // create array holding all objects
+    let mut objects = vec![player];
+    let level = 1;
+
+    // create game state holding most game-relevant information
+    //  - also creates map and player starting position
+    let mut game_state = GameState {
+        // generate map (at this point it's not drawn on screen)
+        world: make_world(&mut objects, level),
+        // create the list of game messages and their colors, starts empty
+        log: vec![],
+        inventory: vec![],
+        dungeon_level: 1,
+    };
+
+    // initial equipment: a dagger
+    let mut dagger = Object::new(0, 0, "dagger", false, '-', colors::SKY);
+    dagger.item = Some(Item::Sword);
+    dagger.equipment = Some(Equipment {
+        equipped: true,
+        slot: Slot::LeftHand,
+        max_hp_bonus: 0,
+        defense_bonus: 0,
+        power_bonus: 2,
+    });
+    game_state.inventory.push(dagger);
+
+    initialize_fov(&game_state.world, game_io);
+
+    // a warm welcoming message
+    game_state.log.add(
+        "Welcome stranger! prepare to perish in the Tombs of the Ancient Kings.",
+        colors::RED,
+    );
+
+    (objects, game_state)
+}
+
+pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io: &mut GameIO) {
+    // force FOV "recompute" first time through the game loop
+    let mut previous_player_position = (-1, -1);
+
+    // input processing
+    let mut key: Key = Default::default();
+
+    while !game_io.root.window_closed() {
+        // clear the screen of the previous frame
+        game_io.con.clear();
+
+        // check for input events
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => game_io.mouse = m,
+            Some((_, Event::Key(k))) => key = k,
+            _ => key = Default::default(),
+        }
+
+        // render objects and map
+        let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
+        render_all(game_io, game_state, &objects, fov_recompute);
+
+        // draw everything on the window at once
+        game_io.root.flush();
+
+        // level up if needed
+        level_up(objects, game_state, game_io);
+
+        // handle keys and exit game if needed
+        previous_player_position = objects[PLAYER].pos();
+        let player_action = handle_keys(game_io, game_state, objects, key);
+        if player_action == PlayerAction::Exit {
+            save_game(objects, game_state).unwrap();
+            break;
+        }
+
+        // let monsters take their turn
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(game_state, objects, &game_io.fov, id);
+                }
+            }
+        }
+    }
 }
 
 pub fn move_by(world: &World, objects: &mut [Object], id: usize, dx: i32, dy: i32) {
@@ -74,7 +176,7 @@ pub fn move_towards(
 }
 
 /// Advance to the next level
-pub fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game_state: &mut GameState) {
+pub fn next_level(game_io: &mut GameIO, objects: &mut Vec<Object>, game_state: &mut GameState) {
     game_state.log.add(
         "You take a moment to rest, and recover your strength.",
         colors::VIOLET,
@@ -88,7 +190,7 @@ pub fn next_level(tcod: &mut Tcod, objects: &mut Vec<Object>, game_state: &mut G
     );
     game_state.dungeon_level += 1;
     game_state.world = make_world(objects, game_state.dungeon_level);
-    initialize_fov(&game_state.world, tcod);
+    initialize_fov(&game_state.world, game_io);
 }
 
 pub struct Transition {

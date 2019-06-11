@@ -1,8 +1,6 @@
-//! Module World
-//!
-//! The world contains all structures and methods for terrain/dungeon generation
-
-// external libraries
+/// Module World
+///
+/// The world contains all structures and methods for terrain/dungeon generation
 use rand::Rng;
 use std::cmp;
 use tcod::colors;
