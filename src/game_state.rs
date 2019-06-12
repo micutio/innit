@@ -2,6 +2,7 @@
 ///
 /// This module contains the struct that encompasses all parts of the game state:
 ///
+/// TODO: Try to move as many dependecies to game_io as possible out of here.
 use tcod::input::{self, Event, Key};
 use tcod::{colors, Console};
 
@@ -9,16 +10,21 @@ use tcod::{colors, Console};
 use ai::ai_take_turn;
 use fighter::{DeathCallback, Fighter};
 use game_io::{
-    handle_keys, initialize_fov, render_all, save_game, GameIO, MessageLog, Messages, PlayerAction,
+    handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
+    PlayerAction,
 };
 use item::{Equipment, Item, Slot};
-use object::{level_up, Object};
+use object::Object;
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
 pub const TORCH_RADIUS: i32 = 10;
+// experience and level-ups
+pub const LEVEL_UP_BASE: i32 = 200;
+pub const LEVEL_UP_FACTOR: i32 = 150;
+pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
@@ -206,4 +212,51 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .rev()
         .find(|transition| level >= transition.level)
         .map_or(0, |transition| transition.value)
+}
+
+pub fn level_up(objects: &mut [Object], game_state: &mut GameState, game_io: &mut GameIO) {
+    let player = &mut objects[PLAYER];
+    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+    // see if the player's experience is enough to level up
+    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+        // exp is enough, lvl up
+        player.level += 1;
+        game_state.log.add(
+            format!(
+                "Your battle skills grow stringer! You reached level {}!",
+                player.level
+            ),
+            colors::YELLOW,
+        );
+        // TODO: increase player's stats
+        let fighter = player.fighter.as_mut().unwrap();
+        let mut choice = None;
+        while choice.is_none() {
+            // keep asking until a choice is made
+            choice = menu(
+                "Level up! Chose a stat to raise:\n",
+                &[
+                    format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
+                    format!("Strength (+1 attack, from {})", fighter.base_power),
+                    format!("Agility (+1 defense, from {})", fighter.base_defense),
+                ],
+                LEVEL_SCREEN_WIDTH,
+                &mut game_io.root,
+            );
+        }
+        fighter.xp -= level_up_xp;
+        match choice.unwrap() {
+            0 => {
+                fighter.base_max_hp += 20;
+                fighter.hp += 20;
+            }
+            1 => {
+                fighter.base_power += 1;
+            }
+            2 => {
+                fighter.base_defense += 1;
+            }
+            _ => unreachable!(),
+        }
+    }
 }

@@ -11,10 +11,11 @@ use tcod::map::FovAlgorithm;
 
 // internal modules
 use game_state::{
-    game_loop, new_game, next_level, player_move_or_attack, GameState, PLAYER, TORCH_RADIUS,
+    game_loop, new_game, next_level, player_move_or_attack, GameState, LEVEL_UP_BASE,
+    LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
 use item::{drop_item, pick_item_up, use_item};
-use object::{Object, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
+use object::Object;
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // GUI constraints
