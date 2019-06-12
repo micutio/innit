@@ -10,6 +10,7 @@ use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::FovAlgorithm;
 
 // internal modules
+use color_palette::*;
 use game_state::{
     game_loop, new_game, next_level, player_move_or_attack, GameState, LEVEL_UP_BASE,
     LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
@@ -38,23 +39,6 @@ const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
 
 const INVENTORY_WIDTH: i32 = 50;
 const CHARACTER_SCREEN_WIDTH: i32 = 30;
-
-const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
-const COLOR_LIGHT_WALL: Color = Color {
-    r: 130,
-    g: 110,
-    b: 50,
-};
-const COLOR_DARK_GROUND: Color = Color {
-    r: 50,
-    g: 50,
-    b: 150,
-};
-const COLOR_LIGHT_GROUND: Color = Color {
-    r: 200,
-    g: 180,
-    b: 50,
-};
 
 /// Field of view mapping
 pub use tcod::map::Map as FovMap;
@@ -172,19 +156,19 @@ pub fn render_all(
             let wall = game_state.world[x as usize][y as usize].block_sight;
             let tile_color = match (visible, wall) {
                 // outside field of view:
-                (false, true) => COLOR_DARK_WALL,
-                (false, false) => COLOR_DARK_GROUND,
+                (false, true) => get_col_dark_wall(),
+                (false, false) => get_col_dark_ground(),
                 // inside fov:
                 // (true, true) => COLOR_LIGHT_WALL,
                 (true, true) => colors::lerp(
-                    COLOR_LIGHT_WALL,
-                    COLOR_DARK_WALL,
+                    get_col_light_wall(),
+                    get_col_dark_wall(),
                     objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
                 ),
                 // (true, false) => COLOR_LIGHT_GROUND,
                 (true, false) => colors::lerp(
-                    COLOR_LIGHT_GROUND,
-                    COLOR_DARK_GROUND,
+                    get_col_light_ground(),
+                    get_col_dark_ground(),
                     objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
                 ),
             };
