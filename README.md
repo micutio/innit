@@ -1,4 +1,3 @@
-# Roguelike
+# innit
 
-A generic roguelike game to try out gameplay concepts and practise programming in Rust.
-Inspired by [this great tutorial](https://tomassedovic.github.io/roguelike-tutorial/).
+A rogue like game that puts you inside a living organism and lets you fight its mircobial invaders.
