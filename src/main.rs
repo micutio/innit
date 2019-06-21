@@ -13,7 +13,6 @@ mod color_palette;
 mod fighter;
 mod game_io;
 mod game_state;
-mod item;
 mod object;
 mod util;
 mod world;

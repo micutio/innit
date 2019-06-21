@@ -15,7 +15,6 @@ use game_state::{
     game_loop, new_game, next_level, player_move_or_attack, GameState, LEVEL_UP_BASE,
     LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
-use item::{drop_item, pick_item_up, use_item};
 use object::Object;
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
@@ -329,40 +328,6 @@ pub fn handle_keys(
             // do nothing, i.e. wait for the monster to come to you
             TookTurn
         }
-        (Key { printable: 'g', .. }, true) => {
-            // pick up an item
-            let item_id = objects
-                .iter()
-                .position(|object| object.pos() == objects[PLAYER].pos() && object.item.is_some());
-            if let Some(item_id) = item_id {
-                pick_item_up(game_state, objects, item_id);
-            }
-            DidntTakeTurn
-        }
-        (Key { printable: 'i', .. }, true) => {
-            // show the inventory: if an item is selected, use it
-            let inventory_index = inventory_menu(
-                &mut game_io.root,
-                &game_state.inventory,
-                "Press the key next to an item to use it, or any other to cancel.\n",
-            );
-            if let Some(inventory_index) = inventory_index {
-                use_item(game_io, game_state, objects, inventory_index);
-            }
-            DidntTakeTurn
-        }
-        (Key { printable: 'd', .. }, true) => {
-            // show_inventory; if an item is selected, drop it
-            let inventory_index = inventory_menu(
-                &mut game_io.root,
-                &game_state.inventory,
-                "Press the key enxt to an item to drop it, or any other to cancel.\n",
-            );
-            if let Some(inventory_index) = inventory_index {
-                drop_item(game_state, objects, inventory_index);
-            }
-            DidntTakeTurn
-        }
         (Key { printable: 'e', .. }, true) => {
             // go down the stairs, if the player is on them
             println!("trying to go down stairs");
@@ -552,36 +517,6 @@ pub fn menu<T: AsRef<str>>(
 fn msgbox(text: &str, width: i32, root: &mut Root) {
     let options: &[&str] = &[];
     menu(text, options, width, root);
-}
-
-fn inventory_menu(root: &mut Root, inventory: &[Object], header: &str) -> Option<usize> {
-    // how a menu with each item of the inventory as an option
-    let options = if inventory.is_empty() {
-        vec!["Inventory is empty.".into()]
-    } else {
-        // inventory.iter().map(|item| item.name.clone()).collect()
-        inventory
-            .iter()
-            .map(|item| {
-                // show additional information, in case it's equipped
-                match item.equipment {
-                    Some(equipment) if equipment.equipped => {
-                        format!("{} (on {})", item.name, equipment.slot)
-                    }
-                    _ => item.name.clone(),
-                }
-            })
-            .collect()
-    };
-
-    let inventory_index = menu(header, &options, INVENTORY_WIDTH, root);
-
-    // if an item was chosen, return if
-    if !inventory.is_empty() {
-        inventory_index
-    } else {
-        None
-    }
 }
 
 pub fn main_menu(game_io: &mut GameIO) {

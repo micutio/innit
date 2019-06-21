@@ -13,7 +13,6 @@ use game_io::{
     handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
     PlayerAction,
 };
-use item::{Equipment, Item, Slot};
 use object::Object;
 use util::mut_two;
 use world::{is_blocked, make_world, World};
@@ -61,18 +60,6 @@ pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
         inventory: vec![],
         dungeon_level: 1,
     };
-
-    // initial equipment: a dagger
-    let mut dagger = Object::new(0, 0, "dagger", false, '-', colors::SKY);
-    dagger.item = Some(Item::Sword);
-    dagger.equipment = Some(Equipment {
-        equipped: true,
-        slot: Slot::LeftHand,
-        max_hp_bonus: 0,
-        defense_bonus: 0,
-        power_bonus: 2,
-    });
-    game_state.inventory.push(dagger);
 
     initialize_fov(&game_state.world, game_io);
 
