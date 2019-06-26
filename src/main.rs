@@ -8,12 +8,10 @@ extern crate tcod;
 extern crate serde_derive;
 extern crate serde_json;
 
-mod ai;
+mod entity;
 mod color_palette;
-mod fighter;
 mod game_io;
 mod game_state;
-mod object;
 mod util;
 mod world;
 

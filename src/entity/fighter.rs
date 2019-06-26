@@ -4,8 +4,8 @@
 use tcod::colors;
 
 // internal modules
+use entity::object::Object;
 use game_io::{MessageLog, Messages};
-use object::Object;
 
 // combat related poperties and methods (monster, player, NPC)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -26,7 +26,7 @@ pub enum DeathCallback {
 
 impl DeathCallback {
     pub fn callback(self, object: &mut Object, messages: &mut Messages) {
-        use fighter::DeathCallback::*;
+        use entity::fighter::DeathCallback::*;
         let callback: fn(&mut Object, &mut Messages) = match self {
             Player => player_death,
             Monster => monster_death,

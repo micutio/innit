@@ -6,10 +6,10 @@ use std::cmp;
 use tcod::colors;
 
 // internal modules
-use ai::Ai;
-use fighter::{DeathCallback, Fighter};
+use entity::ai::Ai;
+use entity::fighter::{DeathCallback, Fighter};
+use entity::object::Object;
 use game_state::{from_dungeon_level, Transition, PLAYER};
-use object::Object;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;

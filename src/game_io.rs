@@ -11,11 +11,11 @@ use tcod::map::FovAlgorithm;
 
 // internal modules
 use color_palette::*;
+use entity::object::Object;
 use game_state::{
     game_loop, new_game, next_level, player_move_or_attack, GameState, LEVEL_UP_BASE,
     LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
-use object::Object;
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // GUI constraints
@@ -36,7 +36,6 @@ const MSG_X: i32 = BAR_WIDTH + 2;
 const MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH - 2;
 const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
 
-const INVENTORY_WIDTH: i32 = 50;
 const CHARACTER_SCREEN_WIDTH: i32 = 30;
 
 /// Field of view mapping

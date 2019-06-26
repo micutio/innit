@@ -7,13 +7,13 @@ use tcod::input::{self, Event, Key};
 use tcod::{colors, Console};
 
 // internal modules
-use ai::ai_take_turn;
-use fighter::{DeathCallback, Fighter};
+use entity::ai::ai_take_turn;
+use entity::fighter::{DeathCallback, Fighter};
+use entity::object::Object;
 use game_io::{
     handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
     PlayerAction,
 };
-use object::Object;
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 

@@ -5,8 +5,8 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal modules
-use ai::Ai;
-use fighter::Fighter;
+use entity::ai::Ai;
+use entity::fighter::Fighter;
 use game_io::MessageLog;
 use game_state::GameState;
 
@@ -14,6 +14,7 @@ use game_state::GameState;
 pub struct Object {
     pub x: i32,
     pub y: i32,
+    pub dna: String,
     pub name: String,
     pub blocks: bool,
     pub alive: bool,
@@ -26,15 +27,24 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(x: i32, y: i32, name: &str, blocks: bool, chr: char, color: Color) -> Self {
+    pub fn new(
+        x: i32,
+        y: i32,
+        // dna: &str, // TODO change constructor
+        name: &str,
+        blocks: bool,
+        chr: char,
+        color: Color,
+    ) -> Self {
         Object {
-            x: x,
-            y: y,
+            x,
+            y,
+            dna: "".into(), // dna.into(),
             name: name.into(),
-            blocks: blocks,
+            blocks,
             alive: false,
-            chr: chr,
-            color: color,
+            chr,
+            color,
             always_visible: false,
             level: 1,
             fighter: None,
@@ -87,7 +97,7 @@ impl Object {
         None
     }
 
-    pub fn power(&self, game_state: &GameState) -> i32 {
+    pub fn power(&self, _game_state: &GameState) -> i32 {
         self.fighter.map_or(0, |f| f.base_power)
     }
 
@@ -119,11 +129,11 @@ impl Object {
         }
     }
 
-    pub fn defense(&self, game_state: &GameState) -> i32 {
+    pub fn defense(&self, _game_state: &GameState) -> i32 {
         self.fighter.map_or(0, |f| f.base_defense)
     }
 
-    pub fn max_hp(&self, game_state: &GameState) -> i32 {
+    pub fn max_hp(&self, _game_state: &GameState) -> i32 {
         self.fighter.map_or(0, |f| f.base_max_hp)
     }
 
