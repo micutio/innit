@@ -191,7 +191,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
     );
 
     // monster random table
-    let troll_chance = from_dungeon_level(
+    let bacteria_chance = from_dungeon_level(
         &[
             Transition {
                 level: 3,
@@ -209,7 +209,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
         level,
     );
 
-    let monster_chances = [("orc", 80), ("troll", troll_chance)];
+    let monster_chances = [("virus", 80), ("bacteria", bacteria_chance)];
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
@@ -222,9 +222,10 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
         if !is_blocked(world, objects, x, y) {
             let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
             {
-                "orc" => {
-                    let mut orc = Object::new(x, y, "orc", true, 'o', colors::DESATURATED_GREEN);
-                    orc.fighter = Some(Fighter {
+                "virus" => {
+                    let mut virus =
+                        Object::new(x, y, "virus", true, 'v', colors::DESATURATED_GREEN);
+                    virus.fighter = Some(Fighter {
                         base_max_hp: 10,
                         hp: 10,
                         base_defense: 0,
@@ -232,12 +233,13 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 35,
                     });
-                    orc.ai = Some(Ai::Basic);
-                    orc
+                    virus.ai = Some(Ai::Basic);
+                    virus
                 }
-                "troll" => {
-                    let mut troll = Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN);
-                    troll.fighter = Some(Fighter {
+                "bacteria" => {
+                    let mut bacteria =
+                        Object::new(x, y, "bacteria", true, 'b', colors::DARKER_GREEN);
+                    bacteria.fighter = Some(Fighter {
                         base_max_hp: 16,
                         hp: 16,
                         base_defense: 1,
@@ -245,8 +247,8 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 100,
                     });
-                    troll.ai = Some(Ai::Basic);
-                    troll
+                    bacteria.ai = Some(Ai::Basic);
+                    bacteria
                 }
                 _ => unreachable!(),
             };

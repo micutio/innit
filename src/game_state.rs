@@ -65,13 +65,17 @@ pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
 
     // a warm welcoming message
     game_state.log.add(
-        "Welcome stranger! prepare to perish in the Tombs of the Ancient Kings.",
+        "Welcome microbe! You're innit now. Beware of bacteria and viruses",
         colors::RED,
     );
 
     (objects, game_state)
 }
 
+/// Central function of the game.
+/// - process player input
+/// - render game world
+/// - let NPCs take their turn
 pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io: &mut GameIO) {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);

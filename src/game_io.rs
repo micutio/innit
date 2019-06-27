@@ -67,13 +67,13 @@ pub fn initialize_io() -> GameIO {
         .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
         .font_type(FontType::Greyscale)
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .title("roguelike")
+        .title("innit alpha v0.0.1")
         .init();
 
     tcod::system::set_fps(LIMIT_FPS);
 
     GameIO {
-        root: root,
+        root,
         con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
         panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
         fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
@@ -532,7 +532,7 @@ pub fn main_menu(game_io: &mut GameIO) {
             SCREEN_HEIGHT / 2 - 4,
             BackgroundFlag::None,
             TextAlignment::Center,
-            "GENERIC DUNGEONS OF MEDIOCRITY",
+            "inside something - innit?",
         );
         game_io.root.print_ex(
             SCREEN_WIDTH / 2,

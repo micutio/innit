@@ -18,6 +18,13 @@ pub enum Ai {
     },
 }
 
+/// Main NPC control function
+/// TODO:
+///  - sense
+///  - reason
+///  - actuate
+///     |- either move
+///     |- or attack
 pub fn ai_take_turn(
     game_state: &mut GameState,
     objects: &mut [Object],
@@ -77,7 +84,7 @@ fn ai_confused(
             rand::thread_rng().gen_range(-1, 2),
         );
         Ai::Confused {
-            previous_ai: previous_ai,
+            previous_ai,
             num_turns: num_turns - 1,
         }
     } else {
