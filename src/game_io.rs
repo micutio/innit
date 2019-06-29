@@ -532,7 +532,7 @@ pub fn main_menu(game_io: &mut GameIO) {
             SCREEN_HEIGHT / 2 - 4,
             BackgroundFlag::None,
             TextAlignment::Center,
-            "inside something - innit?",
+            "I N N I T",
         );
         game_io.root.print_ex(
             SCREEN_WIDTH / 2,
