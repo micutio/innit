@@ -7,6 +7,7 @@ use tcod::input::{self, Event, Key};
 use tcod::{colors, Console};
 
 // internal modules
+use entity::action::*;
 use entity::ai::ai_take_turn;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
@@ -45,6 +46,7 @@ pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
         on_death: DeathCallback::Player,
         xp: 0,
     });
+    player.attack_action = Some(AttackAction::new(2));
 
     // create array holding all objects
     let mut objects = vec![player];
@@ -146,6 +148,15 @@ pub fn player_move_or_attack(game_state: &mut GameState, objects: &mut [Object],
         Some(target_id) => {
             let (player, target) = mut_two(objects, PLAYER, target_id);
             player.attack(target, game_state);
+
+            // TODO: Solve double mutable borrow of `objects` here!
+            // match objects[PLAYER].attack_action {
+            //     Some(ref mut attack_action) => {
+            //         attack_action.acquire_target(target_id);
+            //         attack_action.perform(objects, game_state);
+            //     }
+            //     None => {}
+            // }
         }
         None => {
             move_by(&game_state.world, objects, PLAYER, dx, dy);

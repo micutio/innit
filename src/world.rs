@@ -6,6 +6,7 @@ use std::cmp;
 use tcod::colors;
 
 // internal modules
+use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
@@ -233,6 +234,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 35,
                     });
+                    virus.attack_action = Some(AttackAction::new(3));
                     virus.ai = Some(Ai::Basic);
                     virus
                 }
@@ -247,6 +249,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 100,
                     });
+                    bacteria.attack_action = Some(AttackAction::new(4));
                     bacteria.ai = Some(Ai::Basic);
                     bacteria
                 }

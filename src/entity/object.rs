@@ -5,6 +5,7 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal modules
+use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
 use game_io::MessageLog;
@@ -24,6 +25,7 @@ pub struct Object {
     pub level: i32,           // could be changed into some pseudo-progress like allowed DNA length
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
+    pub attack_action: Option<AttackAction>,
 }
 
 impl Object {
@@ -49,6 +51,7 @@ impl Object {
             level: 1,
             fighter: None,
             ai: None,
+            attack_action: None,
         }
     }
 
