@@ -4,16 +4,20 @@
 /// for color calculation and manipulation.
 use tcod::colors::Color;
 
-const COLOR_DARK_WALL: Color = Color { r: 0, g: 0, b: 100 };
+const COLOR_DARK_WALL: Color = Color {
+    r: 100,
+    g: 0,
+    b: 20,
+};
 const COLOR_LIGHT_WALL: Color = Color {
     r: 130,
     g: 110,
     b: 50,
 };
 const COLOR_DARK_GROUND: Color = Color {
-    r: 50,
+    r: 150,
     g: 50,
-    b: 150,
+    b: 80,
 };
 const COLOR_LIGHT_GROUND: Color = Color {
     r: 200,

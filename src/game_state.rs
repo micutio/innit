@@ -7,14 +7,13 @@ use tcod::input::{self, Event, Key};
 use tcod::{colors, Console};
 
 // internal modules
-use ai::ai_take_turn;
-use fighter::{DeathCallback, Fighter};
+use entity::ai::ai_take_turn;
+use entity::fighter::{DeathCallback, Fighter};
+use entity::object::Object;
 use game_io::{
     handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
     PlayerAction,
 };
-use item::{Equipment, Item, Slot};
-use object::Object;
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 
@@ -62,29 +61,21 @@ pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
         dungeon_level: 1,
     };
 
-    // initial equipment: a dagger
-    let mut dagger = Object::new(0, 0, "dagger", false, '-', colors::SKY);
-    dagger.item = Some(Item::Sword);
-    dagger.equipment = Some(Equipment {
-        equipped: true,
-        slot: Slot::LeftHand,
-        max_hp_bonus: 0,
-        defense_bonus: 0,
-        power_bonus: 2,
-    });
-    game_state.inventory.push(dagger);
-
     initialize_fov(&game_state.world, game_io);
 
     // a warm welcoming message
     game_state.log.add(
-        "Welcome stranger! prepare to perish in the Tombs of the Ancient Kings.",
+        "Welcome microbe! You're innit now. Beware of bacteria and viruses",
         colors::RED,
     );
 
     (objects, game_state)
 }
 
+/// Central function of the game.
+/// - process player input
+/// - render game world
+/// - let NPCs take their turn
 pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io: &mut GameIO) {
     // force FOV "recompute" first time through the game loop
     let mut previous_player_position = (-1, -1);

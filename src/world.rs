@@ -6,11 +6,10 @@ use std::cmp;
 use tcod::colors;
 
 // internal modules
-use ai::Ai;
-use fighter::{DeathCallback, Fighter};
+use entity::ai::Ai;
+use entity::fighter::{DeathCallback, Fighter};
+use entity::object::Object;
 use game_state::{from_dungeon_level, Transition, PLAYER};
-use item::{Equipment, Item, Slot};
-use object::Object;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -192,7 +191,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
     );
 
     // monster random table
-    let troll_chance = from_dungeon_level(
+    let bacteria_chance = from_dungeon_level(
         &[
             Transition {
                 level: 3,
@@ -210,7 +209,7 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
         level,
     );
 
-    let monster_chances = [("orc", 80), ("troll", troll_chance)];
+    let monster_chances = [("virus", 80), ("bacteria", bacteria_chance)];
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
@@ -223,9 +222,10 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
         if !is_blocked(world, objects, x, y) {
             let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
             {
-                "orc" => {
-                    let mut orc = Object::new(x, y, "orc", true, 'o', colors::DESATURATED_GREEN);
-                    orc.fighter = Some(Fighter {
+                "virus" => {
+                    let mut virus =
+                        Object::new(x, y, "virus", true, 'v', colors::DESATURATED_GREEN);
+                    virus.fighter = Some(Fighter {
                         base_max_hp: 10,
                         hp: 10,
                         base_defense: 0,
@@ -233,12 +233,13 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 35,
                     });
-                    orc.ai = Some(Ai::Basic);
-                    orc
+                    virus.ai = Some(Ai::Basic);
+                    virus
                 }
-                "troll" => {
-                    let mut troll = Object::new(x, y, "troll", true, 'T', colors::DARKER_GREEN);
-                    troll.fighter = Some(Fighter {
+                "bacteria" => {
+                    let mut bacteria =
+                        Object::new(x, y, "bacteria", true, 'b', colors::DARKER_GREEN);
+                    bacteria.fighter = Some(Fighter {
                         base_max_hp: 16,
                         hp: 16,
                         base_defense: 1,
@@ -246,157 +247,14 @@ fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u3
                         on_death: DeathCallback::Monster,
                         xp: 100,
                     });
-                    troll.ai = Some(Ai::Basic);
-                    troll
+                    bacteria.ai = Some(Ai::Basic);
+                    bacteria
                 }
                 _ => unreachable!(),
             };
 
             monster.alive = true;
             objects.push(monster);
-        }
-    }
-
-    // maximum number of items per room
-    let max_items = from_dungeon_level(
-        &[
-            Transition { level: 1, value: 1 },
-            Transition { level: 4, value: 2 },
-        ],
-        level,
-    );
-
-    // item random table
-    let item_chances = &mut [
-        // healing potion always shows up, even if all other items have 0 chance
-        (Item::Heal, 35),
-        (
-            Item::Lightning,
-            from_dungeon_level(
-                &[Transition {
-                    level: 4,
-                    value: 25,
-                }],
-                level,
-            ),
-        ),
-        (
-            Item::Fireball,
-            from_dungeon_level(
-                &[Transition {
-                    level: 6,
-                    value: 25,
-                }],
-                level,
-            ),
-        ),
-        (
-            Item::Confuse,
-            from_dungeon_level(
-                &[Transition {
-                    level: 4,
-                    value: 25,
-                }],
-                level,
-            ),
-        ),
-        (
-            Item::Sword,
-            from_dungeon_level(&[Transition { level: 4, value: 5 }], level),
-        ),
-        (
-            Item::Shield,
-            from_dungeon_level(
-                &[Transition {
-                    level: 8,
-                    value: 15,
-                }],
-                level,
-            ),
-        ),
-    ];
-    let item_dist = WeightedIndex::new(item_chances.iter().map(|item| item.1)).unwrap();
-
-    // choose random number of items
-    let num_items = rand::thread_rng().gen_range(0, max_items + 1);
-    for _ in 0..num_items {
-        // choose random spot for this item
-        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
-        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
-
-        // only place it if the tile is not blocked
-        if !is_blocked(world, objects, x, y) {
-            let mut item = match item_chances[item_dist.sample(&mut rand::thread_rng())].0 {
-                Item::Heal => {
-                    // create healing potion
-                    let mut object =
-                        Object::new(x, y, "healing potion", false, '!', colors::VIOLET);
-                    object.item = Some(Item::Heal);
-                    object
-                }
-                Item::Lightning => {
-                    // create lightning bolt scroll
-                    let mut object = Object::new(
-                        x,
-                        y,
-                        "scroll of lightning bolt",
-                        false,
-                        '#',
-                        colors::LIGHT_YELLOW,
-                    );
-                    object.item = Some(Item::Lightning);
-                    object
-                }
-                Item::Fireball => {
-                    // create a fireball scroll
-                    let mut object =
-                        Object::new(x, y, "scroll of fireball", false, '#', colors::LIGHT_YELLOW);
-                    object.item = Some(Item::Fireball);
-                    object
-                }
-                Item::Confuse => {
-                    // create a confuse scroll
-                    let mut object = Object::new(
-                        x,
-                        y,
-                        "scroll of confusion",
-                        false,
-                        '#',
-                        colors::LIGHT_YELLOW,
-                    );
-                    object.item = Some(Item::Confuse);
-                    object
-                }
-                Item::Sword => {
-                    // create a sword
-                    let mut object = Object::new(x, y, "sword", false, '/', colors::SKY);
-                    object.item = Some(Item::Sword);
-                    object.equipment = Some(Equipment {
-                        equipped: false,
-                        slot: Slot::RightHand,
-                        max_hp_bonus: 0,
-                        power_bonus: 3,
-                        defense_bonus: 0,
-                    });
-                    object
-                }
-                Item::Shield => {
-                    // create a sword
-                    let mut object = Object::new(x, y, "shield", false, 'D', colors::SKY);
-                    object.item = Some(Item::Shield);
-                    object.equipment = Some(Equipment {
-                        equipped: false,
-                        slot: Slot::LeftHand,
-                        max_hp_bonus: 0,
-                        power_bonus: 0,
-                        defense_bonus: 1,
-                    });
-                    object
-                }
-                _ => unreachable!(),
-            };
-            item.always_visible = true;
-            objects.push(item);
         }
     }
 }
