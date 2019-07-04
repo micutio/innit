@@ -29,7 +29,7 @@ pub struct GameState {
     pub dungeon_level: u32,
 }
 
-pub fn new_game(game_io: &mut GameFrontend) -> (Vec<Object>, GameState) {
+pub fn new_game() -> (Vec<Object>, GameState) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -57,8 +57,6 @@ pub fn new_game(game_io: &mut GameFrontend) -> (Vec<Object>, GameState) {
         inventory: vec![],
         dungeon_level: 1,
     };
-
-    initialize_fov(&game_state.world, game_io);
 
     // a warm welcoming message
     game_state.log.add(

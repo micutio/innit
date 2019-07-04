@@ -381,7 +381,8 @@ pub fn main_menu(game_frontend: &mut GameFrontend, game_input: &mut GameInput) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut objects, mut game_state) = new_game(game_frontend);
+                let (mut objects, mut game_state) = new_game();
+                initialize_fov(&game_state.world, game_frontend);
                 game_loop(&mut objects, &mut game_state, game_frontend, game_input);
             }
             Some(1) => {
