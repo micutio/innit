@@ -8,8 +8,8 @@ use tcod::console::*;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
-use game_io::MessageLog;
 use game_state::GameState;
+use ui::game_frontend::MessageLog;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {

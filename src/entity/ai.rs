@@ -5,8 +5,8 @@ use rand::Rng;
 use tcod::colors;
 
 use entity::object::Object;
-use game_io::{FovMap, MessageLog};
 use game_state::{move_by, move_towards, GameState, PLAYER};
+use ui::game_frontend::{FovMap, MessageLog};
 use util::mut_two;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

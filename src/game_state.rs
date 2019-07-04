@@ -11,7 +11,7 @@ use entity::action::*;
 use entity::ai::ai_take_turn;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
-use game_io::{
+use ui::game_frontend::{
     handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
     PlayerAction,
 };
@@ -98,7 +98,7 @@ pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io:
 
         // render objects and map
         let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(game_io, game_state, &objects, fov_recompute);
+        render_all(game_io, game_state, objects, fov_recompute);
 
         // draw everything on the window at once
         game_io.root.flush();
@@ -107,6 +107,7 @@ pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io:
         level_up(objects, game_state, game_io);
 
         // handle keys and exit game if needed
+        // TODO: Generate and `action` from the player input and set the player object to execute it.
         previous_player_position = objects[PLAYER].pos();
         let player_action = handle_keys(game_io, game_state, objects, key);
         if player_action == PlayerAction::Exit {
@@ -150,9 +151,9 @@ pub fn player_move_or_attack(game_state: &mut GameState, objects: &mut [Object],
             player.attack(target, game_state);
 
             // TODO: Solve double mutable borrow of `objects` here!
-            // match objects[PLAYER].attack_action {
+            // match player.attack_action {
             //     Some(ref mut attack_action) => {
-            //         attack_action.acquire_target(target_id);
+            //         // attack_action.acquire_target(target_id);
             //         attack_action.perform(objects, game_state);
             //     }
             //     None => {}

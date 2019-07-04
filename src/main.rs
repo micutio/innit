@@ -9,14 +9,13 @@ extern crate serde_derive;
 extern crate serde_json;
 
 mod entity;
-mod color_palette;
-mod game_io;
 mod game_state;
+mod ui;
 mod util;
 mod world;
 
 // internal modules
-use game_io::{initialize_io, main_menu, GameIO};
+use ui::game_frontend::{initialize_io, main_menu, GameIO};
 
 fn launch_game() {
     let mut game_io: GameIO = initialize_io();

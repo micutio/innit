@@ -10,12 +10,12 @@ use tcod::input::{self, Event, Key, Mouse};
 use tcod::map::FovAlgorithm;
 
 // internal modules
-use color_palette::*;
 use entity::object::Object;
 use game_state::{
     game_loop, new_game, next_level, player_move_or_attack, GameState, LEVEL_UP_BASE,
     LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
+use ui::color_palette::*;
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // GUI constraints
@@ -283,9 +283,9 @@ pub fn handle_keys(
     objects: &mut Vec<Object>,
     key: Key,
 ) -> PlayerAction {
-    use game_io::PlayerAction::*;
     use tcod::input::Key;
     use tcod::input::KeyCode::*;
+    use ui::game_frontend::PlayerAction::*;
 
     let player_alive = objects[PLAYER].alive;
     match (key, player_alive) {
