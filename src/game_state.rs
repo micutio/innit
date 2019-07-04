@@ -3,18 +3,13 @@
 /// This module contains the struct that encompasses all parts of the game state:
 ///
 /// TODO: Try to move as many dependecies to game_io as possible out of here.
-use tcod::input::{self, Event, Key};
-use tcod::{colors, Console};
+use tcod::colors;
 
 // internal modules
 use entity::action::*;
-use entity::ai::ai_take_turn;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
-use ui::game_frontend::{
-    handle_keys, initialize_fov, menu, render_all, save_game, GameIO, MessageLog, Messages,
-    PlayerAction,
-};
+use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages};
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 
@@ -34,7 +29,7 @@ pub struct GameState {
     pub dungeon_level: u32,
 }
 
-pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
+pub fn new_game(game_io: &mut GameFrontend) -> (Vec<Object>, GameState) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -72,58 +67,6 @@ pub fn new_game(game_io: &mut GameIO) -> (Vec<Object>, GameState) {
     );
 
     (objects, game_state)
-}
-
-/// Central function of the game.
-/// - process player input
-/// - render game world
-/// - let NPCs take their turn
-pub fn game_loop(objects: &mut Vec<Object>, game_state: &mut GameState, game_io: &mut GameIO) {
-    // force FOV "recompute" first time through the game loop
-    let mut previous_player_position = (-1, -1);
-
-    // input processing
-    let mut key: Key = Default::default();
-
-    while !game_io.root.window_closed() {
-        // clear the screen of the previous frame
-        game_io.con.clear();
-
-        // check for input events
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => game_io.mouse = m,
-            Some((_, Event::Key(k))) => key = k,
-            _ => key = Default::default(),
-        }
-
-        // render objects and map
-        let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        render_all(game_io, game_state, objects, fov_recompute);
-
-        // draw everything on the window at once
-        game_io.root.flush();
-
-        // level up if needed
-        level_up(objects, game_state, game_io);
-
-        // handle keys and exit game if needed
-        // TODO: Generate and `action` from the player input and set the player object to execute it.
-        previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(game_io, game_state, objects, key);
-        if player_action == PlayerAction::Exit {
-            save_game(objects, game_state).unwrap();
-            break;
-        }
-
-        // let monsters take their turn
-        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..objects.len() {
-                if objects[id].ai.is_some() {
-                    ai_take_turn(game_state, objects, &game_io.fov, id);
-                }
-            }
-        }
-    }
 }
 
 pub fn move_by(world: &World, objects: &mut [Object], id: usize, dx: i32, dy: i32) {
@@ -185,7 +128,11 @@ pub fn move_towards(
 }
 
 /// Advance to the next level
-pub fn next_level(game_io: &mut GameIO, objects: &mut Vec<Object>, game_state: &mut GameState) {
+pub fn next_level(
+    game_io: &mut GameFrontend,
+    objects: &mut Vec<Object>,
+    game_state: &mut GameState,
+) {
     game_state.log.add(
         "You take a moment to rest, and recover your strength.",
         colors::VIOLET,
@@ -217,7 +164,7 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(objects: &mut [Object], game_state: &mut GameState, game_io: &mut GameIO) {
+pub fn level_up(objects: &mut [Object], game_state: &mut GameState, game_io: &mut GameFrontend) {
     let player = &mut objects[PLAYER];
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     // see if the player's experience is enough to level up

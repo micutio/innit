@@ -15,11 +15,13 @@ mod util;
 mod world;
 
 // internal modules
-use ui::game_frontend::{initialize_io, main_menu, GameIO};
+use ui::game_frontend::{initialize_io, main_menu, GameFrontend};
+use ui::game_input::GameInput;
 
 fn launch_game() {
-    let mut game_io: GameIO = initialize_io();
-    main_menu(&mut game_io);
+    let mut game_frontend: GameFrontend = initialize_io();
+    let mut game_input: GameInput = GameInput::new();
+    main_menu(&mut game_frontend, &mut game_input);
 }
 
 fn main() {
