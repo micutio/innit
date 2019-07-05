@@ -3,13 +3,12 @@ use game_state::{
     next_level, player_move_or_attack, GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER,
 };
 use tcod::input::{self, Event, Key, Mouse};
-use world::{WORLD_HEIGHT, WORLD_WIDTH};
 
 /// Module Game Input
 ///
 /// User input processing
 /// Handle user input
-use ui::game_frontend::{msgbox, render_all, FovMap, GameFrontend, CHARACTER_SCREEN_WIDTH};
+use ui::game_frontend::{msgbox, FovMap, GameFrontend, CHARACTER_SCREEN_WIDTH};
 
 pub struct GameInput {
     key: Key,
