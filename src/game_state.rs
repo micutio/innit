@@ -3,8 +3,6 @@
 /// This module contains the struct that encompasses all parts of the game state:
 ///
 /// TODO: Try to move as many dependecies to game_io as possible out of here.
-use tcod::colors;
-
 // internal modules
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
@@ -12,6 +10,8 @@ use entity::object::Object;
 use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages};
 use util::mut_two;
 use world::{is_blocked, make_world, World};
+
+use tcod::colors;
 
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
