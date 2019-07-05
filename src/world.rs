@@ -10,7 +10,7 @@ use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
-use game_state::{from_dungeon_level, Transition, PLAYER};
+use game_state::{from_dungeon_level, Transition, PLAYER, Objects};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -48,7 +48,7 @@ impl Tile {
 
 pub type World = Vec<Vec<Tile>>;
 
-pub fn make_world(objects: &mut Vec<Object>, level: u32) -> World {
+pub fn make_world(objects: &mut Objects, level: u32) -> World {
     // fill the world with `unblocked` tiles
     let mut world = vec![vec![Tile::wall(); WORLD_HEIGHT as usize]; WORLD_WIDTH as usize];
 
@@ -179,7 +179,7 @@ fn create_v_tunnel(world: &mut World, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(world: &World, objects: &mut Vec<Object>, room: Rect, level: u32) {
+fn place_objects(world: &World, objects: &mut Objects, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 

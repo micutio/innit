@@ -6,15 +6,15 @@
 // internal modules
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::Object;
+use entity::object::{Object, ObjectVec};
 use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages};
 use util::mut_two;
 use world::{is_blocked, make_world, World};
 
 use tcod::colors;
 
-// TODO: reorganize objects vector
-//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objects
+// TODO: reorganize objectVec vector
+//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objectVec
 //      - n+1 object is PLAYER
 //      - then everything else
 // player object reference, index of the object vector
@@ -33,7 +33,7 @@ pub struct GameState {
     pub dungeon_level: u32,
 }
 
-pub fn new_game() -> (Vec<Object>, GameState) {
+pub fn new_game() -> (ObjectVec, GameState, GameEngine) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -47,15 +47,15 @@ pub fn new_game() -> (Vec<Object>, GameState) {
     });
     player.attack_action = Some(AttackAction::new(2));
 
-    // create array holding all objects
-    let mut objects = vec![player];
+    // create array holding all objectVec
+    let mut object_vec = ObjectVec::new();
     let level = 1;
 
     // create game state holding most game-relevant information
     //  - also creates map and player starting position
     let mut game_state = GameState {
         // generate map (at this point it's not drawn on screen)
-        world: make_world(&mut objects, level),
+        world: make_world(&mut object_vec, level),
         // create the list of game messages and their colors, starts empty
         log: vec![],
         inventory: vec![],
@@ -68,86 +68,126 @@ pub fn new_game() -> (Vec<Object>, GameState) {
         colors::RED,
     );
 
-    (objects, game_state)
+    let mut game_engine = GameEngine::new();
+
+    (object_vec, game_state, game_engine)
 }
 
-pub fn move_by(world: &World, objects: &mut [Object], id: usize, dx: i32, dy: i32) {
-    // move by the given amount
-    let (x, y) = objects[id].pos();
-    if !is_blocked(world, objects, x + dx, y + dy) {
-        objects[id].set_pos(x + dx, y + dy);
+#[derive(Serialize, Deserialize)]
+pub struct GameEngine {
+    current_obj_index: usize
+}
+
+pub enum ProcessResult {
+    Nil,
+    UpdateVisibility,
+    Animate {
+        x: u32,
+        y: u32,
     }
 }
 
-pub fn player_move_or_attack(game_state: &mut GameState, objects: &mut [Object], dx: i32, dy: i32) {
+impl GameEngine {
+    pub fn new() -> Self {
+        GameEngine {
+            current_obj_index: 0
+        }
+    }
+
+    pub fn process(&mut self, game_state: &mut GameState, object_vec: &mut ObjectVec) -> ProcessResult {
+        if let Some((active_index, active_object)) = object_vec.extract(self.current_obj_index) {
+            // execute objects current action
+            dummy_mut_borrow(object_vec);
+            // return result of action
+            return ProcessResult::Nil;
+        }
+        ProcessResult::Nil
+    }
+}
+
+fn dummy_mut_borrow(object_vec: &mut ObjectVec) {
+    if let Some(object) = &mut object_vec[0] {
+        object.set_pos(0, 0);
+    }
+}
+
+pub fn move_by(world: &World, object_vec: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
+    // move by the given amount
+    let (x, y) = object_vec[id].pos();
+    if !is_blocked(world, object_vec, x + dx, y + dy) {
+        object_vec[id].set_pos(x + dx, y + dy);
+    }
+}
+
+pub fn player_move_or_attack(game_state: &mut GameState, object_vec: &mut ObjectVec, dx: i32, dy: i32) {
     // the coordinate the player is moving to/attacking
-    let x = objects[PLAYER].x + dx;
-    let y = objects[PLAYER].y + dy;
+    let x = object_vec[PLAYER].x + dx;
+    let y = object_vec[PLAYER].y + dy;
 
     // try to find an attackable object there
-    let target_id = objects
+    let target_id = object_vec
         .iter()
         .position(|object| object.fighter.is_some() && object.pos() == (x, y));
 
     // attack if target found, move otherwise
     match target_id {
         Some(target_id) => {
-            let (player, target) = mut_two(objects, PLAYER, target_id);
+            let (player, target) = mut_two(object_vec, PLAYER, target_id);
             player.attack(target, game_state);
 
-            // TODO: Solve double mutable borrow of `objects` here!
+            // TODO: Solve double mutable borrow of `object_vec` here!
             // match player.attack_action {
             //     Some(ref mut attack_action) => {
             //         // attack_action.acquire_target(target_id);
-            //         attack_action.perform(objects, game_state);
+            //         attack_action.perform(object_vec, game_state);
             //     }
             //     None => {}
             // }
         }
         None => {
-            move_by(&game_state.world, objects, PLAYER, dx, dy);
+            move_by(&game_state.world, object_vec, PLAYER, dx, dy);
         }
     }
 }
 
 pub fn move_towards(
     world: &World,
-    objects: &mut [Object],
+    object_vec: &mut ObjectVec,
     id: usize,
     target_x: i32,
     target_y: i32,
 ) {
     // vector from this object to the target, and distance
-    let dx = target_x - objects[id].x;
-    let dy = target_y - objects[id].y;
+    let dx = target_x - object_vec[id].x;
+    let dy = target_y - object_vec[id].y;
     let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
 
     // normalize it to length 1 (preserving direction), then round it and
     // convert to integer so the movement is restricted to the map grid
     let dx = (dx as f32 / distance).round() as i32;
     let dy = (dy as f32 / distance).round() as i32;
-    move_by(world, objects, id, dx, dy);
+    move_by(world, object_vec, id, dx, dy);
 }
 
 /// Advance to the next level
 pub fn next_level(
     game_io: &mut GameFrontend,
-    objects: &mut Vec<Object>,
+    objectVec: &mut Vec<Object>,
     game_state: &mut GameState,
 ) {
     game_state.log.add(
         "You take a moment to rest, and recover your strength.",
         colors::VIOLET,
     );
-    let heal_hp = objects[PLAYER].max_hp(game_state) / 2;
-    objects[PLAYER].heal(game_state, heal_hp);
+    let heal_hp = objectVec[PLAYER].max_hp(game_state) / 2;
+    objectVec[PLAYER].heal(game_state, heal_hp);
 
     game_state.log.add(
         "After a rare moment of peace, you descend deeper into the heart of the dungeon...",
         colors::RED,
     );
     game_state.dungeon_level += 1;
-    game_state.world = make_world(objects, game_state.dungeon_level);
+    game_state.world = make_world(objectVec, game_state.dungeon_level);
     initialize_fov(&game_state.world, game_io);
 }
 
@@ -166,8 +206,8 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(objects: &mut [Object], game_state: &mut GameState, game_io: &mut GameFrontend) {
-    let player = &mut objects[PLAYER];
+pub fn level_up(object_vec: &mut ObjectVec, game_state: &mut GameState, game_io: &mut GameFrontend) {
+    let player = &mut object_vec[PLAYER];
     let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
     // see if the player's experience is enough to level up
     if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {

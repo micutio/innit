@@ -151,3 +151,54 @@ impl Object {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ObjectVec(Vec<Option<Object>>);
+
+impl ObjectVec {
+    pub fn new() -> Self {
+        ObjectVec(Vec::new())
+    }
+
+    pub fn push(&mut self, object: Object) {
+        self.0.push(Some(object));
+    }
+
+    pub fn extract(&mut self, index: usize) -> Option<(usize, Object)> {
+        match self.0.get(index) {
+            Some(item) => match item.take() {
+                Some(object) => {
+                    Some( (index, object) )
+                }
+                None => None
+            }
+            None => panic!("[ObjectVec::index] Error: invalid index {}", index)
+        }
+    }
+
+    pub fn replace(&mut self, index: usize, object: Object) {
+        let item = self.0.get(index);
+        match item {
+            Some(obj) => {
+                obj.replace(object);
+            }
+            None => {
+                panic!("[ObjectVec::replace] Error: object {} with given index {} does not exist!", object.name, index);
+            }
+        }
+    }
+}
+
+use std::ops::Index;
+
+impl Index<usize> for ObjectVec {
+    type Output = Option<Object>;
+
+    fn index(&self, i: usize) -> &Self::Output {
+        let item = self.0.get(i);
+        match item{
+            Some(obj_option) => &obj_option,
+            None => panic!("[ObjectVec::index] Error: invalid index {}", i)
+        }
+    }
+}

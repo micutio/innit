@@ -2,8 +2,8 @@
 ///
 /// This module contains all structures and methods pertaining to the user interface.
 use entity::ai::ai_take_turn;
-use entity::object::Object;
-use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS};
+use entity::object::{Object, ObjectVec};
+use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult};
 use ui::color_palette::*;
 use ui::game_input::{handle_keys, GameInput, PlayerAction};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
@@ -110,16 +110,16 @@ pub fn main_menu(game_frontend: &mut GameFrontend, game_input: &mut GameInput) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut objects, mut game_state) = new_game();
+                let (mut objects, mut game_state, mut game_engine) = new_game();
                 initialize_fov(&game_state.world, game_frontend);
-                game_loop(&mut objects, &mut game_state, game_frontend, game_input);
+                game_loop(&mut objects, &mut game_state, game_frontend, game_input, &mut game_engine);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
-                    Ok((mut objects, mut game_state)) => {
+                    Ok((mut objects, mut game_state, mut game_engine)) => {
                         initialize_fov(&game_state.world, game_frontend);
-                        game_loop(&mut objects, &mut game_state, game_frontend, game_input);
+                        game_loop(&mut objects, &mut game_state, game_frontend, game_input, &mut game_engine);
                     }
                     Err(_e) => {
                         msgbox("\nNo saved game to load\n", 24, &mut game_frontend.root);
@@ -158,10 +158,11 @@ pub fn initialize_fov(world: &World, game_frontend: &mut GameFrontend) {
 /// - render game world
 /// - let NPCs take their turn
 pub fn game_loop(
-    objects: &mut Vec<Object>,
+    object_vec: &mut ObjectVec,
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
     game_input: &mut GameInput,
+    game_engine: &mut GameEngine,
 ) {
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
@@ -171,41 +172,62 @@ pub fn game_loop(
         game_frontend.con.clear();
 
         // check for input events
-        game_input.check_for_input_events(objects, &game_frontend.fov);
+        // TODO: Put this into a separate thread!
+        game_input.check_for_input_events(object_vec, &game_frontend.fov);
 
-        // render objects and map
-        // step 1/2: update visibility of objects and world tiles
-        let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-        update_visibility(game_frontend, game_state, objects, fov_recompute);
-        // step 2/2: render everything
-        render_all(
-            game_frontend,
-            game_state,
-            objects,
-            &game_input.names_under_mouse,
-        );
+        // NOTE: new game loop implementation starts here
+        use game_state::ProcessResult::*;
+        match game_engine.process(game_state, object_vec) {
+            Nil => {
 
-        // draw everything on the window at once
-        game_frontend.root.flush();
+            }
+
+            UpdateVisibility => {
+                // render object_vec and map
+                // step 1/2: update visibility of object_vec and world tiles
+                let fov_recompute = previous_player_position != (object_vec[PLAYER].x, object_vec[PLAYER].y);
+                update_visibility(game_frontend, game_state, object_vec, fov_recompute);
+                // step 2/2: render everything
+                render_all(
+                    game_frontend,
+                    game_state,
+                    object_vec,
+                    &game_input.names_under_mouse,
+                );
+
+                // draw everything on the window at once
+                game_frontend.root.flush();
+            }
+
+            Animate{x, y} => {
+
+            }
+
+        }
+
+        // TODO: Once processing is done, check whether we have a new user input
+        // If so, decide whether it's an in-game action or UI action
+        // If in-game action, inject it into the player object
+        // otherwise handle ui input
 
         // level up if needed
         // TODO: Move level up fogic and function call into a more appropriate place/module.
-        level_up(objects, game_state, game_frontend);
+        level_up(object_vec, game_state, game_frontend);
 
         // handle keys and exit game if needed
         // TODO: Generate an `action` from the player input and set the player object to execute it.
-        previous_player_position = objects[PLAYER].pos();
-        let player_action = handle_keys(game_frontend, game_input, game_state, objects);
+        previous_player_position = object_vec[PLAYER].pos();
+        let player_action = handle_keys(game_frontend, game_input, game_state, object_vec);
         if player_action == PlayerAction::Exit {
-            save_game(objects, game_state).unwrap();
+            save_game(object_vec, game_state, game_engine).unwrap();
             break;
         }
 
         // let monsters take their turn
-        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..objects.len() {
-                if objects[id].ai.is_some() {
-                    ai_take_turn(game_state, objects, &game_frontend.fov, id);
+        if object_vec[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..object_vec.len() {
+                if object_vec[id].ai.is_some() {
+                    ai_take_turn(game_state, object_vec, &game_frontend.fov, id);
                 }
             }
         }
@@ -214,17 +236,17 @@ pub fn game_loop(
 
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-pub fn load_game() -> Result<(Vec<Object>, GameState), Box<Error>> {
+pub fn load_game() -> Result<(ObjectVec, GameState, GameEngine), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(Vec<Object>, GameState)>(&json_save_state)?;
+    let result = serde_json::from_str::<(ObjectVec, GameState, GameEngine)>(&json_save_state)?;
     Ok(result)
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(objects: &[Object], game_state: &GameState) -> Result<(), Box<Error>> {
-    let save_data = serde_json::to_string(&(objects, game_state))?;
+pub fn save_game(objects: &[Object], game_state: &GameState, game_engine: &GameEngine) -> Result<(), Box<Error>> {
+    let save_data = serde_json::to_string(&(objects, game_state, game_engine))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
