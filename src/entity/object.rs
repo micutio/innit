@@ -16,12 +16,12 @@ pub struct Object {
     pub x: i32,
     pub y: i32,
     pub dna: String,
-    pub name: String,
-    pub blocks: bool,
+    pub name: String, // move into a UI component
+    pub blocks: bool, // move into a physics component
     pub alive: bool,
     pub chr: char,            // move into a UI component
     pub color: Color,         // move into a UI component
-    pub always_visible: bool, // move into a UI component
+    pub always_visible: bool, // move into a physics component
     pub level: i32,           // could be changed into some pseudo-progress like allowed DNA length
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
