@@ -49,7 +49,6 @@ pub fn handle_keys(
     objects: &mut Vec<Object>,
 ) -> PlayerAction {
     use self::PlayerAction::*;
-    use tcod::input::Key;
     use tcod::input::KeyCode::*;
 
     let player_alive = objects[PLAYER].alive;
