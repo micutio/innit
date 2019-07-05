@@ -20,6 +20,7 @@ const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
+// TODO: Move tile properties into phyics object in Object declaration
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub blocked: bool,

@@ -13,6 +13,10 @@ use world::{is_blocked, make_world, World};
 
 use tcod::colors;
 
+// TODO: reorganize objects vector
+//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objects
+//      - n+1 object is PLAYER
+//      - then everything else
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
 pub const TORCH_RADIUS: i32 = 10;

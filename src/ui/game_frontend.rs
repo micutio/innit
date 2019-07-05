@@ -516,6 +516,7 @@ pub fn msgbox(text: &str, width: i32, root: &mut Root) {
 
 // Structures and functions for message output
 
+// TODO: Move message declarations into game_state
 // Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
 
