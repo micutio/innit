@@ -160,6 +160,10 @@ impl ObjectVec {
         ObjectVec(Vec::new())
     }
 
+    pub fn get_vector(&self) -> &Vec<Option<Object>> {
+        &self.0
+    }
+
     pub fn push(&mut self, object: Object) {
         self.0.push(Some(object));
     }

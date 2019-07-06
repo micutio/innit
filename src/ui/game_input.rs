@@ -2,7 +2,7 @@
 ///
 /// User input processing
 /// Handle user input
-use entity::object::Object;
+use entity::object::{Object, ObjectVec};
 use game_state::{
     next_level, player_move_or_attack, GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER,
 };
@@ -135,14 +135,15 @@ pub fn handle_keys(
     }
 }
 
-fn get_names_under_mouse(objects: &[Object], fov_map: &FovMap, mouse: &Mouse) -> String {
+fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse: &Mouse) -> String {
     let (x, y) = (mouse.cx as i32, mouse.cy as i32);
 
     // create a list with the names of all objects at the mouse's coordinates and in FOV
-    let names = objects
+    let names = object_vec
+        .get_vector()
         .iter()
-        .filter(|obj| obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y))
-        .map(|obj| obj.name.clone())
+        .filter(|Some(obj)| obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y))
+        .map(|Some(obj)| obj.name.clone())
         .collect::<Vec<_>>();
 
     names.join(", ") // return names separated by commas
