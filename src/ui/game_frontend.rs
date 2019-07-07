@@ -5,12 +5,13 @@ use entity::ai::ai_take_turn;
 use entity::object::{Object, ObjectVec};
 use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult};
 use ui::color_palette::*;
-use ui::game_input::{handle_keys, GameInput, PlayerAction};
+use ui::game_input::{handle_keys, GameInput, PlayerAction, start_input_proc_thread};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
@@ -167,6 +168,9 @@ pub fn game_loop(
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
 
+    let mut placeholder = Arc::new(Mutex::new( Some(0 as i32) ));
+    let mut input_thread = start_input_proc_thread(&mut placeholder);
+
     while !game_frontend.root.window_closed() {
         // clear the screen of the previous frame
         game_frontend.con.clear();
@@ -232,6 +236,8 @@ pub fn game_loop(
             }
         }
     }
+
+    input_thread.join();
 }
 
 /// Load an existing savegame and instantiates GameState & Objects

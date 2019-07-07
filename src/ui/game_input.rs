@@ -8,12 +8,14 @@ use game_state::{
 };
 use ui::game_frontend::{msgbox, FovMap, GameFrontend, CHARACTER_SCREEN_WIDTH};
 
+use std::sync::{Mutex, Arc};
+use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
 pub struct GameInput {
+    pub names_under_mouse: String,
     key: Key,
     mouse: Mouse,
-    pub names_under_mouse: String,
 }
 
 impl GameInput {
@@ -25,113 +27,13 @@ impl GameInput {
         }
     }
 
-    pub fn check_for_input_events(&mut self, objects: &[Object], fov_map: &FovMap) {
+    pub fn check_for_input_events(&mut self, objects: &ObjectVec, fov_map: &FovMap) {
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
             Some((_, Event::Mouse(m))) => self.mouse = m,
             Some((_, Event::Key(k))) => self.key = k,
             _ => self.key = Default::default(),
         }
         self.names_under_mouse = get_names_under_mouse(objects, fov_map, &self.mouse);
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum PlayerAction {
-    TookTurn,
-    DidntTakeTurn,
-    Exit,
-}
-
-pub fn handle_keys(
-    game_io: &mut GameFrontend,
-    game_input: &mut GameInput,
-    game_state: &mut GameState,
-    objects: &mut Vec<Object>,
-) -> PlayerAction {
-    use self::PlayerAction::*;
-    use tcod::input::KeyCode::*;
-
-    let player_alive = objects[PLAYER].alive;
-    match (game_input.key, player_alive) {
-        // toggle fullscreen
-        (
-            Key {
-                code: Enter,
-                alt: true,
-                ..
-            },
-            _,
-        ) => {
-            let fullscreen = game_io.root.is_fullscreen();
-            game_io.root.set_fullscreen(!fullscreen);
-            DidntTakeTurn
-        }
-
-        // exit game
-        (Key { code: Escape, .. }, _) => Exit,
-
-        // handle movement
-        (Key { code: Up, .. }, true) => {
-            player_move_or_attack(game_state, objects, 0, -1);
-            TookTurn
-        }
-        (Key { code: Down, .. }, true) => {
-            player_move_or_attack(game_state, objects, 0, 1);
-            TookTurn
-        }
-        (Key { code: Left, .. }, true) => {
-            player_move_or_attack(game_state, objects, -1, 0);
-            TookTurn
-        }
-        (Key { code: Right, .. }, true) => {
-            player_move_or_attack(game_state, objects, 1, 0);
-            TookTurn
-        }
-        (Key { printable: 'x', .. }, true) => {
-            // do nothing, i.e. wait for the monster to come to you
-            TookTurn
-        }
-        (Key { printable: 'e', .. }, true) => {
-            // go down the stairs, if the player is on them
-            println!("trying to go down stairs");
-            let player_on_stairs = objects
-                .iter()
-                .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
-            if player_on_stairs {
-                next_level(game_io, objects, game_state);
-            }
-            DidntTakeTurn
-        }
-        (Key { printable: 'c', .. }, true) => {
-            // show character information
-            let player = &objects[PLAYER];
-            let level = player.level;
-            let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-            if let Some(fighter) = player.fighter.as_ref() {
-                let msg = format!(
-                    "Character information
-
-                Level: {}
-                Experience: {}
-                Experience to level up: {}
-
-                Maximum HP: {}
-                Attack: {}
-                Defense: {}",
-                    level,
-                    fighter.xp,
-                    level_up_xp,
-                    player.max_hp(game_state),
-                    player.power(game_state),
-                    player.defense(game_state),
-                );
-                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_io.root);
-            }
-
-            DidntTakeTurn
-        }
-
-        _ => DidntTakeTurn,
     }
 }
 
@@ -148,6 +50,124 @@ fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse: &Mouse
 
     names.join(", ") // return names separated by commas
 }
+
+pub fn start_input_proc_thread(input_buffer: &mut Arc<Mutex< Option<i32> >>) -> JoinHandle<()> {
+    let data = Arc::clone(&input_buffer);
+
+    thread::spawn(move|| {
+        let _mouse: Mouse = Default::default();
+        let _key: Key = Default::default();
+        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+            Some((_, Event::Mouse(m))) => _mouse = m,
+            Some((_, Event::Key(k))) => _key = k,
+            _ => _key = Default::default(),
+        }
+
+        let mut data = data.lock().unwrap();
+    })
+}
+
+// #[derive(Clone, Copy, Debug, PartialEq)]
+// pub enum PlayerAction {
+//     TookTurn,
+//     DidntTakeTurn,
+//     Exit,
+// }
+
+// pub fn handle_keys(
+//     game_io: &mut GameFrontend,
+//     game_input: &mut GameInput,
+//     game_state: &mut GameState,
+//     objects: &mut Vec<Object>,
+// ) -> PlayerAction {
+//     use self::PlayerAction::*;
+//     use tcod::input::KeyCode::*;
+
+//     let player_alive = objects[PLAYER].alive;
+//     match (game_input.key, player_alive) {
+//         // toggle fullscreen
+//         (
+//             Key {
+//                 code: Enter,
+//                 alt: true,
+//                 ..
+//             },
+//             _,
+//         ) => {
+//             let fullscreen = game_io.root.is_fullscreen();
+//             game_io.root.set_fullscreen(!fullscreen);
+//             DidntTakeTurn
+//         }
+
+//         // exit game
+//         (Key { code: Escape, .. }, _) => Exit,
+
+//         // handle movement
+//         (Key { code: Up, .. }, true) => {
+//             player_move_or_attack(game_state, objects, 0, -1);
+//             TookTurn
+//         }
+//         (Key { code: Down, .. }, true) => {
+//             player_move_or_attack(game_state, objects, 0, 1);
+//             TookTurn
+//         }
+//         (Key { code: Left, .. }, true) => {
+//             player_move_or_attack(game_state, objects, -1, 0);
+//             TookTurn
+//         }
+//         (Key { code: Right, .. }, true) => {
+//             player_move_or_attack(game_state, objects, 1, 0);
+//             TookTurn
+//         }
+//         (Key { printable: 'x', .. }, true) => {
+//             // do nothing, i.e. wait for the monster to come to you
+//             TookTurn
+//         }
+//         (Key { printable: 'e', .. }, true) => {
+//             // go down the stairs, if the player is on them
+//             println!("trying to go down stairs");
+//             let player_on_stairs = objects
+//                 .iter()
+//                 .any(|object| object.pos() == objects[PLAYER].pos() && object.name == "stairs");
+//             if player_on_stairs {
+//                 next_level(game_io, objects, game_state);
+//             }
+//             DidntTakeTurn
+//         }
+//         (Key { printable: 'c', .. }, true) => {
+//             // show character information
+//             let player = &objects[PLAYER];
+//             let level = player.level;
+//             let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+//             if let Some(fighter) = player.fighter.as_ref() {
+//                 let msg = format!(
+//                     "Character information
+
+//                 Level: {}
+//                 Experience: {}
+//                 Experience to level up: {}
+
+//                 Maximum HP: {}
+//                 Attack: {}
+//                 Defense: {}",
+//                     level,
+//                     fighter.xp,
+//                     level_up_xp,
+//                     player.max_hp(game_state),
+//                     player.power(game_state),
+//                     player.defense(game_state),
+//                 );
+//                 msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_io.root);
+//             }
+
+//             DidntTakeTurn
+//         }
+
+//         _ => DidntTakeTurn,
+//     }
+// }
+
+
 
 // /// return the position of a tile left-clicked in player's FOV (optionally in a range),
 // /// or (None, None) if right-clicked.
