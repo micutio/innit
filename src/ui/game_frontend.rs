@@ -5,14 +5,13 @@ use entity::ai::ai_take_turn;
 use entity::object::{Object, ObjectVec};
 use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult};
 use ui::color_palette::*;
-use ui::game_input::{GameInput, PlayerAction, KeyCode, create_key_mapping, start_input_proc_thread};
+use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 
 use tcod::colors::{self, Color};
 use tcod::console::*;
@@ -169,12 +168,15 @@ pub fn game_loop(
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
 
+    // user input data
+    let mut current_mouse_position = (-1, -1);
+    let mut next_action: PlayerAction = PlayerAction::Undefined;
+
     // TODO: (!) Replace placeholder
-    let key_mapping: HashMap<KeyCode, PlayerAction> = create_key_mapping();
     let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
     let game_input_buf = Arc::clone(&game_input);
     let mut input_thread = start_input_proc_thread(&mut game_input);
-    let mut names_under_mouse = "";
+    let mut names_under_mouse: String = "".into();
 
     while !game_frontend.root.window_closed() {
         
@@ -215,17 +217,32 @@ pub fn game_loop(
         // otherwise handle ui input
         {
             let data = game_input_buf.lock().unwrap();
-            names_under_mouse = data.names_under_mouse;
+            current_mouse_position = (data.mouse_x, data.mouse_y);
+            next_action = match data.next_player_actions.pop_front() {
+                Some(action) => action,
+                None => PlayerAction::Undefined,
+            };
+        }
+
+        // TODO: Generate an `action` from the player input and set the player object to execute it.
+        if next_action == PlayerAction::ExitGame {
+            // option 1: save game and return to main menu
+            save_game(objects, game_state, game_engine).unwrap();
+            break;
+        } else {
+            // option 2: set next player action and resume
+            objects[PLAYER].unwrap().next_action = Some(get_player_action_instance(next_action));
         }
         
-        // game_input_buf.unlock();
+        // NOTE: Almost done with the game loop rewrite.
 
+        // TODO: Move level up logic and function call into a more appropriate place/module.
+        // TODO: Remove player and NPC turn-taking below and encode their behavior in actions.
         // level up if needed
-        // TODO: Move level up fogic and function call into a more appropriate place/module.
         level_up(objects, game_state, game_frontend);
 
         // handle keys and exit game if needed
-        // TODO: Generate an `action` from the player input and set the player object to execute it.
+        
         previous_player_position = objects[PLAYER].unwrap().pos();
         let player_action = handle_keys(game_frontend, game_input, game_state, objects);
         if player_action == PlayerAction::Exit {

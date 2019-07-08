@@ -84,7 +84,7 @@ pub struct MoveAction {
 }
 
 impl MoveAction {
-    fn new(direction: Direction, energy_cost: i32) -> Self {
+    pub fn new(direction: Direction, energy_cost: i32) -> Self {
         MoveAction {
             direction,
             energy_cost,

@@ -13,20 +13,27 @@ use ui::game_frontend::{msgbox, FovMap, GameFrontend, CHARACTER_SCREEN_WIDTH};
 
 // external imports
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::sync::{Mutex, Arc};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
+/// As tcod's key codes don't implement Eq and Hash they cannot be used
+/// as keys in a hash table. So to still be able to hash keys, we define our own.
 #[derive(PartialEq, Eq, Hash)]
 pub enum KeyCode {
     A, B, C, D, E, F, G, H,
     I, J, K, L, M, N, O, P,
     Q, R, S, T, U, V, W, X,
-    Y, Z,
+    Y, Z, Undefined,
     Up, Down, Left, Right,
+    Esc
 }
 
+#[derive(PartialEq)]
 pub enum PlayerAction {
+    ExitGame,
+    Undefined,
     Pending,
     DoNothing,
     WalkNorth,
@@ -38,7 +45,7 @@ pub enum PlayerAction {
 pub struct GameInput {
     pub mouse_x: i32,
     pub mouse_y: i32,
-    pub next_player_action: Option<PlayerAction>,
+    pub next_player_actions: VecDeque<PlayerAction>,
 }
 
 impl GameInput {
@@ -46,14 +53,14 @@ impl GameInput {
         GameInput {
             mouse_x: 0,
             mouse_y: 0,
-            next_player_action: None,
+            next_player_actions: VecDeque::new(),
         }
     }
 }
 
-fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse_x: i32, mouse_y: i32) -> String {
+fn get_names_under_mouse(objects: &ObjectVec, fov_map: &FovMap, mouse_x: i32, mouse_y: i32) -> String {
     // create a list with the names of all objects at the mouse's coordinates and in FOV
-    let names = object_vec
+    let names = objects
         .get_vector()
         .iter()
         .filter(|Some(obj)| obj.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(obj.x, obj.y))
@@ -65,30 +72,53 @@ fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse_x: i32,
 
 pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
+    let key_to_action_mapping = create_key_mapping();
 
     thread::spawn(move|| {
         loop {
             let mouse_x: i32 = 0;
             let mouse_y: i32 = 0;
-            let _mouse: Mouse = Default::default();
+            let _mouse: Mouse = Default::default(); // this is not really used right now
             let _key: Key = Default::default();
             match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+                // record mouse position for later use
                 Some((_, Event::Mouse(_m))) => {
-                    // record mouse position for later use
                     mouse_x = _m.cx as i32;
                     mouse_y = _m.cy as i32;
                 }
-
-                Some((_, Event::Key(k))) => _key = k,
-                _ => _key = Default::default(),
+                // get used key to create next user action
+                Some((_, Event::Key(k))) => {
+                    _key = k;
+                }
+                _ => {
+                    mouse_x = Default::default();
+                    mouse_y = Default::default();
+                }
             }
 
             // lock our mutex and get to work
             let mut input = game_input_buf.lock().unwrap();
+            let player_action = match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                Some(key) => key,
+                None => &PlayerAction::Undefined,
+            };
+            input.next_player_actions.push_back(*player_action);
             input.mouse_x = mouse_x;
             input.mouse_y = mouse_y;
         }
     })
+}
+
+/// Translate between tcod's keys and our own key codes.
+fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
+    match tcod_key {
+        Key { code: Escape, .. } => self::KeyCode::Esc,
+        Key { code: Up, .. } => self::KeyCode::Up,
+        Key { code: Down, .. } => self::KeyCode::Down,
+        Key { code: Right, .. } => self::KeyCode::Right,
+        Key { code: Left, .. } => self::KeyCode::Left,
+        _ => self::KeyCode::Undefined,
+    }
 }
 
 pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
@@ -102,8 +132,23 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map.insert(Down, WalkSouth);
     key_map.insert(Left, WalkWest);
     key_map.insert(Right, WalkEast);
+    key_map.insert(Esc, ExitGame);
 
     key_map
+}
+
+pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
+    use entity::action::Direction::*;
+    
+    // TODO: Use actual costs.
+    // No need to map `Esc` since we filter out exiting before instantiating
+    // any player actions.
+    match player_action {
+        Up => Box::new(MoveAction::new(North, 0)),
+        Down => Box::new(MoveAction::new(South, 0)),
+        Right => Box::new(MoveAction::new(East, 0)),
+        Left => Box::new(MoveAction::new(West, 0)),
+    }
 }
 
 // #[derive(Clone, Copy, Debug, PartialEq)]
