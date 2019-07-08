@@ -159,7 +159,7 @@ pub fn initialize_fov(world: &World, game_frontend: &mut GameFrontend) {
 /// - render game world
 /// - let NPCs take their turn
 pub fn game_loop(
-    object_vec: &mut ObjectVec,
+    objects: &mut ObjectVec,
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
     game_input: &mut GameInput,
@@ -177,25 +177,25 @@ pub fn game_loop(
 
         // check for input events
         // TODO: Put this into a separate thread!
-        game_input.check_for_input_events(object_vec, &game_frontend.fov);
+        game_input.check_for_input_events(objects, &game_frontend.fov);
 
         // NOTE: new game loop implementation starts here
         use game_state::ProcessResult::*;
-        match game_engine.process(game_state, object_vec) {
+        match game_engine.process(game_state, objects) {
             Nil => {
 
             }
 
             UpdateVisibility => {
-                // render object_vec and map
-                // step 1/2: update visibility of object_vec and world tiles
-                let fov_recompute = previous_player_position != (object_vec[PLAYER].x, object_vec[PLAYER].y);
-                update_visibility(game_frontend, game_state, object_vec, fov_recompute);
+                // render objects and map
+                // step 1/2: update visibility of objects and world tiles
+                let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
+                update_visibility(game_frontend, game_state, objects, fov_recompute);
                 // step 2/2: render everything
                 render_all(
                     game_frontend,
                     game_state,
-                    object_vec,
+                    objects,
                     &game_input.names_under_mouse,
                 );
 
@@ -216,22 +216,22 @@ pub fn game_loop(
 
         // level up if needed
         // TODO: Move level up fogic and function call into a more appropriate place/module.
-        level_up(object_vec, game_state, game_frontend);
+        level_up(objects, game_state, game_frontend);
 
         // handle keys and exit game if needed
         // TODO: Generate an `action` from the player input and set the player object to execute it.
-        previous_player_position = object_vec[PLAYER].pos();
-        let player_action = handle_keys(game_frontend, game_input, game_state, object_vec);
+        previous_player_position = objects[PLAYER].pos();
+        let player_action = handle_keys(game_frontend, game_input, game_state, objects);
         if player_action == PlayerAction::Exit {
-            save_game(object_vec, game_state, game_engine).unwrap();
+            save_game(objects, game_state, game_engine).unwrap();
             break;
         }
 
         // let monsters take their turn
-        if object_vec[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..object_vec.len() {
-                if object_vec[id].ai.is_some() {
-                    ai_take_turn(game_state, object_vec, &game_frontend.fov, id);
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(game_state, objects, &game_frontend.fov, id);
                 }
             }
         }
