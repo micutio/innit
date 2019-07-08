@@ -82,6 +82,7 @@ pub enum ProcessResult {
     Nil,
     UpdateVisibility,
     Animate {
+        // TODO: Create animation type enum.
         x: u32,
         y: u32,
     }
@@ -96,7 +97,7 @@ impl GameEngine {
 
     pub fn process(&mut self, game_state: &mut GameState, object_vec: &mut ObjectVec) -> ProcessResult {
         if let Some((active_index, active_object)) = object_vec.extract(self.current_obj_index) {
-            
+            // TODO: Find a way to merge ProcessResult and ActionResult.
             // execute objects current action
             dummy_mut_borrow(object_vec);
             // return result of action

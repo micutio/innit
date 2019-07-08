@@ -158,6 +158,7 @@ impl Object {
     }
 }
 
+// TODO: Replace all occurrences of objects[PLAYER].unwrap() with custom function!
 #[derive(Serialize, Deserialize)]
 pub struct ObjectVec(Vec<Option<Object>>);
 
