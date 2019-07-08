@@ -168,6 +168,7 @@ pub fn game_loop(
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
 
+    // TODO: (!) Replace placeholder
     let mut placeholder = Arc::new(Mutex::new( Some(0 as i32) ));
     let mut input_thread = start_input_proc_thread(&mut placeholder);
 
@@ -220,7 +221,7 @@ pub fn game_loop(
 
         // handle keys and exit game if needed
         // TODO: Generate an `action` from the player input and set the player object to execute it.
-        previous_player_position = objects[PLAYER].pos();
+        previous_player_position = objects[PLAYER].unwrap().pos();
         let player_action = handle_keys(game_frontend, game_input, game_state, objects);
         if player_action == PlayerAction::Exit {
             save_game(objects, game_state, game_engine).unwrap();
@@ -228,7 +229,7 @@ pub fn game_loop(
         }
 
         // let monsters take their turn
-        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+        if objects[PLAYER].unwrap().alive && player_action != PlayerAction::DidntTakeTurn {
             for id in 0..objects.len() {
                 if objects[id].ai.is_some() {
                     ai_take_turn(game_state, objects, &game_frontend.fov, id);
@@ -251,22 +252,23 @@ pub fn load_game() -> Result<(ObjectVec, GameState, GameEngine), Box<Error>> {
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(objects: &[Object], game_state: &GameState, game_engine: &GameEngine) -> Result<(), Box<Error>> {
+pub fn save_game(objects: &ObjectVec, game_state: &GameState, game_engine: &GameEngine) -> Result<(), Box<Error>> {
     let save_data = serde_json::to_string(&(objects, game_state, game_engine))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
+// HACK: gratuitous use of unwrap()
 fn update_visibility(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &[Object],
+    objects: &ObjectVec,
     fov_recompute: bool,
 ) {
     // recompute fov if needed (the player moved or something)
     if fov_recompute {
-        let player = &objects[PLAYER];
+        let player = &objects[PLAYER].unwrap();
         game_frontend
             .fov
             .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
@@ -286,13 +288,13 @@ fn update_visibility(
                 (true, true) => colors::lerp(
                     get_col_light_wall(),
                     get_col_dark_wall(),
-                    objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
+                    objects[PLAYER].unwrap().distance(x, y) / TORCH_RADIUS as f32,
                 ),
                 // (true, false) => COLOR_LIGHT_GROUND,
                 (true, false) => colors::lerp(
                     get_col_light_ground(),
                     get_col_dark_ground(),
-                    objects[PLAYER].distance(x, y) / TORCH_RADIUS as f32,
+                    objects[PLAYER].unwrap().distance(x, y) / TORCH_RADIUS as f32,
                 ),
             };
 
@@ -319,15 +321,17 @@ fn update_visibility(
 pub fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &[Object],
+    objects: &ObjectVec,
     names_under_mouse: &str,
 ) {
     let mut to_draw: Vec<&Object> = objects
+        .get_vector()
         .iter()
-        .filter(|o| {
-            game_frontend.fov.is_in_fov(o.x, o.y)
-                || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
+        .filter(|Some(obj)| {
+            game_frontend.fov.is_in_fov(obj.x, obj.y)
+                || (obj.always_visible && game_state.world[obj.x as usize][obj.y as usize].explored)
         })
+        .map(|Some(obj)| obj)
         .collect();
     // sort, so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
@@ -370,7 +374,7 @@ pub fn render_all(
 fn render_ui(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &[Object],
+    objects: &ObjectVec,
     names_under_mouse: &str,
 ) {
     // prepare to render the GUI panel
@@ -378,8 +382,8 @@ fn render_ui(
     game_frontend.panel.clear();
 
     // show player's stats
-    let hp = objects[PLAYER].fighter.map_or(0, |f| f.hp);
-    let max_hp = objects[PLAYER].fighter.map_or(0, |f| f.base_max_hp);
+    let hp = objects[PLAYER].unwrap().fighter.map_or(0, |f| f.hp);
+    let max_hp = objects[PLAYER].unwrap().fighter.map_or(0, |f| f.base_max_hp);
     render_bar(
         &mut game_frontend.panel,
         1,
