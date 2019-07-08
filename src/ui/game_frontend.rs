@@ -3,9 +3,9 @@
 /// This module contains all structures and methods pertaining to the user interface.
 use entity::ai::ai_take_turn;
 use entity::object::{Object, ObjectVec};
-use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult};
+use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult, LEVEL_SCREEN_WIDTH, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
 use ui::color_palette::*;
-use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance};
+use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance, UiAction};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use std::error::Error;
@@ -211,11 +211,8 @@ pub fn game_loop(
 
         }
 
-        // TODO: Once processing is done, check whether we have a new user input
-        // If so, decide whether it's an in-game action or UI action
-        // If in-game action, inject it into the player object
-        // otherwise handle ui input
-        {
+        // Once processing is done, check whether we have a new user input
+        { // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
             let data = game_input_buf.lock().unwrap();
             current_mouse_position = (data.mouse_x, data.mouse_y);
             next_action = match data.next_player_actions.pop_front() {
@@ -224,14 +221,17 @@ pub fn game_loop(
             };
         }
 
-        // TODO: Generate an `action` from the player input and set the player object to execute it.
-        if next_action == PlayerAction::ExitGame {
-            // option 1: save game and return to main menu
-            save_game(objects, game_state, game_engine).unwrap();
-            break;
-        } else {
-            // option 2: set next player action and resume
-            objects[PLAYER].unwrap().next_action = Some(get_player_action_instance(next_action));
+        // distinguish between in-game action and ui (=meta) actions
+        match next_action {
+            PlayerAction::MetaAction(actual_action) => {
+                let is_exit_game = handle_ui_actions(objects, game_frontend, game_state, game_engine, actual_action);
+                if is_exit_game {
+                    break;
+                }
+            },
+            _ => {
+                objects[PLAYER].unwrap().next_action = Some(get_player_action_instance(next_action));
+            }
         }
         
         // NOTE: Almost done with the game loop rewrite.
@@ -263,9 +263,50 @@ pub fn game_loop(
     input_thread.join();
 }
 
+fn handle_ui_actions(objects: &ObjectVec, game_frontend: &mut GameFrontend, game_state: &mut GameState, game_engine: &mut GameEngine, action: UiAction) -> bool {
+    match action {
+        UiAction::ExitGameLoop => {
+            save_game(objects, game_state, game_engine).unwrap();
+            return true;
+        }
+        UiAction::CharacterScreen => {
+            //show character information
+            let player = &objects[PLAYER].unwrap();
+            let level = player.level;
+            let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+            if let Some(fighter) = player.fighter.as_ref() {
+                let msg = format!(
+"Character information
+
+Level: {}
+Experience: {}
+Experience to level up: {}
+
+Maximum HP: {}
+Attack: {}
+Defense: {}",
+                    level,
+                    fighter.xp,
+                    level_up_xp,
+                    player.max_hp(game_state),
+                    player.power(game_state),
+                    player.defense(game_state),
+                );
+                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_frontend.root);
+            }
+        }
+        UiAction::Fullscreen => {
+            let fullscreen = game_frontend.root.is_fullscreen();
+            game_frontend.root.set_fullscreen(!fullscreen);
+        }
+        _ => {}
+    }
+    false
+}
+
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-pub fn load_game() -> Result<(ObjectVec, GameState, GameEngine), Box<Error>> {
+fn load_game() -> Result<(ObjectVec, GameState, GameEngine), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
@@ -274,7 +315,7 @@ pub fn load_game() -> Result<(ObjectVec, GameState, GameEngine), Box<Error>> {
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(objects: &ObjectVec, game_state: &GameState, game_engine: &GameEngine) -> Result<(), Box<Error>> {
+fn save_game(objects: &ObjectVec, game_state: &GameState, game_engine: &GameEngine) -> Result<(), Box<Error>> {
     let save_data = serde_json::to_string(&(objects, game_state, game_engine))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;

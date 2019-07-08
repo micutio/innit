@@ -27,12 +27,11 @@ pub enum KeyCode {
     Q, R, S, T, U, V, W, X,
     Y, Z, Undefined,
     Up, Down, Left, Right,
-    Esc
+    Esc, F1, F2, F3, F4,
 }
 
-#[derive(PartialEq)]
 pub enum PlayerAction {
-    ExitGame,
+    MetaAction(UiAction),
     Undefined,
     Pending,
     DoNothing,
@@ -40,6 +39,12 @@ pub enum PlayerAction {
     WalkSouth,
     WalkEast,
     WalkWest,
+}
+
+pub enum UiAction {
+    ExitGameLoop,
+    Fullscreen,
+    CharacterScreen,
 }
 
 pub struct GameInput {
@@ -112,11 +117,14 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
 /// Translate between tcod's keys and our own key codes.
 fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
     match tcod_key {
-        Key { code: Escape, .. } => self::KeyCode::Esc,
+        // in-game actinos
         Key { code: Up, .. } => self::KeyCode::Up,
         Key { code: Down, .. } => self::KeyCode::Down,
         Key { code: Right, .. } => self::KeyCode::Right,
         Key { code: Left, .. } => self::KeyCode::Left,
+        // non-in-game actions
+        Key { code: Escape, .. } => self::KeyCode::Esc,
+        Key { code: F4, ..} => self::KeyCode::F4,
         _ => self::KeyCode::Undefined,
     }
 }
@@ -124,15 +132,19 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
 pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     use self::KeyCode::*;
     use self::PlayerAction::*;
+    use self::UiAction::*;
 
     let key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
 
     // TODO: Fill mapping from json file.
+    // set up all in-game actions
     key_map.insert(Up, WalkNorth);
     key_map.insert(Down, WalkSouth);
     key_map.insert(Left, WalkWest);
     key_map.insert(Right, WalkEast);
-    key_map.insert(Esc, ExitGame);
+    // set up all non-in-game actions.
+    key_map.insert(Esc, MetaAction(ExitGameLoop));
+    key_map.insert(F4, MetaAction(Fullscreen));
 
     key_map
 }

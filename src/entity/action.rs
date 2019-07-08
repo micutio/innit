@@ -2,6 +2,7 @@
 ///
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
+/// TODO: Add AI actions to control their turn taking.
 use std::rc::Rc;
 use std::fmt::Debug;
 
