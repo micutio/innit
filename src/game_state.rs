@@ -45,7 +45,7 @@ pub fn new_game() -> (ObjectVec, GameState, GameEngine) {
         on_death: DeathCallback::Player,
         xp: 0,
     });
-    player.attack_action = Some(AttackAction::new(2));
+    player.attack_action = Some(AttackAction::new(2, 0));
 
     // create array holding all objectVec
     let mut object_vec = ObjectVec::new();
@@ -96,6 +96,7 @@ impl GameEngine {
 
     pub fn process(&mut self, game_state: &mut GameState, object_vec: &mut ObjectVec) -> ProcessResult {
         if let Some((active_index, active_object)) = object_vec.extract(self.current_obj_index) {
+            
             // execute objects current action
             dummy_mut_borrow(object_vec);
             // return result of action

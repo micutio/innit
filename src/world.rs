@@ -235,7 +235,7 @@ fn place_objects(world: &World, objects: &mut Objects, room: Rect, level: u32) {
                         on_death: DeathCallback::Monster,
                         xp: 35,
                     });
-                    virus.attack_action = Some(AttackAction::new(3));
+                    virus.attack_action = Some(AttackAction::new(3, 0));
                     virus.ai = Some(Ai::Basic);
                     virus
                 }
@@ -250,7 +250,7 @@ fn place_objects(world: &World, objects: &mut Objects, room: Rect, level: u32) {
                         on_death: DeathCallback::Monster,
                         xp: 100,
                     });
-                    bacteria.attack_action = Some(AttackAction::new(4));
+                    bacteria.attack_action = Some(AttackAction::new(4, 0));
                     bacteria.ai = Some(Ai::Basic);
                     bacteria
                 }

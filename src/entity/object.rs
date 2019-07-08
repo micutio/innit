@@ -26,6 +26,7 @@ pub struct Object {
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
     pub attack_action: Option<AttackAction>,
+    pub next_action: Option<Box<dyn Action>>,
 }
 
 impl Object {
@@ -52,6 +53,7 @@ impl Object {
             fighter: None,
             ai: None,
             attack_action: None,
+            next_action: None,
         }
     }
 
@@ -79,6 +81,10 @@ impl Object {
     /// return distance between some coordinates and this object
     pub fn distance(&self, x: i32, y: i32) -> f32 {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
+    }
+
+    pub fn get_next_action(&self) -> &Option<Box<dyn Action>> {
+        &self.next_action
     }
 
     pub fn take_damage(&mut self, damage: i32, game_state: &mut GameState) -> Option<i32> {
