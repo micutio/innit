@@ -5,13 +5,15 @@ use entity::ai::ai_take_turn;
 use entity::object::{Object, ObjectVec};
 use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult};
 use ui::color_palette::*;
-use ui::game_input::{handle_keys, GameInput, PlayerAction, start_input_proc_thread};
+use ui::game_input::{GameInput, PlayerAction, KeyCode, create_key_mapping, start_input_proc_thread};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
@@ -78,7 +80,7 @@ impl GameFrontend {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-pub fn main_menu(game_frontend: &mut GameFrontend, game_input: &mut GameInput) {
+pub fn main_menu(game_frontend: &mut GameFrontend) {
     let img = tcod::image::Image::from_file("assets/menu_background.png")
         .expect("Background image not found");
 
@@ -113,14 +115,14 @@ pub fn main_menu(game_frontend: &mut GameFrontend, game_input: &mut GameInput) {
                 // start new game
                 let (mut objects, mut game_state, mut game_engine) = new_game();
                 initialize_fov(&game_state.world, game_frontend);
-                game_loop(&mut objects, &mut game_state, game_frontend, game_input, &mut game_engine);
+                game_loop(&mut objects, &mut game_state, game_frontend, &mut game_engine);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut objects, mut game_state, mut game_engine)) => {
                         initialize_fov(&game_state.world, game_frontend);
-                        game_loop(&mut objects, &mut game_state, game_frontend, game_input, &mut game_engine);
+                        game_loop(&mut objects, &mut game_state, game_frontend, &mut game_engine);
                     }
                     Err(_e) => {
                         msgbox("\nNo saved game to load\n", 24, &mut game_frontend.root);
@@ -162,32 +164,27 @@ pub fn game_loop(
     objects: &mut ObjectVec,
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
-    game_input: &mut GameInput,
     game_engine: &mut GameEngine,
 ) {
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
 
     // TODO: (!) Replace placeholder
-    let mut placeholder = Arc::new(Mutex::new( Some(0 as i32) ));
-    let mut input_thread = start_input_proc_thread(&mut placeholder);
+    let key_mapping: HashMap<KeyCode, PlayerAction> = create_key_mapping();
+    let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
+    let mut input_thread = start_input_proc_thread(&mut game_input);
 
     while !game_frontend.root.window_closed() {
-        // clear the screen of the previous frame
-        game_frontend.con.clear();
-
-        // check for input events
-        // TODO: Put this into a separate thread!
-        game_input.check_for_input_events(objects, &game_frontend.fov);
-
-        // NOTE: new game loop implementation starts here
+        
         use game_state::ProcessResult::*;
         match game_engine.process(game_state, objects) {
             Nil => {
 
             }
-
             UpdateVisibility => {
+                // clear the screen of the previous frame
+                game_frontend.con.clear();
+                
                 // render objects and map
                 // step 1/2: update visibility of objects and world tiles
                 let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
@@ -214,6 +211,7 @@ pub fn game_loop(
         // If so, decide whether it's an in-game action or UI action
         // If in-game action, inject it into the player object
         // otherwise handle ui input
+        
 
         // level up if needed
         // TODO: Move level up fogic and function call into a more appropriate place/module.

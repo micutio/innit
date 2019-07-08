@@ -16,12 +16,10 @@ mod world;
 
 // internal modules
 use ui::game_frontend::{main_menu, GameFrontend};
-use ui::game_input::GameInput;
 
 fn launch_game() {
     let mut game_frontend: GameFrontend = GameFrontend::new();
-    let mut game_input: GameInput = GameInput::new();
-    main_menu(&mut game_frontend, &mut game_input);
+    main_menu(&mut game_frontend);
 }
 
 fn main() {

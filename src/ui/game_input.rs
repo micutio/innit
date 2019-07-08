@@ -2,69 +2,103 @@
 ///
 /// User input processing
 /// Handle user input
-use entity::object::{Object, ObjectVec};
+
+// internal imports
+use entity::action::*;
+use entity::object::{ObjectVec};
 use game_state::{
     next_level, player_move_or_attack, GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER,
 };
 use ui::game_frontend::{msgbox, FovMap, GameFrontend, CHARACTER_SCREEN_WIDTH};
 
+// external imports
+use std::collections::HashMap;
 use std::sync::{Mutex, Arc};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
+#[derive(PartialEq, Eq, Hash)]
+pub enum KeyCode {
+    A, B, C, D, E, F, G, H,
+    I, J, K, L, M, N, O, P,
+    Q, R, S, T, U, V, W, X,
+    Y, Z,
+    Up, Down, Left, Right,
+}
+
+pub enum PlayerAction {
+    Pending,
+    DoNothing,
+    WalkNorth,
+    WalkSouth,
+    WalkEast,
+    WalkWest,
+}
+
 pub struct GameInput {
-    pub names_under_mouse: String,
-    key: Key,
-    mouse: Mouse,
+    pub mouse_x: i32,
+    pub mouse_y: i32,
+    pub next_player_action: Option<PlayerAction>,
 }
 
 impl GameInput {
     pub fn new() -> Self {
         GameInput {
-            key: Default::default(),
-            mouse: Default::default(),
-            names_under_mouse: "".into(),
+            mouse_x: 0,
+            mouse_y: 0,
+            next_player_action: None,
         }
-    }
-
-    pub fn check_for_input_events(&mut self, objects: &ObjectVec, fov_map: &FovMap) {
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => self.mouse = m,
-            Some((_, Event::Key(k))) => self.key = k,
-            _ => self.key = Default::default(),
-        }
-        self.names_under_mouse = get_names_under_mouse(objects, fov_map, &self.mouse);
     }
 }
 
-fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse: &Mouse) -> String {
-    let (x, y) = (mouse.cx as i32, mouse.cy as i32);
-
+fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse_x: i32, mouse_y: i32) -> String {
     // create a list with the names of all objects at the mouse's coordinates and in FOV
     let names = object_vec
         .get_vector()
         .iter()
-        .filter(|Some(obj)| obj.pos() == (x, y) && fov_map.is_in_fov(obj.x, obj.y))
+        .filter(|Some(obj)| obj.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(obj.x, obj.y))
         .map(|Some(obj)| obj.name.clone())
         .collect::<Vec<_>>();
 
     names.join(", ") // return names separated by commas
 }
 
-pub fn start_input_proc_thread(input_buffer: &mut Arc<Mutex< Option<i32> >>) -> JoinHandle<()> {
-    let data = Arc::clone(&input_buffer);
+pub fn start_input_proc_thread(input_buffer: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
+    let input_buf = Arc::clone(&input_buffer);
 
     thread::spawn(move|| {
+        // lock our mutex and get to work
+        let mut input = input_buf.lock().unwrap();
+
         let _mouse: Mouse = Default::default();
         let _key: Key = Default::default();
         match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(m))) => _mouse = m,
+            Some((_, Event::Mouse(_m))) => {
+                // record mouse position for later use
+                input.mouse_x = _m.cx as i32;
+                input.mouse_y = _m.cy as i32;
+            }
+
             Some((_, Event::Key(k))) => _key = k,
             _ => _key = Default::default(),
         }
 
-        let mut data = data.lock().unwrap();
     })
+}
+
+pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
+    use self::KeyCode::*;
+    use self::PlayerAction::*;
+
+    let key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
+
+    // TODO: Fill mapping from json file.
+    key_map.insert(Up, WalkNorth);
+    key_map.insert(Down, WalkSouth);
+    key_map.insert(Left, WalkWest);
+    key_map.insert(Right, WalkEast);
+
+    key_map
 }
 
 // #[derive(Clone, Copy, Debug, PartialEq)]
