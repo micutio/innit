@@ -63,26 +63,31 @@ fn get_names_under_mouse(object_vec: &ObjectVec, fov_map: &FovMap, mouse_x: i32,
     names.join(", ") // return names separated by commas
 }
 
-pub fn start_input_proc_thread(input_buffer: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
-    let input_buf = Arc::clone(&input_buffer);
+pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
+    let game_input_buf = Arc::clone(&game_input);
 
     thread::spawn(move|| {
-        // lock our mutex and get to work
-        let mut input = input_buf.lock().unwrap();
+        loop {
+            let mouse_x: i32 = 0;
+            let mouse_y: i32 = 0;
+            let _mouse: Mouse = Default::default();
+            let _key: Key = Default::default();
+            match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+                Some((_, Event::Mouse(_m))) => {
+                    // record mouse position for later use
+                    mouse_x = _m.cx as i32;
+                    mouse_y = _m.cy as i32;
+                }
 
-        let _mouse: Mouse = Default::default();
-        let _key: Key = Default::default();
-        match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-            Some((_, Event::Mouse(_m))) => {
-                // record mouse position for later use
-                input.mouse_x = _m.cx as i32;
-                input.mouse_y = _m.cy as i32;
+                Some((_, Event::Key(k))) => _key = k,
+                _ => _key = Default::default(),
             }
 
-            Some((_, Event::Key(k))) => _key = k,
-            _ => _key = Default::default(),
+            // lock our mutex and get to work
+            let mut input = game_input_buf.lock().unwrap();
+            input.mouse_x = mouse_x;
+            input.mouse_y = mouse_y;
         }
-
     })
 }
 

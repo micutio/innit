@@ -172,7 +172,9 @@ pub fn game_loop(
     // TODO: (!) Replace placeholder
     let key_mapping: HashMap<KeyCode, PlayerAction> = create_key_mapping();
     let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
+    let game_input_buf = Arc::clone(&game_input);
     let mut input_thread = start_input_proc_thread(&mut game_input);
+    let mut names_under_mouse = "";
 
     while !game_frontend.root.window_closed() {
         
@@ -194,7 +196,7 @@ pub fn game_loop(
                     game_frontend,
                     game_state,
                     objects,
-                    &game_input.names_under_mouse,
+                    &names_under_mouse,
                 );
 
                 // draw everything on the window at once
@@ -211,7 +213,12 @@ pub fn game_loop(
         // If so, decide whether it's an in-game action or UI action
         // If in-game action, inject it into the player object
         // otherwise handle ui input
+        {
+            let data = game_input_buf.lock().unwrap();
+            names_under_mouse = data.names_under_mouse;
+        }
         
+        // game_input_buf.unlock();
 
         // level up if needed
         // TODO: Move level up fogic and function call into a more appropriate place/module.
