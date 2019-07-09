@@ -1,9 +1,8 @@
 /// Module GUI
 ///
 /// This module contains all structures and methods pertaining to the user interface.
-use entity::ai::ai_take_turn;
 use entity::object::{Object, ObjectVec};
-use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, ProcessResult, LEVEL_SCREEN_WIDTH, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
+use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
 use ui::color_palette::*;
 use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance, UiAction};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
@@ -165,19 +164,26 @@ pub fn game_loop(
     game_frontend: &mut GameFrontend,
     game_engine: &mut GameEngine,
 ) {
+    // step 1/3: pre-processing ///////////////////////////////////////////////
+
+    // TODO: Decide whether we still need to check for re-computing FOV.Arc
+    // We already introducedgame ending process results, which should indicate that a recompute is necessary.
+    // But sometimes is necessary to re-render without FOV change.
     // force FOV recompute first time through the game loop
     let mut previous_player_position = (-1, -1);
 
     // user input data
     let mut current_mouse_position = (-1, -1);
     let mut next_action: PlayerAction = PlayerAction::Undefined;
+    let mut names_under_mouse: String = "".into();
 
-    // TODO: (!) Replace placeholder
+    // concurrent input processing
     let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
     let game_input_buf = Arc::clone(&game_input);
     let mut input_thread = start_input_proc_thread(&mut game_input);
-    let mut names_under_mouse: String = "".into();
 
+    // step 2/2: the actual loop //////////////////////////////////////////////
+    
     while !game_frontend.root.window_closed() {
         
         use game_state::ProcessResult::*;
@@ -211,7 +217,7 @@ pub fn game_loop(
 
         }
 
-        // Once processing is done, check whether we have a new user input
+        // once processing is done, check whether we have a new user input
         { // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
             let data = game_input_buf.lock().unwrap();
             current_mouse_position = (data.mouse_x, data.mouse_y);
@@ -230,36 +236,18 @@ pub fn game_loop(
                 }
             },
             _ => {
-                objects[PLAYER].unwrap().next_action = Some(get_player_action_instance(next_action));
+                objects[PLAYER].unwrap().set_next_action(Some(get_player_action_instance(next_action)));
             }
         }
-        
-        // NOTE: Almost done with the game loop rewrite.
 
-        // TODO: Move level up logic and function call into a more appropriate place/module.
-        // TODO: Remove player and NPC turn-taking below and encode their behavior in actions.
         // level up if needed
         level_up(objects, game_state, game_frontend);
 
-        // handle keys and exit game if needed
-        
+        // update player position
         previous_player_position = objects[PLAYER].unwrap().pos();
-        let player_action = handle_keys(game_frontend, game_input, game_state, objects);
-        if player_action == PlayerAction::Exit {
-            save_game(objects, game_state, game_engine).unwrap();
-            break;
-        }
-
-        // let monsters take their turn
-        if objects[PLAYER].unwrap().alive && player_action != PlayerAction::DidntTakeTurn {
-            for id in 0..objects.len() {
-                if objects[id].ai.is_some() {
-                    ai_take_turn(game_state, objects, &game_frontend.fov, id);
-                }
-            }
-        }
     }
 
+    // step 3/3: cleanup before returning to main menu
     input_thread.join();
 }
 
@@ -376,11 +364,9 @@ fn update_visibility(
 }
 
 /// Render all objects and tiles.
-/// TODO: Rendering should ideally not modify anything.
 /// Right now this happens because we are updating explored tiles here too.
 /// Is there a way to auto-update explored and visible tiles/objects when the player moves?
 /// But visibility can also be influenced by other things.
-/// TODO: Split rendering objects and rendering ui and call both functions here.
 pub fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
@@ -493,6 +479,7 @@ fn render_ui(
     }
 }
 
+/// Render a generic progress or status bar in the UI.
 #[allow(clippy::too_many_arguments)]
 fn render_bar(
     panel: &mut Offscreen,
