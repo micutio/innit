@@ -3,15 +3,17 @@
 /// This module contains the struct that encompasses all parts of the game state:
 ///
 /// TODO: Try to move as many dependecies to game_io as possible out of here.
-// internal modules
+
+// external imports
+use tcod::colors;
+
+// internal imports
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::{Object, ObjectVec};
-use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages};
+use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages, FovMap, AnimationType};
 use util::mut_two;
 use world::{is_blocked, make_world, World};
-
-use tcod::colors;
 
 // TODO: reorganize objectVec vector
 //      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objectVec
@@ -33,7 +35,7 @@ pub struct GameState {
     pub dungeon_level: u32,
 }
 
-pub fn new_game() -> (ObjectVec, GameState, GameEngine) {
+pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -70,7 +72,7 @@ pub fn new_game() -> (ObjectVec, GameState, GameEngine) {
 
     let mut game_engine = GameEngine::new();
 
-    (object_vec, game_state, game_engine)
+    (game_engine, game_state, object_vec)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -80,11 +82,11 @@ pub struct GameEngine {
 
 pub enum ProcessResult {
     Nil,
-    UpdateVisibility,
+    UpdateFOV,
+    UpdateRender,
     Animate {
         // TODO: Create animation type enum.
-        x: u32,
-        y: u32,
+        anim_type: AnimationType,
     }
 }
 
@@ -96,22 +98,46 @@ impl GameEngine {
     }
 
     // TODO: Implement energy costs for actions.
-    pub fn process(&mut self, game_state: &mut GameState, object_vec: &mut ObjectVec) -> ProcessResult {
-        if let Some((active_index, active_object)) = object_vec.extract(self.current_obj_index) {
+    pub fn process_object(&mut self, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec) -> ProcessResult {
+        if let Some((active_index, active_object)) = objects.extract(self.current_obj_index) {
             let action_option = active_object.get_next_action();
-            let action_result = match action_option {
-                Some(action) => {
-                    action.perform(&mut active_object, object_vec, game_state)
-                }
-                None => {
-                    ActionResult::Failure
-                }
-            };
-            // TODO: Find a way to merge ProcessResult and ActionResult.
-            // process action result and return process result
-            return ProcessResult::Nil;
+            let process_result = process_action(&mut active_object, fov_map, game_state, objects, action_option);
+            return process_result;
         }
         ProcessResult::Nil
+    }
+}
+
+/// Process an action of a given object,
+/// TODO: Use fov_map to check whether something moved within the player's FOV.
+fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec, action_option: &Option<Box<Action>>) -> ProcessResult {
+    // first execute action
+    let action_result = match action_option {
+        Some(action) => {
+            action.perform(&mut actor, objects, game_state)
+        }
+        None => {
+            ActionResult::Failure
+        }
+    };
+
+    // then process result and return
+    match action_result {
+        ActionResult::Success => {
+            // what do?
+            // check if we need to play an animation, update fov or render stuff
+            ProcessResult::Nil
+        }
+        ActionResult::Failure => {
+            // how to handle fails?
+            ProcessResult::Nil
+        }
+        ActionResult::Consequence{ action } => {
+            // if we have a side effect, process it first and then the `main` action
+            let consequence_result = process_action(actor, fov_map, game_state, objects, &action);
+            // TODO: Think of a way to handle both results of action and consequence.
+            ProcessResult::Nil
+        }
     }
 }
 
@@ -192,7 +218,7 @@ pub fn next_level(
     );
     game_state.dungeon_level += 1;
     game_state.world = make_world(objectVec, game_state.dungeon_level);
-    initialize_fov(&game_state.world, game_io);
+    initialize_fov(game_io, &game_state.world);
 }
 
 pub struct Transition {
