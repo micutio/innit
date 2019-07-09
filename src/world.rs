@@ -9,8 +9,8 @@ use tcod::colors;
 use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::Object;
-use game_state::{from_dungeon_level, Transition, PLAYER, Objects};
+use entity::object::{Object, ObjectVec};
+use game_state::{from_dungeon_level, Transition, PLAYER};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -48,14 +48,14 @@ impl Tile {
 
 pub type World = Vec<Vec<Tile>>;
 
-pub fn make_world(objects: &mut Objects, level: u32) -> World {
+pub fn make_world(objects: &mut ObjectVec, level: u32) -> World {
     // fill the world with `unblocked` tiles
     let mut world = vec![vec![Tile::wall(); WORLD_HEIGHT as usize]; WORLD_WIDTH as usize];
 
     // PLayer is the first element, remove everything else.
     // NOTE: works only if player is the first object!
     assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
-    objects.truncate(1);
+    objects.get_vector().truncate(1);
 
     // create rooms randomly
     let mut rooms = vec![];
@@ -85,7 +85,7 @@ pub fn make_world(objects: &mut Objects, level: u32) -> World {
             let (new_x, new_y) = new_room.center();
             if rooms.is_empty() {
                 // this is the first room, save position as starting point for the player
-                objects[PLAYER].set_pos(new_x, new_y);
+                objects[PLAYER].unwrap().set_pos(new_x, new_y);
             } else {
                 // all rooms after the first:
                 // connect it to the previous room with a tunnel
@@ -179,7 +179,7 @@ fn create_v_tunnel(world: &mut World, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(world: &World, objects: &mut Objects, room: Rect, level: u32) {
+fn place_objects(world: &World, objects: &mut ObjectVec, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
@@ -263,13 +263,14 @@ fn place_objects(world: &World, objects: &mut Objects, room: Rect, level: u32) {
     }
 }
 
-pub fn is_blocked(world: &World, objects: &[Object], x: i32, y: i32) -> bool {
+pub fn is_blocked(world: &World, objects: &ObjectVec, x: i32, y: i32) -> bool {
     // first test the world tile
     if world[x as usize][y as usize].blocked {
         return true;
     }
     // now check for any blocking objects
     objects
+        .get_vector()
         .iter()
-        .any(|object| object.blocks && object.pos() == (x, y))
+        .any(|Some(object)| object.blocks && object.pos() == (x, y))
 }
