@@ -84,21 +84,21 @@ impl Object {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
-    pub fn get_next_action(&self) -> Option<Box<dyn Action>> {
+    pub fn get_next_action(&mut self) -> Option<Box<dyn Action>> {
         match &self.ai {
-            Some(ai) => {
+            Some(_) => {
                 // TODO: Call ai function to figure out next action!
                 let pass = PassAction;
                 Some(Box::new(pass))
             },
             None => {
-                self.next_action
+                self.next_action.take()
             }
         }
         
     }
 
-    pub fn set_next_action(&self, next_action: Option<Box<dyn Action>>) {
+    pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
         self.next_action = next_action;
     }
 
@@ -191,7 +191,7 @@ impl ObjectVec {
     }
 
     pub fn extract(&mut self, index: usize) -> Option<Object> {
-        match self.0.get(index) {
+        match self.0.get_mut(index) {
             Some(item) => match item.take() {
                 Some(object) => {
                     Some(object)
@@ -203,7 +203,7 @@ impl ObjectVec {
     }
 
     pub fn replace(&mut self, index: usize, object: Object) {
-        let item = self.0.get(index);
+        let item = self.0.get_mut(index);
         match item {
             Some(obj) => {
                 obj.replace(object);
@@ -215,7 +215,7 @@ impl ObjectVec {
     }
 }
 
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 
 impl Index<usize> for ObjectVec {
     type Output = Option<Object>;
@@ -227,4 +227,15 @@ impl Index<usize> for ObjectVec {
             None => panic!("[ObjectVec::index] Error: invalid index {}", i)
         }
     }
+}
+
+impl IndexMut<usize> for ObjectVec {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        let item = self.0.get_mut(i);
+        match item{
+            Some(obj_option) => obj_option,
+            None => panic!("[ObjectVec::index] Error: invalid index {}", i)
+        }
+    }
+
 }
