@@ -2,12 +2,16 @@
 ///
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
-/// TODO: Add AI actions to control their turn taking.
-use std::rc::Rc;
-use std::fmt::Debug;
 
+// internal imports
 use entity::object::{ObjectVec, Object};
 use game_state::GameState;
+use ui::game_frontend::MessageLog;
+use world::is_blocked;
+
+// external imports
+use tcod::colors::{self};
+use std::fmt::Debug;
 
 pub enum ActionResult {
     /// Sucessfully finished action
@@ -16,11 +20,11 @@ pub enum ActionResult {
     Failure,
     /// Another action happens automatically after this one.
     Consequence {
-        action: Option<Rc<dyn Action>>,
+        action: Option<Box<dyn Action>>,
     },
     // Another action happens as the same time as this one.
     SideEffect {
-        action: Option<Rc<dyn Action>>,
+        action: Option<Box<dyn Action>>,
     },
 }
 
@@ -31,7 +35,23 @@ pub trait Action: Debug {
     fn get_energy_cost(&self) -> i32;
 }
 
-// Example action
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PassAction;
+
+#[typetag::serde]
+impl Action for PassAction {
+    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
+        // do nothing
+        // duh
+        game_state.log.add(format!("{} passes their turn", owner.name), colors::WHITE,);
+        ActionResult::Success
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0 // being lazy is easy
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AttackAction {
     base_power: i32,
@@ -95,7 +115,7 @@ impl MoveAction {
 
 #[typetag::serde]
 impl Action for MoveAction {
-    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) {
+    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
         let (dx, dy) = match self.direction {
             North => (0, -1),
             South => (0, 1),
@@ -104,8 +124,12 @@ impl Action for MoveAction {
         };
 
         let (x, y) = owner.pos();
-        if !is_blocked(game_state.world, objects, x + dx, y + dy) {
+        if !is_blocked(&game_state.world, &objects, x + dx, y + dy) {
             owner.set_pos(x + dy, y + dy);
+            // TODO: Check whether we walked into the player's field of view.
+            ActionResult::Success
+        } else {
+            ActionResult::Failure
         }
     }
 
