@@ -7,7 +7,7 @@ use tcod::colors;
 
 // internal imports
 use entity::object::Object;
-use ui::game_frontend::{MessageLog, Messages};
+use game_state::{MessageLog, Messages};
 
 // combat related poperties and methods (monster, player, NPC)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

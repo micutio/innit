@@ -9,8 +9,7 @@ use std::fmt::Debug;
 
 // internal imports
 use entity::object::{ObjectVec, Object};
-use game_state::GameState;
-use ui::game_frontend::MessageLog;
+use game_state::{MessageLog, GameState};
 use world::is_blocked;
 
 /// Result of performing an action.

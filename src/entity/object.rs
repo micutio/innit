@@ -10,8 +10,7 @@ use tcod::console::*;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
-use game_state::GameState;
-use ui::game_frontend::MessageLog;
+use game_state::{MessageLog, GameState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
@@ -85,15 +84,15 @@ impl Object {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
-    pub fn get_next_action(&self) -> &Option<Box<dyn Action>> {
-        match self.ai {
+    pub fn get_next_action(&self) -> Option<Box<dyn Action>> {
+        match &self.ai {
             Some(ai) => {
                 // TODO: Call ai function to figure out next action!
                 let pass = PassAction;
-                &Some(Box::new(pass))
+                Some(Box::new(pass))
             },
             None => {
-                &self.next_action
+                self.next_action
             }
         }
         
@@ -191,11 +190,11 @@ impl ObjectVec {
         self.0.push(Some(object));
     }
 
-    pub fn extract(&mut self, index: usize) -> Option<(usize, Object)> {
+    pub fn extract(&mut self, index: usize) -> Option<Object> {
         match self.0.get(index) {
             Some(item) => match item.take() {
                 Some(object) => {
-                    Some( (index, object) )
+                    Some(object)
                 }
                 None => None
             }

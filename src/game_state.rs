@@ -114,25 +114,25 @@ impl GameEngine {
 
     // TODO: Implement energy costs for actions.
     pub fn process_object(&mut self, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec) -> ProcessResult {
-        if let Some((active_index, active_object)) = objects.extract(self.current_obj_index) {
-            let action_option = active_object.get_next_action();
-            let process_result = process_action(&mut active_object, fov_map, game_state, objects, action_option);
-            return process_result;
-        }
+        let mut active_object = objects.extract(self.current_obj_index).unwrap();
+        let action_option = active_object.get_next_action();
+        let process_result = process_action(&mut active_object, fov_map, game_state, objects, action_option);
 
+        // Put the object back into hte vector
+        objects[self.current_obj_index].replace(active_object);
         self.current_obj_index += 1;
 
-        ProcessResult::Nil
+        process_result
     }
 }
 
 /// Process an action of a given object,
 /// TODO: Use fov_map to check whether something moved within the player's FOV.
-fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec, action_option: &Option<Box<Action>>) -> ProcessResult {
+fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec, action_option: Option<Box<Action>>) -> ProcessResult {
     // first execute action
     let action_result = match action_option {
         Some(action) => {
-            action.perform(&mut actor, objects, game_state)
+            action.perform(actor, objects, game_state)
         }
         None => {
             ActionResult::Failure
@@ -152,7 +152,7 @@ fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameSta
         }
         ActionResult::Consequence{ action } => {
             // if we have a side effect, process it first and then the `main` action
-            let consequence_result = process_action(actor, fov_map, game_state, objects, &action);
+            let consequence_result = process_action(actor, fov_map, game_state, objects, action);
             // TODO: Think of a way to handle both results of action and consequence.
             ProcessResult::Nil
         }
