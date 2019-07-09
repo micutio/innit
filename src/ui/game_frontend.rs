@@ -185,12 +185,6 @@ pub fn game_loop(
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
 
-    // TODO: Decide whether we still need to check for re-computing FOV.
-    // We already introducedgame ending process results, which should indicate that a recompute is necessary.
-    // But sometimes is necessary to re-render without FOV change.
-    // force FOV recompute first time through the game loop
-    let mut previous_player_position = (-1, -1);
-
     // user input data
     let mut current_mouse_position = (-1, -1);
     let mut next_action: PlayerAction = PlayerAction::Undefined;
@@ -263,9 +257,6 @@ pub fn game_loop(
 
         // level up if needed
         level_up(objects, game_state, game_frontend);
-
-        // update player position
-        previous_player_position = objects[PLAYER].unwrap().pos();
     }
 
     // step 3/3: cleanup before returning to main menu
