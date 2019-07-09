@@ -206,24 +206,10 @@ pub fn game_loop(
             }
             UpdateFov => {
                 recompute_fov(game_frontend, objects);
+                update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
             UpdateRender => {
-                // clear the screen of the previous frame
-                game_frontend.con.clear();
-                
-                // render objects and map
-                // step 1/2: update visibility of objects and world tiles
-                update_visibility(game_frontend, game_state, objects);
-                // step 2/2: render everything
-                render_all(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &names_under_mouse,
-                );
-
-                // draw everything on the window at once
-                game_frontend.root.flush();
+                update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
 
             Animate{ anim_type } => {
@@ -327,6 +313,25 @@ fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
     game_frontend
         .fov
         .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+}
+
+fn update_render(game_frontend: &mut GameFrontend, game_state: &mut GameState, objects: &ObjectVec, names_under_mouse: &str) {
+    // clear the screen of the previous frame
+    game_frontend.con.clear();
+    
+    // render objects and map
+    // step 1/2: update visibility of objects and world tiles
+    update_visibility(game_frontend, game_state, objects);
+    // step 2/2: render everything
+    render_all(
+        game_frontend,
+        game_state,
+        objects,
+        &names_under_mouse,
+    );
+
+    // draw everything on the window at once
+    game_frontend.root.flush();
 }
 
 // HACK: gratuitous use of unwrap()
