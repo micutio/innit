@@ -185,7 +185,7 @@ pub fn game_loop(
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
 
-    // TODO: Decide whether we still need to check for re-computing FOV.Arc
+    // TODO: Decide whether we still need to check for re-computing FOV.
     // We already introducedgame ending process results, which should indicate that a recompute is necessary.
     // But sometimes is necessary to re-render without FOV change.
     // force FOV recompute first time through the game loop
