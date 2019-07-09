@@ -1,20 +1,29 @@
 /// Module GUI
 ///
 /// This module contains all structures and methods pertaining to the user interface.
+/// 
+/// Game frontend, input, state, engine etc are very common parameters
+/// for function calls in innit, therefore utmost consistency should be
+/// kept in the order of handing them over to functions.
+/// 
+/// Function parameter precedence:
+/// game_frontend, game_input, game_engine, game_state, objects, anything else.
+
+// external imports
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
+use tcod::colors::{self, Color};
+use tcod::console::*;
+use tcod::map::FovAlgorithm;
+
+// internal imports
 use entity::object::{Object, ObjectVec};
 use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
 use ui::color_palette::*;
 use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance, UiAction};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
-
-use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Write};
-use std::sync::{Arc, Mutex};
-
-use tcod::colors::{self, Color};
-use tcod::console::*;
-use tcod::map::FovAlgorithm;
 
 // game window properties
 const SCREEN_WIDTH: i32 = 80;
@@ -71,6 +80,16 @@ impl GameFrontend {
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
         }
     }
+}
+
+/// Specification of animations and their parameters.
+/// TODO: Outsource (heh) this to its own module.
+pub enum AnimationType {
+    /// Gradual transition of the world hue and or brightness
+    ColorTransition,
+    /// A cell flashes with a specific character.
+    /// Example: flash a red 'x' over an object to indicate a hit.
+    FlashEffect,
 }
 
 /// Main menu of the game.
@@ -187,18 +206,20 @@ pub fn game_loop(
     while !game_frontend.root.window_closed() {
         
         use game_state::ProcessResult::*;
-        match game_engine.process(game_state, objects) {
+        match game_engine.process_object(&game_frontend.fov, game_state, objects) {
             Nil => {
 
             }
-            UpdateVisibility => {
+            UpdateFov => {
+                recompute_fov(game_frontend, objects);
+            }
+            UpdateRender => {
                 // clear the screen of the previous frame
                 game_frontend.con.clear();
                 
                 // render objects and map
                 // step 1/2: update visibility of objects and world tiles
-                let fov_recompute = previous_player_position != (objects[PLAYER].x, objects[PLAYER].y);
-                update_visibility(game_frontend, game_state, objects, fov_recompute);
+                update_visibility(game_frontend, game_state, objects);
                 // step 2/2: render everything
                 render_all(
                     game_frontend,
@@ -211,8 +232,8 @@ pub fn game_loop(
                 game_frontend.root.flush();
             }
 
-            Animate{x, y} => {
-
+            Animate{ anim_type } => {
+                // TODO: Play animation.
             }
 
         }
@@ -310,21 +331,19 @@ fn save_game(objects: &ObjectVec, game_state: &GameState, game_engine: &GameEngi
     Ok(())
 }
 
+fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
+    let player = &objects[PLAYER].unwrap();
+    game_frontend
+        .fov
+        .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+}
+
 // HACK: gratuitous use of unwrap()
 fn update_visibility(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &ObjectVec,
-    fov_recompute: bool,
 ) {
-    // recompute fov if needed (the player moved or something)
-    if fov_recompute {
-        let player = &objects[PLAYER].unwrap();
-        game_frontend
-            .fov
-            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
-    }
-
     // go through all tiles and set their background color
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
