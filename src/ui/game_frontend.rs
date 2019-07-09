@@ -249,6 +249,24 @@ pub fn game_loop(
     input_thread.join();
 }
 
+/// Load an existing savegame and instantiates GameState & Objects
+/// from which the game is resumed in the game loop.
+fn load_game() -> Result<(GameEngine, GameState, ObjectVec), Box<Error>> {
+    let mut json_save_state = String::new();
+    let mut file = File::open("savegame")?;
+    file.read_to_string(&mut json_save_state)?;
+    let result = serde_json::from_str::<(GameEngine, GameState, ObjectVec)>(&json_save_state)?;
+    Ok(result)
+}
+
+/// Serialize and store GameState and Objects into a JSON file.
+fn save_game(game_engine: &GameEngine, game_state: &GameState, objects: &ObjectVec) -> Result<(), Box<Error>> {
+    let save_data = serde_json::to_string(&(game_engine, game_state, objects))?;
+    let mut file = File::create("savegame")?;
+    file.write_all(save_data.as_bytes())?;
+    Ok(())
+}
+
 fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEngine, game_state: &mut GameState, objects: &ObjectVec, action: UiAction) -> bool {
     match action {
         UiAction::ExitGameLoop => {
@@ -288,24 +306,6 @@ Defense: {}",
         _ => {}
     }
     false
-}
-
-/// Load an existing savegame and instantiates GameState & Objects
-/// from which the game is resumed in the game loop.
-fn load_game() -> Result<(GameEngine, GameState, ObjectVec), Box<Error>> {
-    let mut json_save_state = String::new();
-    let mut file = File::open("savegame")?;
-    file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(GameEngine, GameState, ObjectVec)>(&json_save_state)?;
-    Ok(result)
-}
-
-/// Serialize and store GameState and Objects into a JSON file.
-fn save_game(game_engine: &GameEngine, game_state: &GameState, objects: &ObjectVec) -> Result<(), Box<Error>> {
-    let save_data = serde_json::to_string(&(game_engine, game_state, objects))?;
-    let mut file = File::create("savegame")?;
-    file.write_all(save_data.as_bytes())?;
-    Ok(())
 }
 
 fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
