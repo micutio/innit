@@ -26,7 +26,7 @@ pub struct Object {
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
     pub attack_action: Option<AttackAction>,
-    pub next_action: Option<Box<dyn Action>>,
+    next_action: Option<Box<dyn Action>>,
 }
 
 impl Object {
@@ -84,7 +84,21 @@ impl Object {
     }
 
     pub fn get_next_action(&self) -> &Option<Box<dyn Action>> {
-        &self.next_action
+        match self.ai {
+            Some(ai) => {
+                // TODO: Call ai function to figure out next action!
+                let pass = PassAction;
+                &Some(Box::new(pass))
+            },
+            None => {
+                &self.next_action
+            }
+        }
+        
+    }
+
+    pub fn set_next_action(&self, next_action: Option<Box<dyn Action>>) {
+        self.next_action = next_action;
     }
 
     pub fn take_damage(&mut self, damage: i32, game_state: &mut GameState) -> Option<i32> {
