@@ -1,10 +1,12 @@
 /// Module Object
 ///
 /// An Object represents the base structure for all entities in the game.
+
+// external imports
 use tcod::colors::{self, Color};
 use tcod::console::*;
 
-// internal modules
+// internal imports
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;

@@ -1,11 +1,13 @@
 /// Module World
 ///
 /// The world contains all structures and methods for terrain/dungeon generation
+
+// external imports
 use rand::Rng;
 use std::cmp;
 use tcod::colors;
 
-// internal modules
+// internal imports
 use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};

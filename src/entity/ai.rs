@@ -1,9 +1,12 @@
 /// Module Ai
 ///
 /// Structures and methods for constructing the game ai.
+
+// external imports
 use rand::Rng;
 use tcod::colors;
 
+// internal imports
 use entity::object::Object;
 use game_state::{move_by, move_towards, GameState, PLAYER};
 use ui::game_frontend::{FovMap, MessageLog};

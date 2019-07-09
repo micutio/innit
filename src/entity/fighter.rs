@@ -1,9 +1,11 @@
 /// Module Fighter
 ///
 /// This module contains the structures and methods that make up the combat system.
+
+// external imports
 use tcod::colors;
 
-// internal modules
+// internal imports
 use entity::object::Object;
 use ui::game_frontend::{MessageLog, Messages};
 

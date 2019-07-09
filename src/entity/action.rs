@@ -3,16 +3,19 @@
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
 
+// external imports
+use tcod::colors::{self};
+use std::fmt::Debug;
+
 // internal imports
 use entity::object::{ObjectVec, Object};
 use game_state::GameState;
 use ui::game_frontend::MessageLog;
 use world::is_blocked;
 
-// external imports
-use tcod::colors::{self};
-use std::fmt::Debug;
-
+/// Result of performing an action.
+/// It can succeed, fail and cause direct consequences.
+/// TODO: (!) Include UI feedback e.g., animation, FOV update and rendering! 
 pub enum ActionResult {
     /// Sucessfully finished action
     Success,
@@ -22,12 +25,10 @@ pub enum ActionResult {
     Consequence {
         action: Option<Box<dyn Action>>,
     },
-    // Another action happens as the same time as this one.
-    SideEffect {
-        action: Option<Box<dyn Action>>,
-    },
 }
 
+/// Prototype for all actions.
+/// They need to be `performable` and have a cost (even if it's 0).
 #[typetag::serde(tag = "type")]
 pub trait Action: Debug {
     fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult;
@@ -35,6 +36,7 @@ pub trait Action: Debug {
     fn get_energy_cost(&self) -> i32;
 }
 
+/// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassAction;
 
@@ -52,6 +54,7 @@ impl Action for PassAction {
     }
 }
 
+/// Attack another object.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AttackAction {
     base_power: i32,
@@ -98,6 +101,8 @@ pub enum Direction {
     North, South, East, West,
 }
 
+/// Move an object
+/// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
     direction: Direction,
