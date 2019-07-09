@@ -95,21 +95,23 @@ impl GameEngine {
         }
     }
 
+    // TODO: Implement energy costs for actions.
     pub fn process(&mut self, game_state: &mut GameState, object_vec: &mut ObjectVec) -> ProcessResult {
         if let Some((active_index, active_object)) = object_vec.extract(self.current_obj_index) {
+            let action_option = active_object.get_next_action();
+            let action_result = match action_option {
+                Some(action) => {
+                    action.perform(&mut active_object, object_vec, game_state)
+                }
+                None => {
+                    ActionResult::Failure
+                }
+            };
             // TODO: Find a way to merge ProcessResult and ActionResult.
-            // execute objects current action
-            dummy_mut_borrow(object_vec);
-            // return result of action
+            // process action result and return process result
             return ProcessResult::Nil;
         }
         ProcessResult::Nil
-    }
-}
-
-fn dummy_mut_borrow(object_vec: &mut ObjectVec) {
-    if let Some(object) = &mut object_vec[0] {
-        object.set_pos(0, 0);
     }
 }
 
