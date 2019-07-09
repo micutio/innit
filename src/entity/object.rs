@@ -223,7 +223,7 @@ impl Index<usize> for ObjectVec {
     fn index(&self, i: usize) -> &Self::Output {
         let item = self.0.get(i);
         match item{
-            Some(obj_option) => &obj_option,
+            Some(obj_option) => obj_option,
             None => panic!("[ObjectVec::index] Error: invalid index {}", i)
         }
     }

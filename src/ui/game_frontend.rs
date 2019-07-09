@@ -132,14 +132,14 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                 // start new game
                 let (mut game_engine, mut game_state, mut objects) = new_game();
                 initialize_fov(game_frontend, &game_state.world);
-                game_loop(&mut game_frontend, &mut game_engine, &mut game_state, &mut objects);
+                game_loop(game_frontend, &mut game_engine, &mut game_state, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut game_engine, mut game_state, mut objects)) => {
                         initialize_fov(game_frontend, &game_state.world);
-                        game_loop(&mut game_frontend, &mut game_engine, &mut game_state, &mut objects);
+                        game_loop(game_frontend, &mut game_engine, &mut game_state, &mut objects);
                     }
                     Err(_e) => {
                         msgbox("\nNo saved game to load\n", 24, &mut game_frontend.root);
@@ -187,13 +187,13 @@ pub fn game_loop(
 
     // user input data
     let mut current_mouse_position = (-1, -1);
-    let mut next_action: PlayerAction = PlayerAction::Undefined;
-    let mut names_under_mouse: String = "".into();
+    let mut next_action: PlayerAction;
+    let names_under_mouse: &str = Default::default();
 
     // concurrent input processing
     let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
     let game_input_buf = Arc::clone(&game_input);
-    let mut input_thread = start_input_proc_thread(&mut game_input);
+    let input_thread = start_input_proc_thread(&mut game_input);
 
     // step 2/2: the actual loop //////////////////////////////////////////////
     
@@ -220,7 +220,7 @@ pub fn game_loop(
 
         // once processing is done, check whether we have a new user input
         { // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
-            let data = game_input_buf.lock().unwrap();
+            let mut data = game_input_buf.lock().unwrap();
             current_mouse_position = (data.mouse_x, data.mouse_y);
             next_action = match data.next_player_actions.pop_front() {
                 Some(action) => action,
@@ -237,7 +237,12 @@ pub fn game_loop(
                 }
             },
             _ => {
-                objects[PLAYER].unwrap().set_next_action(Some(get_player_action_instance(next_action)));
+                // let mut player = objects.mut_obj(PLAYER);
+                // *player.set_next_action(Some(get_player_action_instance(next_action)));
+                // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
+                if let Some(ref mut player) = objects[PLAYER] {
+                    player.set_next_action(Some(get_player_action_instance(next_action)));
+                };
             }
         }
 
@@ -275,11 +280,11 @@ fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEng
         }
         UiAction::CharacterScreen => {
             //show character information
-            let player = &objects[PLAYER].unwrap();
-            let level = player.level;
-            let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-            if let Some(fighter) = player.fighter.as_ref() {
-                let msg = format!(
+            if let Some(ref player) = objects[PLAYER] {
+                let level = player.level;
+                let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+                if let Some(fighter) = player.fighter.as_ref() {
+                    let msg = format!(
 "Character information
 
 Level: {}
@@ -289,30 +294,33 @@ Experience to level up: {}
 Maximum HP: {}
 Attack: {}
 Defense: {}",
-                    level,
-                    fighter.xp,
-                    level_up_xp,
-                    player.max_hp(game_state),
-                    player.power(game_state),
-                    player.defense(game_state),
-                );
-                msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_frontend.root);
-            }
+                        level,
+                        fighter.xp,
+                        level_up_xp,
+                        player.max_hp(game_state),
+                        player.power(game_state),
+                        player.defense(game_state),
+                    );
+                    msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_frontend.root);
+                }
+            };
         }
+
         UiAction::Fullscreen => {
             let fullscreen = game_frontend.root.is_fullscreen();
             game_frontend.root.set_fullscreen(!fullscreen);
         }
-        _ => {}
+            
     }
     false
 }
 
 fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
-    let player = &objects[PLAYER].unwrap();
-    game_frontend
+    if let Some(ref player) = objects[PLAYER] {
+        game_frontend
         .fov
         .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+    }
 }
 
 fn update_render(game_frontend: &mut GameFrontend, game_state: &mut GameState, objects: &ObjectVec, names_under_mouse: &str) {
@@ -341,38 +349,40 @@ fn update_visibility(
     objects: &ObjectVec,
 ) {
     // go through all tiles and set their background color
-    for y in 0..WORLD_HEIGHT {
-        for x in 0..WORLD_WIDTH {
-            let visible = game_frontend.fov.is_in_fov(x, y);
-            let wall = game_state.world[x as usize][y as usize].block_sight;
-            let tile_color = match (visible, wall) {
-                // outside field of view:
-                (false, true) => get_col_dark_wall(),
-                (false, false) => get_col_dark_ground(),
-                // inside fov:
-                // (true, true) => COLOR_LIGHT_WALL,
-                (true, true) => colors::lerp(
-                    get_col_light_wall(),
-                    get_col_dark_wall(),
-                    objects[PLAYER].unwrap().distance(x, y) / TORCH_RADIUS as f32,
-                ),
-                // (true, false) => COLOR_LIGHT_GROUND,
-                (true, false) => colors::lerp(
-                    get_col_light_ground(),
-                    get_col_dark_ground(),
-                    objects[PLAYER].unwrap().distance(x, y) / TORCH_RADIUS as f32,
-                ),
-            };
+    if let Some(ref player) = objects[PLAYER] {
+        for y in 0..WORLD_HEIGHT {
+            for x in 0..WORLD_WIDTH {
+                let visible = game_frontend.fov.is_in_fov(x, y);
+                let wall = game_state.world[x as usize][y as usize].block_sight;
+                let tile_color = match (visible, wall) {
+                    // outside field of view:
+                    (false, true) => get_col_dark_wall(),
+                    (false, false) => get_col_dark_ground(),
+                    // inside fov:
+                    // (true, true) => COLOR_LIGHT_WALL,
+                    (true, true) => colors::lerp(
+                        get_col_light_wall(),
+                        get_col_dark_wall(),
+                        player.distance(x, y) / TORCH_RADIUS as f32,
+                    ),
+                    // (true, false) => COLOR_LIGHT_GROUND,
+                    (true, false) => colors::lerp(
+                        get_col_light_ground(),
+                        get_col_dark_ground(),
+                        player.distance(x, y) / TORCH_RADIUS as f32,
+                    ),
+                };
 
-            let explored = &mut game_state.world[x as usize][y as usize].explored;
-            if visible {
-                *explored = true;
-            }
-            if *explored {
-                // show explored tiles only (any visible tile is explored already)
-                game_frontend
-                    .con
-                    .set_char_background(x, y, tile_color, BackgroundFlag::Set);
+                let explored = &mut game_state.world[x as usize][y as usize].explored;
+                if visible {
+                    *explored = true;
+                }
+                if *explored {
+                    // show explored tiles only (any visible tile is explored already)
+                    game_frontend
+                        .con
+                        .set_char_background(x, y, tile_color, BackgroundFlag::Set);
+                }
             }
         }
     }
@@ -391,11 +401,10 @@ pub fn render_all(
     let mut to_draw: Vec<&Object> = objects
         .get_vector()
         .iter()
-        .filter(|Some(obj)| {
-            game_frontend.fov.is_in_fov(obj.x, obj.y)
-                || (obj.always_visible && game_state.world[obj.x as usize][obj.y as usize].explored)
+        .flatten()
+        .filter(|o| { game_frontend.fov.is_in_fov(o.x, o.y)
+                || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
         })
-        .map(|Some(obj)| obj)
         .collect();
     // sort, so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
@@ -446,51 +455,53 @@ fn render_ui(
     game_frontend.panel.clear();
 
     // show player's stats
-    let hp = objects[PLAYER].unwrap().fighter.map_or(0, |f| f.hp);
-    let max_hp = objects[PLAYER].unwrap().fighter.map_or(0, |f| f.base_max_hp);
-    render_bar(
-        &mut game_frontend.panel,
-        1,
-        1,
-        BAR_WIDTH,
-        "HP",
-        hp,
-        max_hp,
-        colors::LIGHT_RED,
-        colors::DARKER_RED,
-    );
-    game_frontend.panel.print_ex(
-        1,
-        2,
-        BackgroundFlag::None,
-        TextAlignment::Left,
-        format!("Dungeon level: {}", game_state.dungeon_level),
-    );
+    if let Some(ref player) = objects[PLAYER] {
+        let hp = player.fighter.map_or(0, |f| f.hp);
+        let max_hp = player.fighter.map_or(0, |f| f.base_max_hp);
+        render_bar(
+            &mut game_frontend.panel,
+            1,
+            1,
+            BAR_WIDTH,
+            "HP",
+            hp,
+            max_hp,
+            colors::LIGHT_RED,
+            colors::DARKER_RED,
+        );
+        game_frontend.panel.print_ex(
+            1,
+            2,
+            BackgroundFlag::None,
+            TextAlignment::Left,
+            format!("Dungeon level: {}", game_state.dungeon_level),
+        );
 
-    // show names of objects under the mouse
-    game_frontend
-        .panel
-        .set_default_foreground(colors::LIGHT_GREY);
-    game_frontend.panel.print_ex(
-        1,
-        0,
-        BackgroundFlag::None,
-        TextAlignment::Left,
-        names_under_mouse,
-    );
-
-    // print game messages, one line at a time
-    let mut y = MSG_HEIGHT as i32;
-    for &(ref msg, color) in &mut game_state.log.iter().rev() {
-        let msg_height = game_frontend
+        // show names of objects under the mouse
+        game_frontend
             .panel
-            .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
-        y -= msg_height;
-        if y < 0 {
-            break;
+            .set_default_foreground(colors::LIGHT_GREY);
+        game_frontend.panel.print_ex(
+            1,
+            0,
+            BackgroundFlag::None,
+            TextAlignment::Left,
+            names_under_mouse,
+        );
+
+        // print game messages, one line at a time
+        let mut y = MSG_HEIGHT as i32;
+        for &(ref msg, color) in &mut game_state.log.iter().rev() {
+            let msg_height = game_frontend
+                .panel
+                .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+            y -= msg_height;
+            if y < 0 {
+                break;
+            }
+            game_frontend.panel.set_default_foreground(color);
+            game_frontend.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         }
-        game_frontend.panel.set_default_foreground(color);
-        game_frontend.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
     }
 }
 
