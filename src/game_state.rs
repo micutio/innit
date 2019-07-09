@@ -1,18 +1,15 @@
 /// Module Game_State
 ///
 /// This module contains the struct that encompasses all parts of the game state:
-///
-/// TODO: Try to move as many dependecies to game_io as possible out of here.
 
 // external imports
-use tcod::colors;
+use tcod::colors::{self, Color};
 
 // internal imports
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::{Object, ObjectVec};
-use ui::game_frontend::{initialize_fov, menu, GameFrontend, MessageLog, Messages, FovMap, AnimationType};
-use util::mut_two;
+use ui::game_frontend::{initialize_fov, menu, GameFrontend, FovMap, AnimationType};
 use world::{is_blocked, make_world, World};
 
 // TODO: reorganize objectVec vector
@@ -27,6 +24,23 @@ pub const LEVEL_UP_BASE: i32 = 200;
 pub const LEVEL_UP_FACTOR: i32 = 150;
 pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
+// Structures and functions for message output
+
+/// Messages are expressed as colored text.
+pub type Messages = Vec<(String, Color)>;
+
+pub trait MessageLog {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color);
+}
+
+impl MessageLog for Vec<(String, Color)> {
+    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
+        self.push((message.into(), color));
+    }
+}
+
+/// The game state struct contains all information necessary to represent
+/// the current state of the game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
     pub world: World,
@@ -35,6 +49,7 @@ pub struct GameState {
     pub dungeon_level: u32,
 }
 
+/// Create a new game by instaniating the game engine, game state and object vector.
 pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
@@ -75,6 +90,7 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
     (game_engine, game_state, objects)
 }
 
+/// The game engine is a stateful handler of the game state.
 #[derive(Serialize, Deserialize)]
 pub struct GameEngine {
     current_obj_index: usize
@@ -85,7 +101,6 @@ pub enum ProcessResult {
     UpdateFOV,
     UpdateRender,
     Animate {
-        // TODO: Create animation type enum.
         anim_type: AnimationType,
     }
 }
@@ -104,6 +119,9 @@ impl GameEngine {
             let process_result = process_action(&mut active_object, fov_map, game_state, objects, action_option);
             return process_result;
         }
+
+        self.current_obj_index += 1;
+
         ProcessResult::Nil
     }
 }
@@ -141,6 +159,9 @@ fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameSta
     }
 }
 
+// NOTE: All functions below are hot candidates for a rewrite because they might not fit into the new command pattern system.
+
+/// Move the object with given id to the given position.
 pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
     // move by the given amount
     match objects[id] {
@@ -154,6 +175,7 @@ pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i
     
 }
 
+/// Move the object with given id towards a target.
 pub fn move_towards(
     world: &World,
     objects: &mut ObjectVec,
@@ -232,7 +254,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
             ),
             colors::YELLOW,
         );
-        // TODO: increase player's stats
+
         let fighter = player.fighter.as_mut().unwrap();
         let mut choice = None;
         while choice.is_none() {
