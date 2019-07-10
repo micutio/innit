@@ -8,7 +8,6 @@
 ///
 /// Function parameter precedence:
 /// game_frontend, game_input, game_engine, game_state, objects, anything else.
-// external imports
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -19,10 +18,9 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
-// internal imports
 use entity::object::{Object, ObjectVec};
 use game_state::{
-    level_up, new_game, GameEngine, GameState, ProcessResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR,
+    level_up, new_game, GameEngine, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR,
     PLAYER, TORCH_RADIUS,
 };
 use ui::color_palette::*;
@@ -91,7 +89,7 @@ impl GameFrontend {
 
 /// Specification of animations and their parameters.
 /// TODO: Outsource (heh) this to its own module.
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum AnimationType {
     /// Gradual transition of the world hue and or brightness
     ColorTransition,
@@ -214,47 +212,60 @@ pub fn game_loop(
     let input_thread = start_input_proc_thread(&mut game_input, rx);
 
     recompute_fov(game_frontend, objects);
-    update_render(game_frontend, game_state, objects, &names_under_mouse);
+    re_render(game_frontend, game_state, objects, &names_under_mouse);
 
     // step 2/2: the actual loop //////////////////////////////////////////////
     while !game_frontend.root.window_closed() {
+        next_action = None;
         // let the game engine process an object
         let proc_result = game_engine.process_object(&game_frontend.fov, game_state, objects);
         match proc_result {
-            ProcessResult::UpdateFOV => {
+            // no action has been performed, repeat the turn and try again
+            ObjectProcResult::NoAction => {}
+
+            // action has been completed, but nothing needs to be done about it
+            ObjectProcResult::NoFeedback => {}
+
+            // the player's FOV has been updated, thus we also need to re-render
+            ObjectProcResult::UpdateFOV => {
                 recompute_fov(game_frontend, objects);
-                update_render(game_frontend, game_state, objects, &names_under_mouse);
+                re_render(game_frontend, game_state, objects, &names_under_mouse);
             }
 
-            ProcessResult::UpdateRender => {
-                update_render(game_frontend, game_state, objects, &names_under_mouse);
+            // the player hasn't moved but something happened within fov
+            ObjectProcResult::ReRender => {
+                re_render(game_frontend, game_state, objects, &names_under_mouse);
             }
 
-            ProcessResult::Animate { anim_type } => {
+            ObjectProcResult::Animate { anim_type } => {
                 // TODO: Play animation.
                 println!("animation");
             }
 
-            ProcessResult::Nil => {}
+            _ => {}
         }
 
         // once processing is done, check whether we have a new user input
-        {
-            // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
-            let mut data = game_input_buf.lock().unwrap();
-            current_mouse_position = (data.mouse_x, data.mouse_y);
-            names_under_mouse = get_names_under_mouse(
-                objects,
-                &game_frontend.fov,
-                current_mouse_position.0,
-                current_mouse_position.1,
-            );
-            next_action = data.next_player_actions.pop_front();
+        if let Some(ref player) = objects[PLAYER] {
+            // ... but only if the previous user action is used up
+            if player.next_action.is_some() {
+                // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
+                let mut data = game_input_buf.lock().unwrap();
+                current_mouse_position = (data.mouse_x, data.mouse_y);
+                names_under_mouse = get_names_under_mouse(
+                    objects,
+                    &game_frontend.fov,
+                    current_mouse_position.0,
+                    current_mouse_position.1,
+                );
+                next_action = data.next_player_actions.pop_front();
+            }
+            
         }
 
         // distinguish between in-game action and ui (=meta) actions
         if next_action.is_some() {
-            println!("player/UI action: {:?}", next_action);
+            println!("player [in-game|ui action] => {:?}", next_action);
         }
         match next_action {
             Some(PlayerAction::MetaAction(actual_action)) => {
@@ -393,7 +404,7 @@ fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
     }
 }
 
-fn update_render(
+fn re_render(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &ObjectVec,

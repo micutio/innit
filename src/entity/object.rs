@@ -26,7 +26,7 @@ pub struct Object {
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
     pub attack_action: Option<AttackAction>,
-    next_action: Option<Box<dyn Action>>,
+    pub next_action: Option<Box<dyn Action>>,
 }
 
 impl Object {

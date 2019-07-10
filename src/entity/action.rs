@@ -1,14 +1,14 @@
-use std::fmt::Debug;
 /// Module Action
 ///
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
 // external imports
+use std::fmt::Debug;
 use tcod::colors;
 
 // internal imports
 use entity::object::{Object, ObjectVec};
-use game_state::{GameState, MessageLog};
+use game_state::{GameState, MessageLog, ObjectProcResult};
 use world::is_blocked;
 
 /// Result of performing an action.
@@ -16,7 +16,7 @@ use world::is_blocked;
 /// TODO: (!) Include UI feedback e.g., animation, FOV update and rendering!
 pub enum ActionResult {
     /// Sucessfully finished action
-    Success,
+    Success { callback: ObjectProcResult },
     /// Failed to perform an action, ideally without any side effect.
     Failure,
     /// Another action happens automatically after this one.
@@ -54,7 +54,7 @@ impl Action for PassAction {
         game_state
             .log
             .add(format!("{} passes their turn", owner.name), colors::WHITE);
-        ActionResult::Success
+        ActionResult::Success{ callback: ObjectProcResult::NoFeedback, }
     }
 
     fn get_energy_cost(&self) -> i32 {
@@ -99,7 +99,7 @@ impl Action for AttackAction {
                 // in `objects` is the owner of this action.
                 if let Some(ref mut target) = objects[target_id] {
                     target.take_damage(self.base_power, game_state);
-                    return ActionResult::Success;
+                    return ActionResult::Success { callback: ObjectProcResult::CheckEnterFOV };
                 }
                 ActionResult::Failure
             }
@@ -165,7 +165,7 @@ impl Action for MoveAction {
             );
             owner.set_pos(x + dy, y + dy);
             // TODO: Check whether we walked into the player's field of view.
-            ActionResult::Success
+            ActionResult::Success { callback: ObjectProcResult::CheckEnterFOV }
         } else {
             ActionResult::Failure
         }

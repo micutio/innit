@@ -129,12 +129,12 @@ pub fn start_input_proc_thread(
                 Some((_, Event::Mouse(_m))) => {
                     mouse_x = _m.cx as i32;
                     mouse_y = _m.cy as i32;
-                    println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
+                    // println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
                 }
                 // get used key to create next user action
                 Some((_, Event::Key(k))) => {
                     _key = k;
-                    println!("[input thread] key input {:?}", k.code);
+                    // println!("[input thread] key input {:?}", k.code);
                 }
                 _ => {}
             }
@@ -143,7 +143,7 @@ pub fn start_input_proc_thread(
             let mut input = game_input_buf.lock().unwrap();
             // let player_action: PlayerAction =
             if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                println!("[input thread] push back {:?}", key);
+                // println!("[input thread] push back {:?}", key);
                 input.next_player_actions.push_back(key.clone());
             };
             input.mouse_x = mouse_x;
@@ -151,7 +151,7 @@ pub fn start_input_proc_thread(
 
             match rx.try_recv() {
                 Ok(true) | Err(TryRecvError::Disconnected) => {
-                    println!("[input thread] terminating");
+                    // println!("[input thread] terminating");
                     break;
                 }
                 _ => {}
@@ -205,7 +205,7 @@ pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action
     // TODO: Use actual costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
-    println!("player action: {:?}", player_action);
+    // println!("player action: {:?}", player_action);
     match player_action {
         PlayerAction::WalkNorth => Box::new(MoveAction::new(Direction::North, 0)),
         PlayerAction::WalkSouth => Box::new(MoveAction::new(Direction::South, 0)),
