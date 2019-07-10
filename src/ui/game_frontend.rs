@@ -12,6 +12,8 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use tcod::colors::{self, Color};
 use tcod::console::*;
@@ -202,24 +204,22 @@ pub fn game_loop(
     // step 1/3: pre-processing ///////////////////////////////////////////////
     // user input data
     let mut current_mouse_position;
-    let mut next_action: PlayerAction;
+    let mut next_action: Option<PlayerAction>;
     let mut names_under_mouse: String = Default::default();
 
     // concurrent input processing
+    let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel();
     let mut game_input = Arc::new(Mutex::new(GameInput::new()));
     let game_input_buf = Arc::clone(&game_input);
-    let input_thread = start_input_proc_thread(&mut game_input);
-
+    let input_thread = start_input_proc_thread(&mut game_input, rx);
 
     recompute_fov(game_frontend, objects);
     update_render(game_frontend, game_state, objects, &names_under_mouse);
-
 
     // step 2/2: the actual loop //////////////////////////////////////////////
     while !game_frontend.root.window_closed() {
         // let the game engine process an object
         let proc_result = game_engine.process_object(&game_frontend.fov, game_state, objects);
-        println!("proc result, just in!");
         match proc_result {
             ProcessResult::UpdateFOV => {
                 recompute_fov(game_frontend, objects);
@@ -249,15 +249,16 @@ pub fn game_loop(
                 current_mouse_position.0,
                 current_mouse_position.1,
             );
-            next_action = match data.next_player_actions.pop_front() {
-                Some(ref action) => action.clone(),
-                None => PlayerAction::MetaAction(UiAction::UndefinedUi),
-            };
+            next_action = data.next_player_actions.pop_front();
         }
 
         // distinguish between in-game action and ui (=meta) actions
+        if next_action.is_some() {
+            println!("player/UI action: {:?}", next_action);
+        }
         match next_action {
-            PlayerAction::MetaAction(actual_action) => {
+            Some(PlayerAction::MetaAction(actual_action)) => {
+                println!("[game_frontend] process UI action: {:?}", actual_action);
                 let is_exit_game = handle_ui_actions(
                     game_frontend,
                     game_engine,
@@ -266,21 +267,39 @@ pub fn game_loop(
                     actual_action,
                 );
                 if is_exit_game {
+                    match tx.send(true) {
+                        Ok(_) => {
+                            println!("[game_frontend] terminating input proc thread");
+                        }
+                        Err(e) => {
+                            println!("[game_frontend] error terminating input proc thread: {}", e);
+                        }
+                    }
                     break;
                 }
             }
-            _ => {
+            Some(ingame_action) => {
                 // let mut player = objects.mut_obj(PLAYER);
                 // *player.set_next_action(Some(get_player_action_instance(next_action)));
                 // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
+                println!(
+                    "[game_frontend] inject ingame action: {:?} to player",
+                    ingame_action
+                );
                 if let Some(ref mut player) = objects[PLAYER] {
-                    player.set_next_action(Some(get_player_action_instance(next_action)));
+                    let player_next_action = Some(get_player_action_instance(ingame_action));
+                    println!(
+                        "[game_frontend] player action object: {:?}",
+                        player_next_action
+                    );
+                    player.set_next_action(player_next_action);
                 };
             }
+            None => {}
         }
 
         // level up if needed
-        level_up(objects, game_state, game_frontend);
+        // level_up(objects, game_state, game_frontend);
     }
 
     // step 3/3: cleanup before returning to main menu
@@ -327,6 +346,7 @@ fn handle_ui_actions(
         UiAction::UndefinedUi => return false,
         UiAction::ExitGameLoop => {
             save_game(game_engine, game_state, objects).unwrap();
+            println!("RETURN TRUE");
             return true;
         }
         UiAction::CharacterScreen => {

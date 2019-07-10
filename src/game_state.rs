@@ -118,10 +118,11 @@ impl GameEngine {
         game_state: &mut GameState,
         objects: &mut ObjectVec,
     ) -> ProcessResult {
-        println!("processing object #{}", self.current_obj_index);
+        // println!("processing object #{}", self.current_obj_index);
         let mut process_result = ProcessResult::Nil;
         // unpack object
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+            // println!("[game_engine] querying {:?}", active_object);
             let next_action = active_object.get_next_action();
             // perform action
             process_result = process_action(
@@ -149,10 +150,11 @@ fn process_action(
     fov_map: &FovMap,
     game_state: &mut GameState,
     objects: &mut ObjectVec,
-    action_option: Option<Box<Action>>,
+    action: Option<Box<Action>>,
 ) -> ProcessResult {
     // first execute action
-    let action_result = match action_option {
+    // println!("[game_engine] processing {:?}", action);
+    let action_result = match action {
         Some(action) => action.perform(actor, objects, game_state),
         None => ActionResult::Failure,
     };

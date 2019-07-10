@@ -155,6 +155,14 @@ impl Action for MoveAction {
 
         let (x, y) = owner.pos();
         if !is_blocked(&game_state.world, &objects, x + dx, y + dy) {
+            println!(
+                "move {} from {},{} to {},{}",
+                owner.name,
+                x,
+                y,
+                x + dx,
+                y + dy
+            );
             owner.set_pos(x + dy, y + dy);
             // TODO: Check whether we walked into the player's field of view.
             ActionResult::Success

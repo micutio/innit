@@ -10,6 +10,7 @@ use ui::game_frontend::FovMap;
 // external imports
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::sync::mpsc::{Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
@@ -56,7 +57,7 @@ pub enum KeyCode {
     F4,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PlayerAction {
     MetaAction(UiAction),
     // Pending,
@@ -67,7 +68,7 @@ pub enum PlayerAction {
     WalkWest,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum UiAction {
     UndefinedUi,
     ExitGameLoop,
@@ -110,7 +111,10 @@ pub fn get_names_under_mouse(
     //names//.join(", ") // return names separated by commas
 }
 
-pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
+pub fn start_input_proc_thread(
+    game_input: &mut Arc<Mutex<GameInput>>,
+    rx: Receiver<bool>,
+) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
     let key_to_action_mapping = create_key_mapping();
 
@@ -125,27 +129,39 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
                 Some((_, Event::Mouse(_m))) => {
                     mouse_x = _m.cx as i32;
                     mouse_y = _m.cy as i32;
+                    println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
                 }
                 // get used key to create next user action
                 Some((_, Event::Key(k))) => {
                     _key = k;
+                    println!("[input thread] key input {:?}", k.code);
                 }
-                _ => {
-                    mouse_x = Default::default();
-                    mouse_y = Default::default();
-                }
+                _ => {}
             }
 
             // lock our mutex and get to work
             let mut input = game_input_buf.lock().unwrap();
-            let player_action: PlayerAction =
-                match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                    Some(key) => key.clone(),
-                    None => PlayerAction::MetaAction(UiAction::UndefinedUi),
-                };
-            input.next_player_actions.push_back(player_action);
+            // let player_action: PlayerAction =
+            if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                println!("[input thread] push back {:?}", key);
+                input.next_player_actions.push_back(key.clone());
+            };
             input.mouse_x = mouse_x;
             input.mouse_y = mouse_y;
+
+            match rx.try_recv() {
+                Ok(true) | Err(TryRecvError::Disconnected) => {
+                    println!("[input thread] terminating");
+                    break;
+                }
+                Ok(false) => {}
+                Err(TryRecvError::Empty) => {
+                    println!("[input thread] error trying to receive");
+                }
+            }
+
+            // println!("[input thread] key {:?}", _key);
+            // println!("[input thread] mouse {:?}", _mouse);
         }
     })
 }
@@ -167,7 +183,7 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
     }
 }
 
-pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
+fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     use self::KeyCode::*;
     use self::PlayerAction::*;
     use self::UiAction::*;
@@ -181,7 +197,6 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map.insert(Left, WalkWest);
     key_map.insert(Right, WalkEast);
     // set up all non-in-game actions.
-    key_map.insert(KeyCode::UndefinedKey, PlayerAction::MetaAction(UndefinedUi));
     key_map.insert(Esc, MetaAction(ExitGameLoop));
     key_map.insert(F4, MetaAction(Fullscreen));
     key_map.insert(C, MetaAction(CharacterScreen));
@@ -193,12 +208,12 @@ pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action
     // TODO: Use actual costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
+    println!("player action: {:?}", player_action);
     match player_action {
         PlayerAction::WalkNorth => Box::new(MoveAction::new(Direction::North, 0)),
         PlayerAction::WalkSouth => Box::new(MoveAction::new(Direction::South, 0)),
         PlayerAction::WalkEast => Box::new(MoveAction::new(Direction::East, 0)),
         PlayerAction::WalkWest => Box::new(MoveAction::new(Direction::West, 0)),
-
         _ => Box::new(PassAction),
     }
 }

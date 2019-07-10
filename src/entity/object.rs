@@ -195,7 +195,7 @@ impl ObjectVec {
         match self.0.get_mut(index) {
             Some(item) => match item.take() {
                 Some(object) => {
-                    println!("extract object {} @ index {}", object.name, index);
+                    // println!("extract object {} @ index {}", object.name, index);
                     Some(object)
                 }
                 None => None,
@@ -208,7 +208,7 @@ impl ObjectVec {
         let item = self.0.get_mut(index);
         match item {
             Some(obj) => {
-                println!("replace object {} @ index {}", object.name, index);
+                // println!("replace object {} @ index {}", object.name, index);
                 obj.replace(object);
             }
             None => {
