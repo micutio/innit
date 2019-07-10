@@ -65,6 +65,7 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
 
     // create array holding all objectVec
     let mut objects = ObjectVec::new();
+    objects.get_vector_mut().push(Some(player));
     let level = 1;
 
     // create game state holding most game-relevant information
