@@ -343,7 +343,6 @@ fn handle_ui_actions(
     action: UiAction,
 ) -> bool {
     match action {
-        UiAction::UndefinedUi => return false,
         UiAction::ExitGameLoop => {
             save_game(game_engine, game_state, objects).unwrap();
             println!("RETURN TRUE");

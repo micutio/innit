@@ -70,7 +70,7 @@ pub enum PlayerAction {
 
 #[derive(Clone, Debug)]
 pub enum UiAction {
-    UndefinedUi,
+    // UndefinedUi,
     ExitGameLoop,
     Fullscreen,
     CharacterScreen,
@@ -154,10 +154,7 @@ pub fn start_input_proc_thread(
                     println!("[input thread] terminating");
                     break;
                 }
-                Ok(false) => {}
-                Err(TryRecvError::Empty) => {
-                    println!("[input thread] error trying to receive");
-                }
+                _ => {}
             }
 
             // println!("[input thread] key {:?}", _key);
