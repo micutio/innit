@@ -83,8 +83,11 @@ impl Action for AttackAction {
                 // TODO: Replace with defend action.
                 // unwrap should be safe to use here because the object not available
                 // in `objects` is the owner of this action.
-                objects[target_id].unwrap().take_damage(self.base_power, game_state);
-                ActionResult::Success
+                if let Some(ref mut target) = objects[target_id] {
+                    target.take_damage(self.base_power, game_state);
+                    return ActionResult::Success;
+                }
+                ActionResult::Failure
             }
             None => ActionResult::Failure,
         }
@@ -120,6 +123,7 @@ impl MoveAction {
 #[typetag::serde]
 impl Action for MoveAction {
     fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
+        use self::Direction::*;
         let (dx, dy) = match self.direction {
             North => (0, -1),
             South => (0, 1),

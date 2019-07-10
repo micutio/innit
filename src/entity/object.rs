@@ -186,6 +186,10 @@ impl ObjectVec {
         &self.0
     }
 
+    pub fn get_vector_mut(&mut self) -> &mut Vec<Option<Object>> {
+        &mut self.0
+    }
+
     pub fn push(&mut self, object: Object) {
         self.0.push(Some(object));
     }

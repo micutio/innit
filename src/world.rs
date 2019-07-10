@@ -57,7 +57,7 @@ pub fn make_world(objects: &mut ObjectVec, level: u32) -> World {
     // PLayer is the first element, remove everything else.
     // NOTE: works only if player is the first object!
     assert_eq!(&objects[PLAYER] as *const _, &objects[0] as *const _);
-    objects.get_vector().truncate(1);
+    objects.get_vector_mut().truncate(1);
 
     // create rooms randomly
     let mut rooms = vec![];
@@ -87,7 +87,9 @@ pub fn make_world(objects: &mut ObjectVec, level: u32) -> World {
             let (new_x, new_y) = new_room.center();
             if rooms.is_empty() {
                 // this is the first room, save position as starting point for the player
-                objects[PLAYER].unwrap().set_pos(new_x, new_y);
+                if let Some(ref mut player) = objects[PLAYER] {
+                    player.set_pos(new_x, new_y);
+                }
             } else {
                 // all rooms after the first:
                 // connect it to the previous room with a tunnel
@@ -274,5 +276,6 @@ pub fn is_blocked(world: &World, objects: &ObjectVec, x: i32, y: i32) -> bool {
     objects
         .get_vector()
         .iter()
-        .any(|Some(object)| object.blocks && object.pos() == (x, y))
+        .flatten()
+        .any(|object| object.blocks && object.pos() == (x, y))
 }

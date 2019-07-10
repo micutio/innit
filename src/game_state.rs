@@ -161,48 +161,6 @@ fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameSta
 
 // NOTE: All functions below are hot candidates for a rewrite because they might not fit into the new command pattern system.
 
-/// Move the object with given id to the given position.
-pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
-    // move by the given amount
-    match objects[id] {
-        Some(obj) => {
-            let (x, y) = obj.pos();
-            if !is_blocked(world, objects, x + dx, y + dy) {
-                obj.set_pos(x + dx, y + dy);
-            }
-        }
-    }
-    
-}
-
-/// Move the object with given id towards a target.
-pub fn move_towards(
-    world: &World,
-    objects: &mut ObjectVec,
-    id: usize,
-    target_x: i32,
-    target_y: i32,
-) {
-    // vector from this object to the target, and distance
-    match objects[id] {
-        Some(obj) => {
-            let dx = target_x - obj.x;
-            let dy = target_y - obj.y;
-            let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
-
-            // normalize it to length 1 (preserving direction), then round it and
-            // convert to integer so the movement is restricted to the map grid
-            let dx = (dx as f32 / distance).round() as i32;
-            let dy = (dy as f32 / distance).round() as i32;
-            move_by(world, objects, id, dx, dy);
-        }
-        None => {
-
-        }
-    }
-    
-}
-
 /// Advance to the next level
 pub fn next_level(
     game_io: &mut GameFrontend,
@@ -241,48 +199,90 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
 }
 
 pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &mut GameFrontend) {
-    let player = &mut objects[PLAYER].unwrap();
-    let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-    // see if the player's experience is enough to level up
-    if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
-        // exp is enough, lvl up
-        player.level += 1;
-        game_state.log.add(
-            format!(
-                "Your battle skills grow stringer! You reached level {}!",
-                player.level
-            ),
-            colors::YELLOW,
-        );
-
-        let fighter = player.fighter.as_mut().unwrap();
-        let mut choice = None;
-        while choice.is_none() {
-            // keep asking until a choice is made
-            choice = menu(
-                "Level up! Chose a stat to raise:\n",
-                &[
-                    format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
-                    format!("Strength (+1 attack, from {})", fighter.base_power),
-                    format!("Agility (+1 defense, from {})", fighter.base_defense),
-                ],
-                LEVEL_SCREEN_WIDTH,
-                &mut game_io.root,
+    if let Some(ref mut player) = objects[PLAYER] {
+        let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+        // see if the player's experience is enough to level up
+        if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+            // exp is enough, lvl up
+            player.level += 1;
+            game_state.log.add(
+                format!(
+                    "Your battle skills grow stringer! You reached level {}!",
+                    player.level
+                ),
+                colors::YELLOW,
             );
-        }
-        fighter.xp -= level_up_xp;
-        match choice.unwrap() {
-            0 => {
-                fighter.base_max_hp += 20;
-                fighter.hp += 20;
+
+            let fighter = player.fighter.as_mut().unwrap();
+            let mut choice = None;
+            while choice.is_none() {
+                // keep asking until a choice is made
+                choice = menu(
+                    "Level up! Chose a stat to raise:\n",
+                    &[
+                        format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
+                        format!("Strength (+1 attack, from {})", fighter.base_power),
+                        format!("Agility (+1 defense, from {})", fighter.base_defense),
+                    ],
+                    LEVEL_SCREEN_WIDTH,
+                    &mut game_io.root,
+                );
             }
-            1 => {
-                fighter.base_power += 1;
+            fighter.xp -= level_up_xp;
+            match choice.unwrap() {
+                0 => {
+                    fighter.base_max_hp += 20;
+                    fighter.hp += 20;
+                }
+                1 => {
+                    fighter.base_power += 1;
+                }
+                2 => {
+                    fighter.base_defense += 1;
+                }
+                _ => unreachable!(),
             }
-            2 => {
-                fighter.base_defense += 1;
-            }
-            _ => unreachable!(),
         }
     }
+    
 }
+
+
+// /// Move the object with given id to the given position.
+// pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
+//     // move by the given amount
+//     if let Some(ref mut object) = objects[id] {
+//         let (x, y) = object.pos();
+//             if !is_blocked(world, objects, x + dx, y + dy) {
+//                 object.set_pos(x + dx, y + dy);
+//             }
+//     }    
+// }
+
+// Move the object with given id towards a target.
+// pub fn move_towards(
+//     world: &World,
+//     objects: &mut ObjectVec,
+//     id: usize,
+//     target_x: i32,
+//     target_y: i32,
+// ) {
+//     // vector from this object to the target, and distance
+//     match objects[id] {
+//         Some(obj) => {
+//             let dx = target_x - obj.x;
+//             let dy = target_y - obj.y;
+//             let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
+
+//             // normalize it to length 1 (preserving direction), then round it and
+//             // convert to integer so the movement is restricted to the map grid
+//             let dx = (dx as f32 / distance).round() as i32;
+//             let dy = (dy as f32 / distance).round() as i32;
+//             move_by(world, objects, id, dx, dy);
+//         }
+//         None => {
+
+//         }
+//     }
+    
+// }
