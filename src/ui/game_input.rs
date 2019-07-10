@@ -47,7 +47,7 @@ pub enum UiAction {
 pub struct GameInput {
     pub mouse_x: i32,
     pub mouse_y: i32,
-    pub next_player_actions: VecDeque<PlayerAction>,
+    pub next_player_actions: VecDeque<&'static PlayerAction>,
 }
 
 impl GameInput {
@@ -65,8 +65,9 @@ fn get_names_under_mouse(objects: &ObjectVec, fov_map: &FovMap, mouse_x: i32, mo
     let names = objects
         .get_vector()
         .iter()
-        .filter(|Some(obj)| obj.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(obj.x, obj.y))
-        .map(|Some(obj)| obj.name.clone())
+        .flatten()
+        .filter(|o| o.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(o.x, o.y))
+        .map(|o| o.name.clone())
         .collect::<Vec<_>>();
 
     names.join(", ") // return names separated by commas
@@ -78,10 +79,10 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
 
     thread::spawn(move|| {
         loop {
-            let mouse_x: i32 = 0;
-            let mouse_y: i32 = 0;
+            let mut mouse_x: i32 = 0;
+            let mut mouse_y: i32 = 0;
             let _mouse: Mouse = Default::default(); // this is not really used right now
-            let _key: Key = Default::default();
+            let mut _key: Key = Default::default();
             match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
                 // record mouse position for later use
                 Some((_, Event::Mouse(_m))) => {
@@ -102,9 +103,9 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
             let mut input = game_input_buf.lock().unwrap();
             let player_action = match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
                 Some(key) => key,
-                None => &PlayerAction::Undefined,
+                None => key_to_action_mapping.get(&KeyCode::Undefined).unwrap(),
             };
-            input.next_player_actions.push_back(*player_action);
+            input.next_player_actions.push_back(player_action);
             input.mouse_x = mouse_x;
             input.mouse_y = mouse_y;
         }
@@ -131,8 +132,9 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     use self::PlayerAction::*;
     use self::UiAction::*;
 
-    let key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
+    let mut key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
 
+    key_map.insert(KeyCode::Undefined, PlayerAction::Undefined);
     // TODO: Fill mapping from json file.
     // set up all in-game actions
     key_map.insert(Up, WalkNorth);
@@ -146,17 +148,17 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map
 }
 
-pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
+pub fn get_player_action_instance(player_action: &PlayerAction) -> Box<dyn Action> {
     use entity::action::Direction::*;
     
     // TODO: Use actual costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     match player_action {
-        Up => Box::new(MoveAction::new(North, 0)),
-        Down => Box::new(MoveAction::new(South, 0)),
-        Right => Box::new(MoveAction::new(East, 0)),
-        Left => Box::new(MoveAction::new(West, 0)),
+        WalkNorth => Box::new(MoveAction::new(North, 0)),
+        WalkSouth => Box::new(MoveAction::new(South, 0)),
+        WalkEast => Box::new(MoveAction::new(East, 0)),
+        WalkWest => Box::new(MoveAction::new(West, 0)),
     }
 }
 

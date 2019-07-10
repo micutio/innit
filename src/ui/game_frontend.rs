@@ -187,7 +187,7 @@ pub fn game_loop(
 
     // user input data
     let mut current_mouse_position = (-1, -1);
-    let mut next_action: PlayerAction;
+    let mut next_action: &PlayerAction;
     let names_under_mouse: &str = Default::default();
 
     // concurrent input processing
@@ -223,8 +223,8 @@ pub fn game_loop(
             let mut data = game_input_buf.lock().unwrap();
             current_mouse_position = (data.mouse_x, data.mouse_y);
             next_action = match data.next_player_actions.pop_front() {
-                Some(action) => action,
-                None => PlayerAction::Undefined,
+                Some(ref action) => action,
+                None => &PlayerAction::Undefined,
             };
         }
 
@@ -272,7 +272,7 @@ fn save_game(game_engine: &GameEngine, game_state: &GameState, objects: &ObjectV
     Ok(())
 }
 
-fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEngine, game_state: &mut GameState, objects: &ObjectVec, action: UiAction) -> bool {
+fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEngine, game_state: &mut GameState, objects: &ObjectVec, action: &UiAction) -> bool {
     match action {
         UiAction::ExitGameLoop => {
             save_game(game_engine, game_state, objects).unwrap();
