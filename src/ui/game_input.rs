@@ -44,7 +44,7 @@ pub enum KeyCode {
     // X,
     // Y,
     // Z,
-    Undefined,
+    UndefinedKey,
     Up,
     Down,
     Left,
@@ -59,7 +59,6 @@ pub enum KeyCode {
 #[derive(Clone)]
 pub enum PlayerAction {
     MetaAction(UiAction),
-    Undefined,
     // Pending,
     // DoNothing,
     WalkNorth,
@@ -70,6 +69,7 @@ pub enum PlayerAction {
 
 #[derive(Clone)]
 pub enum UiAction {
+    UndefinedUi,
     ExitGameLoop,
     Fullscreen,
     CharacterScreen,
@@ -141,7 +141,7 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
             let player_action: PlayerAction =
                 match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
                     Some(key) => key.clone(),
-                    None => PlayerAction::Undefined,
+                    None => PlayerAction::MetaAction(UiAction::UndefinedUi),
                 };
             input.next_player_actions.push_back(player_action);
             input.mouse_x = mouse_x;
@@ -155,7 +155,7 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
     use tcod::input::KeyCode::*;
 
     match tcod_key {
-        // in-game actinos
+        // in-game actions
         Key { code: Up, .. } => self::KeyCode::Up,
         Key { code: Down, .. } => self::KeyCode::Down,
         Key { code: Right, .. } => self::KeyCode::Right,
@@ -163,7 +163,7 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
         // non-in-game actions
         Key { code: Escape, .. } => self::KeyCode::Esc,
         Key { code: F4, .. } => self::KeyCode::F4,
-        _ => self::KeyCode::Undefined,
+        _ => self::KeyCode::UndefinedKey,
     }
 }
 
@@ -174,7 +174,6 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
 
     let mut key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
 
-    key_map.insert(KeyCode::Undefined, PlayerAction::Undefined);
     // TODO: Fill mapping from json file.
     // set up all in-game actions
     key_map.insert(Up, WalkNorth);
@@ -182,6 +181,7 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map.insert(Left, WalkWest);
     key_map.insert(Right, WalkEast);
     // set up all non-in-game actions.
+    key_map.insert(KeyCode::UndefinedKey, PlayerAction::MetaAction(UndefinedUi));
     key_map.insert(Esc, MetaAction(ExitGameLoop));
     key_map.insert(F4, MetaAction(Fullscreen));
     key_map.insert(C, MetaAction(CharacterScreen));

@@ -89,6 +89,7 @@ impl GameFrontend {
 
 /// Specification of animations and their parameters.
 /// TODO: Outsource (heh) this to its own module.
+#[derive(PartialEq)]
 pub enum AnimationType {
     /// Gradual transition of the world hue and or brightness
     ColorTransition,
@@ -200,7 +201,6 @@ pub fn game_loop(
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
     // user input data
-    println!("enter game loop");
     let mut current_mouse_position;
     let mut next_action: PlayerAction;
     let mut names_under_mouse: String = Default::default();
@@ -210,14 +210,22 @@ pub fn game_loop(
     let game_input_buf = Arc::clone(&game_input);
     let input_thread = start_input_proc_thread(&mut game_input);
 
+
+    recompute_fov(game_frontend, objects);
+    update_render(game_frontend, game_state, objects, &names_under_mouse);
+
+
     // step 2/2: the actual loop //////////////////////////////////////////////
     while !game_frontend.root.window_closed() {
+        // let the game engine process an object
         let proc_result = game_engine.process_object(&game_frontend.fov, game_state, objects);
+        println!("proc result, just in!");
         match proc_result {
             ProcessResult::UpdateFOV => {
                 recompute_fov(game_frontend, objects);
                 update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
+
             ProcessResult::UpdateRender => {
                 update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
@@ -226,6 +234,7 @@ pub fn game_loop(
                 // TODO: Play animation.
                 println!("animation");
             }
+
             ProcessResult::Nil => {}
         }
 
@@ -242,7 +251,7 @@ pub fn game_loop(
             );
             next_action = match data.next_player_actions.pop_front() {
                 Some(ref action) => action.clone(),
-                None => PlayerAction::Undefined,
+                None => PlayerAction::MetaAction(UiAction::UndefinedUi),
             };
         }
 
@@ -315,12 +324,14 @@ fn handle_ui_actions(
     action: UiAction,
 ) -> bool {
     match action {
+        UiAction::UndefinedUi => return false,
         UiAction::ExitGameLoop => {
             save_game(game_engine, game_state, objects).unwrap();
             return true;
         }
         UiAction::CharacterScreen => {
-            //show character information
+            // TODO: move this to separate function
+            // show character information
             if let Some(ref player) = objects[PLAYER] {
                 let level = player.level;
                 let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;

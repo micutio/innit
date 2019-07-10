@@ -187,13 +187,17 @@ impl ObjectVec {
     }
 
     pub fn push(&mut self, object: Object) {
+        println!("pushing object {}", object.name);
         self.0.push(Some(object));
     }
 
     pub fn extract(&mut self, index: usize) -> Option<Object> {
         match self.0.get_mut(index) {
             Some(item) => match item.take() {
-                Some(object) => Some(object),
+                Some(object) => {
+                    println!("extract object {} @ index {}", object.name, index);
+                    Some(object)
+                }
                 None => None,
             },
             None => panic!("[ObjectVec::index] Error: invalid index {}", index),
@@ -204,6 +208,7 @@ impl ObjectVec {
         let item = self.0.get_mut(index);
         match item {
             Some(obj) => {
+                println!("replace object {} @ index {}", object.name, index);
                 obj.replace(object);
             }
             None => {

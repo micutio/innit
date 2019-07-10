@@ -65,7 +65,7 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
 
     // create array holding all objectVec
     let mut objects = ObjectVec::new();
-    objects.get_vector_mut().push(Some(player));
+    objects.push(player);
     let level = 1;
 
     // create game state holding most game-relevant information
@@ -96,6 +96,7 @@ pub struct GameEngine {
     current_obj_index: usize,
 }
 
+#[derive(PartialEq)]
 pub enum ProcessResult {
     Nil,
     UpdateFOV,
@@ -117,20 +118,26 @@ impl GameEngine {
         game_state: &mut GameState,
         objects: &mut ObjectVec,
     ) -> ProcessResult {
-        let mut active_object = objects.extract(self.current_obj_index).unwrap();
-        let action_option = active_object.get_next_action();
-        let process_result = process_action(
-            &mut active_object,
-            fov_map,
-            game_state,
-            objects,
-            action_option,
-        );
+        println!("processing object #{}", self.current_obj_index);
+        let mut process_result = ProcessResult::Nil;
+        // unpack object
+        if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+            let next_action = active_object.get_next_action();
+            // perform action
+            process_result = process_action(
+                &mut active_object,
+                fov_map,
+                game_state,
+                objects,
+                next_action,
+            );
+            objects[self.current_obj_index].replace(active_object);
+        }
 
-        // Put the object back into hte vector
-        objects[self.current_obj_index].replace(active_object);
-        self.current_obj_index += 1;
-
+        // only increase counter if the object has made a move
+        if process_result != ProcessResult::Nil {
+            self.current_obj_index += 1 % objects.get_vector().len();
+        }
         process_result
     }
 }
