@@ -2,16 +2,15 @@
 ///
 /// User input processing
 /// Handle user input
-
 // internal imports
 use entity::action::*;
-use entity::object::{ObjectVec};
+use entity::object::ObjectVec;
 use ui::game_frontend::FovMap;
 
 // external imports
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
@@ -19,20 +18,50 @@ use tcod::input::{self, Event, Key, Mouse};
 /// as keys in a hash table. So to still be able to hash keys, we define our own.
 #[derive(PartialEq, Eq, Hash)]
 pub enum KeyCode {
-    A, B, C, D, E, F, G, H,
-    I, J, K, L, M, N, O, P,
-    Q, R, S, T, U, V, W, X,
-    Y, Z, Undefined,
-    Up, Down, Left, Right,
-    Esc, F1, F2, F3, F4,
+    // A,
+    // B,
+    C,
+    // D,
+    // E,
+    // F,
+    // G,
+    // H,
+    // I,
+    // J,
+    // K,
+    // L,
+    // M,
+    // N,
+    // O,
+    // P,
+    // Q,
+    // R,
+    // S,
+    // T,
+    // U,
+    // V,
+    // W,
+    // X,
+    // Y,
+    // Z,
+    Undefined,
+    Up,
+    Down,
+    Left,
+    Right,
+    Esc,
+    // F1,
+    // F2,
+    // F3,
+    F4,
 }
 
 #[derive(Clone)]
 pub enum PlayerAction {
     MetaAction(UiAction),
     Undefined,
-    Pending,
-    DoNothing,
+    // Pending,
+    // DoNothing,
     WalkNorth,
     WalkSouth,
     WalkEast,
@@ -62,24 +91,30 @@ impl GameInput {
     }
 }
 
-fn get_names_under_mouse(objects: &ObjectVec, fov_map: &FovMap, mouse_x: i32, mouse_y: i32) -> String {
+pub fn get_names_under_mouse(
+    objects: &ObjectVec,
+    fov_map: &FovMap,
+    mouse_x: i32,
+    mouse_y: i32,
+) -> String {
     // create a list with the names of all objects at the mouse's coordinates and in FOV
-    let names = objects
+    objects
         .get_vector()
         .iter()
         .flatten()
         .filter(|o| o.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(o.x, o.y))
         .map(|o| o.name.clone())
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+        .join(", ")
 
-    names.join(", ") // return names separated by commas
+    //names//.join(", ") // return names separated by commas
 }
 
 pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
     let key_to_action_mapping = create_key_mapping();
 
-    thread::spawn(move|| {
+    thread::spawn(move || {
         loop {
             let mut mouse_x: i32 = 0;
             let mut mouse_y: i32 = 0;
@@ -103,10 +138,11 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
 
             // lock our mutex and get to work
             let mut input = game_input_buf.lock().unwrap();
-            let player_action: PlayerAction = match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                Some(key) => key.clone(),
-                None => PlayerAction::Undefined,
-            };
+            let player_action: PlayerAction =
+                match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                    Some(key) => key.clone(),
+                    None => PlayerAction::Undefined,
+                };
             input.next_player_actions.push_back(player_action);
             input.mouse_x = mouse_x;
             input.mouse_y = mouse_y;
@@ -126,7 +162,7 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
         Key { code: Left, .. } => self::KeyCode::Left,
         // non-in-game actions
         Key { code: Escape, .. } => self::KeyCode::Esc,
-        Key { code: F4, ..} => self::KeyCode::F4,
+        Key { code: F4, .. } => self::KeyCode::F4,
         _ => self::KeyCode::Undefined,
     }
 }
@@ -148,27 +184,24 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaAction(ExitGameLoop));
     key_map.insert(F4, MetaAction(Fullscreen));
+    key_map.insert(C, MetaAction(CharacterScreen));
 
     key_map
 }
 
 pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
-    use entity::action::Direction::*;
-    use self::PlayerAction::*;
-    
     // TODO: Use actual costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     match player_action {
-        WalkNorth => Box::new(MoveAction::new(North, 0)),
-        WalkSouth => Box::new(MoveAction::new(South, 0)),
-        WalkEast => Box::new(MoveAction::new(East, 0)),
-        WalkWest => Box::new(MoveAction::new(West, 0)),
+        PlayerAction::WalkNorth => Box::new(MoveAction::new(Direction::North, 0)),
+        PlayerAction::WalkSouth => Box::new(MoveAction::new(Direction::South, 0)),
+        PlayerAction::WalkEast => Box::new(MoveAction::new(Direction::East, 0)),
+        PlayerAction::WalkWest => Box::new(MoveAction::new(Direction::West, 0)),
 
         _ => Box::new(PassAction),
     }
 }
-
 
 // /// return the position of a tile left-clicked in player's FOV (optionally in a range),
 // /// or (None, None) if right-clicked.

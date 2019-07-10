@@ -1,7 +1,6 @@
 /// Module Object
 ///
 /// An Object represents the base structure for all entities in the game.
-
 // external imports
 use tcod::colors::{self, Color};
 use tcod::console::*;
@@ -10,7 +9,7 @@ use tcod::console::*;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
-use game_state::{MessageLog, GameState};
+use game_state::{GameState, MessageLog};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
@@ -90,12 +89,9 @@ impl Object {
                 // TODO: Call ai function to figure out next action!
                 let pass = PassAction;
                 Some(Box::new(pass))
-            },
-            None => {
-                self.next_action.take()
             }
+            None => self.next_action.take(),
         }
-        
     }
 
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
@@ -174,7 +170,7 @@ impl Object {
 }
 
 // TODO: Replace all occurrences of objects[PLAYER].unwrap() with custom function!
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct ObjectVec(Vec<Option<Object>>);
 
 impl ObjectVec {
@@ -197,12 +193,10 @@ impl ObjectVec {
     pub fn extract(&mut self, index: usize) -> Option<Object> {
         match self.0.get_mut(index) {
             Some(item) => match item.take() {
-                Some(object) => {
-                    Some(object)
-                }
-                None => None
-            }
-            None => panic!("[ObjectVec::index] Error: invalid index {}", index)
+                Some(object) => Some(object),
+                None => None,
+            },
+            None => panic!("[ObjectVec::index] Error: invalid index {}", index),
         }
     }
 
@@ -213,7 +207,10 @@ impl ObjectVec {
                 obj.replace(object);
             }
             None => {
-                panic!("[ObjectVec::replace] Error: object {} with given index {} does not exist!", object.name, index);
+                panic!(
+                    "[ObjectVec::replace] Error: object {} with given index {} does not exist!",
+                    object.name, index
+                );
             }
         }
     }
@@ -226,9 +223,9 @@ impl Index<usize> for ObjectVec {
 
     fn index(&self, i: usize) -> &Self::Output {
         let item = self.0.get(i);
-        match item{
+        match item {
             Some(obj_option) => obj_option,
-            None => panic!("[ObjectVec::index] Error: invalid index {}", i)
+            None => panic!("[ObjectVec::index] Error: invalid index {}", i),
         }
     }
 }
@@ -236,10 +233,9 @@ impl Index<usize> for ObjectVec {
 impl IndexMut<usize> for ObjectVec {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         let item = self.0.get_mut(i);
-        match item{
+        match item {
             Some(obj_option) => obj_option,
-            None => panic!("[ObjectVec::index] Error: invalid index {}", i)
+            None => panic!("[ObjectVec::index] Error: invalid index {}", i),
         }
     }
-
 }

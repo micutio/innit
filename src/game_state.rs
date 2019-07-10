@@ -1,7 +1,6 @@
 /// Module Game_State
 ///
 /// This module contains the struct that encompasses all parts of the game state:
-
 // external imports
 use tcod::colors::{self, Color};
 
@@ -9,8 +8,8 @@ use tcod::colors::{self, Color};
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::{Object, ObjectVec};
-use ui::game_frontend::{initialize_fov, menu, GameFrontend, FovMap, AnimationType};
-use world::{is_blocked, make_world, World};
+use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
+use world::{make_world, World};
 
 // TODO: reorganize objectVec vector
 //      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objectVec
@@ -85,7 +84,7 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
         colors::RED,
     );
 
-    let mut game_engine = GameEngine::new();
+    let game_engine = GameEngine::new();
 
     (game_engine, game_state, objects)
 }
@@ -93,30 +92,39 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
 /// The game engine is a stateful handler of the game state.
 #[derive(Serialize, Deserialize)]
 pub struct GameEngine {
-    current_obj_index: usize
+    current_obj_index: usize,
 }
 
 pub enum ProcessResult {
     Nil,
     UpdateFOV,
     UpdateRender,
-    Animate {
-        anim_type: AnimationType,
-    }
+    Animate { anim_type: AnimationType },
 }
 
 impl GameEngine {
     pub fn new() -> Self {
         GameEngine {
-            current_obj_index: 0
+            current_obj_index: 0,
         }
     }
 
     // TODO: Implement energy costs for actions.
-    pub fn process_object(&mut self, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec) -> ProcessResult {
+    pub fn process_object(
+        &mut self,
+        fov_map: &FovMap,
+        game_state: &mut GameState,
+        objects: &mut ObjectVec,
+    ) -> ProcessResult {
         let mut active_object = objects.extract(self.current_obj_index).unwrap();
         let action_option = active_object.get_next_action();
-        let process_result = process_action(&mut active_object, fov_map, game_state, objects, action_option);
+        let process_result = process_action(
+            &mut active_object,
+            fov_map,
+            game_state,
+            objects,
+            action_option,
+        );
 
         // Put the object back into hte vector
         objects[self.current_obj_index].replace(active_object);
@@ -128,15 +136,17 @@ impl GameEngine {
 
 /// Process an action of a given object,
 /// TODO: Use fov_map to check whether something moved within the player's FOV.
-fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameState, objects: &mut ObjectVec, action_option: Option<Box<Action>>) -> ProcessResult {
+fn process_action(
+    actor: &mut Object,
+    fov_map: &FovMap,
+    game_state: &mut GameState,
+    objects: &mut ObjectVec,
+    action_option: Option<Box<Action>>,
+) -> ProcessResult {
     // first execute action
     let action_result = match action_option {
-        Some(action) => {
-            action.perform(actor, objects, game_state)
-        }
-        None => {
-            ActionResult::Failure
-        }
+        Some(action) => action.perform(actor, objects, game_state),
+        None => ActionResult::Failure,
     };
 
     // then process result and return
@@ -150,9 +160,9 @@ fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameSta
             // how to handle fails?
             ProcessResult::Nil
         }
-        ActionResult::Consequence{ action } => {
+        ActionResult::Consequence { action } => {
             // if we have a side effect, process it first and then the `main` action
-            let consequence_result = process_action(actor, fov_map, game_state, objects, action);
+            let _consequence_result = process_action(actor, fov_map, game_state, objects, action);
             // TODO: Think of a way to handle both results of action and consequence.
             ProcessResult::Nil
         }
@@ -160,28 +170,6 @@ fn process_action(actor: &mut Object, fov_map: &FovMap, game_state: &mut GameSta
 }
 
 // NOTE: All functions below are hot candidates for a rewrite because they might not fit into the new command pattern system.
-
-/// Advance to the next level
-pub fn next_level(
-    game_io: &mut GameFrontend,
-    objects: &mut ObjectVec,
-    game_state: &mut GameState,
-) {
-    game_state.log.add(
-        "You take a moment to rest, and recover your strength.",
-        colors::VIOLET,
-    );
-    // let heal_hp = objects[PLAYER].max_hp(game_state) / 2;
-    // objects[PLAYER].heal(game_state, heal_hp);
-
-    game_state.log.add(
-        "After a rare moment of peace, you descend deeper into the heart of the dungeon...",
-        colors::RED,
-    );
-    game_state.dungeon_level += 1;
-    game_state.world = make_world(objects, game_state.dungeon_level);
-    initialize_fov(game_io, &game_state.world);
-}
 
 pub struct Transition {
     pub level: u32,
@@ -244,9 +232,29 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
             }
         }
     }
-    
 }
 
+// /// Advance to the next level
+// pub fn next_level(
+//     game_io: &mut GameFrontend,
+//     objects: &mut ObjectVec,
+//     game_state: &mut GameState,
+// ) {
+//     game_state.log.add(
+//         "You take a moment to rest, and recover your strength.",
+//         colors::VIOLET,
+//     );
+//     // let heal_hp = objects[PLAYER].max_hp(game_state) / 2;
+//     // objects[PLAYER].heal(game_state, heal_hp);
+
+//     game_state.log.add(
+//         "After a rare moment of peace, you descend deeper into the heart of the dungeon...",
+//         colors::RED,
+//     );
+//     game_state.dungeon_level += 1;
+//     game_state.world = make_world(objects, game_state.dungeon_level);
+//     initialize_fov(game_io, &game_state.world);
+// }
 
 // /// Move the object with given id to the given position.
 // pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
@@ -256,7 +264,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
 //             if !is_blocked(world, objects, x + dx, y + dy) {
 //                 object.set_pos(x + dx, y + dy);
 //             }
-//     }    
+//     }
 // }
 
 // Move the object with given id towards a target.
@@ -284,5 +292,4 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
 
 //         }
 //     }
-    
 // }

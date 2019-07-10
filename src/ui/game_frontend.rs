@@ -1,14 +1,13 @@
 /// Module GUI
 ///
 /// This module contains all structures and methods pertaining to the user interface.
-/// 
+///
 /// Game frontend, input, state, engine etc are very common parameters
 /// for function calls in innit, therefore utmost consistency should be
 /// kept in the order of handing them over to functions.
-/// 
+///
 /// Function parameter precedence:
 /// game_frontend, game_input, game_engine, game_state, objects, anything else.
-
 // external imports
 use std::error::Error;
 use std::fs::File;
@@ -20,9 +19,15 @@ use tcod::map::FovAlgorithm;
 
 // internal imports
 use entity::object::{Object, ObjectVec};
-use game_state::{level_up, new_game, GameState, PLAYER, TORCH_RADIUS, GameEngine, LEVEL_UP_BASE, LEVEL_UP_FACTOR};
+use game_state::{
+    level_up, new_game, GameEngine, GameState, ProcessResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR,
+    PLAYER, TORCH_RADIUS,
+};
 use ui::color_palette::*;
-use ui::game_input::{GameInput, PlayerAction, start_input_proc_thread, get_player_action_instance, UiAction};
+use ui::game_input::{
+    get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
+    PlayerAction, UiAction,
+};
 use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // game window properties
@@ -132,14 +137,24 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                 // start new game
                 let (mut game_engine, mut game_state, mut objects) = new_game();
                 initialize_fov(game_frontend, &game_state.world);
-                game_loop(game_frontend, &mut game_engine, &mut game_state, &mut objects);
+                game_loop(
+                    game_frontend,
+                    &mut game_engine,
+                    &mut game_state,
+                    &mut objects,
+                );
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut game_engine, mut game_state, mut objects)) => {
                         initialize_fov(game_frontend, &game_state.world);
-                        game_loop(game_frontend, &mut game_engine, &mut game_state, &mut objects);
+                        game_loop(
+                            game_frontend,
+                            &mut game_engine,
+                            &mut game_state,
+                            &mut objects,
+                        );
                     }
                     Err(_e) => {
                         msgbox("\nNo saved game to load\n", 24, &mut game_frontend.root);
@@ -157,7 +172,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 }
 
 /// Initialize the field of view map with a given instance of **World**
-pub fn initialize_fov(game_frontend: &mut GameFrontend, world: &World, ) {
+pub fn initialize_fov(game_frontend: &mut GameFrontend, world: &World) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
@@ -184,44 +199,47 @@ pub fn game_loop(
     objects: &mut ObjectVec,
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
-
     // user input data
-    let mut current_mouse_position = (-1, -1);
+    println!("enter game loop");
+    let mut current_mouse_position;
     let mut next_action: PlayerAction;
-    let names_under_mouse: &str = Default::default();
+    let mut names_under_mouse: String = Default::default();
 
     // concurrent input processing
-    let mut game_input = Arc::new(Mutex::new( GameInput::new() ));
+    let mut game_input = Arc::new(Mutex::new(GameInput::new()));
     let game_input_buf = Arc::clone(&game_input);
     let input_thread = start_input_proc_thread(&mut game_input);
 
     // step 2/2: the actual loop //////////////////////////////////////////////
-    
     while !game_frontend.root.window_closed() {
-        
-        use game_state::ProcessResult::*;
-        match game_engine.process_object(&game_frontend.fov, game_state, objects) {
-            Nil => {
-
-            }
-            UpdateFov => {
+        let proc_result = game_engine.process_object(&game_frontend.fov, game_state, objects);
+        match proc_result {
+            ProcessResult::UpdateFOV => {
                 recompute_fov(game_frontend, objects);
                 update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
-            UpdateRender => {
+            ProcessResult::UpdateRender => {
                 update_render(game_frontend, game_state, objects, &names_under_mouse);
             }
 
-            Animate{ anim_type } => {
+            ProcessResult::Animate { anim_type } => {
                 // TODO: Play animation.
+                println!("animation");
             }
-
+            ProcessResult::Nil => {}
         }
 
         // once processing is done, check whether we have a new user input
-        { // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
+        {
+            // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
             let mut data = game_input_buf.lock().unwrap();
             current_mouse_position = (data.mouse_x, data.mouse_y);
+            names_under_mouse = get_names_under_mouse(
+                objects,
+                &game_frontend.fov,
+                current_mouse_position.0,
+                current_mouse_position.1,
+            );
             next_action = match data.next_player_actions.pop_front() {
                 Some(ref action) => action.clone(),
                 None => PlayerAction::Undefined,
@@ -231,11 +249,17 @@ pub fn game_loop(
         // distinguish between in-game action and ui (=meta) actions
         match next_action {
             PlayerAction::MetaAction(actual_action) => {
-                let is_exit_game = handle_ui_actions(game_frontend, game_engine, game_state, objects, actual_action);
+                let is_exit_game = handle_ui_actions(
+                    game_frontend,
+                    game_engine,
+                    game_state,
+                    objects,
+                    actual_action,
+                );
                 if is_exit_game {
                     break;
                 }
-            },
+            }
             _ => {
                 // let mut player = objects.mut_obj(PLAYER);
                 // *player.set_next_action(Some(get_player_action_instance(next_action)));
@@ -251,7 +275,14 @@ pub fn game_loop(
     }
 
     // step 3/3: cleanup before returning to main menu
-    input_thread.join();
+    let join_result = input_thread.join();
+    match join_result {
+        Ok(_) => println!("[join] successfully joined user input thread"),
+        Err(e) => println!(
+            "[join] error while trying to join user input thread: {:?}",
+            e
+        ),
+    }
 }
 
 /// Load an existing savegame and instantiates GameState & Objects
@@ -265,14 +296,24 @@ fn load_game() -> Result<(GameEngine, GameState, ObjectVec), Box<Error>> {
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-fn save_game(game_engine: &GameEngine, game_state: &GameState, objects: &ObjectVec) -> Result<(), Box<Error>> {
+fn save_game(
+    game_engine: &GameEngine,
+    game_state: &GameState,
+    objects: &ObjectVec,
+) -> Result<(), Box<Error>> {
     let save_data = serde_json::to_string(&(game_engine, game_state, objects))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
 
-fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEngine, game_state: &mut GameState, objects: &ObjectVec, action: UiAction) -> bool {
+fn handle_ui_actions(
+    game_frontend: &mut GameFrontend,
+    game_engine: &mut GameEngine,
+    game_state: &mut GameState,
+    objects: &ObjectVec,
+    action: UiAction,
+) -> bool {
     match action {
         UiAction::ExitGameLoop => {
             save_game(game_engine, game_state, objects).unwrap();
@@ -285,7 +326,7 @@ fn handle_ui_actions(game_frontend: &mut GameFrontend, game_engine: &mut GameEng
                 let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
                 if let Some(fighter) = player.fighter.as_ref() {
                     let msg = format!(
-"Character information
+                        "Character information
 
 Level: {}
 Experience: {}
@@ -310,7 +351,6 @@ Defense: {}",
             let fullscreen = game_frontend.root.is_fullscreen();
             game_frontend.root.set_fullscreen(!fullscreen);
         }
-            
     }
     false
 }
@@ -318,31 +358,29 @@ Defense: {}",
 fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
     if let Some(ref player) = objects[PLAYER] {
         game_frontend
-        .fov
-        .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+            .fov
+            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
     }
 }
 
-fn update_render(game_frontend: &mut GameFrontend, game_state: &mut GameState, objects: &ObjectVec, names_under_mouse: &str) {
+fn update_render(
+    game_frontend: &mut GameFrontend,
+    game_state: &mut GameState,
+    objects: &ObjectVec,
+    names_under_mouse: &str,
+) {
     // clear the screen of the previous frame
     game_frontend.con.clear();
-    
     // render objects and map
     // step 1/2: update visibility of objects and world tiles
     update_visibility(game_frontend, game_state, objects);
     // step 2/2: render everything
-    render_all(
-        game_frontend,
-        game_state,
-        objects,
-        &names_under_mouse,
-    );
+    render_all(game_frontend, game_state, objects, &names_under_mouse);
 
     // draw everything on the window at once
     game_frontend.root.flush();
 }
 
-// HACK: gratuitous use of unwrap()
 fn update_visibility(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
@@ -402,7 +440,8 @@ pub fn render_all(
         .get_vector()
         .iter()
         .flatten()
-        .filter(|o| { game_frontend.fov.is_in_fov(o.x, o.y)
+        .filter(|o| {
+            game_frontend.fov.is_in_fov(o.x, o.y)
                 || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
         })
         .collect();

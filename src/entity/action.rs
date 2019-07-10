@@ -1,36 +1,38 @@
+use std::fmt::Debug;
 /// Module Action
 ///
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
-
 // external imports
-use tcod::colors::{self};
-use std::fmt::Debug;
+use tcod::colors;
 
 // internal imports
-use entity::object::{ObjectVec, Object};
-use game_state::{MessageLog, GameState};
+use entity::object::{Object, ObjectVec};
+use game_state::{GameState, MessageLog};
 use world::is_blocked;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
-/// TODO: (!) Include UI feedback e.g., animation, FOV update and rendering! 
+/// TODO: (!) Include UI feedback e.g., animation, FOV update and rendering!
 pub enum ActionResult {
     /// Sucessfully finished action
     Success,
     /// Failed to perform an action, ideally without any side effect.
     Failure,
     /// Another action happens automatically after this one.
-    Consequence {
-        action: Option<Box<dyn Action>>,
-    },
+    Consequence { action: Option<Box<dyn Action>> },
 }
 
 /// Prototype for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
 #[typetag::serde(tag = "type")]
 pub trait Action: Debug {
-    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult;
+    fn perform(
+        &self,
+        owner: &mut Object,
+        objects: &mut ObjectVec,
+        game_state: &mut GameState,
+    ) -> ActionResult;
 
     fn get_energy_cost(&self) -> i32;
 }
@@ -41,10 +43,17 @@ pub struct PassAction;
 
 #[typetag::serde]
 impl Action for PassAction {
-    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
+    fn perform(
+        &self,
+        owner: &mut Object,
+        _objects: &mut ObjectVec,
+        game_state: &mut GameState,
+    ) -> ActionResult {
         // do nothing
         // duh
-        game_state.log.add(format!("{} passes their turn", owner.name), colors::WHITE,);
+        game_state
+            .log
+            .add(format!("{} passes their turn", owner.name), colors::WHITE);
         ActionResult::Success
     }
 
@@ -77,7 +86,12 @@ impl AttackAction {
 
 #[typetag::serde]
 impl Action for AttackAction {
-    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
+    fn perform(
+        &self,
+        _owner: &mut Object,
+        objects: &mut ObjectVec,
+        game_state: &mut GameState,
+    ) -> ActionResult {
         match self.target_id {
             Some(target_id) => {
                 // TODO: Replace with defend action.
@@ -100,7 +114,10 @@ impl Action for AttackAction {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Direction {
-    North, South, East, West,
+    North,
+    South,
+    East,
+    West,
 }
 
 /// Move an object
@@ -122,7 +139,12 @@ impl MoveAction {
 
 #[typetag::serde]
 impl Action for MoveAction {
-    fn perform(&self, owner: &mut Object, objects: &mut ObjectVec, game_state: &mut GameState) -> ActionResult {
+    fn perform(
+        &self,
+        owner: &mut Object,
+        objects: &mut ObjectVec,
+        game_state: &mut GameState,
+    ) -> ActionResult {
         use self::Direction::*;
         let (dx, dy) = match self.direction {
             North => (0, -1),
