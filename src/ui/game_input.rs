@@ -27,6 +27,7 @@ pub enum KeyCode {
     Esc, F1, F2, F3, F4,
 }
 
+#[derive(Clone)]
 pub enum PlayerAction {
     MetaAction(UiAction),
     Undefined,
@@ -38,6 +39,7 @@ pub enum PlayerAction {
     WalkWest,
 }
 
+#[derive(Clone)]
 pub enum UiAction {
     ExitGameLoop,
     Fullscreen,
@@ -47,7 +49,7 @@ pub enum UiAction {
 pub struct GameInput {
     pub mouse_x: i32,
     pub mouse_y: i32,
-    pub next_player_actions: VecDeque<&'static PlayerAction>,
+    pub next_player_actions: VecDeque<PlayerAction>,
 }
 
 impl GameInput {
@@ -101,9 +103,9 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
 
             // lock our mutex and get to work
             let mut input = game_input_buf.lock().unwrap();
-            let player_action = match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                Some(key) => key,
-                None => key_to_action_mapping.get(&KeyCode::Undefined).unwrap(),
+            let player_action: PlayerAction = match key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                Some(key) => key.clone(),
+                None => PlayerAction::Undefined,
             };
             input.next_player_actions.push_back(player_action);
             input.mouse_x = mouse_x;
@@ -114,6 +116,8 @@ pub fn start_input_proc_thread(game_input: &mut Arc<Mutex<GameInput>>) -> JoinHa
 
 /// Translate between tcod's keys and our own key codes.
 fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
+    use tcod::input::KeyCode::*;
+
     match tcod_key {
         // in-game actinos
         Key { code: Up, .. } => self::KeyCode::Up,
@@ -148,8 +152,9 @@ pub fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map
 }
 
-pub fn get_player_action_instance(player_action: &PlayerAction) -> Box<dyn Action> {
+pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
     use entity::action::Direction::*;
+    use self::PlayerAction::*;
     
     // TODO: Use actual costs.
     // No need to map `Esc` since we filter out exiting before instantiating
@@ -159,6 +164,8 @@ pub fn get_player_action_instance(player_action: &PlayerAction) -> Box<dyn Actio
         WalkSouth => Box::new(MoveAction::new(South, 0)),
         WalkEast => Box::new(MoveAction::new(East, 0)),
         WalkWest => Box::new(MoveAction::new(West, 0)),
+
+        _ => Box::new(PassAction),
     }
 }
 
