@@ -169,6 +169,8 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
     use tcod::input::KeyCode::*;
 
     match tcod_key {
+        // letters
+        Key { printable: 'c', .. } => self::KeyCode::C,
         // in-game actions
         Key { code: Up, .. } => self::KeyCode::Up,
         Key { code: Down, .. } => self::KeyCode::Down,

@@ -19,9 +19,9 @@ const COL_ACCENT_WARM: Color = Color {
 };
 
 const COL_ACCENT_COLD: Color = Color {
-    r: 130,
-    g: 43,
-    b: 102,
+    r: 72,
+    g: 143,
+    b: 181,
 };
 
 pub struct ColorPalette {
@@ -40,8 +40,8 @@ impl ColorPalette {
             col_main: COL_MAIN,
             col_acc_warm: COL_ACCENT_WARM,
             col_acc_cold: COL_ACCENT_COLD,
-            dark_factor: 0.2,
-            light_factor: 0.8,
+            dark_factor: 0.3,
+            light_factor: 1.2,
             full_saturation_factor: 0.9,
             de_saturation_factor: 0.3,
         }
@@ -54,7 +54,7 @@ impl ColorPalette {
 
     pub fn get_col_light_wall(&self) -> Color {
         self.col_main
-            .scale_hsv(self.full_saturation_factor, self.light_factor / 2.0)
+            .scale_hsv(self.full_saturation_factor, self.light_factor * 0.7)
     }
 
     pub fn get_col_dark_ground(&self) -> Color {
@@ -65,5 +65,22 @@ impl ColorPalette {
     pub fn get_col_dark_wall(&self) -> Color {
         self.col_main
             .scale_hsv(self.de_saturation_factor, self.dark_factor / 2.0)
+    }
+
+    pub fn get_col_acc_warm(&self) -> Color {
+        self.col_acc_warm
+    }
+
+    pub fn get_col_acc_cold(&self) -> Color {
+        self.col_acc_cold
+    }
+
+    pub fn get_col_menu_fg(&self) -> Color {
+        self.col_acc_cold
+    }
+
+    pub fn get_col_menu_bg(&self) -> Color {
+        self.col_main
+            .scale_hsv(self.de_saturation_factor, self.light_factor * 2.0)
     }
 }

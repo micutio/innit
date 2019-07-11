@@ -243,7 +243,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
             let mut choice = None;
             while choice.is_none() {
                 // keep asking until a choice is made
-                choice = menu(
+                choice = menu(game_io,
                     "Level up! Chose a stat to raise:\n",
                     &[
                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
@@ -251,7 +251,6 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
                         format!("Agility (+1 defense, from {})", fighter.base_defense),
                     ],
                     LEVEL_SCREEN_WIDTH,
-                    &mut game_io.root,
                 );
             }
             fighter.xp -= level_up_xp;

@@ -14,6 +14,7 @@ use std::io::{Read, Write};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
+use tcod::chars;
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
@@ -115,7 +116,10 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 
         game_frontend
             .root
-            .set_default_foreground(colors::LIGHT_YELLOW); // this doesn't seem to work...
+            .set_default_foreground(game_frontend.coloring.get_col_menu_bg());
+        game_frontend
+            .root
+            .set_default_background(game_frontend.coloring.get_col_menu_bg());
         game_frontend.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT / 2 - 4,
@@ -133,7 +137,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu("", choices, 24, &mut game_frontend.root);
+        let choice = menu(game_frontend, "main menu", choices, 24);
 
         match choice {
             Some(0) => {
@@ -160,7 +164,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                         );
                     }
                     Err(_e) => {
-                        msgbox("\nNo saved game to load\n", 24, &mut game_frontend.root);
+                        msgbox(game_frontend, "\nNo saved game to load\n", 24);
                         continue;
                     }
                 }
@@ -392,7 +396,7 @@ Defense: {}",
                         player.power(game_state),
                         player.defense(game_state),
                     );
-                    msgbox(&msg, CHARACTER_SCREEN_WIDTH, &mut game_frontend.root);
+                    msgbox(game_frontend, &msg, CHARACTER_SCREEN_WIDTH);
                 }
             };
         }
@@ -544,7 +548,9 @@ fn render_ui(
     names_under_mouse: &str,
 ) {
     // prepare to render the GUI panel
-    game_frontend.panel.set_default_background(colors::BLACK);
+    game_frontend
+        .panel
+        .set_default_background(game_frontend.coloring.get_col_menu_bg());
     game_frontend.panel.clear();
 
     // show player's stats
@@ -638,10 +644,10 @@ fn render_bar(
 /// Display a generic menu with multiple options to choose from.
 /// Returns the number of the menu item that has been chosen.
 pub fn menu<T: AsRef<str>>(
+    game_frontend: &mut GameFrontend,
     header: &str,
     options: &[T],
     width: i32,
-    root: &mut Root,
 ) -> Option<usize> {
     assert!(
         options.len() <= 26,
@@ -650,25 +656,51 @@ pub fn menu<T: AsRef<str>>(
 
     // calculate total height for the header (after auto-wrap) and one line per option
     let header_height = if header.is_empty() {
-        0
+        1
     } else {
-        root.get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
+        game_frontend
+            .root
+            .get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
     };
 
-    let height = options.len() as i32 + header_height;
+    let height = options.len() as i32 + header_height + 1;
 
     // create an off-screen console that represents the menu's window
     let mut window = Offscreen::new(width, height);
 
+    for x in 0..width {
+        for y in 0..height {
+            window.set_char_background(
+                x,
+                y,
+                game_frontend.coloring.get_col_menu_bg(),
+                BackgroundFlag::Set,
+            );
+            window.set_char(x, y, ' ');
+        }
+    }
+
+    // render border
+    for x in 0..width {
+        window.set_char(x, 0, chars::BLOCK1);
+        window.set_char(x, height - 1, chars::BLOCK1);
+    }
+    for y in 0..height - 1 {
+        window.set_char(0, y, chars::BLOCK1);
+        window.set_char(width - 1, y, chars::BLOCK1);
+    }
+
     // print the header, with auto-wrap
-    window.set_default_foreground(colors::WHITE);
+    window.set_default_background(game_frontend.coloring.get_col_menu_bg());
+    window.set_default_foreground(game_frontend.coloring.get_col_menu_fg());
+
     window.print_rect_ex(
-        0,
+        width / 2 as i32,
         0,
         width,
         height,
         BackgroundFlag::None,
-        TextAlignment::Left,
+        TextAlignment::Center,
         header,
     );
 
@@ -677,7 +709,7 @@ pub fn menu<T: AsRef<str>>(
         let menu_letter = (b'a' + index as u8) as char;
         let text = format!("({}) {}", menu_letter, option_text.as_ref());
         window.print_ex(
-            0,
+            1,
             header_height + index as i32,
             BackgroundFlag::None,
             TextAlignment::Left,
@@ -688,11 +720,19 @@ pub fn menu<T: AsRef<str>>(
     // blit contents of "window" to the root console
     let x = SCREEN_WIDTH / 2 - width / 2;
     let y = SCREEN_HEIGHT / 2 - height / 2;
-    tcod::console::blit(&window, (0, 0), (width, height), root, (x, y), 1.0, 0.7);
+    tcod::console::blit(
+        &window,
+        (0, 0),
+        (width, height),
+        &mut game_frontend.root,
+        (x, y),
+        1.0,
+        0.7,
+    );
 
     // present the root console to the player and wait for a key-press
-    root.flush();
-    let key = root.wait_for_keypress(true);
+    game_frontend.root.flush();
+    let key = game_frontend.root.wait_for_keypress(true);
 
     // convert the ASCII code to an index
     // if it corresponds to an option, return it
@@ -710,7 +750,7 @@ pub fn menu<T: AsRef<str>>(
 
 /// Display a box with a message to the user.
 /// This works like a menu, but without any choices.
-pub fn msgbox(text: &str, width: i32, root: &mut Root) {
+pub fn msgbox(game_frontend: &mut GameFrontend, text: &str, width: i32) {
     let options: &[&str] = &[];
-    menu(text, options, width, root);
+    menu(game_frontend, text, options, width);
 }
