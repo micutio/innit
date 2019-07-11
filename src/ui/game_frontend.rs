@@ -59,6 +59,7 @@ pub struct GameFrontend {
     pub con: Offscreen,
     pub panel: Offscreen,
     pub fov: FovMap,
+    pub coloring: ColorPalette,
 }
 
 impl GameFrontend {
@@ -83,6 +84,7 @@ impl GameFrontend {
             con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
             panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
+            coloring: ColorPalette::new(),
         }
     }
 }
@@ -428,25 +430,29 @@ fn update_visibility(
 ) {
     // go through all tiles and set their background color
     if let Some(ref player) = objects[PLAYER] {
+        let col_dark_wall = game_frontend.coloring.get_col_dark_wall();
+        let col_light_wall = game_frontend.coloring.get_col_light_wall();
+        let col_dark_ground = game_frontend.coloring.get_col_dark_ground();
+        let col_light_ground = game_frontend.coloring.get_col_light_ground();
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 let visible = game_frontend.fov.is_in_fov(x, y);
                 let wall = game_state.world[x as usize][y as usize].block_sight;
                 let tile_color = match (visible, wall) {
                     // outside field of view:
-                    (false, true) => get_col_dark_wall(),
-                    (false, false) => get_col_dark_ground(),
+                    (false, true) => col_dark_wall,
+                    (false, false) => col_dark_ground,
                     // inside fov:
                     // (true, true) => COLOR_LIGHT_WALL,
                     (true, true) => colors::lerp(
-                        get_col_light_wall(),
-                        get_col_dark_wall(),
+                        col_light_wall,
+                        col_dark_wall,
                         player.distance(x, y) / TORCH_RADIUS as f32,
                     ),
                     // (true, false) => COLOR_LIGHT_GROUND,
                     (true, false) => colors::lerp(
-                        get_col_light_ground(),
-                        get_col_dark_ground(),
+                        col_light_ground,
+                        col_dark_ground,
                         player.distance(x, y) / TORCH_RADIUS as f32,
                     ),
                 };
