@@ -129,12 +129,12 @@ pub fn start_input_proc_thread(
                 Some((_, Event::Mouse(_m))) => {
                     mouse_x = _m.cx as i32;
                     mouse_y = _m.cy as i32;
-                    // println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
+                    println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
                 }
                 // get used key to create next user action
                 Some((_, Event::Key(k))) => {
                     _key = k;
-                    // println!("[input thread] key input {:?}", k.code);
+                    println!("[input thread] key input {:?}", k.code);
                 }
                 _ => {}
             }
@@ -151,7 +151,7 @@ pub fn start_input_proc_thread(
 
             match rx.try_recv() {
                 Ok(true) | Err(TryRecvError::Disconnected) => {
-                    // println!("[input thread] terminating");
+                    println!("[input thread] terminating");
                     break;
                 }
                 _ => {}

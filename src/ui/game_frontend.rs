@@ -248,7 +248,7 @@ pub fn game_loop(
         // once processing is done, check whether we have a new user input
         if let Some(ref player) = objects[PLAYER] {
             // ... but only if the previous user action is used up
-            if player.next_action.is_some() {
+            if player.next_action.is_none() {
                 // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
                 let mut data = game_input_buf.lock().unwrap();
                 current_mouse_position = (data.mouse_x, data.mouse_y);
@@ -258,18 +258,20 @@ pub fn game_loop(
                     current_mouse_position.0,
                     current_mouse_position.1,
                 );
-                next_action = data.next_player_actions.pop_front();
+                if let Some(new_action) = data.next_player_actions.pop_front() {
+                    next_action = Some(new_action);
+                    println!("[frontend] player next action changed to {:?}", next_action);
+                }
             }
-            
         }
 
         // distinguish between in-game action and ui (=meta) actions
         if next_action.is_some() {
-            println!("player [in-game|ui action] => {:?}", next_action);
+            println!("[frontend] player next action => {:?}", next_action);
         }
         match next_action {
             Some(PlayerAction::MetaAction(actual_action)) => {
-                println!("[game_frontend] process UI action: {:?}", actual_action);
+                println!("[frontend] process UI action: {:?}", actual_action);
                 let is_exit_game = handle_ui_actions(
                     game_frontend,
                     game_engine,
@@ -280,10 +282,10 @@ pub fn game_loop(
                 if is_exit_game {
                     match tx.send(true) {
                         Ok(_) => {
-                            println!("[game_frontend] terminating input proc thread");
+                            println!("[frontend] terminating input proc thread");
                         }
                         Err(e) => {
-                            println!("[game_frontend] error terminating input proc thread: {}", e);
+                            println!("[frontend] error terminating input proc thread: {}", e);
                         }
                     }
                     break;
@@ -294,15 +296,12 @@ pub fn game_loop(
                 // *player.set_next_action(Some(get_player_action_instance(next_action)));
                 // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
                 println!(
-                    "[game_frontend] inject ingame action: {:?} to player",
+                    "[frontend] inject ingame action {:?} to player",
                     ingame_action
                 );
                 if let Some(ref mut player) = objects[PLAYER] {
                     let player_next_action = Some(get_player_action_instance(ingame_action));
-                    println!(
-                        "[game_frontend] player action object: {:?}",
-                        player_next_action
-                    );
+                    println!("[frontend] player action object: {:?}", player_next_action);
                     player.set_next_action(player_next_action);
                 };
             }

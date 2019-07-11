@@ -1,7 +1,6 @@
 /// Module World
 ///
 /// The world contains all structures and methods for terrain/dungeon generation
-
 // external imports
 use rand::Rng;
 use std::cmp;
@@ -114,17 +113,18 @@ pub fn make_world(objects: &mut ObjectVec, level: u32) -> World {
     }
 
     // create stairs at the center of the last room
-    let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
-    let mut stairs = Object::new(
-        last_room_x,
-        last_room_y,
-        "stairs",
-        false,
-        '<',
-        colors::WHITE,
-    );
-    stairs.always_visible = true;
-    objects.push(stairs);
+    // let (last_room_x, last_room_y) = rooms[rooms.len() - 1].center();
+    // let mut stairs = Object::new(
+    //     last_room_x,
+    //     last_room_y,
+    //     "stairs",
+    //     false,
+    //     '<',
+    //     colors::WHITE,
+    // );
+    // stairs.ai = Some(Ai::Basic);
+    // stairs.always_visible = true;
+    // objects.push(stairs);
 
     world
 }

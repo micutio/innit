@@ -54,7 +54,9 @@ impl Action for PassAction {
         game_state
             .log
             .add(format!("{} passes their turn", owner.name), colors::WHITE);
-        ActionResult::Success{ callback: ObjectProcResult::NoFeedback, }
+        ActionResult::Success {
+            callback: ObjectProcResult::NoFeedback,
+        }
     }
 
     fn get_energy_cost(&self) -> i32 {
@@ -99,7 +101,9 @@ impl Action for AttackAction {
                 // in `objects` is the owner of this action.
                 if let Some(ref mut target) = objects[target_id] {
                     target.take_damage(self.base_power, game_state);
-                    return ActionResult::Success { callback: ObjectProcResult::CheckEnterFOV };
+                    return ActionResult::Success {
+                        callback: ObjectProcResult::CheckEnterFOV,
+                    };
                 }
                 ActionResult::Failure
             }
@@ -156,16 +160,18 @@ impl Action for MoveAction {
         let (x, y) = owner.pos();
         if !is_blocked(&game_state.world, &objects, x + dx, y + dy) {
             println!(
-                "move {} from {},{} to {},{}",
+                "[move action] move {} from ({},{}) to ({},{})",
                 owner.name,
                 x,
                 y,
                 x + dx,
                 y + dy
             );
-            owner.set_pos(x + dy, y + dy);
+            owner.set_pos(x + dx, y + dy);
             // TODO: Check whether we walked into the player's field of view.
-            ActionResult::Success { callback: ObjectProcResult::CheckEnterFOV }
+            ActionResult::Success {
+                callback: ObjectProcResult::CheckEnterFOV,
+            }
         } else {
             ActionResult::Failure
         }

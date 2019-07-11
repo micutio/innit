@@ -122,86 +122,87 @@ impl GameEngine {
         objects: &mut ObjectVec,
     ) -> ObjectProcResult {
         if self.current_obj_index == PLAYER {
-            println!("processing object #{}", self.current_obj_index);
+            // println!("processing object #{}", self.current_obj_index);
         }
         let mut process_result = ObjectProcResult::NoAction;
-        // unpack object
+        // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+            // println!("[engine] next actor: {:?}", active_object);
             if let Some(next_action) = active_object.get_next_action() {
-                if self.current_obj_index == PLAYER {
-                    println!("next action: {:?}", next_action);
-                }
+                println!("[engine] next action to process: {:?}", next_action);
 
                 // perform action
-                process_result = process_action(
+                process_result = self.process_action(
                     &mut active_object,
                     fov_map,
                     game_state,
                     objects,
                     next_action,
                 );
-                if self.current_obj_index == PLAYER {
-                    println!("process result {:?}", process_result);
-                    println!("process object {:?}", active_object);
-                }
-
-                objects[self.current_obj_index].replace(active_object);
+                println!("[engine] process result {:?}", process_result);
             }
+            // return object back to objects vector
+            objects[self.current_obj_index].replace(active_object);
         }
 
         // only increase counter if the object has made a move
         if process_result != ObjectProcResult::NoAction {
-            self.current_obj_index += 1 % objects.get_vector().len();
+            self.current_obj_index = (self.current_obj_index + 1) % objects.get_vector().len();
         }
         process_result
     }
-}
 
-/// Process an action of a given object,
-/// TODO: Use fov_map to check whether something moved within the player's FOV.
-fn process_action(
-    actor: &mut Object,
-    fov_map: &FovMap,
-    game_state: &mut GameState,
-    objects: &mut ObjectVec,
-    action: Box<Action>,
-) -> ObjectProcResult {
-    // first execute action
-    println!("[game_engine] processing {:?}", action);
+    /// Process an action of a given object,
+    /// TODO: Use fov_map to check whether something moved within the player's FOV.
+    fn process_action(
+        &self,
+        actor: &mut Object,
+        fov_map: &FovMap,
+        game_state: &mut GameState,
+        objects: &mut ObjectVec,
+        action: Box<Action>,
+    ) -> ObjectProcResult {
+        // first execute action
+        println!("[engine] processing {:?}", action);
 
-    // then process result and return
-    match action.perform(actor, objects, game_state) {
-        ActionResult::Success { callback } => {
-            match callback {
-                // if the acting object is inside the FOV now, trigger a re-render
-                ObjectProcResult::CheckEnterFOV => {
-                    if fov_map.is_in_fov(actor.x, actor.y) {
-                        ObjectProcResult::ReRender
-                    } else {
-                        ObjectProcResult::NoFeedback
+        // then process result and return
+        match action.perform(actor, objects, game_state) {
+            ActionResult::Success { callback } => {
+                match callback {
+                    ObjectProcResult::CheckEnterFOV => {
+                        if self.current_obj_index == PLAYER {
+                            // if we have the player, then it will surely be in it's own fov
+                            ObjectProcResult::UpdateFOV
+                        } else if fov_map.is_in_fov(actor.x, actor.y) {
+                            // if the acting object is inside the FOV now, trigger a re-render
+                            ObjectProcResult::ReRender
+                        } else {
+                            ObjectProcResult::NoFeedback
+                        }
                     }
-                }
-                // only play animations if the object is visible to our hero
-                ObjectProcResult::Animate { anim_type } => {
-                    if fov_map.is_in_fov(actor.x, actor.y) {
-                        ObjectProcResult::Animate { anim_type }
-                    } else {
-                        ObjectProcResult::NoFeedback
+                    // only play animations if the object is visible to our hero
+                    ObjectProcResult::Animate { anim_type } => {
+                        if fov_map.is_in_fov(actor.x, actor.y) {
+                            ObjectProcResult::Animate { anim_type }
+                        } else {
+                            ObjectProcResult::NoFeedback
+                        }
                     }
+                    _ => callback,
                 }
-                _ => callback,
             }
-        }
-        ActionResult::Failure => {
-            // how to handle fails?
-            ObjectProcResult::NoAction
-        }
-        ActionResult::Consequence { action } => {
-            // if we have a side effect, process it first and then the `main` action
-            let _consequence_result = process_action(actor, fov_map, game_state, objects, action.unwrap());
-            // TODO: Think of a way to handle both results of action and consequence.
-            // TODO: extract into function, recursively bubble results and return the highest priority
-            ObjectProcResult::ReRender // use highest priority for now as a dummy
+            ActionResult::Failure => {
+                // how to handle fails?
+                ObjectProcResult::NoAction
+            }
+            ActionResult::Consequence { action } => {
+                // if we have a side effect, process it first and then the `main` action
+                let _consequence_result =
+                    self.process_action(actor, fov_map, game_state, objects, action.unwrap());
+                // TODO: Think of a way to handle both results of action and consequence.
+                // TODO: extract into function, recursively bubble results and return the highest priority
+                ObjectProcResult::ReRender // use highest priority for now as a dummy
+            }
         }
     }
 }
