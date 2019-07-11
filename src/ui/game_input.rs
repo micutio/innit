@@ -119,9 +119,10 @@ pub fn start_input_proc_thread(
     let key_to_action_mapping = create_key_mapping();
 
     thread::spawn(move || {
+        let mut mouse_x: i32 = 0;
+        let mut mouse_y: i32 = 0;
+
         loop {
-            let mut mouse_x: i32 = 0;
-            let mut mouse_y: i32 = 0;
             let _mouse: Mouse = Default::default(); // this is not really used right now
             let mut _key: Key = Default::default();
             match input::check_for_event(input::MOUSE | input::KEY_PRESS) {

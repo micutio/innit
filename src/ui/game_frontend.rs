@@ -203,7 +203,7 @@ pub fn game_loop(
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
     // user input data
-    let mut current_mouse_position;
+    let mut current_mouse_pos: (i32, i32) = Default::default();
     let mut next_action: Option<PlayerAction>;
     let mut names_under_mouse: String = Default::default();
 
@@ -248,21 +248,29 @@ pub fn game_loop(
         }
 
         // once processing is done, check whether we have a new user input
-        if let Some(ref player) = objects[PLAYER] {
-            // ... but only if the previous user action is used up
-            if player.next_action.is_none() {
-                // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
-                let mut data = game_input_buf.lock().unwrap();
-                current_mouse_position = (data.mouse_x, data.mouse_y);
+        {
+            // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
+            let mut data = game_input_buf.lock().unwrap();
+            // If the mouse moved, update the names and trigger re-render
+            if current_mouse_pos.0 != data.mouse_x || current_mouse_pos.1 != data.mouse_y {
+                current_mouse_pos = (data.mouse_x, data.mouse_y);
                 names_under_mouse = get_names_under_mouse(
                     objects,
                     &game_frontend.fov,
-                    current_mouse_position.0,
-                    current_mouse_position.1,
+                    current_mouse_pos.0,
+                    current_mouse_pos.1,
                 );
-                if let Some(new_action) = data.next_player_actions.pop_front() {
-                    next_action = Some(new_action);
-                    println!("[frontend] player next action changed to {:?}", next_action);
+                re_render(game_frontend, game_state, objects, &names_under_mouse);
+                names_under_mouse = "".to_string();
+            }
+
+            if let Some(ref player) = objects[PLAYER] {
+                // ... but only if the previous user action is used up
+                if player.next_action.is_none() {
+                    if let Some(new_action) = data.next_player_actions.pop_front() {
+                        next_action = Some(new_action);
+                        println!("[frontend] player next action changed to {:?}", next_action);
+                    }
                 }
             }
         }
