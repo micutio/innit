@@ -19,17 +19,17 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
-use entity::object::{Object, GameObjects};
-use game_state::{
-    level_up, new_game, GameEngine, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR,
-    PLAYER, TORCH_RADIUS,
+use core::game_state::{
+    level_up, new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER,
+    TORCH_RADIUS,
 };
+use core::world::{World, WORLD_HEIGHT, WORLD_WIDTH};
+use entity::object::{GameObjects, Object};
 use ui::color_palette::*;
 use ui::game_input::{
     get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
     PlayerAction, UiAction,
 };
-use world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 
 // game window properties
 const SCREEN_WIDTH: i32 = 80;
@@ -142,26 +142,16 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut game_engine, mut game_state, mut objects) = new_game();
+                let (mut game_state, mut objects) = new_game();
                 initialize_fov(game_frontend, &game_state.world);
-                game_loop(
-                    game_frontend,
-                    &mut game_engine,
-                    &mut game_state,
-                    &mut objects,
-                );
+                game_loop(game_frontend, &mut game_state, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
-                    Ok((mut game_engine, mut game_state, mut objects)) => {
+                    Ok((mut game_state, mut objects)) => {
                         initialize_fov(game_frontend, &game_state.world);
-                        game_loop(
-                            game_frontend,
-                            &mut game_engine,
-                            &mut game_state,
-                            &mut objects,
-                        );
+                        game_loop(game_frontend, &mut game_state, &mut objects);
                     }
                     Err(_e) => {
                         msgbox(game_frontend, "\nNo saved game to load\n", 24);
@@ -201,7 +191,6 @@ pub fn initialize_fov(game_frontend: &mut GameFrontend, world: &World) {
 /// - let NPCs take their turn
 pub fn game_loop(
     game_frontend: &mut GameFrontend,
-    game_engine: &mut GameEngine,
     game_state: &mut GameState,
     objects: &mut GameObjects,
 ) {
@@ -224,7 +213,7 @@ pub fn game_loop(
     while !game_frontend.root.window_closed() {
         next_action = None;
         // let the game engine process an object
-        let proc_result = game_engine.process_object(&game_frontend.fov, game_state, objects);
+        let proc_result = game_state.process_object(&game_frontend.fov, objects);
         match proc_result {
             // no action has been performed, repeat the turn and try again
             ObjectProcResult::NoAction => {}
@@ -286,13 +275,8 @@ pub fn game_loop(
         match next_action {
             Some(PlayerAction::MetaAction(actual_action)) => {
                 println!("[frontend] process UI action: {:?}", actual_action);
-                let is_exit_game = handle_ui_actions(
-                    game_frontend,
-                    game_engine,
-                    game_state,
-                    objects,
-                    actual_action,
-                );
+                let is_exit_game =
+                    handle_ui_actions(game_frontend, game_state, objects, actual_action);
                 if is_exit_game {
                     match tx.send(true) {
                         Ok(_) => {
@@ -339,21 +323,17 @@ pub fn game_loop(
 
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-fn load_game() -> Result<(GameEngine, GameState, GameObjects), Box<Error>> {
+fn load_game() -> Result<(GameState, GameObjects), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(GameEngine, GameState, GameObjects)>(&json_save_state)?;
+    let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
     Ok(result)
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-fn save_game(
-    game_engine: &GameEngine,
-    game_state: &GameState,
-    objects: &GameObjects,
-) -> Result<(), Box<Error>> {
-    let save_data = serde_json::to_string(&(game_engine, game_state, objects))?;
+fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<Error>> {
+    let save_data = serde_json::to_string(&(game_state, objects))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
@@ -361,14 +341,13 @@ fn save_game(
 
 fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
-    game_engine: &mut GameEngine,
     game_state: &mut GameState,
     objects: &GameObjects,
     action: UiAction,
 ) -> bool {
     match action {
         UiAction::ExitGameLoop => {
-            save_game(game_engine, game_state, objects).unwrap();
+            save_game(game_state, objects).unwrap();
             println!("RETURN TRUE");
             return true;
         }

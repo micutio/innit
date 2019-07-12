@@ -8,8 +8,8 @@ use tcod::colors;
 
 // internal imports
 use entity::object::{Object, GameObjects};
-use game_state::{GameState, MessageLog, ObjectProcResult};
-use world::is_blocked;
+use core::game_state::{GameState, MessageLog, ObjectProcResult};
+use core::world::is_blocked;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -29,9 +29,9 @@ pub enum ActionResult {
 pub trait Action: Debug {
     fn perform(
         &self,
-        owner: &mut Object,
-        objects: &mut GameObjects,
         game_state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
     ) -> ActionResult;
 
     fn get_energy_cost(&self) -> i32;
@@ -45,9 +45,9 @@ pub struct PassAction;
 impl Action for PassAction {
     fn perform(
         &self,
-        owner: &mut Object,
-        _objects: &mut GameObjects,
         game_state: &mut GameState,
+        _objects: &mut GameObjects,
+        owner: &mut Object,
     ) -> ActionResult {
         // do nothing
         // duh
@@ -90,9 +90,9 @@ impl AttackAction {
 impl Action for AttackAction {
     fn perform(
         &self,
-        _owner: &mut Object,
-        objects: &mut GameObjects,
         game_state: &mut GameState,
+        objects: &mut GameObjects,
+        _owner: &mut Object,
     ) -> ActionResult {
         match self.target_id {
             Some(target_id) => {
@@ -145,9 +145,9 @@ impl MoveAction {
 impl Action for MoveAction {
     fn perform(
         &self,
-        owner: &mut Object,
-        objects: &mut GameObjects,
         game_state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
     ) -> ActionResult {
         use self::Direction::*;
         let (dx, dy) = match self.direction {

@@ -9,7 +9,7 @@ use tcod::console::*;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
-use game_state::{GameState, MessageLog};
+use core::game_state::{GameState, MessageLog};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {

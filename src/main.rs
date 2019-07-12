@@ -9,10 +9,9 @@ extern crate serde_derive;
 extern crate serde_json;
 
 mod entity;
-mod game_state;
+mod core;
 mod ui;
 mod util;
-mod world;
 
 // internal modules
 use ui::game_frontend::{main_menu, GameFrontend};
