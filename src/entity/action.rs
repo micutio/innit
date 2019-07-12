@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use tcod::colors;
 
 // internal imports
-use entity::object::{Object, ObjectVec};
+use entity::object::{Object, GameObjects};
 use game_state::{GameState, MessageLog, ObjectProcResult};
 use world::is_blocked;
 
@@ -30,7 +30,7 @@ pub trait Action: Debug {
     fn perform(
         &self,
         owner: &mut Object,
-        objects: &mut ObjectVec,
+        objects: &mut GameObjects,
         game_state: &mut GameState,
     ) -> ActionResult;
 
@@ -46,7 +46,7 @@ impl Action for PassAction {
     fn perform(
         &self,
         owner: &mut Object,
-        _objects: &mut ObjectVec,
+        _objects: &mut GameObjects,
         game_state: &mut GameState,
     ) -> ActionResult {
         // do nothing
@@ -91,7 +91,7 @@ impl Action for AttackAction {
     fn perform(
         &self,
         _owner: &mut Object,
-        objects: &mut ObjectVec,
+        objects: &mut GameObjects,
         game_state: &mut GameState,
     ) -> ActionResult {
         match self.target_id {
@@ -146,7 +146,7 @@ impl Action for MoveAction {
     fn perform(
         &self,
         owner: &mut Object,
-        objects: &mut ObjectVec,
+        objects: &mut GameObjects,
         game_state: &mut GameState,
     ) -> ActionResult {
         use self::Direction::*;

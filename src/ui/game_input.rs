@@ -4,7 +4,7 @@
 /// Handle user input
 // internal imports
 use entity::action::*;
-use entity::object::ObjectVec;
+use entity::object::GameObjects;
 use ui::game_frontend::FovMap;
 
 // external imports
@@ -93,7 +93,7 @@ impl GameInput {
 }
 
 pub fn get_names_under_mouse(
-    objects: &ObjectVec,
+    objects: &GameObjects,
     fov_map: &FovMap,
     mouse_x: i32,
     mouse_y: i32,

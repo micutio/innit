@@ -7,12 +7,12 @@ use tcod::colors::{self, Color};
 // internal imports
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{Object, ObjectVec};
+use entity::object::{Object, GameObjects};
 use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
 use world::{make_world, World};
 
-// TODO: reorganize objectVec vector
-//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile objectVec
+// TODO: reorganize GameObjects vector
+//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile GameObjects
 //      - n+1 object is PLAYER
 //      - then everything else
 // player object reference, index of the object vector
@@ -49,7 +49,7 @@ pub struct GameState {
 }
 
 /// Create a new game by instaniating the game engine, game state and object vector.
-pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
+pub fn new_game() -> (GameEngine, GameState, GameObjects) {
     // create object representing the player
     let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
     player.alive = true;
@@ -63,8 +63,8 @@ pub fn new_game() -> (GameEngine, GameState, ObjectVec) {
     });
     player.attack_action = Some(AttackAction::new(2, 0));
 
-    // create array holding all objectVec
-    let mut objects = ObjectVec::new();
+    // create array holding all GameObjects
+    let mut objects = GameObjects::new();
     objects.push(player);
     let level = 1;
 
@@ -119,7 +119,7 @@ impl GameEngine {
         &mut self,
         fov_map: &FovMap,
         game_state: &mut GameState,
-        objects: &mut ObjectVec,
+        objects: &mut GameObjects,
     ) -> ObjectProcResult {
         if self.current_obj_index == PLAYER {
             // println!("processing object #{}", self.current_obj_index);
@@ -159,7 +159,7 @@ impl GameEngine {
         actor: &mut Object,
         fov_map: &FovMap,
         game_state: &mut GameState,
-        objects: &mut ObjectVec,
+        objects: &mut GameObjects,
         action: Box<Action>,
     ) -> ObjectProcResult {
         // first execute action
@@ -224,7 +224,7 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &mut GameFrontend) {
+pub fn level_up(objects: &mut GameObjects, game_state: &mut GameState, game_io: &mut GameFrontend) {
     if let Some(ref mut player) = objects[PLAYER] {
         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
         // see if the player's experience is enough to level up
@@ -274,7 +274,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
 // /// Advance to the next level
 // pub fn next_level(
 //     game_io: &mut GameFrontend,
-//     objects: &mut ObjectVec,
+//     objects: &mut GameObjects,
 //     game_state: &mut GameState,
 // ) {
 //     game_state.log.add(
@@ -294,7 +294,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
 // }
 
 // /// Move the object with given id to the given position.
-// pub fn move_by(world: &World, objects: &mut ObjectVec, id: usize, dx: i32, dy: i32) {
+// pub fn move_by(world: &World, objects: &mut GameObjects, id: usize, dx: i32, dy: i32) {
 //     // move by the given amount
 //     if let Some(ref mut object) = objects[id] {
 //         let (x, y) = object.pos();
@@ -307,7 +307,7 @@ pub fn level_up(objects: &mut ObjectVec, game_state: &mut GameState, game_io: &m
 // Move the object with given id towards a target.
 // pub fn move_towards(
 //     world: &World,
-//     objects: &mut ObjectVec,
+//     objects: &mut GameObjects,
 //     id: usize,
 //     target_x: i32,
 //     target_y: i32,

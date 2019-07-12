@@ -171,11 +171,11 @@ impl Object {
 
 // TODO: Replace all occurrences of objects[PLAYER].unwrap() with custom function!
 #[derive(Serialize, Deserialize, Default)]
-pub struct ObjectVec(Vec<Option<Object>>);
+pub struct GameObjects(Vec<Option<Object>>);
 
-impl ObjectVec {
+impl GameObjects {
     pub fn new() -> Self {
-        ObjectVec(Vec::new())
+        GameObjects(Vec::new())
     }
 
     pub fn get_vector(&self) -> &Vec<Option<Object>> {
@@ -200,7 +200,7 @@ impl ObjectVec {
                 }
                 None => None,
             },
-            None => panic!("[ObjectVec::index] Error: invalid index {}", index),
+            None => panic!("[GameObjects::index] Error: invalid index {}", index),
         }
     }
 
@@ -213,7 +213,7 @@ impl ObjectVec {
             }
             None => {
                 panic!(
-                    "[ObjectVec::replace] Error: object {} with given index {} does not exist!",
+                    "[GameObjects::replace] Error: object {} with given index {} does not exist!",
                     object.name, index
                 );
             }
@@ -223,24 +223,24 @@ impl ObjectVec {
 
 use std::ops::{Index, IndexMut};
 
-impl Index<usize> for ObjectVec {
+impl Index<usize> for GameObjects {
     type Output = Option<Object>;
 
     fn index(&self, i: usize) -> &Self::Output {
         let item = self.0.get(i);
         match item {
             Some(obj_option) => obj_option,
-            None => panic!("[ObjectVec::index] Error: invalid index {}", i),
+            None => panic!("[GameObjects::index] Error: invalid index {}", i),
         }
     }
 }
 
-impl IndexMut<usize> for ObjectVec {
+impl IndexMut<usize> for GameObjects {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         let item = self.0.get_mut(i);
         match item {
             Some(obj_option) => obj_option,
-            None => panic!("[ObjectVec::index] Error: invalid index {}", i),
+            None => panic!("[GameObjects::index] Error: invalid index {}", i),
         }
     }
 }

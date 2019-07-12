@@ -19,7 +19,7 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
-use entity::object::{Object, ObjectVec};
+use entity::object::{Object, GameObjects};
 use game_state::{
     level_up, new_game, GameEngine, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR,
     PLAYER, TORCH_RADIUS,
@@ -203,7 +203,7 @@ pub fn game_loop(
     game_frontend: &mut GameFrontend,
     game_engine: &mut GameEngine,
     game_state: &mut GameState,
-    objects: &mut ObjectVec,
+    objects: &mut GameObjects,
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
     // user input data
@@ -339,11 +339,11 @@ pub fn game_loop(
 
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-fn load_game() -> Result<(GameEngine, GameState, ObjectVec), Box<Error>> {
+fn load_game() -> Result<(GameEngine, GameState, GameObjects), Box<Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(GameEngine, GameState, ObjectVec)>(&json_save_state)?;
+    let result = serde_json::from_str::<(GameEngine, GameState, GameObjects)>(&json_save_state)?;
     Ok(result)
 }
 
@@ -351,7 +351,7 @@ fn load_game() -> Result<(GameEngine, GameState, ObjectVec), Box<Error>> {
 fn save_game(
     game_engine: &GameEngine,
     game_state: &GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
 ) -> Result<(), Box<Error>> {
     let save_data = serde_json::to_string(&(game_engine, game_state, objects))?;
     let mut file = File::create("savegame")?;
@@ -363,7 +363,7 @@ fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
     game_engine: &mut GameEngine,
     game_state: &mut GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
     action: UiAction,
 ) -> bool {
     match action {
@@ -409,7 +409,7 @@ Defense: {}",
     false
 }
 
-fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
+fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
     if let Some(ref player) = objects[PLAYER] {
         game_frontend
             .fov
@@ -420,7 +420,7 @@ fn recompute_fov(game_frontend: &mut GameFrontend, objects: &ObjectVec) {
 fn re_render(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
     names_under_mouse: &str,
 ) {
     // clear the screen of the previous frame
@@ -438,7 +438,7 @@ fn re_render(
 fn update_visibility(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
 ) {
     // go through all tiles and set their background color
     if let Some(ref player) = objects[PLAYER] {
@@ -491,7 +491,7 @@ fn update_visibility(
 pub fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
     names_under_mouse: &str,
 ) {
     let mut to_draw: Vec<&Object> = objects
@@ -544,7 +544,7 @@ pub fn render_all(
 fn render_ui(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &ObjectVec,
+    objects: &GameObjects,
     names_under_mouse: &str,
 ) {
     // prepare to render the GUI panel
