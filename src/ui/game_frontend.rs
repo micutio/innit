@@ -12,7 +12,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use tcod::chars;
@@ -21,8 +21,7 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_state::{
-    level_up, new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER,
-    TORCH_RADIUS,
+    new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
 use core::world::{World, WORLD_HEIGHT, WORLD_WIDTH};
 use entity::object::{GameObjects, Object};
@@ -91,169 +90,179 @@ impl GameFrontend {
             input: None,
         }
     }
+}
 
-    pub fn init_input(&mut self) {
+pub struct MousePosition {
+    x: i32,
+    y: i32,
+}
+
+pub struct ConcurrentInput {
+    // game_input: Arc<Mutex<GameInput>>,
+    game_input_ref: Arc<Mutex<GameInput>>,
+    input_thread_tx: Sender<bool>,
+    input_thread: JoinHandle<()>,
+}
+
+impl ConcurrentInput {
+    fn join_thread(self) {
+        match self.input_thread.join() {
+            Ok(_) => println!("[join] successfully joined user input thread"),
+            Err(e) => println!(
+                "[join] error while trying to join user input thread: {:?}",
+                e
+            ),
+        }
+    }
+}
+
+pub struct InputHandler {
+    pub current_mouse_pos: MousePosition,
+    pub names_under_mouse: String,
+    concurrent_input: Option<ConcurrentInput>,
+    next_action: Option<PlayerAction>,
+}
+
+impl InputHandler {
+    fn new() -> Self {
+        InputHandler {
+            current_mouse_pos: MousePosition { x: 0, y: 0 },
+            names_under_mouse: Default::default(),
+            concurrent_input: None,
+            next_action: None,
+        }
+    }
+
+    pub fn start_concurrent_input(&mut self) {
+        let (tx, rx) = mpsc::channel();
+        let game_input = Arc::new(Mutex::new(GameInput::new()));
+        let mut game_input_ref = Arc::clone(&game_input);
+        let input_thread = start_input_proc_thread(&mut game_input_ref, rx);
+
+        self.concurrent_input = Some(ConcurrentInput {
+            // game_input,
+            game_input_ref,
+            input_thread_tx: tx,
+            input_thread,
+        })
+    }
+
+    pub fn stop_concurrent_input(&mut self) {
         // clean up any existing threads before creating a new one
-        self.terminate_input_thread();
-        self.join_input_thread();
-        self.input = Some(InputHandler::new());
-    }
-
-    pub fn get_names_under_mouse(&self) -> &str {
-        match &self.input {
-            Some(input) => {
-                &input.names_under_mouse
+        self.terminate_concurrent_input();
+        match self.concurrent_input.take() {
+            Some(concurrent) => {
+                concurrent.join_thread();
             }
-            None => {
-                Default::default()
-            }
+            None => eprintln!("[InputHandler] ERROR: failed to reset concurrent thread!"),
         }
     }
 
-    pub fn reset_names_under_mouse(&mut self){
-        match &self.input {
-            Some(input) => {
-                input.names_under_mouse = Default::default();
-            }
-            None => {}
-        }
-    }
+    // pub fn get_names_under_mouse(&self) -> &str {
+    //     match &self.input {
+    //         Some(input) => {
+    //             &input.names_under_mouse
+    //         }
+    //         None => {
+    //             Default::default()
+    //         }
+    //     }
+    // }
+
+    // pub fn reset_names_under_mouse(&mut self) {
+    //     self.names_under_mouse = Default::default();
+    // }
 
     pub fn reset_next_action(&mut self) {
-        match &mut self.input {
-            Some(input) => {
-                input.next_action = None
-            }
+        match &self.next_action {
+            Some(action) => panic!(
+                "Why are we trying to reset an existing action? {:?}",
+                action
+            ),
             None => {}
         }
     }
 
     pub fn get_next_action(&mut self) -> Option<PlayerAction> {
-        match &mut self.input {
-            Some(input) => {
-                input.next_action.take()
-            }
-            None => None
-        }
+        self.next_action.take()
     }
 
-    pub fn check_for_next_action(&mut self, game_state: &mut GameState, objects: &GameObjects) {
-        let need_re_render = false;
-        let _input = self.input.take();
-        match _input {
-            Some(mut input_handler) => {
-                // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
-                let data = input_handler.game_input_ref.lock().unwrap();
+    pub fn check_for_next_action(
+        &mut self,
+        game_frontend: &mut GameFrontend,
+        game_state: &mut GameState,
+        objects: &GameObjects,
+    ) {
+        // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
+        let concurrent_option = self.concurrent_input.take();
+        match &concurrent_option {
+            Some(concurrent) => {
+                let mut data = concurrent.game_input_ref.lock().unwrap();
                 // If the mouse moved, update the names and trigger re-render
-                need_re_render = check_set_mouse_position(&mut input_handler, data.mouse_x, data.mouse_y);
-                
-            }
-            None => {
-
-            }
-        }
-
-
-
-        self.input.replace(_input.unwrap());
-
-
-        if need_re_render {
-            input.names_under_mouse = get_names_under_mouse(
-                objects,
-                &self.fov,
-                input.current_mouse_pos.x,
-                input.current_mouse_pos.y,
-            );
-            re_render(self, game_state, objects);
-            self.reset_names_under_mouse();
-        }
-
-        if let Some(ref player) = objects[PLAYER] {
-            // ... but only if the previous user action is used up
-            if player.next_action.is_none() {
-                if let Some(new_action) = data.next_player_actions.pop_front() {
-                    input.next_action = Some(new_action);
-                    println!("[frontend] player next action changed to {:?}", input.next_action);
+                if self.check_set_mouse_position(data.mouse_x, data.mouse_y) {
+                    self.names_under_mouse = get_names_under_mouse(
+                        objects,
+                        &game_frontend.fov,
+                        self.current_mouse_pos.x,
+                        self.current_mouse_pos.y,
+                    );
+                    re_render(game_frontend, game_state, objects, &self.names_under_mouse);
+                    self.names_under_mouse = Default::default();
                 }
-            }
-        }
-    }
 
-    pub fn terminate_input_thread(&mut self) {
-        match &self.input {
-            Some(input) => {
-                match input.input_thread_channel.0.send(true) {
-                    Ok(_) => {
-                        println!("[frontend] terminating input proc thread");
+                if let Some(ref player) = objects[PLAYER] {
+                    // ... but only if the previous user action is used up
+                    if player.next_action.is_none() {
+                        if let Some(new_action) = data.next_player_actions.pop_front() {
+                            self.next_action = Some(new_action);
+                            println!(
+                                "[frontend] player next action changed to {:?}",
+                                self.next_action
+                            );
+                        }
                     }
-                    Err(e) => {
-                        println!("[frontend] error terminating input proc thread: {}", e);
-                    }
-                }
-        }
-            None => {}
-        }
-    }
-
-    pub fn join_input_thread(&mut self) {
-        match &self.input {
-            Some(input) => {
-                let join_result = input.input_thread.join();
-                match join_result {
-                    Ok(_) => println!("[join] successfully joined user input thread"),
-                    Err(e) => println!(
-                        "[join] error while trying to join user input thread: {:?}",
-                        e
-                    ),
                 }
             }
             None => {
-
+                println!("[InputHandler] concurrent is not there");
             }
         }
-        
-    }
-}
 
-struct InputHandler {
-    current_mouse_pos: MousePosition,
-    names_under_mouse: String,
-    game_input: Arc<Mutex<GameInput>>,
-    game_input_ref: Arc<Mutex<GameInput>>,
-    input_thread_channel: (Sender<bool>, Receiver<bool>),
-    input_thread: JoinHandle<()>,
-    next_action: Option<PlayerAction>,
-}
-
-struct MousePosition {
-    x: i32,
-    y: i32,
-}
-
-impl InputHandler {
-    fn new() -> Self {
-        // user input data
-        let mut current_mouse_pos: (i32, i32) = Default::default();
-        let mut next_action: Option<PlayerAction>;
-        let mut names_under_mouse: String = Default::default();
-
-        // concurrent input processing
-        let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel();
-        let mut game_input = Arc::new(Mutex::new(GameInput::new()));
-        let game_input_ref = Arc::clone(&game_input);
-        // let input_thread = ;
-
-        InputHandler {
-            current_mouse_pos: MousePosition{x: 0, y: 0},
-            names_under_mouse: Default::default(),
-            game_input,
-            game_input_ref,
-            input_thread_channel: (tx, rx),
-            input_thread: start_input_proc_thread(&mut game_input, rx),
-            next_action,
+        match concurrent_option {
+            Some(concurrent) => {
+                self.concurrent_input.replace(concurrent);
+            }
+            None => {
+                println!("[InputHandler] concurrent is still not there");
+            }
         }
     }
+
+    fn check_set_mouse_position(&mut self, new_x: i32, new_y: i32) -> bool {
+        if self.current_mouse_pos.x != new_x || self.current_mouse_pos.y != new_y {
+            self.current_mouse_pos.x = new_x;
+            self.current_mouse_pos.y = new_y;
+            return true;
+        }
+        false
+    }
+
+    fn terminate_concurrent_input(&self) {
+        if let Some(concurrent) = &self.concurrent_input {
+            match concurrent.input_thread_tx.send(true) {
+                Ok(_) => {
+                    println!("[frontend] terminating input proc thread");
+                }
+                Err(e) => {
+                    println!("[frontend] error terminating input proc thread: {}", e);
+                }
+            }
+        }
+    }
+
+    // pub fn take_thread(&mut self) -> Option<ConcurrentInput> {
+    //     self.concurrent_input.take()
+    // }
 }
 
 /// Specification of animations and their parameters.
@@ -303,7 +312,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu(game_frontend, "main menu", choices, 24);
+        let choice = menu(game_frontend, &mut None, "main menu", choices, 24);
 
         match choice {
             Some(0) => {
@@ -320,7 +329,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                         game_loop(game_frontend, &mut game_state, &mut objects);
                     }
                     Err(_e) => {
-                        msgbox(game_frontend, "\nNo saved game to load\n", 24);
+                        msgbox(game_frontend, &mut None, "\nNo saved game to load\n", 24);
                         continue;
                     }
                 }
@@ -361,13 +370,18 @@ pub fn game_loop(
     objects: &mut GameObjects,
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
-
+    let mut input_handler = InputHandler::new();
     recompute_fov(game_frontend, objects);
-    re_render(game_frontend, game_state, objects);
+    re_render(
+        game_frontend,
+        game_state,
+        objects,
+        &input_handler.names_under_mouse,
+    );
 
     // step 2/2: the actual loop //////////////////////////////////////////////
     while !game_frontend.root.window_closed() {
-        game_frontend.reset_next_action();
+        input_handler.reset_next_action();
         // let the game engine process an object
         let proc_result = game_state.process_object(&game_frontend.fov, objects);
         match proc_result {
@@ -380,12 +394,22 @@ pub fn game_loop(
             // the player's FOV has been updated, thus we also need to re-render
             ObjectProcResult::UpdateFOV => {
                 recompute_fov(game_frontend, objects);
-                re_render(game_frontend, game_state, objects);
+                re_render(
+                    game_frontend,
+                    game_state,
+                    objects,
+                    &input_handler.names_under_mouse,
+                );
             }
 
             // the player hasn't moved but something happened within fov
             ObjectProcResult::ReRender => {
-                re_render(game_frontend, game_state, objects);
+                re_render(
+                    game_frontend,
+                    game_state,
+                    objects,
+                    &input_handler.names_under_mouse,
+                );
             }
 
             ObjectProcResult::Animate { anim_type } => {
@@ -397,16 +421,21 @@ pub fn game_loop(
         }
 
         // once processing is done, check whether we have a new user input
-        game_frontend.check_for_next_action(game_state, objects);
+        input_handler.check_for_next_action(game_frontend, game_state, objects);
 
         // distinguish between in-game action and ui (=meta) actions
-        match game_frontend.get_next_action() {
+        match input_handler.get_next_action() {
             Some(PlayerAction::MetaAction(actual_action)) => {
                 println!("[frontend] process UI action: {:?}", actual_action);
-                let is_exit_game =
-                    handle_ui_actions(game_frontend, game_state, objects, actual_action);
+                let is_exit_game = handle_ui_actions(
+                    game_frontend,
+                    game_state,
+                    objects,
+                    &mut Some(&mut input_handler),
+                    actual_action,
+                );
                 if is_exit_game {
-                    
+                    input_handler.stop_concurrent_input();
                     break;
                 }
             }
@@ -430,9 +459,6 @@ pub fn game_loop(
         // level up if needed
         // level_up(objects, game_state, game_frontend);
     }
-
-    // step 3/3: cleanup before returning to main menu
-    game_frontend.join_input_thread();
 }
 
 /// Load an existing savegame and instantiates GameState & Objects
@@ -453,19 +479,11 @@ fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<Er
     Ok(())
 }
 
-pub fn check_set_mouse_position(input: &mut InputHandler, new_x: i32, new_y: i32) -> bool {
-    if input.current_mouse_pos.x != new_x || input.current_mouse_pos.y != new_y {
-        input.current_mouse_pos.x = new_x;
-        input.current_mouse_pos.y = new_y;
-        return true;
-    }
-    false
-}
-
 fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
+    input_handler: &mut Option<&mut InputHandler>,
     action: UiAction,
 ) -> bool {
     match action {
@@ -498,7 +516,7 @@ Defense: {}",
                         player.power(game_state),
                         player.defense(game_state),
                     );
-                    msgbox(game_frontend, &msg, CHARACTER_SCREEN_WIDTH);
+                    msgbox(game_frontend, input_handler, &msg, CHARACTER_SCREEN_WIDTH);
                 }
             };
         }
@@ -523,6 +541,7 @@ fn re_render(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
+    names_under_mouse: &str,
 ) {
     // clear the screen of the previous frame
     game_frontend.con.clear();
@@ -530,7 +549,7 @@ fn re_render(
     // step 1/2: update visibility of objects and world tiles
     update_visibility(game_frontend, game_state, objects);
     // step 2/2: render everything
-    render_all(game_frontend, game_state, objects);
+    render_all(game_frontend, game_state, objects, names_under_mouse);
 
     // draw everything on the window at once
     game_frontend.root.flush();
@@ -593,6 +612,7 @@ pub fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
+    names_under_mouse: &str,
 ) {
     let mut to_draw: Vec<&Object> = objects
         .get_vector()
@@ -610,7 +630,7 @@ pub fn render_all(
         object.draw(&mut game_frontend.con);
     }
 
-    render_ui(game_frontend, game_state, objects);
+    render_ui(game_frontend, game_state, objects, names_under_mouse);
     // blit contents of `game_frontend.panel` to the root console
     blit(
         &game_frontend.panel,
@@ -644,6 +664,7 @@ fn render_ui(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
+    names_under_mouse: &str,
 ) {
     // prepare to render the GUI panel
     game_frontend
@@ -683,7 +704,7 @@ fn render_ui(
             0,
             BackgroundFlag::None,
             TextAlignment::Left,
-            game_frontend.get_names_under_mouse(),
+            names_under_mouse,
         );
 
         // print game messages, one line at a time
@@ -743,6 +764,7 @@ fn render_bar(
 /// Returns the number of the menu item that has been chosen.
 pub fn menu<T: AsRef<str>>(
     game_frontend: &mut GameFrontend,
+    input_handler: &mut Option<&mut InputHandler>,
     header: &str,
     options: &[T],
     width: i32,
@@ -830,7 +852,26 @@ pub fn menu<T: AsRef<str>>(
 
     // present the root console to the player and wait for a key-press
     game_frontend.root.flush();
+
+    // if we have an instance of InputHandler, finish the input listener thread first
+    // so that we can receive events here
+
+    match input_handler {
+        Some(handle) => {
+            handle.stop_concurrent_input();
+        }
+        None => {}
+    }
+
     let key = game_frontend.root.wait_for_keypress(true);
+    // after we got he key, restart input listener thread
+
+    match input_handler {
+        Some(ref mut handle) => {
+            handle.start_concurrent_input();
+        }
+        None => {}
+    }
 
     // convert the ASCII code to an index
     // if it corresponds to an option, return it
@@ -848,7 +889,12 @@ pub fn menu<T: AsRef<str>>(
 
 /// Display a box with a message to the user.
 /// This works like a menu, but without any choices.
-pub fn msgbox(game_frontend: &mut GameFrontend, text: &str, width: i32) {
+pub fn msgbox(
+    game_frontend: &mut GameFrontend,
+    input_handler: &mut Option<&mut InputHandler>,
+    text: &str,
+    width: i32,
+) {
     let options: &[&str] = &[];
-    menu(game_frontend, text, options, width);
+    menu(game_frontend, input_handler, text, options, width);
 }

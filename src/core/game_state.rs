@@ -8,7 +8,7 @@ use tcod::colors::{self, Color};
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::{Object, GameObjects};
-use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
+use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend, InputHandler};
 use core::world::{make_world, World};
 
 // TODO: reorganize GameObjects vector
@@ -212,7 +212,7 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(objects: &mut GameObjects, game_state: &mut GameState, game_io: &mut GameFrontend) {
+pub fn level_up(game_io: &mut GameFrontend, game_state: &mut GameState, objects: &mut GameObjects, input_handler: &mut Option<&mut InputHandler>) {
     if let Some(ref mut player) = objects[PLAYER] {
         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
         // see if the player's experience is enough to level up
@@ -232,6 +232,7 @@ pub fn level_up(objects: &mut GameObjects, game_state: &mut GameState, game_io: 
             while choice.is_none() {
                 // keep asking until a choice is made
                 choice = menu(game_io,
+                              input_handler,
                     "Level up! Chose a stat to raise:\n",
                     &[
                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
