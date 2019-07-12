@@ -7,13 +7,12 @@ use std::fmt::Debug;
 use tcod::colors;
 
 // internal imports
-use entity::object::{Object, GameObjects};
 use core::game_state::{GameState, MessageLog, ObjectProcResult};
 use core::world::is_blocked;
+use entity::object::{GameObjects, Object};
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
-/// TODO: (!) Include UI feedback e.g., animation, FOV update and rendering!
 pub enum ActionResult {
     /// Sucessfully finished action
     Success { callback: ObjectProcResult },
@@ -168,7 +167,6 @@ impl Action for MoveAction {
                 y + dy
             );
             owner.set_pos(x + dx, y + dy);
-            // TODO: Check whether we walked into the player's field of view.
             ActionResult::Success {
                 callback: ObjectProcResult::CheckEnterFOV,
             }

@@ -6,10 +6,10 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal imports
+use core::game_state::{GameState, MessageLog};
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
-use core::game_state::{GameState, MessageLog};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
@@ -169,7 +169,6 @@ impl Object {
     }
 }
 
-// TODO: Replace all occurrences of objects[PLAYER].unwrap() with custom function!
 #[derive(Serialize, Deserialize, Default)]
 pub struct GameObjects(Vec<Option<Object>>);
 

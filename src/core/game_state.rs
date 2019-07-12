@@ -5,11 +5,11 @@
 use tcod::colors::{self, Color};
 
 // internal imports
+use core::world::{make_world, World};
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{Object, GameObjects};
+use entity::object::{GameObjects, Object};
 use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend, InputHandler};
-use core::world::{make_world, World};
 
 // TODO: reorganize GameObjects vector
 //      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile GameObjects
@@ -37,7 +37,6 @@ impl MessageLog for Vec<(String, Color)> {
         self.push((message.into(), color));
     }
 }
-
 
 /// Results from porcessing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
@@ -93,7 +92,6 @@ pub fn new_game() -> (GameState, GameObjects) {
     (game_state, objects)
 }
 
-
 impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
         GameState {
@@ -122,12 +120,8 @@ impl GameState {
                 println!("[engine] next action to process: {:?}", next_action);
 
                 // perform action
-                process_result = self.process_action(
-                    fov_map,
-                    objects,
-                    &mut active_object,
-                    next_action,
-                );
+                process_result =
+                    self.process_action(fov_map, objects, &mut active_object, next_action);
                 println!("[engine] process result {:?}", process_result);
             }
             // return object back to objects vector
@@ -141,8 +135,7 @@ impl GameState {
         process_result
     }
 
-    /// Process an action of a given object,
-    /// TODO: Use fov_map to check whether something moved within the player's FOV.
+    /// Process an action of a given object.
     fn process_action(
         &mut self,
         fov_map: &FovMap,
@@ -212,7 +205,12 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(game_io: &mut GameFrontend, game_state: &mut GameState, objects: &mut GameObjects, input_handler: &mut Option<&mut InputHandler>) {
+pub fn level_up(
+    game_io: &mut GameFrontend,
+    game_state: &mut GameState,
+    objects: &mut GameObjects,
+    input_handler: &mut Option<&mut InputHandler>,
+) {
     if let Some(ref mut player) = objects[PLAYER] {
         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
         // see if the player's experience is enough to level up
@@ -231,8 +229,9 @@ pub fn level_up(game_io: &mut GameFrontend, game_state: &mut GameState, objects:
             let mut choice = None;
             while choice.is_none() {
                 // keep asking until a choice is made
-                choice = menu(game_io,
-                              input_handler,
+                choice = menu(
+                    game_io,
+                    input_handler,
                     "Level up! Chose a stat to raise:\n",
                     &[
                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),

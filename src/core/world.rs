@@ -7,11 +7,11 @@ use std::cmp;
 use tcod::colors;
 
 // internal imports
+use core::game_state::{from_dungeon_level, Transition, PLAYER};
 use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{Object, GameObjects};
-use core::game_state::{from_dungeon_level, Transition, PLAYER};
+use entity::object::{GameObjects, Object};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -47,6 +47,7 @@ impl Tile {
     }
 }
 
+// TODO: Move all world tiles as properties into Object and put them all into GameObjects.
 pub type World = Vec<Vec<Tile>>;
 
 pub fn make_world(objects: &mut GameObjects, level: u32) -> World {

@@ -107,9 +107,9 @@ pub struct ConcurrentInput {
 impl ConcurrentInput {
     fn join_thread(self) {
         match self.input_thread.join() {
-            Ok(_) => println!("[join] successfully joined user input thread"),
+            Ok(_) => println!("[concurrent input] successfully joined user input thread"),
             Err(e) => println!(
-                "[join] error while trying to join user input thread: {:?}",
+                "[concurrent input] error while trying to join user input thread: {:?}",
                 e
             ),
         }
@@ -154,7 +154,7 @@ impl InputHandler {
             Some(concurrent) => {
                 concurrent.join_thread();
             }
-            None => eprintln!("[InputHandler] ERROR: failed to reset concurrent thread!"),
+            None => panic!("[InputHandler] ERROR: failed to reset concurrent thread!"),
         }
     }
 
@@ -224,7 +224,7 @@ impl InputHandler {
                 }
             }
             None => {
-                println!("[InputHandler] concurrent is not there");
+                panic!("[InputHandler] concurrent is not there");
             }
         }
 
@@ -233,7 +233,7 @@ impl InputHandler {
                 self.concurrent_input.replace(concurrent);
             }
             None => {
-                println!("[InputHandler] concurrent is still not there");
+                panic!("[InputHandler] concurrent is still not there");
             }
         }
     }
@@ -371,6 +371,8 @@ pub fn game_loop(
 ) {
     // step 1/3: pre-processing ///////////////////////////////////////////////
     let mut input_handler = InputHandler::new();
+    input_handler.start_concurrent_input();
+
     recompute_fov(game_frontend, objects);
     re_render(
         game_frontend,
@@ -383,8 +385,7 @@ pub fn game_loop(
     while !game_frontend.root.window_closed() {
         input_handler.reset_next_action();
         // let the game engine process an object
-        let proc_result = game_state.process_object(&game_frontend.fov, objects);
-        match proc_result {
+        match game_state.process_object(&game_frontend.fov, objects) {
             // no action has been performed, repeat the turn and try again
             ObjectProcResult::NoAction => {}
 
@@ -426,7 +427,7 @@ pub fn game_loop(
         // distinguish between in-game action and ui (=meta) actions
         match input_handler.get_next_action() {
             Some(PlayerAction::MetaAction(actual_action)) => {
-                println!("[frontend] process UI action: {:?}", actual_action);
+                println!("[game loop] process UI action: {:?}", actual_action);
                 let is_exit_game = handle_ui_actions(
                     game_frontend,
                     game_state,
@@ -444,12 +445,12 @@ pub fn game_loop(
                 // *player.set_next_action(Some(get_player_action_instance(next_action)));
                 // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
                 println!(
-                    "[frontend] inject ingame action {:?} to player",
+                    "[game loop] inject ingame action {:?} to player",
                     ingame_action
                 );
                 if let Some(ref mut player) = objects[PLAYER] {
                     let player_next_action = Some(get_player_action_instance(ingame_action));
-                    println!("[frontend] player action object: {:?}", player_next_action);
+                    println!("[game loop] player action object: {:?}", player_next_action);
                     player.set_next_action(player_next_action);
                 };
             }
@@ -489,7 +490,6 @@ fn handle_ui_actions(
     match action {
         UiAction::ExitGameLoop => {
             save_game(game_state, objects).unwrap();
-            println!("RETURN TRUE");
             return true;
         }
         UiAction::CharacterScreen => {
@@ -608,7 +608,7 @@ fn update_visibility(
 /// Right now this happens because we are updating explored tiles here too.
 /// Is there a way to auto-update explored and visible tiles/objects when the player moves?
 /// But visibility can also be influenced by other things.
-pub fn render_all(
+fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
@@ -762,6 +762,7 @@ fn render_bar(
 
 /// Display a generic menu with multiple options to choose from.
 /// Returns the number of the menu item that has been chosen.
+/// TODO: Make this private
 pub fn menu<T: AsRef<str>>(
     game_frontend: &mut GameFrontend,
     input_handler: &mut Option<&mut InputHandler>,
@@ -889,7 +890,7 @@ pub fn menu<T: AsRef<str>>(
 
 /// Display a box with a message to the user.
 /// This works like a menu, but without any choices.
-pub fn msgbox(
+fn msgbox(
     game_frontend: &mut GameFrontend,
     input_handler: &mut Option<&mut InputHandler>,
     text: &str,
