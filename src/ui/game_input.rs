@@ -4,7 +4,7 @@
 /// Handle user input
 // internal imports
 use entity::action::*;
-use entity::object::GameObjects;
+use core::game_objects::GameObjects;
 use ui::game_frontend::FovMap;
 
 // external imports
@@ -104,7 +104,7 @@ pub fn get_names_under_mouse(
         .iter()
         .flatten()
         .filter(|o| o.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(o.x, o.y))
-        .map(|o| o.name.clone())
+        .map(|o| o.visual.name.clone())
         .collect::<Vec<_>>()
         .join(", ")
 

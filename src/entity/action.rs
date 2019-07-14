@@ -8,8 +8,8 @@ use tcod::colors;
 
 // internal imports
 use core::game_state::{GameState, MessageLog, ObjectProcResult};
-use core::world::is_blocked;
-use entity::object::{GameObjects, Object};
+use core::game_objects::GameObjects;
+use entity::object::{Object};
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -52,7 +52,7 @@ impl Action for PassAction {
         // duh
         game_state
             .log
-            .add(format!("{} passes their turn", owner.name), colors::WHITE);
+            .add(format!("{} passes their turn", owner.visual.name), colors::WHITE);
         ActionResult::Success {
             callback: ObjectProcResult::NoFeedback,
         }
@@ -157,10 +157,10 @@ impl Action for MoveAction {
         };
 
         let (x, y) = owner.pos();
-        if !is_blocked(&game_state.world, &objects, x + dx, y + dy) {
+        if ! &objects.is_blocked(x + dx, y + dy) {
             println!(
                 "[move action] move {} from ({},{}) to ({},{})",
-                owner.name,
+                owner.visual.name,
                 x,
                 y,
                 x + dx,

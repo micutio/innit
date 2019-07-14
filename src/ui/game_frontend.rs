@@ -23,8 +23,9 @@ use tcod::map::FovAlgorithm;
 use core::game_state::{
     new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
-use core::world::{World, WORLD_HEIGHT, WORLD_WIDTH};
-use entity::object::{GameObjects, Object};
+use core::game_objects::GameObjects;
+use game::{WORLD_HEIGHT, WORLD_WIDTH};
+use entity::object::{Object};
 use ui::color_palette::*;
 use ui::game_input::{
     get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
@@ -318,14 +319,14 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
             Some(0) => {
                 // start new game
                 let (mut game_state, mut objects) = new_game();
-                initialize_fov(game_frontend, &game_state.world);
+                initialize_fov(game_frontend, &objects);
                 game_loop(game_frontend, &mut game_state, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut game_state, mut objects)) => {
-                        initialize_fov(game_frontend, &game_state.world);
+                        initialize_fov(game_frontend, &objects);
                         game_loop(game_frontend, &mut game_state, &mut objects);
                     }
                     Err(_e) => {
@@ -344,15 +345,16 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 }
 
 /// Initialize the field of view map with a given instance of **World**
-pub fn initialize_fov(game_frontend: &mut GameFrontend, world: &World) {
+pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
+            let object = objects.get_tile_at(x as usize, y as usize).unwrap();
             game_frontend.fov.set(
-                x,
-                y,
-                !world[x as usize][y as usize].block_sight,
-                !world[x as usize][y as usize].blocked,
+                x as i32,
+                y as i32,
+                !object.physics.is_blocking_sight,
+                !object.physics.is_blocking,
             );
         }
     }
@@ -569,7 +571,7 @@ fn update_visibility(
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 let visible = game_frontend.fov.is_in_fov(x, y);
-                let wall = game_state.world[x as usize][y as usize].block_sight;
+                let wall = objects.get_tile_at(x as usize, y as usize).unwrap().physics.is_blocking_sight;
                 let tile_color = match (visible, wall) {
                     // outside field of view:
                     (false, true) => col_dark_wall,
@@ -589,7 +591,8 @@ fn update_visibility(
                     ),
                 };
 
-                let explored = &mut game_state.world[x as usize][y as usize].explored;
+                // FIXME: Gratuitous use of unwrap.
+                let explored = &mut objects.get_tile_at(x as usize, y as usize).unwrap().tile.unwrap().explored;
                 if visible {
                     *explored = true;
                 }
@@ -619,12 +622,12 @@ fn render_all(
         .iter()
         .flatten()
         .filter(|o| {
-            game_frontend.fov.is_in_fov(o.x, o.y)
-                || (o.always_visible && game_state.world[o.x as usize][o.y as usize].explored)
+            game_frontend.fov.is_in_fov(o.x, o.y) // FIXME: Gratuitous use of unwrap.
+                || (o.physics.is_always_visible && objects.get_tile_at(o.x as usize, o.y as usize).unwrap().tile.unwrap().explored)
         })
         .collect();
     // sort, so that non-blocking objects come first
-    to_draw.sort_by(|o1, o2| o1.blocks.cmp(&o2.blocks));
+    to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
     // draw the objects in the list
     for object in &to_draw {
         object.draw(&mut game_frontend.con);

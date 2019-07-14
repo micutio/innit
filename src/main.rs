@@ -12,6 +12,7 @@ mod entity;
 mod core;
 mod ui;
 mod util;
+mod game;
 
 // internal modules
 use ui::game_frontend::{main_menu, GameFrontend};

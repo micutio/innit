@@ -5,10 +5,11 @@
 use tcod::colors::{self, Color};
 
 // internal imports
-use core::world::{make_world, World};
+use core::world::{make_world};
+use core::game_objects::GameObjects;
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{GameObjects, Object};
+use entity::object::{ Object};
 use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend, InputHandler};
 
 // TODO: reorganize GameObjects vector
@@ -53,7 +54,6 @@ pub enum ObjectProcResult {
 /// the current state of the game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
-    pub world: World,
     pub log: Messages,
     pub dungeon_level: u32,
     current_obj_index: usize,
@@ -62,7 +62,7 @@ pub struct GameState {
 /// Create a new game by instaniating the game engine, game state and object vector.
 pub fn new_game() -> (GameState, GameObjects) {
     // create object representing the player
-    let mut player = Object::new(0, 0, "player", true, '@', colors::WHITE);
+    let mut player = Object::new(0, 0, "player", '@', colors::WHITE, true, false, false);
     player.alive = true;
     player.fighter = Some(Fighter {
         base_max_hp: 100,
@@ -76,7 +76,7 @@ pub fn new_game() -> (GameState, GameObjects) {
 
     // create array holding all GameObjects
     let mut objects = GameObjects::new();
-    objects.push(player);
+    objects.set_player(player);
     let level = 1;
 
     // create game state holding most game-relevant information
@@ -94,8 +94,9 @@ pub fn new_game() -> (GameState, GameObjects) {
 
 impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
+        make_world(game_objects, level);
+
         GameState {
-            world: make_world(game_objects, level),
             // create the list of game messages and their colors, starts empty
             log: vec![],
             dungeon_level: 1,
@@ -130,7 +131,7 @@ impl GameState {
 
         // only increase counter if the object has made a move
         if process_result != ObjectProcResult::NoAction {
-            self.current_obj_index = (self.current_obj_index + 1) % objects.get_vector().len();
+            self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
         }
         process_result
     }

@@ -6,6 +6,7 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal imports
+use core::world::{Tile};
 use core::game_state::{GameState, MessageLog};
 use entity::action::*;
 use entity::ai::Ai;
@@ -16,17 +17,29 @@ pub struct Object {
     pub x: i32,
     pub y: i32,
     pub dna: String,
-    pub name: String, // move into a UI component
-    pub blocks: bool, // move into a physics component
     pub alive: bool,
-    pub chr: char,            // move into a UI component
-    pub color: Color,         // move into a UI component
-    pub always_visible: bool, // move into a physics component
     pub level: i32,           // could be changed into some pseudo-progress like allowed DNA length
+    pub visual: Visual,
+    pub physics: Physics,
+    pub tile: Option<Tile>,
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
     pub attack_action: Option<AttackAction>,
     pub next_action: Option<Box<dyn Action>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Visual {
+    pub name: String,
+    pub character: char,
+    pub color: Color,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Physics {
+    pub is_blocking: bool,
+    pub is_blocking_sight: bool,
+    pub is_always_visible: bool,
 }
 
 impl Object {
@@ -35,21 +48,33 @@ impl Object {
         y: i32,
         // dna: &str, // TODO change constructor
         name: &str,
-        blocks: bool,
-        chr: char,
+        character: char,
         color: Color,
+        is_blocking: bool,
+        is_blocking_sight: bool,
+        is_always_visible: bool,
     ) -> Self {
+        let visual = Visual {
+            name: name.into(),
+            character,
+            color,
+        };
+
+        let physics = Physics {
+            is_blocking,
+            is_blocking_sight,
+            is_always_visible,
+        };
+
         Object {
             x,
             y,
             dna: "".into(), // dna.into(),
-            name: name.into(),
-            blocks,
             alive: false,
-            chr,
-            color,
-            always_visible: false,
             level: 1,
+            visual,
+            physics,
+            tile: None,
             fighter: None,
             ai: None,
             attack_action: None,
@@ -68,8 +93,8 @@ impl Object {
 
     /// Set the color and then draw the char that represents this object at its position.
     pub fn draw(&self, con: &mut Console) {
-        con.set_default_foreground(self.color);
-        con.put_char(self.x, self.y, self.chr, BackgroundFlag::None);
+        con.set_default_foreground(self.visual.color);
+        con.put_char(self.x, self.y, self.visual.character, BackgroundFlag::None);
     }
 
     pub fn distance_to(&self, other: &Object) -> f32 {
@@ -129,7 +154,7 @@ impl Object {
             game_state.log.add(
                 format!(
                     "{} attacks {} for {} hit points.",
-                    self.name, target.name, damage
+                    self.visual.name, target.visual.name, damage
                 ),
                 colors::WHITE,
             );
@@ -142,7 +167,7 @@ impl Object {
             game_state.log.add(
                 format!(
                     "{} attacks {} but it has no effect!",
-                    self.name, target.name
+                    self.visual.name, target.visual.name
                 ),
                 colors::WHITE,
             );
@@ -165,81 +190,6 @@ impl Object {
             if fighter.hp > max_hp {
                 fighter.hp = max_hp;
             }
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct GameObjects(Vec<Option<Object>>);
-
-impl GameObjects {
-    pub fn new() -> Self {
-        GameObjects(Vec::new())
-    }
-
-    pub fn get_vector(&self) -> &Vec<Option<Object>> {
-        &self.0
-    }
-
-    pub fn get_vector_mut(&mut self) -> &mut Vec<Option<Object>> {
-        &mut self.0
-    }
-
-    pub fn push(&mut self, object: Object) {
-        println!("pushing object {}", object.name);
-        self.0.push(Some(object));
-    }
-
-    pub fn extract(&mut self, index: usize) -> Option<Object> {
-        match self.0.get_mut(index) {
-            Some(item) => match item.take() {
-                Some(object) => {
-                    // println!("extract object {} @ index {}", object.name, index);
-                    Some(object)
-                }
-                None => None,
-            },
-            None => panic!("[GameObjects::index] Error: invalid index {}", index),
-        }
-    }
-
-    pub fn replace(&mut self, index: usize, object: Object) {
-        let item = self.0.get_mut(index);
-        match item {
-            Some(obj) => {
-                // println!("replace object {} @ index {}", object.name, index);
-                obj.replace(object);
-            }
-            None => {
-                panic!(
-                    "[GameObjects::replace] Error: object {} with given index {} does not exist!",
-                    object.name, index
-                );
-            }
-        }
-    }
-}
-
-use std::ops::{Index, IndexMut};
-
-impl Index<usize> for GameObjects {
-    type Output = Option<Object>;
-
-    fn index(&self, i: usize) -> &Self::Output {
-        let item = self.0.get(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
-        }
-    }
-}
-
-impl IndexMut<usize> for GameObjects {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        let item = self.0.get_mut(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
         }
     }
 }
