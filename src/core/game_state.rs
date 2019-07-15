@@ -59,39 +59,6 @@ pub struct GameState {
     current_obj_index: usize,
 }
 
-/// Create a new game by instaniating the game engine, game state and object vector.
-pub fn new_game() -> (GameState, GameObjects) {
-    // create object representing the player
-    let mut player = Object::new(0, 0, "player", '@', colors::WHITE, true, false, false);
-    player.alive = true;
-    player.fighter = Some(Fighter {
-        base_max_hp: 100,
-        hp: 100,
-        base_defense: 1,
-        base_power: 2,
-        on_death: DeathCallback::Player,
-        xp: 0,
-    });
-    player.attack_action = Some(AttackAction::new(2, 0));
-
-    // create array holding all GameObjects
-    let mut objects = GameObjects::new();
-    objects.set_player(player);
-    let level = 1;
-
-    // create game state holding most game-relevant information
-    //  - also creates map and player starting position
-    let mut game_state = GameState::new(&mut objects, level);
-
-    // a warm welcoming message
-    game_state.log.add(
-        "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-        colors::RED,
-    );
-
-    (game_state, objects)
-}
-
 impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
         make_world(game_objects, level);

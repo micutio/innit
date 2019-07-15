@@ -7,10 +7,8 @@
 /// kept in the order of handing them over to functions.
 ///
 /// Function parameter precedence:
-/// game_frontend, game_input, game_engine, game_state, objects, anything else.
-use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Write};
+/// game_state, game_frontend, game_input, objects, anything else.
+
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -21,12 +19,10 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
-use core::game_state::{
-    new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
-};
+use core::game_state::{ GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS, };
 use core::world::is_explored;
 use entity::object::Object;
-use game::{WORLD_HEIGHT, WORLD_WIDTH};
+use game::{WORLD_HEIGHT, WORLD_WIDTH, new_game, game_loop, load_game, save_game};
 use ui::color_palette::*;
 use ui::game_input::{
     get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
@@ -321,14 +317,18 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                 // start new game
                 let (mut game_state, mut objects) = new_game();
                 initialize_fov(game_frontend, &mut objects);
-                game_loop(game_frontend, &mut game_state, &mut objects);
+                let mut input_handler = InputHandler::new();
+                input_handler.start_concurrent_input();
+                game_loop(&mut game_state, game_frontend, &mut input_handler, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut game_state, mut objects)) => {
                         initialize_fov(game_frontend, &mut objects);
-                        game_loop(game_frontend, &mut game_state, &mut objects);
+                        let mut input_handler = InputHandler::new();
+                        input_handler.start_concurrent_input();
+                        game_loop(&mut game_state, game_frontend, &mut input_handler, &mut objects);
                     }
                     Err(_e) => {
                         msgbox(game_frontend, &mut None, "\nNo saved game to load\n", 24);
@@ -369,127 +369,17 @@ pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObject
     game_frontend.con.clear();
 }
 
-/// Central function of the game.
-/// - process player input
-/// - render game world
-/// - let NPCs take their turn
-pub fn game_loop(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    objects: &mut GameObjects,
-) {
-    // step 1/3: pre-processing ///////////////////////////////////////////////
-    let mut input_handler = InputHandler::new();
-    input_handler.start_concurrent_input();
-
-    recompute_fov(game_frontend, objects);
+pub fn pre_game_loop(game_state: &mut GameState, game_frontend: &mut GameFrontend, input_handler: &InputHandler, game_objects: &mut GameObjects) {
+    recompute_fov(game_frontend, game_objects);
     re_render(
         game_frontend,
         game_state,
-        objects,
+        game_objects,
         &input_handler.names_under_mouse,
     );
-
-    // step 2/2: the actual loop //////////////////////////////////////////////
-    while !game_frontend.root.window_closed() {
-        input_handler.reset_next_action();
-        // let the game engine process an object
-        match game_state.process_object(&game_frontend.fov, objects) {
-            // no action has been performed, repeat the turn and try again
-            ObjectProcResult::NoAction => {}
-
-            // action has been completed, but nothing needs to be done about it
-            ObjectProcResult::NoFeedback => {}
-
-            // the player's FOV has been updated, thus we also need to re-render
-            ObjectProcResult::UpdateFOV => {
-                recompute_fov(game_frontend, objects);
-                re_render(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &input_handler.names_under_mouse,
-                );
-            }
-
-            // the player hasn't moved but something happened within fov
-            ObjectProcResult::ReRender => {
-                re_render(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &input_handler.names_under_mouse,
-                );
-            }
-
-            ObjectProcResult::Animate { anim_type } => {
-                // TODO: Play animation.
-                println!("animation");
-            }
-
-            _ => {}
-        }
-
-        // once processing is done, check whether we have a new user input
-        input_handler.check_for_next_action(game_frontend, game_state, objects);
-
-        // distinguish between in-game action and ui (=meta) actions
-        match input_handler.get_next_action() {
-            Some(PlayerAction::MetaAction(actual_action)) => {
-                println!("[game loop] process UI action: {:?}", actual_action);
-                let is_exit_game = handle_ui_actions(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &mut Some(&mut input_handler),
-                    actual_action,
-                );
-                if is_exit_game {
-                    input_handler.stop_concurrent_input();
-                    break;
-                }
-            }
-            Some(ingame_action) => {
-                // let mut player = objects.mut_obj(PLAYER);
-                // *player.set_next_action(Some(get_player_action_instance(next_action)));
-                // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
-                println!(
-                    "[game loop] inject ingame action {:?} to player",
-                    ingame_action
-                );
-                if let Some(ref mut player) = objects[PLAYER] {
-                    let player_next_action = Some(get_player_action_instance(ingame_action));
-                    println!("[game loop] player action object: {:?}", player_next_action);
-                    player.set_next_action(player_next_action);
-                };
-            }
-            None => {}
-        }
-
-        // level up if needed
-        // level_up(objects, game_state, game_frontend);
-    }
 }
 
-/// Load an existing savegame and instantiates GameState & Objects
-/// from which the game is resumed in the game loop.
-fn load_game() -> Result<(GameState, GameObjects), Box<Error>> {
-    let mut json_save_state = String::new();
-    let mut file = File::open("savegame")?;
-    file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
-    Ok(result)
-}
-
-/// Serialize and store GameState and Objects into a JSON file.
-fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<Error>> {
-    let save_data = serde_json::to_string(&(game_state, objects))?;
-    let mut file = File::create("savegame")?;
-    file.write_all(save_data.as_bytes())?;
-    Ok(())
-}
-
-fn handle_ui_actions(
+pub fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &GameObjects,
@@ -538,7 +428,7 @@ Defense: {}",
     false
 }
 
-fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
+pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
     if let Some(ref player) = objects[PLAYER] {
         game_frontend
             .fov
@@ -546,7 +436,7 @@ fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
     }
 }
 
-fn re_render(
+pub fn re_render(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &mut GameObjects,
