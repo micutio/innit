@@ -2,18 +2,193 @@
 ///
 /// User input processing
 /// Handle user input
-// internal imports
-use entity::action::*;
-use core::game_objects::GameObjects;
-use ui::game_frontend::FovMap;
 
-// external imports
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::sync::mpsc::{Sender, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
+use std::sync::mpsc;
+
+use entity::action::*;
+use core::game_objects::GameObjects;
+use core::game_state::{GameState, PLAYER};
+use ui::game_frontend::{FovMap, GameFrontend, re_render};
+
+pub struct MousePosition {
+    x: i32,
+    y: i32,
+}
+
+pub struct ConcurrentInput {
+    // game_input: Arc<Mutex<InputProcessor>>,
+    game_input_ref: Arc<Mutex<InputProcessor>>,
+    input_thread_tx: Sender<bool>,
+    input_thread: JoinHandle<()>,
+}
+
+impl ConcurrentInput {
+    fn join_thread(self) {
+        match self.input_thread.join() {
+            Ok(_) => println!("[concurrent input] successfully joined user input thread"),
+            Err(e) => println!(
+                "[concurrent input] error while trying to join user input thread: {:?}",
+                e
+            ),
+        }
+    }
+}
+
+pub struct GameInput {
+    pub current_mouse_pos: MousePosition,
+    pub names_under_mouse: String,
+    concurrent_input: Option<ConcurrentInput>,
+    next_action: Option<PlayerAction>,
+}
+
+impl GameInput {
+    pub fn new() -> Self {
+        GameInput {
+            current_mouse_pos: MousePosition { x: 0, y: 0 },
+            names_under_mouse: Default::default(),
+            concurrent_input: None,
+            next_action: None,
+        }
+    }
+
+    // FIXME: Keep reference to InputProcessor and use it to instantiate new game_inputs!
+    pub fn start_concurrent_input(&mut self) {
+        let (tx, rx) = mpsc::channel();
+        let game_input = Arc::new(Mutex::new(InputProcessor::new()));
+        let mut game_input_ref = Arc::clone(&game_input);
+        let input_thread = start_input_proc_thread(&mut game_input_ref, rx);
+
+        self.concurrent_input = Some(ConcurrentInput {
+            // game_input,
+            game_input_ref,
+            input_thread_tx: tx,
+            input_thread,
+        })
+    }
+
+    pub fn stop_concurrent_input(&mut self) {
+        // clean up any existing threads before creating a new one
+        self.terminate_concurrent_input();
+        match self.concurrent_input.take() {
+            Some(concurrent) => {
+                concurrent.join_thread();
+            }
+            None => panic!("[GameInput] ERROR: failed to reset concurrent thread!"),
+        }
+    }
+
+    // pub fn get_names_under_mouse(&self) -> &str {
+    //     match &self.input {
+    //         Some(input) => {
+    //             &input.names_under_mouse
+    //         }
+    //         None => {
+    //             Default::default()
+    //         }
+    //     }
+    // }
+
+    // pub fn reset_names_under_mouse(&mut self) {
+    //     self.names_under_mouse = Default::default();
+    // }
+
+    pub fn reset_next_action(&mut self) {
+        match &self.next_action {
+            Some(action) => panic!(
+                "Why are we trying to reset an existing action? {:?}",
+                action
+            ),
+            None => {}
+        }
+    }
+
+    pub fn get_next_action(&mut self) -> Option<PlayerAction> {
+        self.next_action.take()
+    }
+
+    pub fn check_for_next_action(
+        &mut self,
+        game_state: &mut GameState,
+        game_frontend: &mut GameFrontend,
+        objects: &mut GameObjects,
+    ) {
+        // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
+        let concurrent_option = self.concurrent_input.take();
+        match &concurrent_option {
+            Some(concurrent) => {
+                let mut data = concurrent.game_input_ref.lock().unwrap();
+                // If the mouse moved, update the names and trigger re-render
+                if self.check_set_mouse_position(data.mouse_x, data.mouse_y) {
+                    self.names_under_mouse = get_names_under_mouse(
+                        objects,
+                        &game_frontend.fov,
+                        self.current_mouse_pos.x,
+                        self.current_mouse_pos.y,
+                    );
+                    re_render(game_state, game_frontend, objects, &self.names_under_mouse);
+                    self.names_under_mouse = Default::default();
+                }
+
+                if let Some(ref player) = objects[PLAYER] {
+                    // ... but only if the previous user action is used up
+                    if player.next_action.is_none() {
+                        if let Some(new_action) = data.next_player_actions.pop_front() {
+                            self.next_action = Some(new_action);
+                            println!(
+                                "[frontend] player next action changed to {:?}",
+                                self.next_action
+                            );
+                        }
+                    }
+                }
+            }
+            None => {
+                panic!("[GameInput] concurrent is not there");
+            }
+        }
+
+        match concurrent_option {
+            Some(concurrent) => {
+                self.concurrent_input.replace(concurrent);
+            }
+            None => {
+                panic!("[GameInput] concurrent is still not there");
+            }
+        }
+    }
+
+    fn check_set_mouse_position(&mut self, new_x: i32, new_y: i32) -> bool {
+        if self.current_mouse_pos.x != new_x || self.current_mouse_pos.y != new_y {
+            self.current_mouse_pos.x = new_x;
+            self.current_mouse_pos.y = new_y;
+            return true;
+        }
+        false
+    }
+
+    fn terminate_concurrent_input(&self) {
+        if let Some(concurrent) = &self.concurrent_input {
+            match concurrent.input_thread_tx.send(true) {
+                Ok(_) => {
+                    println!("[frontend] terminating input proc thread");
+                }
+                Err(e) => {
+                    println!("[frontend] error terminating input proc thread: {}", e);
+                }
+            }
+        }
+    }
+
+    // pub fn take_thread(&mut self) -> Option<ConcurrentInput> {
+    //     self.concurrent_input.take()
+    // }
+}
 
 /// As tcod's key codes don't implement Eq and Hash they cannot be used
 /// as keys in a hash table. So to still be able to hash keys, we define our own.
@@ -76,15 +251,15 @@ pub enum UiAction {
     CharacterScreen,
 }
 
-pub struct GameInput {
+pub struct InputProcessor {
     pub mouse_x: i32,
     pub mouse_y: i32,
     pub next_player_actions: VecDeque<PlayerAction>,
 }
 
-impl GameInput {
+impl InputProcessor {
     pub fn new() -> Self {
-        GameInput {
+        InputProcessor {
             mouse_x: 0,
             mouse_y: 0,
             next_player_actions: VecDeque::new(),
@@ -112,7 +287,7 @@ pub fn get_names_under_mouse(
 }
 
 pub fn start_input_proc_thread(
-    game_input: &mut Arc<Mutex<GameInput>>,
+    game_input: &mut Arc<Mutex<InputProcessor>>,
     rx: Receiver<bool>,
 ) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);

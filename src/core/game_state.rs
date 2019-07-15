@@ -8,9 +8,9 @@ use tcod::colors::{self, Color};
 use core::game_objects::GameObjects;
 use core::world::make_world;
 use entity::action::*;
-use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
-use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend, InputHandler};
+use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
+use ui::game_input::{GameInput};
 
 // TODO: reorganize GameObjects vector
 //      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile GameObjects
@@ -177,7 +177,7 @@ pub fn level_up(
     game_io: &mut GameFrontend,
     game_state: &mut GameState,
     objects: &mut GameObjects,
-    input_handler: &mut Option<&mut InputHandler>,
+    game_input: &mut Option<&mut GameInput>,
 ) {
     if let Some(ref mut player) = objects[PLAYER] {
         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
@@ -199,7 +199,7 @@ pub fn level_up(
                 // keep asking until a choice is made
                 choice = menu(
                     game_io,
-                    input_handler,
+                    game_input,
                     "Level up! Chose a stat to raise:\n",
                     &[
                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),

@@ -14,8 +14,8 @@ use core::game_objects::GameObjects;
 use entity::action::AttackAction;
 use entity::object::Object;
 use entity::fighter::{DeathCallback, Fighter};
-use ui::game_frontend::{GameFrontend, InputHandler, handle_ui_actions, process_visual_feedback};
-use ui::game_input::{PlayerAction, get_player_action_instance};
+use ui::game_frontend::{GameFrontend, handle_ui_actions, process_visual_feedback};
+use ui::game_input::{PlayerAction, get_player_action_instance, GameInput};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -61,7 +61,7 @@ pub fn new_game() -> (GameState, GameObjects) {
 pub fn game_loop(
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
-    game_input: &mut InputHandler,
+    game_input: &mut GameInput,
     game_objects: &mut GameObjects,
 ) {
 
