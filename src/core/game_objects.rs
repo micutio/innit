@@ -1,4 +1,3 @@
-use core::world::Tile;
 /// Module Game Objects
 ///
 /// The game object struct contains all game objects, including
@@ -7,12 +6,13 @@ use core::world::Tile;
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
+use core::game_state::PLAYER;
+use core::world::Tile;
 use entity::object::Object;
 use game::{WORLD_HEIGHT, WORLD_WIDTH};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct GameObjects {
-    player_index: usize,
     num_world_tiles: usize,
     obj_vec: Vec<Option<Object>>,
 }
@@ -20,10 +20,8 @@ pub struct GameObjects {
 impl GameObjects {
     pub fn new() -> Self {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
-        let player_index = 0;
 
         let mut game_objects = GameObjects {
-            player_index,
             num_world_tiles,
             obj_vec: Vec::new(),
         };
@@ -58,7 +56,7 @@ impl GameObjects {
     }
 
     pub fn set_player(&mut self, object: Object) {
-        match &mut self.obj_vec[self.player_index] {
+        match &mut self.obj_vec[PLAYER] {
             Some(player) => {
                 panic!(
                     "[GameObjects] Error: trying to replace the player {:?} with {:?}",
@@ -66,7 +64,7 @@ impl GameObjects {
                 );
             }
             None => {
-                self.obj_vec[self.player_index].replace(object);
+                self.obj_vec[PLAYER].replace(object);
             }
         }
     }
@@ -110,7 +108,7 @@ impl GameObjects {
     pub fn truncate(&mut self) {
         // PLayer is the first element, remove everything else.
         // NOTE: works only if player is the first object!
-        // assert_eq!(&self.obj_vec[self.player_index as usize].unwrap() as *const _, &self.obj_vec[0].unwrap() as *const _);
+        // assert_eq!(&self.obj_vec[PLAYER as usize].unwrap() as *const _, &self.obj_vec[0].unwrap() as *const _);
         self.obj_vec.truncate(self.num_world_tiles);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
