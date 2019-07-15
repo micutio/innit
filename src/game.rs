@@ -9,12 +9,12 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 
-use core::game_state::{GameState, MessageLog, ObjectProcResult, PLAYER};
+use core::game_state::{GameState, MessageLog, PLAYER};
 use core::game_objects::GameObjects;
 use entity::action::AttackAction;
 use entity::object::Object;
 use entity::fighter::{DeathCallback, Fighter};
-use ui::game_frontend::{GameFrontend, InputHandler, recompute_fov, re_render, handle_ui_actions};
+use ui::game_frontend::{GameFrontend, InputHandler, handle_ui_actions, process_visual_feedback};
 use ui::game_input::{PlayerAction, get_player_action_instance};
 
 // world constraints
@@ -62,50 +62,18 @@ pub fn game_loop(
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
     game_input: &mut InputHandler,
-    objects: &mut GameObjects,
+    game_objects: &mut GameObjects,
 ) {
 
     while !game_frontend.root.window_closed() {
         game_input.reset_next_action();
         // let the game engine process an object
-        match game_state.process_object(&game_frontend.fov, objects) {
-            // no action has been performed, repeat the turn and try again
-            ObjectProcResult::NoAction => {}
-
-            // action has been completed, but nothing needs to be done about it
-            ObjectProcResult::NoFeedback => {}
-
-            // the player's FOV has been updated, thus we also need to re-render
-            ObjectProcResult::UpdateFOV => {
-                recompute_fov(game_frontend, objects);
-                re_render(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &game_input.names_under_mouse,
-                );
-            }
-
-            // the player hasn't moved but something happened within fov
-            ObjectProcResult::ReRender => {
-                re_render(
-                    game_frontend,
-                    game_state,
-                    objects,
-                    &game_input.names_under_mouse,
-                );
-            }
-
-            ObjectProcResult::Animate { anim_type } => {
-                // TODO: Play animation.
-                println!("animation");
-            }
-
-            _ => {}
-        }
+        let process_result = game_state.process_object(game_objects, &game_frontend.fov);
+        process_visual_feedback(game_state, game_frontend, game_input, game_objects, process_result);
+        
 
         // once processing is done, check whether we have a new user input
-        game_input.check_for_next_action(game_frontend, game_state, objects);
+        game_input.check_for_next_action(game_state, game_frontend, game_objects);
 
         // distinguish between in-game action and ui (=meta) actions
         match game_input.get_next_action() {
@@ -114,7 +82,7 @@ pub fn game_loop(
                 let is_exit_game = handle_ui_actions(
                     game_frontend,
                     game_state,
-                    objects,
+                    game_objects,
                     &mut Some(game_input),
                     actual_action,
                 );
@@ -131,7 +99,7 @@ pub fn game_loop(
                     "[game loop] inject ingame action {:?} to player",
                     ingame_action
                 );
-                if let Some(ref mut player) = objects[PLAYER] {
+                if let Some(ref mut player) = game_objects[PLAYER] {
                     let player_next_action = Some(get_player_action_instance(ingame_action));
                     println!("[game loop] player action object: {:?}", player_next_action);
                     player.set_next_action(player_next_action);

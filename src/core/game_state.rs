@@ -74,8 +74,8 @@ impl GameState {
     // TODO: Implement energy costs for actions.
     pub fn process_object(
         &mut self,
-        fov_map: &FovMap,
         objects: &mut GameObjects,
+        fov_map: &FovMap,
     ) -> ObjectProcResult {
         if self.current_obj_index == PLAYER {
             // println!("processing object #{}", self.current_obj_index);

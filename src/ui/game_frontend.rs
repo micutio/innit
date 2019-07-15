@@ -8,7 +8,6 @@
 ///
 /// Function parameter precedence:
 /// game_state, game_frontend, game_input, objects, anything else.
-
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -19,10 +18,12 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
-use core::game_state::{ GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS, };
+use core::game_state::{
+    GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
+};
 use core::world::is_explored;
 use entity::object::Object;
-use game::{WORLD_HEIGHT, WORLD_WIDTH, new_game, game_loop, load_game, save_game};
+use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use ui::color_palette::*;
 use ui::game_input::{
     get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
@@ -187,8 +188,8 @@ impl InputHandler {
 
     pub fn check_for_next_action(
         &mut self,
-        game_frontend: &mut GameFrontend,
         game_state: &mut GameState,
+        game_frontend: &mut GameFrontend,
         objects: &mut GameObjects,
     ) {
         // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
@@ -204,7 +205,7 @@ impl InputHandler {
                         self.current_mouse_pos.x,
                         self.current_mouse_pos.y,
                     );
-                    re_render(game_frontend, game_state, objects, &self.names_under_mouse);
+                    re_render(game_state, game_frontend, objects, &self.names_under_mouse);
                     self.names_under_mouse = Default::default();
                 }
 
@@ -315,20 +316,42 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut game_state, mut objects) = new_game();
-                initialize_fov(game_frontend, &mut objects);
+                let (mut game_state, mut game_objects) = new_game();
+                // initialize_fov(game_frontend, &mut objects);
                 let mut input_handler = InputHandler::new();
+                init_object_visuals(
+                    &mut game_state,
+                    game_frontend,
+                    &input_handler,
+                    &mut game_objects,
+                );
                 input_handler.start_concurrent_input();
-                game_loop(&mut game_state, game_frontend, &mut input_handler, &mut objects);
+                game_loop(
+                    &mut game_state,
+                    game_frontend,
+                    &mut input_handler,
+                    &mut game_objects,
+                );
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
-                    Ok((mut game_state, mut objects)) => {
-                        initialize_fov(game_frontend, &mut objects);
+                    Ok((mut game_state, mut game_objects)) => {
+                        // initialize_fov(game_frontend, &mut objects);
                         let mut input_handler = InputHandler::new();
+                        init_object_visuals(
+                            &mut game_state,
+                            game_frontend,
+                            &input_handler,
+                            &mut game_objects,
+                        );
                         input_handler.start_concurrent_input();
-                        game_loop(&mut game_state, game_frontend, &mut input_handler, &mut objects);
+                        game_loop(
+                            &mut game_state,
+                            game_frontend,
+                            &mut input_handler,
+                            &mut game_objects,
+                        );
                     }
                     Err(_e) => {
                         msgbox(game_frontend, &mut None, "\nNo saved game to load\n", 24);
@@ -346,7 +369,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 }
 
 /// Initialize the field of view map with a given instance of **World**
-pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
+fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
@@ -369,14 +392,64 @@ pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObject
     game_frontend.con.clear();
 }
 
-pub fn pre_game_loop(game_state: &mut GameState, game_frontend: &mut GameFrontend, input_handler: &InputHandler, game_objects: &mut GameObjects) {
+pub fn init_object_visuals(
+    game_state: &mut GameState,
+    game_frontend: &mut GameFrontend,
+    input_handler: &InputHandler,
+    game_objects: &mut GameObjects,
+) {
+    initialize_fov(game_frontend, game_objects);
     recompute_fov(game_frontend, game_objects);
     re_render(
-        game_frontend,
         game_state,
+        game_frontend,
         game_objects,
         &input_handler.names_under_mouse,
     );
+}
+
+pub fn process_visual_feedback(
+    game_state: &mut GameState,
+    game_frontend: &mut GameFrontend,
+    game_input: &InputHandler,
+    game_objects: &mut GameObjects,
+    proc_result: ObjectProcResult,
+) {
+    match proc_result {
+        // no action has been performed, repeat the turn and try again
+        ObjectProcResult::NoAction => {}
+
+        // action has been completed, but nothing needs to be done about it
+        ObjectProcResult::NoFeedback => {}
+
+        // the player's FOV has been updated, thus we also need to re-render
+        ObjectProcResult::UpdateFOV => {
+            recompute_fov(game_frontend, game_objects);
+            re_render(
+                game_state,
+                game_frontend,
+                game_objects,
+                &game_input.names_under_mouse,
+            );
+        }
+
+        // the player hasn't moved but something happened within fov
+        ObjectProcResult::ReRender => {
+            re_render(
+                game_state,
+                game_frontend,
+                game_objects,
+                &game_input.names_under_mouse,
+            );
+        }
+
+        ObjectProcResult::Animate { anim_type } => {
+            // TODO: Play animation.
+            println!("animation");
+        }
+
+        _ => {}
+    }
 }
 
 pub fn handle_ui_actions(
@@ -437,8 +510,8 @@ pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
 }
 
 pub fn re_render(
-    game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
+    game_frontend: &mut GameFrontend,
     objects: &mut GameObjects,
     names_under_mouse: &str,
 ) {
