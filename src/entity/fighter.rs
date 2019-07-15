@@ -43,23 +43,23 @@ pub fn player_death(player: &mut Object, messages: &mut Messages) {
 
     // for added effect, transform the player into a corpse
     // TODO: move color and character change to module game_io or object!
-    player.chr = '%';
-    player.color = colors::DARK_RED;
+    player.visual.character = '%';
+    player.visual.color = colors::DARK_RED;
 }
 
 pub fn monster_death(monster: &mut Object, messages: &mut Messages) {
     messages.add(
         format!(
             "{} is dead! You gain {} XP",
-            monster.name,
+            monster.visual.name,
             monster.fighter.unwrap().xp
         ),
         colors::ORANGE,
     );
-    monster.chr = '%';
-    monster.color = colors::DARK_RED;
-    monster.blocks = false;
+    monster.visual.character = '%';
+    monster.visual.color = colors::DARK_RED;
+    monster.visual.name = format!("remains of {}", monster.visual.name);
+    monster.physics.is_blocking = false;
     monster.fighter = None;
     monster.ai = None;
-    monster.name = format!("remains of {}", monster.name);
 }

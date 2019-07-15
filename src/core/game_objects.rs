@@ -1,15 +1,14 @@
+use core::world::Tile;
 /// Module Game Objects
-/// 
+///
 /// The game object struct contains all game objects, including
 /// * player character
 /// * non-player character
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
-
 use entity::object::Object;
-use game::{WORLD_WIDTH, WORLD_HEIGHT};
-use core::world::Tile;
+use game::{WORLD_HEIGHT, WORLD_WIDTH};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct GameObjects {
@@ -23,7 +22,7 @@ impl GameObjects {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
         let player_index = 0;
 
-        let game_objects = GameObjects{
+        let mut game_objects = GameObjects {
             player_index,
             num_world_tiles,
             obj_vec: Vec::new(),
@@ -40,26 +39,31 @@ impl GameObjects {
     //     &mut self.obj_vec
     // }
 
-    pub fn get_tile_at(&self, x: usize, y: usize) -> &Option<Object> {
+    pub fn get_tile_at(&mut self, x: usize, y: usize) -> &mut Option<Object> {
         // HACK: offset by one because player is the first object
-        &self.obj_vec[(y * (WORLD_WIDTH as usize) + x) + 1]
+        &mut self.obj_vec[(y * (WORLD_WIDTH as usize) + x) + 1]
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    fn init_world(&self) {
+    fn init_world(&mut self) {
+        assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
-                &self.obj_vec[(y as usize) * (WORLD_WIDTH as usize) + (x as usize)].replace(Tile::wall(x, y));
+                self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
+                    .replace(Tile::wall(x, y));
             }
         }
     }
 
-    pub fn set_player(&self, object: Object) {
-        match self.obj_vec[self.player_index] {
+    pub fn set_player(&mut self, object: Object) {
+        match &mut self.obj_vec[self.player_index] {
             Some(player) => {
-                panic!("[GameObjects] Error: trying to replace the player");
+                panic!(
+                    "[GameObjects] Error: trying to replace the player {:?} with {:?}",
+                    player, object
+                );
             }
             None => {
                 self.obj_vec[self.player_index].replace(object);
@@ -103,22 +107,22 @@ impl GameObjects {
 
     /// Remove all objects that are not the player or world tiles.
     /// NOTE: This means we cannot go back to a dungeon level once we leave it.
-    pub fn truncate(&self) {
+    pub fn truncate(&mut self) {
         // PLayer is the first element, remove everything else.
         // NOTE: works only if player is the first object!
-        assert_eq!(&self.obj_vec[self.player_index as usize].unwrap() as *const _, &self.obj_vec[0].unwrap() as *const _);
+        // assert_eq!(&self.obj_vec[self.player_index as usize].unwrap() as *const _, &self.obj_vec[0].unwrap() as *const _);
         self.obj_vec.truncate(self.num_world_tiles);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
-                &self.obj_vec[(y as usize) * (WORLD_WIDTH as usize) + (x as usize)].replace(Tile::wall(x, y));
+                self.obj_vec[(y as usize) * (WORLD_WIDTH as usize) + (x as usize)]
+                    .replace(Tile::wall(x, y));
             }
         }
     }
 
     /// Check wether there is an objects blocking access to the given world coordinate
     pub fn is_blocked(&self, x: i32, y: i32) -> bool {
-        self
-            .obj_vec
+        self.obj_vec
             .iter()
             .flatten()
             .any(|object| object.physics.is_blocking && object.pos() == (x, y))

@@ -5,11 +5,11 @@
 use tcod::colors::{self, Color};
 
 // internal imports
-use core::world::{make_world};
 use core::game_objects::GameObjects;
+use core::world::make_world;
 use entity::action::*;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{ Object};
+use entity::object::Object;
 use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend, InputHandler};
 
 // TODO: reorganize GameObjects vector

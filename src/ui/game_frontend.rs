@@ -20,12 +20,13 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
+use core::game_objects::GameObjects;
 use core::game_state::{
     new_game, GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
 };
-use core::game_objects::GameObjects;
+use core::world::is_explored;
+use entity::object::Object;
 use game::{WORLD_HEIGHT, WORLD_WIDTH};
-use entity::object::{Object};
 use ui::color_palette::*;
 use ui::game_input::{
     get_names_under_mouse, get_player_action_instance, start_input_proc_thread, GameInput,
@@ -192,7 +193,7 @@ impl InputHandler {
         &mut self,
         game_frontend: &mut GameFrontend,
         game_state: &mut GameState,
-        objects: &GameObjects,
+        objects: &mut GameObjects,
     ) {
         // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
         let concurrent_option = self.concurrent_input.take();
@@ -319,14 +320,14 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
             Some(0) => {
                 // start new game
                 let (mut game_state, mut objects) = new_game();
-                initialize_fov(game_frontend, &objects);
+                initialize_fov(game_frontend, &mut objects);
                 game_loop(game_frontend, &mut game_state, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
                     Ok((mut game_state, mut objects)) => {
-                        initialize_fov(game_frontend, &objects);
+                        initialize_fov(game_frontend, &mut objects);
                         game_loop(game_frontend, &mut game_state, &mut objects);
                     }
                     Err(_e) => {
@@ -345,17 +346,23 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 }
 
 /// Initialize the field of view map with a given instance of **World**
-pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
+pub fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
-            let object = objects.get_tile_at(x as usize, y as usize).unwrap();
-            game_frontend.fov.set(
-                x as i32,
-                y as i32,
-                !object.physics.is_blocking_sight,
-                !object.physics.is_blocking,
-            );
+            match objects.get_tile_at(x as usize, y as usize) {
+                Some(object) => {
+                    game_frontend.fov.set(
+                        x as i32,
+                        y as i32,
+                        !object.physics.is_blocking_sight,
+                        !object.physics.is_blocking,
+                    );
+                }
+                None => {
+                    panic!("[game_frontend] Error initializing fov");
+                }
+            }
         }
     }
     // unexplored areas start black (which is the default background color)
@@ -542,14 +549,14 @@ fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
 fn re_render(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &GameObjects,
+    objects: &mut GameObjects,
     names_under_mouse: &str,
 ) {
     // clear the screen of the previous frame
     game_frontend.con.clear();
     // render objects and map
     // step 1/2: update visibility of objects and world tiles
-    update_visibility(game_frontend, game_state, objects);
+    update_visibility(game_frontend, objects);
     // step 2/2: render everything
     render_all(game_frontend, game_state, objects, names_under_mouse);
 
@@ -557,21 +564,23 @@ fn re_render(
     game_frontend.root.flush();
 }
 
-fn update_visibility(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    objects: &GameObjects,
-) {
+fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // go through all tiles and set their background color
+    let mut player_pos: (i32, i32) = (0, 0);
     if let Some(ref player) = objects[PLAYER] {
-        let col_dark_wall = game_frontend.coloring.get_col_dark_wall();
-        let col_light_wall = game_frontend.coloring.get_col_light_wall();
-        let col_dark_ground = game_frontend.coloring.get_col_dark_ground();
-        let col_light_ground = game_frontend.coloring.get_col_light_ground();
-        for y in 0..WORLD_HEIGHT {
-            for x in 0..WORLD_WIDTH {
-                let visible = game_frontend.fov.is_in_fov(x, y);
-                let wall = objects.get_tile_at(x as usize, y as usize).unwrap().physics.is_blocking_sight;
+        player_pos = (player.x, player.y);
+    }
+
+    let col_dark_wall = game_frontend.coloring.get_col_dark_wall();
+    let col_light_wall = game_frontend.coloring.get_col_light_wall();
+    let col_dark_ground = game_frontend.coloring.get_col_dark_ground();
+    let col_light_ground = game_frontend.coloring.get_col_light_ground();
+    // TODO: Can this be done is a more functional programming way?
+    for y in 0..WORLD_HEIGHT {
+        for x in 0..WORLD_WIDTH {
+            let visible = game_frontend.fov.is_in_fov(x, y);
+            if let Some(ref mut tile_object) = objects.get_tile_at(x as usize, y as usize) {
+                let wall = tile_object.physics.is_blocking_sight;
                 let tile_color = match (visible, wall) {
                     // outside field of view:
                     (false, true) => col_dark_wall,
@@ -581,26 +590,29 @@ fn update_visibility(
                     (true, true) => colors::lerp(
                         col_light_wall,
                         col_dark_wall,
-                        player.distance(x, y) / TORCH_RADIUS as f32,
+                        tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
                     ),
                     // (true, false) => COLOR_LIGHT_GROUND,
                     (true, false) => colors::lerp(
                         col_light_ground,
                         col_dark_ground,
-                        player.distance(x, y) / TORCH_RADIUS as f32,
+                        tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
                     ),
                 };
 
-                // FIXME: Gratuitous use of unwrap.
-                let explored = &mut objects.get_tile_at(x as usize, y as usize).unwrap().tile.unwrap().explored;
-                if visible {
-                    *explored = true;
-                }
-                if *explored {
-                    // show explored tiles only (any visible tile is explored already)
-                    game_frontend
-                        .con
-                        .set_char_background(x, y, tile_color, BackgroundFlag::Set);
+                if let Some(tile) = &mut tile_object.tile {
+                    if visible {
+                        tile.explored = true;
+                    }
+                    if tile.explored {
+                        // show explored tiles only (any visible tile is explored already)
+                        game_frontend.con.set_char_background(
+                            x,
+                            y,
+                            tile_color,
+                            BackgroundFlag::Set,
+                        );
+                    }
                 }
             }
         }
@@ -622,8 +634,9 @@ fn render_all(
         .iter()
         .flatten()
         .filter(|o| {
-            game_frontend.fov.is_in_fov(o.x, o.y) // FIXME: Gratuitous use of unwrap.
-                || (o.physics.is_always_visible && objects.get_tile_at(o.x as usize, o.y as usize).unwrap().tile.unwrap().explored)
+            // FIXME: there must be a better way than using `and_then`.
+            game_frontend.fov.is_in_fov(o.x, o.y)
+                || (o.physics.is_always_visible && *o.tile.as_ref().and_then(is_explored).unwrap())
         })
         .collect();
     // sort, so that non-blocking objects come first
@@ -727,7 +740,6 @@ fn render_ui(
 }
 
 /// Render a generic progress or status bar in the UI.
-#[allow(clippy::too_many_arguments)]
 fn render_bar(
     panel: &mut Offscreen,
     x: i32,

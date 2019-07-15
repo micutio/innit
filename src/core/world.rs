@@ -7,14 +7,13 @@ use std::cmp;
 use tcod::colors;
 
 // internal imports
-use game::{WORLD_HEIGHT, WORLD_WIDTH};
-use core::game_state::{from_dungeon_level, Transition, PLAYER};
 use core::game_objects::GameObjects;
+use core::game_state::{from_dungeon_level, Transition, PLAYER};
 use entity::action::AttackAction;
 use entity::ai::Ai;
 use entity::fighter::{DeathCallback, Fighter};
-use entity::object::{Object};
-
+use entity::object::Object;
+use game::{WORLD_HEIGHT, WORLD_WIDTH};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -28,30 +27,45 @@ pub struct Tile {
 
 impl Tile {
     pub fn empty(x: i32, y: i32) -> Object {
-        let tile_object = Object::new(
+        let mut tile_object = Object::new(
             // block_sight: false,
             // explored: false,
-            x, y, "empty tile", ' ', colors::BLACK, false, false, false,
+            x,
+            y,
+            "empty tile",
+            ' ',
+            colors::BLACK,
+            false,
+            false,
+            false,
         );
-        tile_object.tile = Some(Tile {
-            explored: false,
-        });
+        tile_object.tile = Some(Tile { explored: false });
+        tile_object.ai = Some(Ai::Basic);
         tile_object
     }
 
-    pub fn wall(x: i32, y:i32) -> Object{
-        let tile_object = Object::new(
+    pub fn wall(x: i32, y: i32) -> Object {
+        let mut tile_object = Object::new(
             // block_sight: false,
             // explored: false,
-            x, y, "empty tile", ' ', colors::BLACK, true, true, false,
+            x,
+            y,
+            "empty tile",
+            ' ',
+            colors::BLACK,
+            true,
+            true,
+            false,
         );
-        tile_object.tile = Some(Tile {
-            explored: false,
-        });
+        tile_object.tile = Some(Tile { explored: false });
+        tile_object.ai = Some(Ai::Basic);
         tile_object
     }
 }
 
+pub fn is_explored(tile: &Tile) -> Option<&bool> {
+    Some(&tile.explored)
+}
 
 pub fn make_world(objects: &mut GameObjects, level: u32) {
     // fill the world with `unblocked` tiles
@@ -158,23 +172,29 @@ impl Rect {
     }
 }
 
-fn create_room(objects: &GameObjects, room: Rect) {
+fn create_room(objects: &mut GameObjects, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
-            objects.get_tile_at(x as usize, y as usize).replace(Tile::empty(x, y));
+            objects
+                .get_tile_at(x as usize, y as usize)
+                .replace(Tile::empty(x, y));
         }
     }
 }
 
-fn create_h_tunnel(objects: &GameObjects, x1: i32, x2: i32, y: i32) {
+fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
-        objects.get_tile_at(x as usize, y as usize).replace(Tile::empty(x, y));
+        objects
+            .get_tile_at(x as usize, y as usize)
+            .replace(Tile::empty(x, y));
     }
 }
 
-fn create_v_tunnel(objects: &GameObjects, y1: i32, y2: i32, x: i32) {
+fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
-        objects.get_tile_at(x as usize, y as usize).replace(Tile::empty(x, y));
+        objects
+            .get_tile_at(x as usize, y as usize)
+            .replace(Tile::empty(x, y));
     }
 }
 
@@ -224,8 +244,16 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
             let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
             {
                 "virus" => {
-                    let mut virus =
-                        Object::new(x, y, "virus", 'v', colors::DESATURATED_GREEN, true, false, false);
+                    let mut virus = Object::new(
+                        x,
+                        y,
+                        "virus",
+                        'v',
+                        colors::DESATURATED_GREEN,
+                        true,
+                        false,
+                        false,
+                    );
                     virus.fighter = Some(Fighter {
                         base_max_hp: 10,
                         hp: 10,
@@ -239,8 +267,16 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
                     virus
                 }
                 "bacteria" => {
-                    let mut bacteria =
-                        Object::new(x, y, "bacteria", 'b', colors::DARKER_GREEN, true, false, false);
+                    let mut bacteria = Object::new(
+                        x,
+                        y,
+                        "bacteria",
+                        'b',
+                        colors::DARKER_GREEN,
+                        true,
+                        false,
+                        false,
+                    );
                     bacteria.fighter = Some(Fighter {
                         base_max_hp: 16,
                         hp: 16,

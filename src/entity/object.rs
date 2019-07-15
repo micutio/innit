@@ -6,8 +6,8 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 
 // internal imports
-use core::world::{Tile};
 use core::game_state::{GameState, MessageLog};
+use core::world::Tile;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;
@@ -18,7 +18,7 @@ pub struct Object {
     pub y: i32,
     pub dna: String,
     pub alive: bool,
-    pub level: i32,           // could be changed into some pseudo-progress like allowed DNA length
+    pub level: i32, // could be changed into some pseudo-progress like allowed DNA length
     pub visual: Visual,
     pub physics: Physics,
     pub tile: Option<Tile>,
@@ -43,6 +43,7 @@ pub struct Physics {
 }
 
 impl Object {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: i32,
         y: i32,

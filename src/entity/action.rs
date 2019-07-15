@@ -144,7 +144,7 @@ impl MoveAction {
 impl Action for MoveAction {
     fn perform(
         &self,
-        game_state: &mut GameState,
+        _game_state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
