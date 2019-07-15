@@ -2,19 +2,18 @@
 ///
 /// User input processing
 /// Handle user input
-
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::sync::mpsc::{Sender, Receiver, TryRecvError};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
-use std::sync::mpsc;
 
-use entity::action::*;
 use core::game_objects::GameObjects;
 use core::game_state::{GameState, PLAYER};
-use ui::game_frontend::{FovMap, GameFrontend, re_render};
+use entity::action::*;
+use ui::game_frontend::{re_render, FovMap, GameFrontend};
 
 pub struct MousePosition {
     x: i32,
@@ -22,7 +21,6 @@ pub struct MousePosition {
 }
 
 pub struct ConcurrentInput {
-    // game_input: Arc<Mutex<InputProcessor>>,
     game_input_ref: Arc<Mutex<InputProcessor>>,
     input_thread_tx: Sender<bool>,
     input_thread: JoinHandle<()>,
@@ -57,7 +55,6 @@ impl GameInput {
         }
     }
 
-    // FIXME: Keep reference to InputProcessor and use it to instantiate new game_inputs!
     pub fn start_concurrent_input(&mut self) {
         let (tx, rx) = mpsc::channel();
         let game_input = Arc::new(Mutex::new(InputProcessor::new()));
@@ -82,21 +79,6 @@ impl GameInput {
             None => panic!("[GameInput] ERROR: failed to reset concurrent thread!"),
         }
     }
-
-    // pub fn get_names_under_mouse(&self) -> &str {
-    //     match &self.input {
-    //         Some(input) => {
-    //             &input.names_under_mouse
-    //         }
-    //         None => {
-    //             Default::default()
-    //         }
-    //     }
-    // }
-
-    // pub fn reset_names_under_mouse(&mut self) {
-    //     self.names_under_mouse = Default::default();
-    // }
 
     pub fn reset_next_action(&mut self) {
         match &self.next_action {
@@ -380,7 +362,7 @@ fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
 }
 
 pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
-    // TODO: Use actual costs.
+    // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     // println!("player action: {:?}", player_action);

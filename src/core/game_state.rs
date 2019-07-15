@@ -10,12 +10,8 @@ use core::world::make_world;
 use entity::action::*;
 use entity::object::Object;
 use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
-use ui::game_input::{GameInput};
+use ui::game_input::GameInput;
 
-// TODO: reorganize GameObjects vector
-//      - first n = WORLD_WIDTH*WORLD_HEIGHT objects are world tile GameObjects
-//      - n+1 object is PLAYER
-//      - then everything else
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
 pub const TORCH_RADIUS: i32 = 10;

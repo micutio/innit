@@ -14,12 +14,14 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
-use core::game_state::{GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS};
+use core::game_state::{
+    GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
+};
 use core::world::is_explored;
 use entity::object::Object;
 use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use ui::color_palette::*;
-use ui::game_input::{UiAction, GameInput};
+use ui::game_input::{GameInput, UiAction};
 
 // game window properties
 const SCREEN_WIDTH: i32 = 80;
@@ -210,7 +212,8 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     game_frontend.con.clear();
 }
 
-pub fn init_object_visuals(
+/// Initialize the player's field of view and render objects + ui for the start of the game.
+fn init_object_visuals(
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
     game_input: &GameInput,
@@ -327,6 +330,7 @@ pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
     }
 }
 
+/// Render all objects, the menu
 pub fn re_render(
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
@@ -345,6 +349,7 @@ pub fn re_render(
     game_frontend.root.flush();
 }
 
+/// Update the player's field of view and updated which tiles are visible/explored.
 fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: (i32, i32) = (0, 0);
@@ -356,7 +361,7 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
     let col_light_wall = game_frontend.coloring.get_col_light_wall();
     let col_dark_ground = game_frontend.coloring.get_col_dark_ground();
     let col_light_ground = game_frontend.coloring.get_col_light_ground();
-    // TODO: Can this be done is a more functional programming way?
+
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
             let visible = game_frontend.fov.is_in_fov(x, y);
@@ -521,6 +526,7 @@ fn render_ui(
 }
 
 /// Render a generic progress or status bar in the UI.
+#[allow(clippy::too_many_arguments)]
 fn render_bar(
     panel: &mut Offscreen,
     x: i32,
