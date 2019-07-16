@@ -2,16 +2,16 @@
 ///
 /// This module contains the struct that encompasses all parts of the game state:
 // external imports
-use tcod::colors::{self, Color};
+use tcod::colors::Color;
 
 // internal imports
 use core::game_objects::GameObjects;
 use core::world::make_world;
 use entity::action::*;
 use entity::object::Object;
-use ui::game_frontend::{AnimationType, FovMap, GameFrontend};
-use ui::dialog::menu;
-use ui::game_input::GameInput;
+// use ui::dialog::menu;
+use ui::game_frontend::{AnimationType, FovMap};
+// use ui::game_input::GameInput;
 
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
@@ -19,7 +19,7 @@ pub const TORCH_RADIUS: i32 = 10;
 // experience and level-ups
 pub const LEVEL_UP_BASE: i32 = 200;
 pub const LEVEL_UP_FACTOR: i32 = 150;
-pub const LEVEL_SCREEN_WIDTH: i32 = 40;
+// pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
 // Structures and functions for message output
 
@@ -162,59 +162,59 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .map_or(0, |transition| transition.value)
 }
 
-pub fn level_up(
-    game_io: &mut GameFrontend,
-    game_state: &mut GameState,
-    objects: &mut GameObjects,
-    game_input: &mut Option<&mut GameInput>,
-) {
-    if let Some(ref mut player) = objects[PLAYER] {
-        let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-        // see if the player's experience is enough to level up
-        if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
-            // exp is enough, lvl up
-            player.level += 1;
-            game_state.log.add(
-                format!(
-                    "Your battle skills grow stringer! You reached level {}!",
-                    player.level
-                ),
-                colors::YELLOW,
-            );
+// pub fn level_up(
+//     game_io: &mut GameFrontend,
+//     game_state: &mut GameState,
+//     objects: &mut GameObjects,
+//     game_input: &mut Option<&mut GameInput>,
+// ) {
+//     if let Some(ref mut player) = objects[PLAYER] {
+//         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+//         // see if the player's experience is enough to level up
+//         if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
+//             // exp is enough, lvl up
+//             player.level += 1;
+//             game_state.log.add(
+//                 format!(
+//                     "Your battle skills grow stringer! You reached level {}!",
+//                     player.level
+//                 ),
+//                 colors::YELLOW,
+//             );
 
-            let fighter = player.fighter.as_mut().unwrap();
-            let mut choice = None;
-            while choice.is_none() {
-                // keep asking until a choice is made
-                choice = menu(
-                    game_io,
-                    game_input,
-                    "Level up! Chose a stat to raise:\n",
-                    &[
-                        format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
-                        format!("Strength (+1 attack, from {})", fighter.base_power),
-                        format!("Agility (+1 defense, from {})", fighter.base_defense),
-                    ],
-                    LEVEL_SCREEN_WIDTH,
-                );
-            }
-            fighter.xp -= level_up_xp;
-            match choice.unwrap() {
-                0 => {
-                    fighter.base_max_hp += 20;
-                    fighter.hp += 20;
-                }
-                1 => {
-                    fighter.base_power += 1;
-                }
-                2 => {
-                    fighter.base_defense += 1;
-                }
-                _ => unreachable!(),
-            }
-        }
-    }
-}
+//             let fighter = player.fighter.as_mut().unwrap();
+//             let mut choice = None;
+//             while choice.is_none() {
+//                 // keep asking until a choice is made
+//                 choice = menu(
+//                     game_io,
+//                     game_input,
+//                     "Level up! Chose a stat to raise:\n",
+//                     &[
+//                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
+//                         format!("Strength (+1 attack, from {})", fighter.base_power),
+//                         format!("Agility (+1 defense, from {})", fighter.base_defense),
+//                     ],
+//                     LEVEL_SCREEN_WIDTH,
+//                 );
+//             }
+//             fighter.xp -= level_up_xp;
+//             match choice.unwrap() {
+//                 0 => {
+//                     fighter.base_max_hp += 20;
+//                     fighter.hp += 20;
+//                 }
+//                 1 => {
+//                     fighter.base_power += 1;
+//                 }
+//                 2 => {
+//                     fighter.base_defense += 1;
+//                 }
+//                 _ => unreachable!(),
+//             }
+//         }
+//     }
+// }
 
 // /// Advance to the next level
 // pub fn next_level(

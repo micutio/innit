@@ -13,13 +13,13 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
-use core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS,};
+use core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS};
 use core::world::is_explored;
 use entity::object::Object;
 use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use ui::color_palette::*;
-use ui::game_input::{GameInput, UiAction};
 use ui::dialog::*;
+use ui::game_input::{GameInput, UiAction};
 
 // game window properties
 pub const SCREEN_WIDTH: i32 = 80;
@@ -92,7 +92,7 @@ pub enum AnimationType {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-    pub fn main_menu(game_frontend: &mut GameFrontend) {
+pub fn main_menu(game_frontend: &mut GameFrontend) {
     let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
         .expect("Background image not found");
 
@@ -166,7 +166,13 @@ pub enum AnimationType {
                         );
                     }
                     Err(_e) => {
-                        msgbox(game_frontend, &mut None, "", "\nNo saved game to load\n", 24);
+                        msgbox(
+                            game_frontend,
+                            &mut None,
+                            "",
+                            "\nNo saved game to load\n",
+                            24,
+                        );
                         continue;
                     }
                 }

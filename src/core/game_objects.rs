@@ -95,7 +95,7 @@ impl GameObjects {
         match item {
             Some(obj) => {
                 // debug!("replace object {} @ index {}", object.visual.name, index);
-                // obj.replace(object);
+                obj.replace(object);
             }
             None => {
                 panic!(
