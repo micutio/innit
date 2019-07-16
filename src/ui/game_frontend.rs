@@ -58,7 +58,7 @@ impl GameFrontend {
     pub fn new() -> Self {
         let root = Root::initializer()
             .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
-            .font_type(FontType::Default)
+            .font_type(FontType::Greyscale)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
             .title("innit alpha v0.0.1")
             .init();
@@ -224,8 +224,9 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     }
     // unexplored areas start black (which is the default background color)
     game_frontend.con.clear();
-    // game_frontend.con
-    // .set_default_background(game_frontend.coloring.get_col_world_bg());
+    game_frontend
+        .con
+        .set_default_background(game_frontend.coloring.get_col_world_bg());
 }
 
 pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
@@ -457,8 +458,8 @@ fn render_ui(
             "HP",
             hp,
             max_hp,
-            colors::LIGHT_RED,
-            colors::DARKER_RED,
+            colors::DARK_RED,
+            colors::DARKEST_RED,
         );
         game_frontend.panel.print_ex(
             1,
@@ -547,9 +548,9 @@ pub fn handle_ui_actions(
         }
         UiAction::ToggleDarkLightMode => {
             game_frontend.coloring.toggle_dark_light_mode();
-            // recompute_fov(game_frontend, game_objects);
-            // initialize_fov(game_frontend, game_objects);
-            // re_render(game_state, game_frontend, game_objects, "");
+            recompute_fov(game_frontend, game_objects);
+            initialize_fov(game_frontend, game_objects);
+            re_render(game_state, game_frontend, game_objects, "");
         }
         UiAction::CharacterScreen => {
             // TODO: move this to separate function
@@ -560,6 +561,7 @@ pub fn handle_ui_actions(
         UiAction::Fullscreen => {
             let fullscreen = game_frontend.root.is_fullscreen();
             game_frontend.root.set_fullscreen(!fullscreen);
+            initialize_fov(game_frontend, game_objects);
         }
     }
     re_render(game_state, game_frontend, game_objects, "");
