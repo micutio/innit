@@ -8,24 +8,22 @@
 ///
 /// Function parameter precedence:
 /// game_state, game_frontend, game_input, objects, anything else.
-use tcod::chars;
 use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
-use core::game_state::{
-    GameState, ObjectProcResult, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER, TORCH_RADIUS,
-};
+use core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS,};
 use core::world::is_explored;
 use entity::object::Object;
 use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use ui::color_palette::*;
 use ui::game_input::{GameInput, UiAction};
+use ui::dialog::*;
 
 // game window properties
-const SCREEN_WIDTH: i32 = 80;
-const SCREEN_HEIGHT: i32 = 50;
+pub const SCREEN_WIDTH: i32 = 80;
+pub const SCREEN_HEIGHT: i32 = 50;
 const LIMIT_FPS: i32 = 20; // target fps
 
 // field of view algorithm parameters
@@ -33,15 +31,9 @@ const FOV_ALG: FovAlgorithm = FovAlgorithm::Shadow;
 const FOV_LIGHT_WALLS: bool = true;
 
 // ui and menu constraints
-const BAR_WIDTH: i32 = 20;
-const PANEL_HEIGHT: i32 = 7;
+pub const BAR_WIDTH: i32 = 20;
+pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
-// message box measurements
-const MSG_X: i32 = BAR_WIDTH + 2;
-const MSG_WIDTH: i32 = SCREEN_WIDTH - BAR_WIDTH - 2;
-const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
-// width of the character info screen.
-pub const CHARACTER_SCREEN_WIDTH: i32 = 30;
 
 /// Field of view mapping
 pub use tcod::map::Map as FovMap;
@@ -100,8 +92,8 @@ pub enum AnimationType {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-pub fn main_menu(game_frontend: &mut GameFrontend) {
-    let img = tcod::image::Image::from_file("assets/menu_background.png")
+    pub fn main_menu(game_frontend: &mut GameFrontend) {
+    let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
         .expect("Background image not found");
 
     while !game_frontend.root.window_closed() {
@@ -174,7 +166,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                         );
                     }
                     Err(_e) => {
-                        msgbox(game_frontend, &mut None, "\nNo saved game to load\n", 24);
+                        msgbox(game_frontend, &mut None, "", "\nNo saved game to load\n", 24);
                         continue;
                     }
                 }
@@ -531,152 +523,6 @@ fn render_bar(
     );
 }
 
-/// Display a generic menu with multiple options to choose from.
-/// Returns the number of the menu item that has been chosen.
-/// TODO: Make this private
-pub fn menu<T: AsRef<str>>(
-    game_frontend: &mut GameFrontend,
-    game_input: &mut Option<&mut GameInput>,
-    header: &str,
-    options: &[T],
-    width: i32,
-) -> Option<usize> {
-    assert!(
-        options.len() <= 26,
-        "Cannot have a mnu with more than 26 options."
-    );
-
-    // calculate total height for the header (after auto-wrap) and one line per option
-    let header_height = game_frontend
-        .root
-        .get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
-
-    let height = options.len() as i32 + header_height + 2;
-
-    // create an off-screen console that represents the menu's window
-    let mut window = Offscreen::new(width, height);
-
-    // print the header, with auto-wrap
-    window.set_default_background(game_frontend.coloring.get_col_menu_bg());
-    window.set_default_foreground(game_frontend.coloring.get_col_menu_fg());
-
-    for x in 0..width {
-        for y in 0..height {
-            window.set_char_background(
-                x,
-                y,
-                game_frontend.coloring.get_col_menu_bg(),
-                BackgroundFlag::Set,
-            );
-            window.set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
-            window.set_char(x, y, ' ');
-        }
-    }
-
-    // render horizontal borders
-    for x in 0..width - 1 {
-        window.set_char(x, 0, chars::HLINE);
-        window.set_char(x, 1, chars::DHLINE);
-        window.set_char(x, height - 1, chars::HLINE);
-    }
-    // render vertical borders
-    for y in 0..height - 1 {
-        window.set_char(0, y, chars::VLINE);
-        window.set_char(width - 1, y, chars::VLINE);
-    }
-
-    // render corners
-    window.set_char(0, 0, '\u{da}');
-    window.set_char(0, 1, '\u{d4}');
-    window.set_char(width - 1, 0, chars::NE);
-    window.set_char(width - 1, 1, chars::COPYRIGHT);
-    window.set_char(0, height - 1, chars::SW);
-    window.set_char(width - 1, height - 1, chars::SE);
-    // window.set_char(width, height - 1, chars::SW);
-    // window.set_char(width, 1, chars::SE);
-
-    window.print_rect_ex(
-        width / 2 as i32,
-        0,
-        width,
-        height,
-        BackgroundFlag::None,
-        TextAlignment::Center,
-        header,
-    );
-
-    // print all the options
-    for (index, option_text) in options.iter().enumerate() {
-        let menu_letter = (b'a' + index as u8) as char;
-        let text = format!(" ({}) {}", menu_letter, option_text.as_ref());
-        window.print_ex(
-            0,
-            header_height + index as i32 + 1,
-            BackgroundFlag::None,
-            TextAlignment::Left,
-            text,
-        );
-    }
-
-    // blit contents of "window" to the root console
-    let x = SCREEN_WIDTH / 2 - width / 2;
-    let y = SCREEN_HEIGHT / 2 - height / 2;
-    tcod::console::blit(
-        &window,
-        (0, 0),
-        (width, height),
-        &mut game_frontend.root,
-        (x, y),
-        1.0,
-        0.7,
-    );
-
-    // present the root console to the player and wait for a key-press
-    game_frontend.root.flush();
-
-    // if we have an instance of GameInput, pause the input listener thread first
-    // so that we can receive input events directly
-    let key: tcod::input::Key;
-    match game_input {
-        // NOTE: We can't use pause_concurrent_input() and resume_concurrent_input(). Why?
-        // NOTE: If we do that, the game ends up unable to process any key input.
-        Some(ref mut handle) => {
-            handle.stop_concurrent_input();
-            key = game_frontend.root.wait_for_keypress(true);
-            // after we got he key, restart input listener thread
-            handle.start_concurrent_input();
-        }
-        None => {
-            key = game_frontend.root.wait_for_keypress(true);
-        }
-    }
-
-    // convert the ASCII code to an index
-    // if it corresponds to an option, return it
-    if key.printable.is_alphabetic() {
-        let index = key.printable.to_ascii_lowercase() as usize - 'a' as usize;
-        if index < options.len() {
-            Some(index)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
-}
-
-/// Display a box with a message to the user.
-/// This works like a menu, but without any choices.
-fn msgbox(
-    game_frontend: &mut GameFrontend,
-    game_input: &mut Option<&mut GameInput>,
-    text: &str,
-    width: i32,
-) {
-    let options: &[&str] = &[];
-    menu(game_frontend, game_input, text, options, width);
-}
-
 pub fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
@@ -698,30 +544,7 @@ pub fn handle_ui_actions(
         UiAction::CharacterScreen => {
             // TODO: move this to separate function
             // show character information
-            if let Some(ref player) = game_objects[PLAYER] {
-                let level = player.level;
-                let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-                if let Some(fighter) = player.fighter.as_ref() {
-                    let msg = format!(
-                        "           Character information           \
-                         \
-                         Level: {} \
-                         Experience: {} \
-                         Experience to level up: {} \
-                         \
-                         Maximum HP: {} \
-                         Attack: {} \
-                         Defense: {} ",
-                        level,
-                        fighter.xp,
-                        level_up_xp,
-                        player.max_hp(game_state),
-                        player.power(game_state),
-                        player.defense(game_state),
-                    );
-                    msgbox(game_frontend, game_input, &msg, CHARACTER_SCREEN_WIDTH);
-                }
-            };
+            show_character_screen(game_state, game_frontend, game_input, game_objects);
         }
 
         UiAction::Fullscreen => {

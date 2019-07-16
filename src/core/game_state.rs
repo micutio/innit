@@ -9,7 +9,8 @@ use core::game_objects::GameObjects;
 use core::world::make_world;
 use entity::action::*;
 use entity::object::Object;
-use ui::game_frontend::{menu, AnimationType, FovMap, GameFrontend};
+use ui::game_frontend::{AnimationType, FovMap, GameFrontend};
+use ui::dialog::menu;
 use ui::game_input::GameInput;
 
 // player object reference, index of the object vector
