@@ -314,7 +314,7 @@ fn start_input_proc_thread(
                     // get used key to create next user action
                     Some((_, Event::Key(k))) => {
                         _key = k;
-                        trace!("key input {:?}", k);
+                        trace!("key input {:?}", k.code);
                     }
                     _ => {}
                 }

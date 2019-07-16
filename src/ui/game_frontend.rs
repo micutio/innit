@@ -66,7 +66,7 @@ impl GameFrontend {
     pub fn new() -> Self {
         let root = Root::initializer()
             .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
-            .font_type(FontType::Greyscale)
+            .font_type(FontType::Default)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
             .title("innit alpha v0.0.1")
             .init();
@@ -116,7 +116,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
             .set_default_background(game_frontend.coloring.get_col_menu_bg());
         game_frontend.root.print_ex(
             SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT / 2 - 4,
+            SCREEN_HEIGHT / 2 - 6,
             BackgroundFlag::None,
             TextAlignment::Center,
             "I N N I T",
@@ -185,6 +185,18 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
             }
             _ => {}
         }
+
+        // let mut x: u8 = 0;
+        // for i in 0..16 {
+        //     for j in 0..16 {
+        //         game_frontend
+        //             .root
+        //             .put_char_ex(i, j, x as u8 as char, colors::WHITE, colors::BLUE);
+        //         if x < 255 {
+        //             x += 1;
+        //         }
+        //     }
+        // }
     }
 }
 
@@ -210,10 +222,16 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     }
     // unexplored areas start black (which is the default background color)
     game_frontend.con.clear();
-    game_frontend
-        .con
-        // .set_default_background(game_frontend.coloring.get_col_menu_bg());
-        .set_default_background(game_frontend.coloring.get_col_world_bg());
+    // game_frontend.con
+    // .set_default_background(game_frontend.coloring.get_col_world_bg());
+}
+
+pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
+    if let Some(ref player) = objects[PLAYER] {
+        game_frontend
+            .fov
+            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+    }
 }
 
 /// Initialize the player's field of view and render objects + ui for the start of the game.
@@ -231,77 +249,6 @@ fn init_object_visuals(
         game_objects,
         &game_input.names_under_mouse,
     );
-}
-
-pub fn process_visual_feedback(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_input: &GameInput,
-    game_objects: &mut GameObjects,
-    proc_result: ObjectProcResult,
-) {
-    match proc_result {
-        // no action has been performed, repeat the turn and try again
-        ObjectProcResult::NoAction => {}
-
-        // action has been completed, but nothing needs to be done about it
-        ObjectProcResult::NoFeedback => {}
-
-        // the player's FOV has been updated, thus we also need to re-render
-        ObjectProcResult::UpdateFOV => {
-            recompute_fov(game_frontend, game_objects);
-            re_render(
-                game_state,
-                game_frontend,
-                game_objects,
-                &game_input.names_under_mouse,
-            );
-        }
-
-        // the player hasn't moved but something happened within fov
-        ObjectProcResult::ReRender => {
-            re_render(
-                game_state,
-                game_frontend,
-                game_objects,
-                &game_input.names_under_mouse,
-            );
-        }
-
-        ObjectProcResult::Animate { anim_type } => {
-            // TODO: Play animation.
-            info!("animation");
-        }
-
-        _ => {}
-    }
-}
-
-pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
-    if let Some(ref player) = objects[PLAYER] {
-        game_frontend
-            .fov
-            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
-    }
-}
-
-/// Render all objects, the menu
-pub fn re_render(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    objects: &mut GameObjects,
-    names_under_mouse: &str,
-) {
-    // clear the screen of the previous frame
-    game_frontend.con.clear();
-    // render objects and map
-    // step 1/2: update visibility of objects and world tiles
-    update_visibility(game_frontend, objects);
-    // step 2/2: render everything
-    render_all(game_frontend, game_state, objects, names_under_mouse);
-
-    // draw everything on the window at once
-    game_frontend.root.flush();
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
@@ -350,17 +297,80 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
                     if tile.explored {
                         // show explored tiles only (any visible tile is explored already)
                         tile_object.visual.color = tile_color;
-                        game_frontend.con.set_char_background(
-                            x,
-                            y,
-                            tile_color,
-                            BackgroundFlag::Set,
-                        );
+                        // game_frontend.con.set_char_background(
+                        //     x,
+                        //     y,
+                        //     tile_color,
+                        //     BackgroundFlag::Set,
+                        // );
                     }
                 }
             }
         }
     }
+}
+
+pub fn process_visual_feedback(
+    game_state: &mut GameState,
+    game_frontend: &mut GameFrontend,
+    game_input: &GameInput,
+    game_objects: &mut GameObjects,
+    proc_result: ObjectProcResult,
+) {
+    match proc_result {
+        // no action has been performed, repeat the turn and try again
+        ObjectProcResult::NoAction => {}
+
+        // action has been completed, but nothing needs to be done about it
+        ObjectProcResult::NoFeedback => {}
+
+        // the player's FOV has been updated, thus we also need to re-render
+        ObjectProcResult::UpdateFOV => {
+            recompute_fov(game_frontend, game_objects);
+            re_render(
+                game_state,
+                game_frontend,
+                game_objects,
+                &game_input.names_under_mouse,
+            );
+        }
+
+        // the player hasn't moved but something happened within fov
+        ObjectProcResult::ReRender => {
+            re_render(
+                game_state,
+                game_frontend,
+                game_objects,
+                &game_input.names_under_mouse,
+            );
+        }
+
+        ObjectProcResult::Animate { anim_type } => {
+            // TODO: Play animation.
+            info!("animation");
+        }
+
+        _ => {}
+    }
+}
+
+/// Render all objects, the menu
+pub fn re_render(
+    game_state: &mut GameState,
+    game_frontend: &mut GameFrontend,
+    objects: &mut GameObjects,
+    names_under_mouse: &str,
+) {
+    // clear the screen of the previous frame
+    game_frontend.con.clear();
+    // render objects and map
+    // step 1/2: update visibility of objects and world tiles
+    update_visibility(game_frontend, objects);
+    // step 2/2: render everything
+    render_all(game_frontend, game_state, objects, names_under_mouse);
+
+    // draw everything on the window at once
+    game_frontend.root.flush();
 }
 
 /// Render all objects and tiles.
@@ -537,18 +547,18 @@ pub fn menu<T: AsRef<str>>(
     );
 
     // calculate total height for the header (after auto-wrap) and one line per option
-    let header_height = if header.is_empty() {
-        1
-    } else {
-        game_frontend
-            .root
-            .get_height_rect(0, 0, width, SCREEN_HEIGHT, header)
-    };
+    let header_height = game_frontend
+        .root
+        .get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
 
-    let height = options.len() as i32 + header_height + 1;
+    let height = options.len() as i32 + header_height + 2;
 
     // create an off-screen console that represents the menu's window
     let mut window = Offscreen::new(width, height);
+
+    // print the header, with auto-wrap
+    window.set_default_background(game_frontend.coloring.get_col_menu_bg());
+    window.set_default_foreground(game_frontend.coloring.get_col_menu_fg());
 
     for x in 0..width {
         for y in 0..height {
@@ -558,23 +568,32 @@ pub fn menu<T: AsRef<str>>(
                 game_frontend.coloring.get_col_menu_bg(),
                 BackgroundFlag::Set,
             );
+            window.set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
             window.set_char(x, y, ' ');
         }
     }
 
-    // render border
-    for x in 0..width {
-        window.set_char(x, 0, chars::BLOCK1);
-        window.set_char(x, height - 1, chars::BLOCK1);
+    // render horizontal borders
+    for x in 0..width - 1 {
+        window.set_char(x, 0, chars::HLINE);
+        window.set_char(x, 1, chars::DHLINE);
+        window.set_char(x, height - 1, chars::HLINE);
     }
+    // render vertical borders
     for y in 0..height - 1 {
-        window.set_char(0, y, chars::BLOCK1);
-        window.set_char(width - 1, y, chars::BLOCK1);
+        window.set_char(0, y, chars::VLINE);
+        window.set_char(width - 1, y, chars::VLINE);
     }
 
-    // print the header, with auto-wrap
-    window.set_default_background(game_frontend.coloring.get_col_menu_bg());
-    window.set_default_foreground(game_frontend.coloring.get_col_menu_fg());
+    // render corners
+    window.set_char(0, 0, '\u{da}');
+    window.set_char(0, 1, '\u{d4}');
+    window.set_char(width - 1, 0, chars::NE);
+    window.set_char(width - 1, 1, chars::COPYRIGHT);
+    window.set_char(0, height - 1, chars::SW);
+    window.set_char(width - 1, height - 1, chars::SE);
+    // window.set_char(width, height - 1, chars::SW);
+    // window.set_char(width, 1, chars::SE);
 
     window.print_rect_ex(
         width / 2 as i32,
@@ -589,10 +608,10 @@ pub fn menu<T: AsRef<str>>(
     // print all the options
     for (index, option_text) in options.iter().enumerate() {
         let menu_letter = (b'a' + index as u8) as char;
-        let text = format!("({}) {}", menu_letter, option_text.as_ref());
+        let text = format!(" ({}) {}", menu_letter, option_text.as_ref());
         window.print_ex(
-            1,
-            header_height + index as i32,
+            0,
+            header_height + index as i32 + 1,
             BackgroundFlag::None,
             TextAlignment::Left,
             text,
