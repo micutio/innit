@@ -4,6 +4,7 @@
 /// for color calculation and manipulation.
 ///
 /// TODO: Read constants from file.
+/// TODO: Distinguish between dark and light theme
 use tcod::colors::Color;
 
 const COL_MAIN: Color = Color {
@@ -47,24 +48,26 @@ impl ColorPalette {
         }
     }
 
-    pub fn get_col_light_ground(&self) -> Color {
+    pub fn get_col_ground_in_fov(&self) -> Color {
         self.col_main
             .scale_hsv(self.full_saturation_factor, self.light_factor)
     }
 
-    pub fn get_col_light_wall(&self) -> Color {
+    pub fn get_col_wall_in_fov(&self) -> Color {
         self.col_main
             .scale_hsv(self.full_saturation_factor, self.light_factor * 0.7)
     }
 
-    pub fn get_col_dark_ground(&self) -> Color {
+    pub fn get_col_ground_out_fov(&self) -> Color {
         self.col_main
             .scale_hsv(self.de_saturation_factor, self.dark_factor)
+        // .scale_hsv(self.de_saturation_factor, self.light_factor * 1.3)
     }
 
-    pub fn get_col_dark_wall(&self) -> Color {
+    pub fn get_col_wall_out_fov(&self) -> Color {
         self.col_main
             .scale_hsv(self.de_saturation_factor, self.dark_factor / 2.0)
+        // .scale_hsv(self.de_saturation_factor, self.light_factor * 1.0)
     }
 
     pub fn get_col_acc_warm(&self) -> Color {

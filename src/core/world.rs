@@ -52,7 +52,7 @@ impl Tile {
             x,
             y,
             "empty tile",
-            chars::BLOCK1,
+            '#',
             colors::BLACK,
             true,
             true,

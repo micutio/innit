@@ -210,6 +210,10 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     }
     // unexplored areas start black (which is the default background color)
     game_frontend.con.clear();
+    game_frontend
+        .con
+        // .set_default_background(game_frontend.coloring.get_col_menu_bg());
+        .set_default_background(colors::BLACK);
 }
 
 /// Initialize the player's field of view and render objects + ui for the start of the game.
@@ -358,10 +362,10 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
         player_pos = (player.x, player.y);
     }
 
-    let col_dark_wall = game_frontend.coloring.get_col_dark_wall();
-    let col_light_wall = game_frontend.coloring.get_col_light_wall();
-    let col_dark_ground = game_frontend.coloring.get_col_dark_ground();
-    let col_light_ground = game_frontend.coloring.get_col_light_ground();
+    let col_wall_out_fov = game_frontend.coloring.get_col_wall_out_fov();
+    let col_wall_in_fov = game_frontend.coloring.get_col_wall_in_fov();
+    let col_ground_out_fov = game_frontend.coloring.get_col_ground_out_fov();
+    let col_ground_in_fov = game_frontend.coloring.get_col_ground_in_fov();
 
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
@@ -372,19 +376,19 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
                 // set tile background colors
                 let tile_color = match (visible, wall) {
                     // outside field of view:
-                    (false, true) => col_dark_wall,
-                    (false, false) => col_dark_ground,
+                    (false, true) => col_wall_out_fov,
+                    (false, false) => col_ground_out_fov,
                     // inside fov:
                     // (true, true) => COLOR_LIGHT_WALL,
                     (true, true) => colors::lerp(
-                        col_light_wall,
-                        col_dark_wall,
+                        col_wall_in_fov,
+                        col_wall_out_fov,
                         tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
                     ),
-                    // (true, false) => COLOR_LIGHT_GROUND,
+                    // (true, false) => COLOR_ground_in_fov,
                     (true, false) => colors::lerp(
-                        col_light_ground,
-                        col_dark_ground,
+                        col_ground_in_fov,
+                        col_ground_out_fov,
                         tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
                     ),
                 };
@@ -396,12 +400,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
                     if tile.explored {
                         // show explored tiles only (any visible tile is explored already)
                         tile_object.visual.color = tile_color;
-                        // game_frontend.con.set_char_background(
-                        //     x,
-                        //     y,
-                        //     tile_color,
-                        //     BackgroundFlag::Set,
-                        // );
+                        game_frontend.con.set_char_background(
+                            x,
+                            y,
+                            tile_color,
+                            BackgroundFlag::Set,
+                        );
                     }
                 }
             }
