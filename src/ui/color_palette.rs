@@ -4,7 +4,7 @@
 /// for color calculation and manipulation.
 ///
 /// TODO: Read constants from file.
-/// TODO: Distinguish between dark and light theme
+/// TODO: Better readable colors between dark and light scheme
 use tcod::colors::Color;
 
 const COL_MAIN: Color = Color {

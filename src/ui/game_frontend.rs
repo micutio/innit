@@ -541,6 +541,7 @@ pub fn handle_ui_actions(
     game_input: &mut Option<&mut GameInput>,
     action: UiAction,
 ) -> bool {
+    // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     match action {
         UiAction::ExitGameLoop => {
             save_game(game_state, game_objects).unwrap();
