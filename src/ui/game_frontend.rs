@@ -213,7 +213,7 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     game_frontend
         .con
         // .set_default_background(game_frontend.coloring.get_col_menu_bg());
-        .set_default_background(colors::BLACK);
+        .set_default_background(game_frontend.coloring.get_col_world_bg());
 }
 
 /// Initialize the player's field of view and render objects + ui for the start of the game.
@@ -275,56 +275,6 @@ pub fn process_visual_feedback(
 
         _ => {}
     }
-}
-
-pub fn handle_ui_actions(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    game_objects: &mut GameObjects,
-    game_input: &mut Option<&mut GameInput>,
-    action: UiAction,
-) -> bool {
-    match action {
-        UiAction::ExitGameLoop => {
-            save_game(game_state, game_objects).unwrap();
-            return true;
-        }
-        UiAction::CharacterScreen => {
-            // TODO: move this to separate function
-            // show character information
-            if let Some(ref player) = game_objects[PLAYER] {
-                let level = player.level;
-                let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-                if let Some(fighter) = player.fighter.as_ref() {
-                    let msg = format!(
-                        "Character information
-
-Level: {}
-Experience: {}
-Experience to level up: {}
-
-Maximum HP: {}
-Attack: {}
-Defense: {}",
-                        level,
-                        fighter.xp,
-                        level_up_xp,
-                        player.max_hp(game_state),
-                        player.power(game_state),
-                        player.defense(game_state),
-                    );
-                    msgbox(game_frontend, game_input, &msg, CHARACTER_SCREEN_WIDTH);
-                }
-            };
-        }
-
-        UiAction::Fullscreen => {
-            let fullscreen = game_frontend.root.is_fullscreen();
-            game_frontend.root.set_fullscreen(!fullscreen);
-        }
-    }
-    re_render(game_state, game_frontend, game_objects, "");
-    false
 }
 
 pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
@@ -706,4 +656,60 @@ fn msgbox(
 ) {
     let options: &[&str] = &[];
     menu(game_frontend, game_input, text, options, width);
+}
+
+pub fn handle_ui_actions(
+    game_frontend: &mut GameFrontend,
+    game_state: &mut GameState,
+    game_objects: &mut GameObjects,
+    game_input: &mut Option<&mut GameInput>,
+    action: UiAction,
+) -> bool {
+    match action {
+        UiAction::ExitGameLoop => {
+            save_game(game_state, game_objects).unwrap();
+            return true;
+        }
+        UiAction::ToggleDarkLightMode => {
+            game_frontend.coloring.toggle_dark_light_mode();
+            // recompute_fov(game_frontend, game_objects);
+            // initialize_fov(game_frontend, game_objects);
+            // re_render(game_state, game_frontend, game_objects, "");
+        }
+        UiAction::CharacterScreen => {
+            // TODO: move this to separate function
+            // show character information
+            if let Some(ref player) = game_objects[PLAYER] {
+                let level = player.level;
+                let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
+                if let Some(fighter) = player.fighter.as_ref() {
+                    let msg = format!(
+                        "           Character information           \
+                         \
+                         Level: {} \
+                         Experience: {} \
+                         Experience to level up: {} \
+                         \
+                         Maximum HP: {} \
+                         Attack: {} \
+                         Defense: {} ",
+                        level,
+                        fighter.xp,
+                        level_up_xp,
+                        player.max_hp(game_state),
+                        player.power(game_state),
+                        player.defense(game_state),
+                    );
+                    msgbox(game_frontend, game_input, &msg, CHARACTER_SCREEN_WIDTH);
+                }
+            };
+        }
+
+        UiAction::Fullscreen => {
+            let fullscreen = game_frontend.root.is_fullscreen();
+            game_frontend.root.set_fullscreen(!fullscreen);
+        }
+    }
+    re_render(game_state, game_frontend, game_objects, "");
+    false
 }

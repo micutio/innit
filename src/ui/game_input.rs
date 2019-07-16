@@ -205,7 +205,7 @@ pub enum KeyCode {
     // I,
     // J,
     // K,
-    // L,
+    L,
     // M,
     // N,
     // O,
@@ -249,6 +249,7 @@ pub enum UiAction {
     ExitGameLoop,
     Fullscreen,
     CharacterScreen,
+    ToggleDarkLightMode,
 }
 
 pub struct InputProcessor {
@@ -313,7 +314,7 @@ fn start_input_proc_thread(
                     // get used key to create next user action
                     Some((_, Event::Key(k))) => {
                         _key = k;
-                        trace!("key input {:?}", k.code);
+                        trace!("key input {:?}", k);
                     }
                     _ => {}
                 }
@@ -322,7 +323,7 @@ fn start_input_proc_thread(
                 let mut input = game_input_buf.lock().unwrap();
                 // let player_action: PlayerAction =
                 if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                    // println!("[input thread] push back {:?}", key);
+                    trace!("[input thread] push back {:?}", key);
                     input.next_player_actions.push_back(key.clone());
                 };
                 input.mouse_x = mouse_x;
@@ -358,7 +359,16 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
 
     match tcod_key {
         // letters
-        Key { printable: 'c', .. } => self::KeyCode::C,
+        Key {
+            code: Char,
+            printable: 'c',
+            ..
+        } => self::KeyCode::C,
+        Key {
+            code: Char,
+            printable: 'l',
+            ..
+        } => self::KeyCode::L,
         // in-game actions
         Key { code: Up, .. } => self::KeyCode::Up,
         Key { code: Down, .. } => self::KeyCode::Down,
@@ -388,6 +398,7 @@ fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map.insert(Esc, MetaAction(ExitGameLoop));
     key_map.insert(F4, MetaAction(Fullscreen));
     key_map.insert(C, MetaAction(CharacterScreen));
+    key_map.insert(L, MetaAction(ToggleDarkLightMode));
 
     key_map
 }

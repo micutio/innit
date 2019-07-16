@@ -42,10 +42,16 @@ impl ColorPalette {
             col_acc_warm: COL_ACCENT_WARM,
             col_acc_cold: COL_ACCENT_COLD,
             dark_factor: 0.3,
-            light_factor: 1.2,
+            light_factor: 0.9,
             full_saturation_factor: 0.9,
             de_saturation_factor: 0.3,
         }
+    }
+
+    pub fn toggle_dark_light_mode(&mut self) {
+        self.dark_factor = 1.0 - self.dark_factor;
+        self.light_factor = 1.0 - self.light_factor;
+        println!("toggle dark/light");
     }
 
     pub fn get_col_ground_in_fov(&self) -> Color {
@@ -85,5 +91,10 @@ impl ColorPalette {
     pub fn get_col_menu_bg(&self) -> Color {
         self.col_main
             .scale_hsv(self.de_saturation_factor, self.light_factor * 2.0)
+    }
+
+    pub fn get_col_world_bg(&self) -> Color {
+        self.col_main
+            .scale_hsv(self.de_saturation_factor, self.dark_factor)
     }
 }
