@@ -51,7 +51,6 @@ impl ColorPalette {
     pub fn toggle_dark_light_mode(&mut self) {
         self.dark_factor = 1.0 - self.dark_factor;
         self.light_factor = 1.0 - self.light_factor;
-        println!("toggle dark/light");
     }
 
     pub fn get_col_ground_in_fov(&self) -> Color {
