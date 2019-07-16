@@ -8,7 +8,7 @@ use tcod::colors;
 
 // internal imports
 use core::game_objects::GameObjects;
-use core::game_state::{GameState, MessageLog, ObjectProcResult};
+use core::game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS};
 use entity::object::Object;
 
 /// Result of performing an action.
@@ -45,15 +45,21 @@ impl Action for PassAction {
     fn perform(
         &self,
         game_state: &mut GameState,
-        _objects: &mut GameObjects,
+        game_objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
         // do nothing
         // duh
-        game_state.log.add(
-            format!("{} passes their turn", owner.visual.name),
-            colors::WHITE,
-        );
+        // TODO: make sure all game log messages are only displayed if the cause is visible to the player
+        if let Some(player) = &game_objects[PLAYER] {
+            if player.distance_to(&owner) <= TORCH_RADIUS as f32 && owner.tile.is_none() {
+                // don't record all tiles passing constantly
+                game_state.log.add(
+                    format!("{} passes their turn", owner.visual.name),
+                    colors::WHITE,
+                );
+            }
+        }
         ActionResult::Success {
             callback: ObjectProcResult::NoFeedback,
         }
