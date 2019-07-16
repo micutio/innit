@@ -4,6 +4,7 @@
 // external imports
 use rand::Rng;
 use std::cmp;
+use tcod::chars;
 use tcod::colors;
 
 // internal imports
@@ -33,7 +34,7 @@ impl Tile {
             x,
             y,
             "empty tile",
-            ' ',
+            '.',
             colors::BLACK,
             false,
             false,
@@ -51,7 +52,7 @@ impl Tile {
             x,
             y,
             "empty tile",
-            ' ',
+            chars::BLOCK1,
             colors::BLACK,
             true,
             true,

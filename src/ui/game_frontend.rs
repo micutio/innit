@@ -368,6 +368,8 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
             let visible = game_frontend.fov.is_in_fov(x, y);
             if let Some(ref mut tile_object) = objects.get_tile_at(x as usize, y as usize) {
                 let wall = tile_object.physics.is_blocking_sight;
+
+                // set tile background colors
                 let tile_color = match (visible, wall) {
                     // outside field of view:
                     (false, true) => col_dark_wall,
@@ -393,12 +395,13 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
                     }
                     if tile.explored {
                         // show explored tiles only (any visible tile is explored already)
-                        game_frontend.con.set_char_background(
-                            x,
-                            y,
-                            tile_color,
-                            BackgroundFlag::Set,
-                        );
+                        tile_object.visual.color = tile_color;
+                        // game_frontend.con.set_char_background(
+                        //     x,
+                        //     y,
+                        //     tile_color,
+                        //     BackgroundFlag::Set,
+                        // );
                     }
                 }
             }
@@ -423,7 +426,8 @@ fn render_all(
         .filter(|o| {
             // FIXME: there must be a better way than using `and_then`.
             game_frontend.fov.is_in_fov(o.x, o.y)
-                || (o.physics.is_always_visible && *o.tile.as_ref().and_then(is_explored).unwrap())
+                || o.physics.is_always_visible
+                || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
         })
         .collect();
     // sort, so that non-blocking objects come first
