@@ -106,13 +106,17 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         game_frontend
             .root
             .set_default_background(game_frontend.coloring.get_col_menu_bg());
-        game_frontend.root.print_ex(
-            SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT / 2 - 6,
-            BackgroundFlag::None,
-            TextAlignment::Center,
-            "I N N I T",
-        );
+        // game_frontend.root.print_ex(
+        //     SCREEN_WIDTH / 2,
+        //     SCREEN_HEIGHT / 2 - 6,
+        //     BackgroundFlag::None,
+        //     TextAlignment::Center,
+        //     "I N N I T",
+        // );
+
+        game_frontend
+            .root
+            .set_default_foreground(game_frontend.coloring.get_col_acc_warm());
         game_frontend.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT - 2,

@@ -14,9 +14,9 @@ const COL_MAIN: Color = Color {
 };
 
 const COL_ACCENT_WARM: Color = Color {
-    r: 170,
-    g: 92,
-    b: 57,
+    r: 210,
+    g: 152,
+    b: 107,
 };
 
 const COL_ACCENT_COLD: Color = Color {
