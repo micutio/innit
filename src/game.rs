@@ -1,21 +1,20 @@
-/// Module Game
-/// 
-/// This is the top level representation of the game
-/// and all its components. Here the components and
-/// game loop are constructed and executed.
-
-use tcod::colors;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
+/// Module Game
+///
+/// This is the top level representation of the game
+/// and all its components. Here the components and
+/// game loop are constructed and executed.
+use tcod::colors;
 
-use core::game_state::{GameState, MessageLog, PLAYER};
 use core::game_objects::GameObjects;
+use core::game_state::{GameState, MessageLog, PLAYER};
 use entity::action::AttackAction;
-use entity::object::Object;
 use entity::fighter::{DeathCallback, Fighter};
-use ui::game_frontend::{GameFrontend, handle_ui_actions, process_visual_feedback};
-use ui::game_input::{PlayerAction, get_player_action_instance, GameInput};
+use entity::object::Object;
+use ui::game_frontend::{handle_ui_actions, process_visual_feedback, GameFrontend};
+use ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -64,13 +63,17 @@ pub fn game_loop(
     game_input: &mut GameInput,
     game_objects: &mut GameObjects,
 ) {
-
     while !game_frontend.root.window_closed() {
         game_input.reset_next_action();
         // let the game engine process an object
         let process_result = game_state.process_object(game_objects, &game_frontend.fov);
-        process_visual_feedback(game_state, game_frontend, game_input, game_objects, process_result);
-        
+        process_visual_feedback(
+            game_state,
+            game_frontend,
+            game_input,
+            game_objects,
+            process_result,
+        );
 
         // once processing is done, check whether we have a new user input
         game_input.check_for_next_action(game_state, game_frontend, game_objects);
@@ -78,7 +81,7 @@ pub fn game_loop(
         // distinguish between in-game action and ui (=meta) actions
         match game_input.get_next_action() {
             Some(PlayerAction::MetaAction(actual_action)) => {
-                println!("[game loop] process UI action: {:?}", actual_action);
+                debug!("process UI action: {:#?}", actual_action);
                 let is_exit_game = handle_ui_actions(
                     game_frontend,
                     game_state,
@@ -92,16 +95,11 @@ pub fn game_loop(
                 }
             }
             Some(ingame_action) => {
-                // let mut player = objects.mut_obj(PLAYER);
-                // *player.set_next_action(Some(get_player_action_instance(next_action)));
-                // objects.mut_obj(PLAYER).unwrap().set_next_action(Some(get_player_action_instance(next_action)));
-                println!(
-                    "[game loop] inject ingame action {:?} to player",
-                    ingame_action
-                );
+                debug!("inject ingame action {:#?} to player", ingame_action);
+
                 if let Some(ref mut player) = game_objects[PLAYER] {
                     let player_next_action = Some(get_player_action_instance(ingame_action));
-                    println!("[game loop] player action object: {:?}", player_next_action);
+                    debug!("player action object: {:#?}", player_next_action);
                     player.set_next_action(player_next_action);
                 };
             }

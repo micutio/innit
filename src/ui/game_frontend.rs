@@ -266,7 +266,7 @@ pub fn process_visual_feedback(
 
         ObjectProcResult::Animate { anim_type } => {
             // TODO: Play animation.
-            println!("animation");
+            info!("animation");
         }
 
         _ => {}
@@ -661,12 +661,13 @@ pub fn menu<T: AsRef<str>>(
     // so that we can receive input events directly
     let key: tcod::input::Key;
     match game_input {
+        // NOTE: We can't use pause_concurrent_input() and resume_concurrent_input(). Why?
+        // NOTE: If we do that, the game ends up unable to process any key input.
         Some(ref mut handle) => {
-            handle.pause_concurrent_input();
+            handle.stop_concurrent_input();
             key = game_frontend.root.wait_for_keypress(true);
-            println!("GOT KEY: {:?}", key);
             // after we got he key, restart input listener thread
-            handle.resume_concurrent_input();
+            handle.start_concurrent_input();
         }
         None => {
             key = game_frontend.root.wait_for_keypress(true);

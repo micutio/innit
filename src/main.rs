@@ -1,6 +1,9 @@
 /// Module Main
 ///
 /// This module contains all structures and methods pertaining to the user interface.
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate log;
 extern crate rand;
 extern crate serde;
 extern crate tcod;
@@ -8,11 +11,11 @@ extern crate tcod;
 extern crate serde_derive;
 extern crate serde_json;
 
-mod entity;
 mod core;
+mod entity;
+mod game;
 mod ui;
 mod util;
-mod game;
 
 // internal modules
 use ui::game_frontend::{main_menu, GameFrontend};
@@ -23,5 +26,7 @@ fn launch_game() {
 }
 
 fn main() {
+    pretty_env_logger::init();
+    // RUST_LOG=innit=trace cargo run
     launch_game();
 }

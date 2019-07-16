@@ -7,9 +7,9 @@ use std::fmt::Debug;
 use tcod::colors;
 
 // internal imports
-use core::game_state::{GameState, MessageLog, ObjectProcResult};
 use core::game_objects::GameObjects;
-use entity::object::{Object};
+use core::game_state::{GameState, MessageLog, ObjectProcResult};
+use entity::object::Object;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -50,9 +50,10 @@ impl Action for PassAction {
     ) -> ActionResult {
         // do nothing
         // duh
-        game_state
-            .log
-            .add(format!("{} passes their turn", owner.visual.name), colors::WHITE);
+        game_state.log.add(
+            format!("{} passes their turn", owner.visual.name),
+            colors::WHITE,
+        );
         ActionResult::Success {
             callback: ObjectProcResult::NoFeedback,
         }
@@ -157,9 +158,9 @@ impl Action for MoveAction {
         };
 
         let (x, y) = owner.pos();
-        if ! &objects.is_blocked(x + dx, y + dy) {
-            println!(
-                "[move action] move {} from ({},{}) to ({},{})",
+        if !&objects.is_blocked(x + dx, y + dy) {
+            info!(
+                "move {} from ({},{}) to ({},{})",
                 owner.visual.name,
                 x,
                 y,

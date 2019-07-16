@@ -36,11 +36,8 @@ pub struct ConcurrentInput {
 impl ConcurrentInput {
     fn join_thread(self) {
         match self.input_thread.join() {
-            Ok(_) => println!("[concurrent input] successfully joined user input thread"),
-            Err(e) => println!(
-                "[concurrent input] error while trying to join user input thread: {:?}",
-                e
-            ),
+            Ok(_) => debug!("successfully joined user input thread"),
+            Err(e) => error!("error while trying to join user input thread: {:#?}", e),
         }
     }
 }
@@ -150,10 +147,7 @@ impl GameInput {
                     if player.next_action.is_none() {
                         if let Some(new_action) = data.next_player_actions.pop_front() {
                             self.next_action = Some(new_action);
-                            println!(
-                                "[game input] player next action changed to {:?}",
-                                self.next_action
-                            );
+                            debug!("popped next action from queue {:?}", self.next_action);
                         }
                     }
                 }
@@ -186,16 +180,10 @@ impl GameInput {
         if let Some(concurrent) = &self.concurrent_input {
             match concurrent.input_thread_tx.send(command) {
                 Ok(_) => {
-                    println!(
-                        "[game input] successfully sent command {:?} to thread",
-                        command
-                    );
+                    debug!("successfully sent command {:?} to thread", command);
                 }
                 Err(e) => {
-                    println!(
-                        "[game input] error while sending command {:?} to thread: {}",
-                        command, e
-                    );
+                    error!("error while sending command {:?} to thread: {}", command, e);
                 }
             }
         }
@@ -320,12 +308,12 @@ fn start_input_proc_thread(
                     Some((_, Event::Mouse(_m))) => {
                         mouse_x = _m.cx as i32;
                         mouse_y = _m.cy as i32;
-                        println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
+                        trace!("mouse moved {},{}", _m.cx, _m.cy);
                     }
                     // get used key to create next user action
                     Some((_, Event::Key(k))) => {
                         _key = k;
-                        println!("[input thread] key input {:?}", k.code);
+                        trace!("key input {:?}", k.code);
                     }
                     _ => {}
                 }
@@ -344,25 +332,22 @@ fn start_input_proc_thread(
             match rx.try_recv() {
                 Ok(InputThreadCommand::Pause) => {
                     is_paused = true;
-                    println!("[game input] pausing input thread");
+                    debug!("pausing input thread");
                 }
                 Ok(InputThreadCommand::Resume) => {
                     is_paused = false;
-                    println!("[game input] resuming input thread");
+                    debug!("resuming input thread");
                 }
                 Ok(InputThreadCommand::Stop) => {
-                    println!("[game input] stopping input thread");
+                    debug!("stopping input thread");
                     break;
                 }
                 Err(TryRecvError::Disconnected) => {
-                    println!("[input thread] error: disconnected");
+                    debug!("Error: input thread disconnected");
                     break;
                 }
                 _ => {}
             }
-
-            // println!("[input thread] key {:?}", _key);
-            // println!("[input thread] mouse {:?}", _mouse);
         }
     })
 }

@@ -59,7 +59,7 @@ impl GameObjects {
         match &mut self.obj_vec[PLAYER] {
             Some(player) => {
                 panic!(
-                    "[GameObjects] Error: trying to replace the player {:?} with {:?}",
+                    "Error: trying to replace the player {:?} with {:?}",
                     player, object
                 );
             }
@@ -70,7 +70,7 @@ impl GameObjects {
     }
 
     pub fn push(&mut self, object: Object) {
-        println!("pushing object {}", object.visual.name);
+        trace!("adding {} to game objects", object.visual.name);
         self.obj_vec.push(Some(object));
     }
 
@@ -78,12 +78,15 @@ impl GameObjects {
         match self.obj_vec.get_mut(index) {
             Some(item) => match item.take() {
                 Some(object) => {
-                    // println!("extract object {} @ index {}", object.name, index);
+                    // debug!(
+                    //     "extract object {} @ index {}",
+                    //     object.visual.name, index
+                    // );
                     Some(object)
                 }
                 None => None,
             },
-            None => panic!("[GameObjects::index] Error: invalid index {}", index),
+            None => panic!(" Error: invalid index {}", index),
         }
     }
 
@@ -91,12 +94,12 @@ impl GameObjects {
         let item = self.obj_vec.get_mut(index);
         match item {
             Some(obj) => {
-                // println!("replace object {} @ index {}", object.name, index);
-                obj.replace(object);
+                // debug!("replace object {} @ index {}", object.visual.name, index);
+                // obj.replace(object);
             }
             None => {
                 panic!(
-                    "[GameObjects::replace] Error: object {} with given index {} does not exist!",
+                    "Error: object {} with given index {} does not exist!",
                     object.visual.name, index
                 );
             }

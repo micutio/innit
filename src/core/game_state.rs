@@ -73,20 +73,13 @@ impl GameState {
         objects: &mut GameObjects,
         fov_map: &FovMap,
     ) -> ObjectProcResult {
-        if self.current_obj_index == PLAYER {
-            // println!("processing object #{}", self.current_obj_index);
-        }
         let mut process_result = ObjectProcResult::NoAction;
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
-            // println!("[engine] next actor: {:?}", active_object);
             if let Some(next_action) = active_object.get_next_action() {
-                println!("[engine] next action to process: {:?}", next_action);
-
                 // perform action
                 process_result =
                     self.process_action(fov_map, objects, &mut active_object, next_action);
-                println!("[engine] process result {:?}", process_result);
             }
             // return object back to objects vector
             objects[self.current_obj_index].replace(active_object);
@@ -108,7 +101,6 @@ impl GameState {
         action: Box<Action>,
     ) -> ObjectProcResult {
         // first execute action
-        println!("[engine] processing {:?}", action);
 
         // then process result and return
         match action.perform(self, objects, actor) {
