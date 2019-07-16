@@ -15,6 +15,13 @@ use core::game_state::{GameState, PLAYER};
 use entity::action::*;
 use ui::game_frontend::{re_render, FovMap, GameFrontend};
 
+#[derive(Debug, Clone, Copy)]
+enum InputThreadCommand {
+    Resume,
+    Pause,
+    Stop,
+}
+
 pub struct MousePosition {
     x: i32,
     y: i32,
@@ -22,7 +29,7 @@ pub struct MousePosition {
 
 pub struct ConcurrentInput {
     game_input_ref: Arc<Mutex<InputProcessor>>,
-    input_thread_tx: Sender<bool>,
+    input_thread_tx: Sender<InputThreadCommand>,
     input_thread: JoinHandle<()>,
 }
 
@@ -62,21 +69,42 @@ impl GameInput {
         let input_thread = start_input_proc_thread(&mut game_input_ref, rx);
 
         self.concurrent_input = Some(ConcurrentInput {
-            // game_input,
             game_input_ref,
             input_thread_tx: tx,
             input_thread,
         })
     }
 
-    pub fn stop_concurrent_input(&mut self) {
+    pub fn pause_concurrent_input(&mut self) {
         // clean up any existing threads before creating a new one
-        self.terminate_concurrent_input();
+        self.notify_concurrent_input(InputThreadCommand::Pause);
         match self.concurrent_input.take() {
             Some(concurrent) => {
                 concurrent.join_thread();
             }
-            None => panic!("[GameInput] ERROR: failed to reset concurrent thread!"),
+            None => panic!("[game input] ERROR: failed to pause concurrent thread!"),
+        }
+    }
+
+    pub fn resume_concurrent_input(&mut self) {
+        // clean up any existing threads before creating a new one
+        self.notify_concurrent_input(InputThreadCommand::Resume);
+        match self.concurrent_input.take() {
+            Some(concurrent) => {
+                concurrent.join_thread();
+            }
+            None => panic!("[game input] ERROR: failed to resume concurrent thread!"),
+        }
+    }
+
+    pub fn stop_concurrent_input(&mut self) {
+        // clean up any existing threads before creating a new one
+        self.notify_concurrent_input(InputThreadCommand::Stop);
+        match self.concurrent_input.take() {
+            Some(concurrent) => {
+                concurrent.join_thread();
+            }
+            None => panic!("[game input] ERROR: failed to stop concurrent thread!"),
         }
     }
 
@@ -123,7 +151,7 @@ impl GameInput {
                         if let Some(new_action) = data.next_player_actions.pop_front() {
                             self.next_action = Some(new_action);
                             println!(
-                                "[frontend] player next action changed to {:?}",
+                                "[game input] player next action changed to {:?}",
                                 self.next_action
                             );
                         }
@@ -131,7 +159,7 @@ impl GameInput {
                 }
             }
             None => {
-                panic!("[GameInput] concurrent is not there");
+                panic!("[game input] concurrent is not there");
             }
         }
 
@@ -140,7 +168,7 @@ impl GameInput {
                 self.concurrent_input.replace(concurrent);
             }
             None => {
-                panic!("[GameInput] concurrent is still not there");
+                panic!("[game input] concurrent is still not there");
             }
         }
     }
@@ -154,22 +182,24 @@ impl GameInput {
         false
     }
 
-    fn terminate_concurrent_input(&self) {
+    fn notify_concurrent_input(&self, command: InputThreadCommand) {
         if let Some(concurrent) = &self.concurrent_input {
-            match concurrent.input_thread_tx.send(true) {
+            match concurrent.input_thread_tx.send(command) {
                 Ok(_) => {
-                    println!("[frontend] terminating input proc thread");
+                    println!(
+                        "[game input] successfully sent command {:?} to thread",
+                        command
+                    );
                 }
                 Err(e) => {
-                    println!("[frontend] error terminating input proc thread: {}", e);
+                    println!(
+                        "[game input] error while sending command {:?} to thread: {}",
+                        command, e
+                    );
                 }
             }
         }
     }
-
-    // pub fn take_thread(&mut self) -> Option<ConcurrentInput> {
-    //     self.concurrent_input.take()
-    // }
 }
 
 /// As tcod's key codes don't implement Eq and Hash they cannot be used
@@ -268,9 +298,9 @@ pub fn get_names_under_mouse(
     //names//.join(", ") // return names separated by commas
 }
 
-pub fn start_input_proc_thread(
+fn start_input_proc_thread(
     game_input: &mut Arc<Mutex<InputProcessor>>,
-    rx: Receiver<bool>,
+    rx: Receiver<InputThreadCommand>,
 ) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
     let key_to_action_mapping = create_key_mapping();
@@ -279,37 +309,53 @@ pub fn start_input_proc_thread(
         let mut mouse_x: i32 = 0;
         let mut mouse_y: i32 = 0;
 
+        let mut is_paused = false;
+
         loop {
-            let _mouse: Mouse = Default::default(); // this is not really used right now
-            let mut _key: Key = Default::default();
-            match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
-                // record mouse position for later use
-                Some((_, Event::Mouse(_m))) => {
-                    mouse_x = _m.cx as i32;
-                    mouse_y = _m.cy as i32;
-                    println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
+            if !is_paused {
+                let _mouse: Mouse = Default::default(); // this is not really used right now
+                let mut _key: Key = Default::default();
+                match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
+                    // record mouse position for later use
+                    Some((_, Event::Mouse(_m))) => {
+                        mouse_x = _m.cx as i32;
+                        mouse_y = _m.cy as i32;
+                        println!("[input thread] mouse moved {},{}", _m.cx, _m.cy);
+                    }
+                    // get used key to create next user action
+                    Some((_, Event::Key(k))) => {
+                        _key = k;
+                        println!("[input thread] key input {:?}", k.code);
+                    }
+                    _ => {}
                 }
-                // get used key to create next user action
-                Some((_, Event::Key(k))) => {
-                    _key = k;
-                    println!("[input thread] key input {:?}", k.code);
-                }
-                _ => {}
+
+                // lock our mutex and get to work
+                let mut input = game_input_buf.lock().unwrap();
+                // let player_action: PlayerAction =
+                if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                    // println!("[input thread] push back {:?}", key);
+                    input.next_player_actions.push_back(key.clone());
+                };
+                input.mouse_x = mouse_x;
+                input.mouse_y = mouse_y;
             }
 
-            // lock our mutex and get to work
-            let mut input = game_input_buf.lock().unwrap();
-            // let player_action: PlayerAction =
-            if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
-                // println!("[input thread] push back {:?}", key);
-                input.next_player_actions.push_back(key.clone());
-            };
-            input.mouse_x = mouse_x;
-            input.mouse_y = mouse_y;
-
             match rx.try_recv() {
-                Ok(true) | Err(TryRecvError::Disconnected) => {
-                    println!("[input thread] terminating");
+                Ok(InputThreadCommand::Pause) => {
+                    is_paused = true;
+                    println!("[game input] pausing input thread");
+                }
+                Ok(InputThreadCommand::Resume) => {
+                    is_paused = false;
+                    println!("[game input] resuming input thread");
+                }
+                Ok(InputThreadCommand::Stop) => {
+                    println!("[game input] stopping input thread");
+                    break;
+                }
+                Err(TryRecvError::Disconnected) => {
+                    println!("[input thread] error: disconnected");
                     break;
                 }
                 _ => {}

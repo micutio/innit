@@ -180,7 +180,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                 }
             }
             Some(2) => {
-                //quit
+                // quit
                 break;
             }
             _ => {}
@@ -276,19 +276,19 @@ pub fn process_visual_feedback(
 pub fn handle_ui_actions(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &GameObjects,
+    game_objects: &mut GameObjects,
     game_input: &mut Option<&mut GameInput>,
     action: UiAction,
 ) -> bool {
     match action {
         UiAction::ExitGameLoop => {
-            save_game(game_state, objects).unwrap();
+            save_game(game_state, game_objects).unwrap();
             return true;
         }
         UiAction::CharacterScreen => {
             // TODO: move this to separate function
             // show character information
-            if let Some(ref player) = objects[PLAYER] {
+            if let Some(ref player) = game_objects[PLAYER] {
                 let level = player.level;
                 let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
                 if let Some(fighter) = player.fighter.as_ref() {
@@ -319,6 +319,7 @@ Defense: {}",
             game_frontend.root.set_fullscreen(!fullscreen);
         }
     }
+    re_render(game_state, game_frontend, game_objects, "");
     false
 }
 
@@ -656,24 +657,20 @@ pub fn menu<T: AsRef<str>>(
     // present the root console to the player and wait for a key-press
     game_frontend.root.flush();
 
-    // if we have an instance of GameInput, finish the input listener thread first
-    // so that we can receive events here
-
-    match game_input {
-        Some(handle) => {
-            handle.stop_concurrent_input();
-        }
-        None => {}
-    }
-
-    let key = game_frontend.root.wait_for_keypress(true);
-    // after we got he key, restart input listener thread
-
+    // if we have an instance of GameInput, pause the input listener thread first
+    // so that we can receive input events directly
+    let key: tcod::input::Key;
     match game_input {
         Some(ref mut handle) => {
-            handle.start_concurrent_input();
+            handle.pause_concurrent_input();
+            key = game_frontend.root.wait_for_keypress(true);
+            println!("GOT KEY: {:?}", key);
+            // after we got he key, restart input listener thread
+            handle.resume_concurrent_input();
         }
-        None => {}
+        None => {
+            key = game_frontend.root.wait_for_keypress(true);
+        }
     }
 
     // convert the ASCII code to an index
