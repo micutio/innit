@@ -138,7 +138,7 @@ impl GameState {
                 let _consequence_result =
                     self.process_action(fov_map, objects, actor, action.unwrap());
                 // TODO: Think of a way to handle both results of action and consequence.
-                // TODO: extract into function, recursively bubble results and return the highest priority
+                // TODO: extract into function, recursively bubble up results and return the highest priority
                 ObjectProcResult::ReRender // use highest priority for now as a dummy
             }
         }

@@ -18,8 +18,7 @@ pub const MSG_HEIGHT: usize = PANEL_HEIGHT as usize - 1;
 pub const CHARACTER_SCREEN_WIDTH: i32 = 30;
 
 // Display a generic menu with multiple options to choose from.
-/// Returns the number of the menu item that has been chosen.
-/// TODO: Make this private
+/// Return the number of the menu item that has been chosen.
 pub fn menu<T: AsRef<str>>(
     game_frontend: &mut GameFrontend,
     game_input: &mut Option<&mut GameInput>,
