@@ -239,7 +239,7 @@ pub fn msgbox(
         &mut game_frontend.root,
         (x, y),
         1.0,
-        0.7,
+        1.0,
     );
 
     // present the root console to the player and wait for a key-press

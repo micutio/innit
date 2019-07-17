@@ -1,3 +1,4 @@
+use tcod::chars;
 /// Module GUI
 ///
 /// This module contains all structures and methods pertaining to the user interface.
@@ -446,6 +447,46 @@ fn render_ui(
         .set_default_background(game_frontend.coloring.get_col_menu_bg());
     game_frontend.panel.clear();
 
+    // set panel borders
+    // set background and foreground colors
+    for x in 0..SCREEN_WIDTH {
+        for y in 0..PANEL_HEIGHT {
+            game_frontend.panel.set_char_background(
+                x,
+                y,
+                game_frontend.coloring.get_col_menu_bg(),
+                BackgroundFlag::Set,
+            );
+            game_frontend
+                .panel
+                .set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
+            game_frontend.panel.set_char(x, y, ' ');
+        }
+    }
+
+    // render horizontal borders
+    for x in 0..SCREEN_WIDTH - 1 {
+        game_frontend.panel.set_char(x, 0, chars::DHLINE);
+        game_frontend
+            .panel
+            .set_char(x, PANEL_HEIGHT - 1, chars::HLINE);
+    }
+    // render vertical borders
+    for y in 0..PANEL_HEIGHT - 1 {
+        game_frontend.panel.set_char(0, y, chars::VLINE);
+        game_frontend
+            .panel
+            .set_char(SCREEN_WIDTH - 1, y, chars::VLINE);
+    }
+
+    // render corners
+    game_frontend.panel.set_char(0, 0, '\u{d5}');
+    game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b8}');
+    game_frontend.panel.set_char(0, PANEL_HEIGHT - 1, chars::SW);
+    game_frontend
+        .panel
+        .set_char(SCREEN_WIDTH - 1, PANEL_HEIGHT - 1, chars::SE);
+
     // show player's stats
     if let Some(ref player) = objects[PLAYER] {
         let hp = player.fighter.map_or(0, |f| f.hp);
@@ -488,7 +529,7 @@ fn render_ui(
                 .panel
                 .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
             y -= msg_height;
-            if y < 0 {
+            if y < 1 {
                 break;
             }
             game_frontend.panel.set_default_foreground(color);
