@@ -7,7 +7,7 @@
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
 use core::game_state::PLAYER;
-use core::world::Tile;
+use core::world::world_gen::Tile;
 use entity::object::Object;
 use game::{WORLD_HEIGHT, WORLD_WIDTH};
 

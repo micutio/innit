@@ -7,7 +7,7 @@ use tcod::console::*;
 
 // internal imports
 use core::game_state::{GameState, MessageLog};
-use core::world::Tile;
+use core::world::world_gen::Tile;
 use entity::action::*;
 use entity::ai::Ai;
 use entity::fighter::Fighter;

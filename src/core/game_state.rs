@@ -6,7 +6,8 @@ use tcod::colors::Color;
 
 // internal imports
 use core::game_objects::GameObjects;
-use core::world::make_world;
+use core::world::world_gen::WorldGen;
+use core::world::world_gen_rogue::RogueWorldGenerator;
 use entity::action::*;
 use entity::object::Object;
 // use ui::dialog::menu;
@@ -58,7 +59,8 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
-        make_world(game_objects, level);
+        let mut world_generator = RogueWorldGenerator::new();
+        world_generator.make_world(game_objects, level);
 
         GameState {
             // create the list of game messages and their colors, starts empty

@@ -15,7 +15,7 @@ use tcod::map::FovAlgorithm;
 
 use core::game_objects::GameObjects;
 use core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS};
-use core::world::is_explored;
+use core::world::world_gen::is_explored;
 use entity::object::Object;
 use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use ui::color_palette::*;
@@ -107,14 +107,6 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         game_frontend
             .root
             .set_default_background(game_frontend.coloring.get_col_menu_bg());
-        // game_frontend.root.print_ex(
-        //     SCREEN_WIDTH / 2,
-        //     SCREEN_HEIGHT / 2 - 6,
-        //     BackgroundFlag::None,
-        //     TextAlignment::Center,
-        //     "I N N I T",
-        // );
-
         game_frontend
             .root
             .set_default_foreground(game_frontend.coloring.get_col_acc_warm());
