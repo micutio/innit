@@ -8,9 +8,7 @@ use tcod::input::Key;
 
 use core::game_objects::GameObjects;
 use core::game_state::{GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER};
-use ui::game_frontend::{
-    re_render, GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH,
-};
+use ui::game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
 use ui::game_input::GameInput;
 use util::modulus;
 
