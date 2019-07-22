@@ -63,7 +63,7 @@ pub fn menu<T: AsRef<str>>(
         for x in 0..width {
             for y in 0..height {
                 // offset by 2 because the first to lines are header and separator
-                let bg_color = if y == current_option + 2 {
+                let bg_color = if y == current_option + 2 && x > 0 && x < width - 1 {
                     color_option_highlight
                 } else {
                     color_normal

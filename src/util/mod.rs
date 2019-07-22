@@ -20,7 +20,7 @@ pub fn mut_two<T>(items: &mut [T], first_index: usize, second_index: usize) -> (
     }
 }
 
-/// Modulus function
+/// Modulus function.
 /// In Rust the `%` operator is the remainder, not modulus.
 pub fn modulus<T: Num + PartialOrd + Copy>(a: T, b: T) -> T {
     ((a % b) + b) % b
