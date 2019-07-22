@@ -16,6 +16,7 @@ use ui::game_frontend::{AnimationType, FovMap};
 
 // player object reference, index of the object vector
 pub const PLAYER: usize = 0;
+// TODO: Replace with something like object -> perception -> range.
 pub const TORCH_RADIUS: i32 = 10;
 // experience and level-ups
 pub const LEVEL_UP_BASE: i32 = 200;

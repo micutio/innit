@@ -45,8 +45,9 @@ pub struct GameFrontend {
     pub con: Offscreen,
     pub panel: Offscreen,
     pub fov: FovMap,
-    pub coloring: ColorPalette,
     pub input: Option<GameInput>,
+    pub coloring: ColorPalette,
+    is_light_mode: bool,
 }
 
 impl GameFrontend {
@@ -71,8 +72,21 @@ impl GameFrontend {
             con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
             panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
-            coloring: ColorPalette::new(),
             input: None,
+            // TODO: Distinguish between light and dark.
+            // TODO: Save light and dark setting to config file.
+            coloring: ColorPalette::new_light(),
+            is_light_mode: true,
+        }
+    }
+
+    pub fn toggle_dark_light_mode(&mut self) {
+        if self.is_light_mode {
+            self.is_light_mode = false;
+            self.coloring = ColorPalette::new_dark();
+        } else {
+            self.is_light_mode = true;
+            self.coloring = ColorPalette::new_light();
         }
     }
 }
@@ -103,13 +117,10 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
 
         game_frontend
             .root
-            .set_default_foreground(game_frontend.coloring.get_col_menu_bg());
+            .set_default_foreground(game_frontend.coloring.bg_dialog);
         game_frontend
             .root
-            .set_default_background(game_frontend.coloring.get_col_menu_bg());
-        game_frontend
-            .root
-            .set_default_foreground(game_frontend.coloring.get_col_acc_warm());
+            .set_default_background(game_frontend.coloring.bg_dialog);
         game_frontend.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT - 2,
@@ -219,7 +230,7 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     game_frontend.con.clear();
     game_frontend
         .con
-        .set_default_background(game_frontend.coloring.get_col_world_bg());
+        .set_default_background(game_frontend.coloring.bg_world);
 }
 
 pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
@@ -251,14 +262,23 @@ fn init_object_visuals(
 fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: (i32, i32) = (0, 0);
-    if let Some(ref player) = objects[PLAYER] {
+    if let Some(ref mut player) = objects[PLAYER] {
         player_pos = (player.x, player.y);
+        player.visual.color = game_frontend.coloring.player;
     }
 
-    let col_wall_out_fov = game_frontend.coloring.get_col_wall_out_fov();
-    let col_wall_in_fov = game_frontend.coloring.get_col_wall_in_fov();
-    let col_ground_out_fov = game_frontend.coloring.get_col_ground_out_fov();
-    let col_ground_in_fov = game_frontend.coloring.get_col_ground_in_fov();
+    // let col_wall_out_fov = game_frontend.coloring.get_col_wall_out_fov();
+    // let col_wall_in_fov = game_frontend.coloring.get_col_wall_in_fov();
+    // let col_ground_out_fov = game_frontend.coloring.get_col_ground_out_fov();
+    // let col_ground_in_fov = game_frontend.coloring.get_col_ground_in_fov();
+    let bwft = game_frontend.coloring.bg_wall_fov_true;
+    let bwff = game_frontend.coloring.bg_wall_fov_false;
+    let bgft = game_frontend.coloring.bg_ground_fov_true;
+    let bgff = game_frontend.coloring.bg_ground_fov_false;
+    let fwft = game_frontend.coloring.fg_wall_fov_true;
+    let fwff = game_frontend.coloring.fg_wall_fov_false;
+    let fgft = game_frontend.coloring.fg_ground_fov_true;
+    let fgff = game_frontend.coloring.fg_ground_fov_false;
 
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
@@ -266,23 +286,37 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
             if let Some(ref mut tile_object) = objects.get_tile_at(x as usize, y as usize) {
                 let wall = tile_object.physics.is_blocking_sight;
 
-                // set tile background colors
-                let tile_color = match (visible, wall) {
+                // set tile foregroung and background colors
+                let (tile_color_fg, tile_color_bg) = match (visible, wall) {
                     // outside field of view:
-                    (false, true) => col_wall_out_fov,
-                    (false, false) => col_ground_out_fov,
+                    (false, true) => (fwff, bwff),
+                    (false, false) => (fgff, bgff),
                     // inside fov:
                     // (true, true) => COLOR_LIGHT_WALL,
-                    (true, true) => colors::lerp(
-                        col_wall_in_fov,
-                        col_wall_out_fov,
-                        tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                    (true, true) => (
+                        colors::lerp(
+                            fwft,
+                            fwff,
+                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                        ),
+                        colors::lerp(
+                            bwft,
+                            bwff,
+                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                        ),
                     ),
                     // (true, false) => COLOR_ground_in_fov,
-                    (true, false) => colors::lerp(
-                        col_ground_in_fov,
-                        col_ground_out_fov,
-                        tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                    (true, false) => (
+                        colors::lerp(
+                            fgft,
+                            fgff,
+                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                        ),
+                        colors::lerp(
+                            bgft,
+                            bgff,
+                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                        ),
                     ),
                 };
 
@@ -292,13 +326,13 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
                     }
                     if tile.explored {
                         // show explored tiles only (any visible tile is explored already)
-                        tile_object.visual.color = tile_color;
-                        // game_frontend.con.set_char_background(
-                        //     x,
-                        //     y,
-                        //     tile_color,
-                        //     BackgroundFlag::Set,
-                        // );
+                        tile_object.visual.color = tile_color_fg;
+                        game_frontend.con.set_char_background(
+                            x,
+                            y,
+                            tile_color_bg,
+                            BackgroundFlag::Set,
+                        );
                     }
                 }
             }
@@ -436,7 +470,7 @@ fn render_ui(
     // prepare to render the GUI panel
     game_frontend
         .panel
-        .set_default_background(game_frontend.coloring.get_col_menu_bg());
+        .set_default_background(game_frontend.coloring.bg_dialog);
     game_frontend.panel.clear();
 
     // set panel borders
@@ -446,12 +480,12 @@ fn render_ui(
             game_frontend.panel.set_char_background(
                 x,
                 y,
-                game_frontend.coloring.get_col_menu_bg(),
+                game_frontend.coloring.bg_dialog,
                 BackgroundFlag::Set,
             );
             game_frontend
                 .panel
-                .set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
+                .set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
             game_frontend.panel.set_char(x, y, ' ');
         }
     }
@@ -479,6 +513,10 @@ fn render_ui(
         .panel
         .set_char(SCREEN_WIDTH - 1, PANEL_HEIGHT - 1, chars::SE);
 
+    game_frontend
+        .panel
+        .set_default_foreground(game_frontend.coloring.fg_dialog);
+
     // show player's stats
     if let Some(ref player) = objects[PLAYER] {
         let hp = player.fighter.map_or(0, |f| f.hp);
@@ -491,6 +529,7 @@ fn render_ui(
             "HP",
             hp,
             max_hp,
+            game_frontend.coloring.fg_dialog,
             colors::DARK_RED,
             colors::DARKEST_RED,
         );
@@ -540,6 +579,7 @@ fn render_bar(
     name: &str,
     value: i32,
     maximum: i32,
+    text_color: Color,
     bar_color: Color,
     back_color: Color,
 ) {
@@ -557,7 +597,7 @@ fn render_bar(
     }
 
     // finally some centered text with the values
-    panel.set_default_foreground(colors::WHITE);
+    panel.set_default_foreground(text_color);
     panel.print_ex(
         x + total_width / 2,
         y,
@@ -581,7 +621,7 @@ pub fn handle_ui_actions(
             return true;
         }
         UiAction::ToggleDarkLightMode => {
-            game_frontend.coloring.toggle_dark_light_mode();
+            game_frontend.toggle_dark_light_mode();
             recompute_fov(game_frontend, game_objects);
             initialize_fov(game_frontend, game_objects);
             re_render(game_state, game_frontend, game_objects, "");

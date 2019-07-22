@@ -57,8 +57,8 @@ pub fn menu<T: AsRef<str>>(
 
         // initialize coloring for each cell in the text box
         // choose different color for currently selected option
-        let color_normal = game_frontend.coloring.get_col_menu_bg();
-        let color_option_highlight = game_frontend.coloring.get_col_acc_warm();
+        let color_normal = game_frontend.coloring.bg_dialog;
+        let color_option_highlight = game_frontend.coloring.fg_dialog_highlight;
         for x in 0..width {
             for y in 0..height {
                 // offset by 2 because the first to lines are header and separator
@@ -68,7 +68,7 @@ pub fn menu<T: AsRef<str>>(
                     color_normal
                 };
                 window.set_char_background(x, y, bg_color, BackgroundFlag::Set);
-                window.set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
+                window.set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
                 window.set_char(x, y, ' ');
             }
         }
@@ -94,6 +94,8 @@ pub fn menu<T: AsRef<str>>(
         window.set_char(width - 1, height - 1, chars::SE);
         // window.set_char(width, height - 1, chars::SW);
         // window.set_char(width, 1, chars::SE);
+
+        window.set_default_foreground(game_frontend.coloring.fg_dialog);
 
         window.print_rect_ex(
             width / 2 as i32,
@@ -205,13 +207,8 @@ pub fn msgbox(
     // set background and foreground colors
     for x in 0..width {
         for y in 0..height {
-            window.set_char_background(
-                x,
-                y,
-                game_frontend.coloring.get_col_menu_bg(),
-                BackgroundFlag::Set,
-            );
-            window.set_char_foreground(x, y, game_frontend.coloring.get_col_menu_fg());
+            window.set_char_background(x, y, game_frontend.coloring.bg_dialog, BackgroundFlag::Set);
+            window.set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
             window.set_char(x, y, ' ');
         }
     }
@@ -238,6 +235,7 @@ pub fn msgbox(
     // window.set_char(width, height - 1, chars::SW);
     // window.set_char(width, 1, chars::SE);
 
+    window.set_default_foreground(game_frontend.coloring.fg_dialog);
     // print header with multi-line wrap
     window.print_rect_ex(
         width / 2 as i32,
