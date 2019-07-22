@@ -20,7 +20,11 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "innit=trace",
+                "RUST_BACKTRACE": "1",
+            }
         },
     ]
 }
