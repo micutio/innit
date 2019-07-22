@@ -90,9 +90,9 @@ impl ColorPalette {
                 b: 144,
             },
             bg_wall_fov_true: Color {
-                r: 220,
-                g: 120,
-                b: 140,
+                r: 250,
+                g: 110,
+                b: 130,
             },
             bg_wall_fov_false: Color {
                 r: 240,
@@ -101,8 +101,8 @@ impl ColorPalette {
             },
             bg_ground_fov_true: Color {
                 r: 250,
-                g: 190,
-                b: 210,
+                g: 160,
+                b: 180,
             },
             bg_ground_fov_false: Color {
                 r: 250,
@@ -136,8 +136,8 @@ impl ColorPalette {
             },
             fg_ground_fov_true: Color {
                 r: 255,
-                g: 150,
-                b: 170,
+                g: 130,
+                b: 150,
             },
             fg_ground_fov_false: Color {
                 r: 210,
