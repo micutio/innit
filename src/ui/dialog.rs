@@ -52,7 +52,6 @@ pub fn menu<T: AsRef<str>>(
     // keep redrawing everything as long as we just move around the options of the menu
     // once an option is selected, return it
     loop {
-        println!("current option: {}", current_option);
         // create an off-screen console that represents the menu's window
         let mut window = Offscreen::new(width, height);
 
