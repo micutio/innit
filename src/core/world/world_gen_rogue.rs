@@ -1,18 +1,25 @@
 /// Module World Generator Rogue-style
 ///
 /// This world generator is based on the genre-defining game `Rogue`.
+/// NOTE: In the future, NPCs should be generated based on a spawning table.
 use rand::Rng;
 use std::cmp;
 use tcod::colors;
 
-use core::game_objects::GameObjects;
-use core::game_state::{from_dungeon_level, Transition, PLAYER};
-use core::world::world_gen::{Tile, WorldGen};
-use entity::action::AttackAction;
-use entity::ai::Ai;
-use entity::fighter::{DeathCallback, Fighter};
-use entity::object::Object;
-use game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{from_dungeon_level, Transition, PLAYER},
+        world::world_gen::{Tile, WorldGen},
+    },
+    entity::{
+        action::AttackAction,
+        ai::Ai,
+        fighter::{DeathCallback, Fighter},
+        object::Object,
+    },
+    game::{WORLD_HEIGHT, WORLD_WIDTH},
+};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -30,7 +37,7 @@ impl RogueWorldGenerator {
 }
 
 impl WorldGen for RogueWorldGenerator {
-    fn make_world(&mut self, objects: &mut GameObjects, level: u32) {
+    fn make_world(&mut self, game_objects: &mut GameObjects, level: u32) {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
@@ -45,21 +52,22 @@ impl WorldGen for RogueWorldGenerator {
 
             // create room and store in vector
             let new_room = Rect::new(x, y, w, h);
-            let failed = self.rooms
+            let failed = self
+                .rooms
                 .iter()
                 .any(|other_room| new_room.intersects_with(other_room));
 
             if !failed {
                 // no intersections, we have a valid room.
-                create_room(objects, new_room);
+                create_room(game_objects, new_room);
 
                 // add some content to the room
-                place_objects(objects, new_room, level);
+                place_objects(game_objects, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
                     // this is the first room, save position as starting point for the player
-                    if let Some(ref mut player) = objects[PLAYER] {
+                    if let Some(ref mut player) = game_objects[PLAYER] {
                         player.set_pos(new_x, new_y);
                     }
                 } else {
@@ -72,12 +80,12 @@ impl WorldGen for RogueWorldGenerator {
                     // connect both rooms with a horizontal and a vertical tunnel - in random order
                     if rand::random() {
                         // move horizontally, then vertically
-                        create_h_tunnel(objects, prev_x, new_x, prev_y);
-                        create_v_tunnel(objects, prev_y, new_y, new_x);
+                        create_h_tunnel(game_objects, prev_x, new_x, prev_y);
+                        create_v_tunnel(game_objects, prev_y, new_y, new_x);
                     } else {
                         // move vertically, then horizontally
-                        create_v_tunnel(objects, prev_y, new_y, prev_x);
-                        create_h_tunnel(objects, prev_x, new_x, new_y);
+                        create_v_tunnel(game_objects, prev_y, new_y, prev_x);
+                        create_h_tunnel(game_objects, prev_x, new_x, new_y);
                     }
                 }
                 // finally, append new room to list

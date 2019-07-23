@@ -1,21 +1,21 @@
 /// Module World
 ///
-/// The world contains all structures and methods for terrain/dungeon generation
-// external imports
+/// The world generation module contains the trait that all world generators have to implement
+/// to be exchangably used to create the game environments.
+use tcod::{chars, colors};
 
-use tcod::chars;
-use tcod::colors;
+use crate::{
+    core::game_objects::GameObjects,
+    entity::{ai::Ai, object::Object},
+};
 
+/// The world generation trait only requests to implement a method that
+/// manipulated the world tiles provided in the GameObject struct.
+pub trait WorldGen {
+    fn make_world(&mut self, game_objects: &mut GameObjects, level: u32);
+}
 
-use core::game_objects::GameObjects;
-
-use entity::ai::Ai;
-
-use entity::object::Object;
-
-
-
-
+/// The tile is an object component that identifies an object as (mostly) fixed part of the game world.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub explored: bool,
@@ -62,9 +62,3 @@ impl Tile {
 pub fn is_explored(tile: &Tile) -> Option<&bool> {
     Some(&tile.explored)
 }
-
-pub trait WorldGen {
-    fn make_world(&mut self, objects: &mut GameObjects, level: u32);
-}
-
-
