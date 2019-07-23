@@ -1,4 +1,3 @@
-use tcod::chars;
 /// Module GUI
 ///
 /// This module contains all structures and methods pertaining to the user interface.
@@ -9,18 +8,27 @@ use tcod::chars;
 ///
 /// Function parameter precedence:
 /// game_state, game_frontend, game_input, objects, anything else.
-use tcod::colors::{self, Color};
-use tcod::console::*;
-use tcod::map::FovAlgorithm;
+use tcod::{
+    chars,
+    colors::{self, Color},
+    console::*,
+    map::FovAlgorithm,
+};
 
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS};
-use core::world::world_gen::is_explored;
-use entity::object::Object;
-use game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
-use ui::color_palette::*;
-use ui::dialog::*;
-use ui::game_input::{GameInput, UiAction};
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS},
+        world::world_gen::is_explored,
+    },
+    entity::object::Object,
+    game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH},
+    ui::{
+        color_palette::*,
+        dialog::*,
+        game_input::{GameInput, UiAction},
+    },
+};
 
 // game window properties
 pub const SCREEN_WIDTH: i32 = 80;
@@ -36,10 +44,10 @@ pub const BAR_WIDTH: i32 = 20;
 pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
-/// Field of view mapping
+/// field of view mapping
 pub use tcod::map::Map as FovMap;
 
-/// GameIO holds the core components for game's input and output processing.
+/// GameFrontend holds the core components for game's input and output processing.
 pub struct GameFrontend {
     pub root: Root,
     pub con: Offscreen,
@@ -62,7 +70,7 @@ impl GameFrontend {
             .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
             .font_type(FontType::Greyscale)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-            .title("innit alpha v0.0.1")
+            .title("Innit alpha v0.0.1")
             .init();
 
         tcod::system::set_fps(LIMIT_FPS);
@@ -73,9 +81,7 @@ impl GameFrontend {
             panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             input: None,
-            // TODO: Distinguish between light and dark.
-            // TODO: Save light and dark setting to config file.
-            coloring: ColorPalette::new_light(),
+            coloring: ColorPalette::new_light(), // TODO: Save light and dark setting to config file.
             is_light_mode: true,
         }
     }
@@ -206,12 +212,12 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
     }
 }
 
-/// Initialize the field of view map with a given instance of **World**
-fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
+/// Initialize the field of view map with the world tiles contained in game_objects
+fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
-            match objects.get_tile_at(x as usize, y as usize) {
+            match game_objects.get_tile_at(x as usize, y as usize) {
                 Some(object) => {
                     game_frontend.fov.set(
                         x as i32,
@@ -233,8 +239,8 @@ fn initialize_fov(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
         .set_default_background(game_frontend.coloring.bg_world);
 }
 
-pub fn recompute_fov(game_frontend: &mut GameFrontend, objects: &GameObjects) {
-    if let Some(ref player) = objects[PLAYER] {
+pub fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
+    if let Some(ref player) = game_objects[PLAYER] {
         game_frontend
             .fov
             .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
@@ -259,10 +265,10 @@ fn init_object_visuals(
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
-fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects) {
+fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: (i32, i32) = (0, 0);
-    if let Some(ref mut player) = objects[PLAYER] {
+    if let Some(ref mut player) = game_objects[PLAYER] {
         player_pos = (player.x, player.y);
         player.visual.color = game_frontend.coloring.player;
     }
@@ -283,7 +289,7 @@ fn update_visibility(game_frontend: &mut GameFrontend, objects: &mut GameObjects
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
             let visible = game_frontend.fov.is_in_fov(x, y);
-            if let Some(ref mut tile_object) = objects.get_tile_at(x as usize, y as usize) {
+            if let Some(ref mut tile_object) = game_objects.get_tile_at(x as usize, y as usize) {
                 let wall = tile_object.physics.is_blocking_sight;
 
                 // set tile foregroung and background colors
@@ -388,32 +394,32 @@ pub fn process_visual_feedback(
 pub fn re_render(
     game_state: &mut GameState,
     game_frontend: &mut GameFrontend,
-    objects: &mut GameObjects,
+    game_objects: &mut GameObjects,
     names_under_mouse: &str,
 ) {
     // clear the screen of the previous frame
     game_frontend.con.clear();
     // render objects and map
     // step 1/2: update visibility of objects and world tiles
-    update_visibility(game_frontend, objects);
+    update_visibility(game_frontend, game_objects);
     // step 2/2: render everything
-    render_all(game_frontend, game_state, objects, names_under_mouse);
+    render_objects(game_frontend, game_state, game_objects, names_under_mouse);
 
     // draw everything on the window at once
     game_frontend.root.flush();
 }
 
-/// Render all objects and tiles.
+/// Render all objects.
 /// Right now this happens because we are updating explored tiles here too.
 /// Is there a way to auto-update explored and visible tiles/objects when the player moves?
 /// But visibility can also be influenced by other things.
-fn render_all(
+fn render_objects(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &GameObjects,
+    game_objects: &GameObjects,
     names_under_mouse: &str,
 ) {
-    let mut to_draw: Vec<&Object> = objects
+    let mut to_draw: Vec<&Object> = game_objects
         .get_vector()
         .iter()
         .flatten()
@@ -431,7 +437,7 @@ fn render_all(
         object.draw(&mut game_frontend.con);
     }
 
-    render_ui(game_frontend, game_state, objects, names_under_mouse);
+    render_ui(game_frontend, game_state, game_objects, names_under_mouse);
     // blit contents of `game_frontend.panel` to the root console
     blit(
         &game_frontend.panel,
@@ -464,7 +470,7 @@ fn render_all(
 fn render_ui(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
-    objects: &GameObjects,
+    game_objects: &GameObjects,
     names_under_mouse: &str,
 ) {
     // prepare to render the GUI panel
@@ -518,7 +524,7 @@ fn render_ui(
         .set_default_foreground(game_frontend.coloring.fg_dialog);
 
     // show player's stats
-    if let Some(ref player) = objects[PLAYER] {
+    if let Some(ref player) = game_objects[PLAYER] {
         let hp = player.fighter.map_or(0, |f| f.hp);
         let max_hp = player.fighter.map_or(0, |f| f.base_max_hp);
         render_bar(
