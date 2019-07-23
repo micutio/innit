@@ -6,10 +6,13 @@
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
-use core::game_state::PLAYER;
-use core::world::world_gen::Tile;
-use entity::object::Object;
-use game::{WORLD_HEIGHT, WORLD_WIDTH};
+use std::ops::{Index, IndexMut};
+
+use crate::{
+    core::{game_state::PLAYER, world::world_gen::Tile},
+    entity::object::Object,
+    game::{WORLD_HEIGHT, WORLD_WIDTH},
+};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct GameObjects {
@@ -29,16 +32,8 @@ impl GameObjects {
         game_objects
     }
 
-    // pub fn get_vector(&self) -> &Vec<Option<Object>> {
-    //     &self.obj_vec
-    // }
-
-    // pub fn get_vector_mut(&mut self) -> &mut Vec<Option<Object>> {
-    //     &mut self.obj_vec
-    // }
-
     pub fn get_tile_at(&mut self, x: usize, y: usize) -> &mut Option<Object> {
-        // HACK: offset by one because player is the first object
+        // offset by one because player is the first object
         &mut self.obj_vec[(y * (WORLD_WIDTH as usize) + x) + 1]
     }
 
@@ -111,7 +106,6 @@ impl GameObjects {
     pub fn truncate(&mut self) {
         // PLayer is the first element, remove everything else.
         // NOTE: works only if player is the first object!
-        // assert_eq!(&self.obj_vec[PLAYER as usize].unwrap() as *const _, &self.obj_vec[0].unwrap() as *const _);
         self.obj_vec.truncate(self.num_world_tiles);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
@@ -137,8 +131,6 @@ impl GameObjects {
         &self.obj_vec
     }
 }
-
-use std::ops::{Index, IndexMut};
 
 impl Index<usize> for GameObjects {
     type Output = Option<Object>;

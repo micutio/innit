@@ -1,24 +1,20 @@
 /// Module Game_State
 ///
 /// This module contains the struct that encompasses all parts of the game state:
-// external imports
 use tcod::colors::Color;
 
-// internal imports
-use core::game_objects::GameObjects;
-use core::world::world_gen::WorldGen;
-use core::world::world_gen_rogue::RogueWorldGenerator;
-use entity::action::*;
-use entity::object::Object;
-// use ui::dialog::menu;
-use ui::game_frontend::{AnimationType, FovMap};
-// use ui::game_input::GameInput;
+use crate::{
+    core::{
+        game_objects::GameObjects, world::world_gen::WorldGen,
+        world::world_gen_rogue::RogueWorldGenerator,
+    },
+    entity::{action::*, object::Object},
+    ui::game_frontend::{AnimationType, FovMap},
+};
 
-// player object reference, index of the object vector
-pub const PLAYER: usize = 0;
-// TODO: Replace with something like object -> perception -> range.
-pub const TORCH_RADIUS: i32 = 10;
-// experience and level-ups
+pub const PLAYER: usize = 0; // player object reference, index of the object vector
+pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
+
 pub const LEVEL_UP_BASE: i32 = 200;
 pub const LEVEL_UP_FACTOR: i32 = 150;
 // pub const LEVEL_SCREEN_WIDTH: i32 = 40;
@@ -104,9 +100,7 @@ impl GameState {
         actor: &mut Object,
         action: Box<Action>,
     ) -> ObjectProcResult {
-        // first execute action
-
-        // then process result and return
+        // first execute action, then process result and return
         match action.perform(self, objects, actor) {
             ActionResult::Success { callback } => {
                 match callback {
