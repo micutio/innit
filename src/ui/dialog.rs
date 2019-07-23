@@ -1,8 +1,8 @@
-use tcod::chars;
 /// Module Dialog
 ///
 /// Dialogs can be menus with options to select from
 /// or simple message boxes.
+use tcod::chars;
 use tcod::console::*;
 use tcod::input::Key;
 

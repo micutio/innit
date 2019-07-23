@@ -7,54 +7,6 @@
 /// TODO: Better readable colors between dark and light scheme
 use tcod::colors::Color;
 
-const COL_LIGHT_MAIN: Color = Color {
-    r: 158,
-    g: 53,
-    b: 74,
-};
-
-const COL_LIGHT_ACCENT_WARM: Color = Color {
-    r: 210,
-    g: 152,
-    b: 107,
-};
-
-const COL_LIGHT_ACCENT_COLD: Color = Color {
-    r: 72,
-    g: 143,
-    b: 181,
-};
-
-const COL_LIGHT_PLAYER: Color = Color {
-    r: 100,
-    g: 100,
-    b: 100,
-};
-
-const COL_DARK_MAIN: Color = Color {
-    r: 158,
-    g: 53,
-    b: 74,
-};
-
-const COL_DARK_ACCENT_WARM: Color = Color {
-    r: 210,
-    g: 152,
-    b: 107,
-};
-
-const COL_DARK_ACCENT_COLD: Color = Color {
-    r: 72,
-    g: 143,
-    b: 181,
-};
-
-const COL_DARK_PLAYER: Color = Color {
-    r: 170,
-    g: 170,
-    b: 170,
-};
-
 pub struct ColorPalette {
     // background colors
     pub bg_world: Color,
@@ -144,7 +96,11 @@ impl ColorPalette {
                 g: 210,
                 b: 210,
             },
-            player: COL_LIGHT_PLAYER,
+            player: Color {
+                r: 100,
+                g: 100,
+                b: 100,
+            },
         }
     }
 
@@ -209,7 +165,11 @@ impl ColorPalette {
                 g: 40,
                 b: 40,
             },
-            player: COL_DARK_PLAYER,
+            player: Color {
+                r: 170,
+                g: 170,
+                b: 170,
+            },
         }
     }
 }

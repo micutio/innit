@@ -1,15 +1,16 @@
 /// Module Main
 ///
 /// This module contains all structures and methods pertaining to the user interface.
-extern crate pretty_env_logger;
+
 #[macro_use]
 extern crate log;
+extern crate pretty_env_logger;
 extern crate rand;
 extern crate serde;
-extern crate tcod;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate tcod;
 
 mod core;
 mod entity;
