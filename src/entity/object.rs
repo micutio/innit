@@ -1,16 +1,18 @@
 /// Module Object
 ///
 /// An Object represents the base structure for all entities in the game.
-// external imports
-use tcod::colors::{self, Color};
-use tcod::console::*;
+use tcod::{
+    colors::{self, Color},
+    console::*,
+};
 
-// internal imports
-use core::game_state::{GameState, MessageLog};
-use core::world::world_gen::Tile;
-use entity::action::*;
-use entity::ai::Ai;
-use entity::fighter::Fighter;
+use crate::{
+    core::{
+        game_state::{GameState, MessageLog},
+        world::world_gen::Tile,
+    },
+    entity::{action::*, ai::Ai, fighter::Fighter},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {

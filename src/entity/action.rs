@@ -2,14 +2,18 @@
 ///
 /// This module provides the action interface, which is used to create any kind
 /// of action that can be performed by the player or an NPC.
-// external imports
+
+
 use std::fmt::Debug;
 use tcod::colors;
 
-// internal imports
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS};
-use entity::object::Object;
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS},
+    },
+    entity::object::Object,
+};
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
