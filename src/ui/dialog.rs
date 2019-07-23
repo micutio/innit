@@ -2,15 +2,19 @@
 ///
 /// Dialogs can be menus with options to select from
 /// or simple message boxes.
-use tcod::chars;
-use tcod::console::*;
-use tcod::input::Key;
+use tcod::{chars, console::*, input::Key};
 
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER};
-use ui::game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
-use ui::game_input::GameInput;
-use util::modulus;
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER},
+    },
+    ui::{
+        game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH},
+        game_input::GameInput,
+    },
+    util::modulus,
+};
 
 // message box measurements
 pub const MSG_X: i32 = BAR_WIDTH + 2;
@@ -46,7 +50,7 @@ pub fn menu<T: AsRef<str>>(
     // check if we have a running instance of GameInput;
     // if yes, suspend it so we can read from the input directly
     if let Some(instance) = game_input {
-        instance.stop_concurrent_input();
+        instance.pause_concurrent_input();
     }
 
     // keep redrawing everything as long as we just move around the options of the menu
@@ -153,20 +157,16 @@ pub fn menu<T: AsRef<str>>(
             Key { code: Char, .. } => {
                 // convert the ASCII code to an index
                 // if it corresponds to an option, return it
-                // but before returning, re-start concurrent user input again
-                if let Some(instance) = game_input {
-                    instance.start_concurrent_input();
-                }
 
                 if key.printable.is_alphabetic() {
                     let index = key.printable.to_ascii_lowercase() as usize - 'a' as usize;
                     if index < options.len() {
+                        // before returning, re-start concurrent user input again
+                        if let Some(instance) = game_input {
+                            instance.resume_concurrent_input();
+                        }
                         return Some(index);
-                    } else {
-                        return None;
                     }
-                } else {
-                    return None;
                 }
             }
             Key { code: Enter, .. } => {
@@ -277,13 +277,11 @@ pub fn msgbox(
     // if we have an instance of GameInput, pause the input listener thread first
     // so that we can receive input events directly
     match game_input {
-        // NOTE: We can't use pause_concurrent_input() and resume_concurrent_input(). Why?
-        // NOTE: If we do that, the game ends up unable to process any key input.
         Some(ref mut handle) => {
-            handle.stop_concurrent_input();
+            handle.pause_concurrent_input();
             game_frontend.root.wait_for_keypress(true);
             // after we got he key, restart input listener thread
-            handle.start_concurrent_input();
+            handle.resume_concurrent_input();
         }
         None => {
             game_frontend.root.wait_for_keypress(true);
