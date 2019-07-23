@@ -1,20 +1,28 @@
 /// Module Game Input
 ///
 /// User input processing
-/// Handle user input
-use std::collections::HashMap;
-use std::collections::VecDeque;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::{
+        mpsc,
+        mpsc::{Receiver, Sender, TryRecvError},
+        Arc, Mutex,
+    },
+    thread::{self, JoinHandle},
+};
+
 use tcod::input::{self, Event, Key, Mouse};
 
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, PLAYER};
-use entity::action::*;
-use ui::game_frontend::{re_render, FovMap, GameFrontend};
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, PLAYER},
+    },
+    entity::action::*,
+    ui::game_frontend::{re_render, FovMap, GameFrontend},
+};
 
+/// Enum for thread control.
 #[derive(Debug, Clone, Copy)]
 enum InputThreadCommand {
     Resume,
@@ -27,12 +35,19 @@ pub struct MousePosition {
     y: i32,
 }
 
+/// Concurrent input contains
+/// - the action queue that is shared between game and concurrent input listener thread
+/// - the cannel that allows the ui to communicate with the running thread
+/// - the handle of the input thread itself
 pub struct ConcurrentInput {
     game_input_ref: Arc<Mutex<InputProcessor>>,
     input_thread_tx: Sender<InputThreadCommand>,
     input_thread: JoinHandle<()>,
 }
 
+/// Since joining the thread consumes the handle, the concurrent input component
+/// needs to be moved out of the game input structure before doing so.
+/// To restart the thread, the game input will instantiate a new concurrent component.
 impl ConcurrentInput {
     fn join_thread(self) {
         match self.input_thread.join() {
@@ -42,6 +57,13 @@ impl ConcurrentInput {
     }
 }
 
+/// The game input contains fields for
+/// - current mouse position
+/// - the names of all objects currently `inspected` by the mouse cursor
+/// - a handle for the concurrent input component
+/// - next player action, based on what key was pressed last
+/// This encapsulated the complete game input handling and constitutes the
+/// interface towards the frontend.
 pub struct GameInput {
     pub current_mouse_pos: MousePosition,
     pub names_under_mouse: String,
@@ -50,6 +72,7 @@ pub struct GameInput {
 }
 
 impl GameInput {
+    /// Create a new instance of the user input.
     pub fn new() -> Self {
         GameInput {
             current_mouse_pos: MousePosition { x: 0, y: 0 },
@@ -59,6 +82,7 @@ impl GameInput {
         }
     }
 
+    /// Start a new instance of the input listener thread.
     pub fn start_concurrent_input(&mut self) {
         let (tx, rx) = mpsc::channel();
         let game_input = Arc::new(Mutex::new(InputProcessor::new()));
@@ -72,28 +96,18 @@ impl GameInput {
         })
     }
 
+    /// Tell the input thread to stop listening to input and idle around,
+    /// but NOT to stop completely.
     pub fn pause_concurrent_input(&mut self) {
-        // clean up any existing threads before creating a new one
         self.notify_concurrent_input(InputThreadCommand::Pause);
-        match self.concurrent_input.take() {
-            Some(concurrent) => {
-                concurrent.join_thread();
-            }
-            None => panic!("[game input] ERROR: failed to pause concurrent thread!"),
-        }
     }
 
+    /// Tell the input thread to resume listening for input.
     pub fn resume_concurrent_input(&mut self) {
-        // clean up any existing threads before creating a new one
         self.notify_concurrent_input(InputThreadCommand::Resume);
-        match self.concurrent_input.take() {
-            Some(concurrent) => {
-                concurrent.join_thread();
-            }
-            None => panic!("[game input] ERROR: failed to resume concurrent thread!"),
-        }
     }
 
+    /// Stop the input thread completely and wait for it to join.
     pub fn stop_concurrent_input(&mut self) {
         // clean up any existing threads before creating a new one
         self.notify_concurrent_input(InputThreadCommand::Stop);
@@ -105,21 +119,20 @@ impl GameInput {
         }
     }
 
-    pub fn reset_next_action(&mut self) {
-        match &self.next_action {
-            Some(action) => panic!(
-                "Why are we trying to reset an existing action? {:?}",
-                action
-            ),
-            None => {}
-        }
+    /// Reset the `next action` field to signal that it has been performed.
+    pub fn is_action_consumed(&self) -> bool {
+        self.next_action.is_none()
     }
 
+    /// Retrieve the next player action
     pub fn get_next_action(&mut self) -> Option<PlayerAction> {
         self.next_action.take()
     }
 
-    pub fn check_for_next_action(
+    /// Check for new input data:
+    /// - update inspection if the mouse has moved
+    /// - inject a new action from the queue into the player object if the current one has been consumed
+    pub fn check_for_player_actions(
         &mut self,
         game_state: &mut GameState,
         game_frontend: &mut GameFrontend,
@@ -167,6 +180,8 @@ impl GameInput {
         }
     }
 
+    /// Check whether the mouse position has changed, and if so, store it.
+    /// Return **true** if the mouse position changed, false otherwise.
     fn check_set_mouse_position(&mut self, new_x: i32, new_y: i32) -> bool {
         if self.current_mouse_pos.x != new_x || self.current_mouse_pos.y != new_y {
             self.current_mouse_pos.x = new_x;
@@ -176,6 +191,7 @@ impl GameInput {
         false
     }
 
+    /// Send a given command to the input thread.
     fn notify_concurrent_input(&self, command: InputThreadCommand) {
         if let Some(concurrent) = &self.concurrent_input {
             match concurrent.input_thread_tx.send(command) {
@@ -190,7 +206,7 @@ impl GameInput {
     }
 }
 
-/// As tcod's key codes don't implement Eq and Hash they cannot be used
+/// As tcod's key codes don't implement `Eq` and `Hash` they cannot be used
 /// as keys in a hash table. So to still be able to hash keys, we define our own.
 #[derive(PartialEq, Eq, Hash)]
 pub enum KeyCode {
@@ -252,6 +268,7 @@ pub enum UiAction {
     ToggleDarkLightMode,
 }
 
+/// The input processor maps user input to player actions.
 pub struct InputProcessor {
     pub mouse_x: i32,
     pub mouse_y: i32,
@@ -287,6 +304,8 @@ pub fn get_names_under_mouse(
     //names//.join(", ") // return names separated by commas
 }
 
+/// Start an input processing thread.
+/// Listen to keystrokes and mouse movement at the same time.
 fn start_input_proc_thread(
     game_input: &mut Arc<Mutex<InputProcessor>>,
     rx: Receiver<InputThreadCommand>,
@@ -381,6 +400,7 @@ fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
     }
 }
 
+/// Create a mapping between our own key codes and player actions.
 fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     use self::KeyCode::*;
     use self::PlayerAction::*;
@@ -403,6 +423,8 @@ fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
     key_map
 }
 
+/// Construct a new player action from a given key code.
+/// NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
     // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating

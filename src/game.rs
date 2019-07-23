@@ -1,20 +1,29 @@
-use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Write};
 /// Module Game
 ///
 /// This is the top level representation of the game
 /// and all its components. Here the components and
 /// game loop are constructed and executed.
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
+
 use tcod::colors;
 
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, MessageLog, PLAYER};
-use entity::action::AttackAction;
-use entity::fighter::{DeathCallback, Fighter};
-use entity::object::Object;
-use ui::game_frontend::{handle_ui_actions, process_visual_feedback, GameFrontend};
-use ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, MessageLog, PLAYER},
+    },
+    entity::{
+        action::AttackAction,
+        fighter::{DeathCallback, Fighter},
+        object::Object,
+    },
+    ui::{
+        game_frontend::{handle_ui_actions, process_visual_feedback, GameFrontend},
+        game_input::{get_player_action_instance, GameInput, PlayerAction},
+    },
+};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -64,7 +73,7 @@ pub fn game_loop(
     game_objects: &mut GameObjects,
 ) {
     while !game_frontend.root.window_closed() {
-        game_input.reset_next_action();
+        assert!(game_input.is_action_consumed());
         // let the game engine process an object
         let process_result = game_state.process_object(game_objects, &game_frontend.fov);
         process_visual_feedback(
@@ -76,7 +85,7 @@ pub fn game_loop(
         );
 
         // once processing is done, check whether we have a new user input
-        game_input.check_for_next_action(game_state, game_frontend, game_objects);
+        game_input.check_for_player_actions(game_state, game_frontend, game_objects);
 
         // distinguish between in-game action and ui (=meta) actions
         match game_input.get_next_action() {
