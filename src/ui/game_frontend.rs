@@ -212,7 +212,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
     }
 }
 
-/// Initialize the field of view map with the world tiles contained in game_objects
+/// Initialize the field of view map with the world tiles contained in game_objects.
 fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
@@ -239,7 +239,7 @@ fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjec
         .set_default_background(game_frontend.coloring.bg_world);
 }
 
-pub fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
+fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     if let Some(ref player) = game_objects[PLAYER] {
         game_frontend
             .fov
