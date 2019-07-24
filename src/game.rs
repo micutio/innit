@@ -9,7 +9,6 @@ use tcod::colors;
 
 use core::game_objects::GameObjects;
 use core::game_state::{GameState, MessageLog, PLAYER};
-use entity::action::AttackAction;
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
 use ui::game_frontend::{handle_ui_actions, process_visual_feedback, GameFrontend};
@@ -32,7 +31,6 @@ pub fn new_game() -> (GameState, GameObjects) {
         on_death: DeathCallback::Player,
         xp: 0,
     });
-    player.attack_action = Some(AttackAction::new(2, 0));
 
     // create array holding all GameObjects
     let mut objects = GameObjects::new();
@@ -104,9 +102,6 @@ pub fn game_loop(
             }
             None => {}
         }
-
-        // level up if needed
-        // level_up(objects, game_state, game_frontend);
     }
 }
 

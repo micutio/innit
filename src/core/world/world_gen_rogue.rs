@@ -5,7 +5,6 @@ use tcod::colors;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition, PLAYER};
 use crate::core::world::world_gen::{Tile, WorldGen};
-use crate::entity::action::AttackAction;
 use crate::entity::ai::Ai;
 use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
@@ -119,6 +118,7 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
+    // TODO: Pull spawn tables out of here and pass as parameters in make_world().
     let max_monsters = from_dungeon_level(
         &[
             Transition { level: 1, value: 2 },
@@ -179,7 +179,6 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
                         on_death: DeathCallback::Monster,
                         xp: 35,
                     });
-                    virus.attack_action = Some(AttackAction::new(3, 0));
                     virus.ai = Some(Ai::Basic);
                     virus
                 }
@@ -202,7 +201,6 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
                         on_death: DeathCallback::Monster,
                         xp: 100,
                     });
-                    bacteria.attack_action = Some(AttackAction::new(4, 0));
                     bacteria.ai = Some(Ai::Basic);
                     bacteria
                 }

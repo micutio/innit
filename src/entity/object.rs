@@ -7,8 +7,6 @@ use crate::entity::action::*;
 use crate::entity::ai::Ai;
 use crate::entity::fighter::Fighter;
 
-/// # Object
-///
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
 ///
@@ -23,22 +21,29 @@ use crate::entity::fighter::Fighter;
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
 ///
-/// ## Sensor
+/// *Sensor*
+/// 
+/// - sensing range
+/// 
+/// 
+/// *Actuator* - the object's body
+/// 
+/// - membrane integrity a.k.a health points
+/// - 
 ///
 /// Attributes:
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x: i32,
     pub y: i32,
-    pub dna: String,
     pub alive: bool,
-    pub level: i32, // could be changed into some pseudo-progress like allowed DNA length
+    pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
+    pub dna: String,
     pub visual: Visual,
     pub physics: Physics,
     pub tile: Option<Tile>,
     pub fighter: Option<Fighter>,
     pub ai: Option<Ai>,
-    pub attack_action: Option<AttackAction>,
     pub next_action: Option<Box<dyn Action>>,
 }
 
@@ -84,15 +89,14 @@ impl Object {
         Object {
             x,
             y,
-            dna: "".into(), // dna.into(),
             alive: false,
-            level: 1,
+            energy: 0,
+            dna: "".into(), // dna.into(),
             visual,
             physics,
             tile: None,
             fighter: None,
             ai: None,
-            attack_action: None,
             next_action: None,
         }
     }

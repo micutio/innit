@@ -9,9 +9,6 @@ use crate::ui::game_frontend::{AnimationType, FovMap};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
-pub const LEVEL_UP_BASE: i32 = 200;
-pub const LEVEL_UP_FACTOR: i32 = 150;
-// pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
@@ -142,7 +139,7 @@ pub struct Transition {
     pub value: u32,
 }
 
-/// Return a value that depends on dnugeonlevel.
+/// Return a value that depends on dungeon level.
 /// The table specifies what value occurs after each level, default is 0.
 pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
     table
@@ -151,82 +148,6 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .find(|transition| level >= transition.level)
         .map_or(0, |transition| transition.value)
 }
-
-// pub fn level_up(
-//     game_io: &mut GameFrontend,
-//     game_state: &mut GameState,
-//     objects: &mut GameObjects,
-//     game_input: &mut Option<&mut GameInput>,
-// ) {
-//     if let Some(ref mut player) = objects[PLAYER] {
-//         let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-//         // see if the player's experience is enough to level up
-//         if player.fighter.as_ref().map_or(0, |f| f.xp) >= level_up_xp {
-//             // exp is enough, lvl up
-//             player.level += 1;
-//             game_state.log.add(
-//                 format!(
-//                     "Your battle skills grow stringer! You reached level {}!",
-//                     player.level
-//                 ),
-//                 colors::YELLOW,
-//             );
-
-//             let fighter = player.fighter.as_mut().unwrap();
-//             let mut choice = None;
-//             while choice.is_none() {
-//                 // keep asking until a choice is made
-//                 choice = menu(
-//                     game_io,
-//                     game_input,
-//                     "Level up! Chose a stat to raise:\n",
-//                     &[
-//                         format!("Constitution (+20 HP, from {})", fighter.base_max_hp),
-//                         format!("Strength (+1 attack, from {})", fighter.base_power),
-//                         format!("Agility (+1 defense, from {})", fighter.base_defense),
-//                     ],
-//                     LEVEL_SCREEN_WIDTH,
-//                 );
-//             }
-//             fighter.xp -= level_up_xp;
-//             match choice.unwrap() {
-//                 0 => {
-//                     fighter.base_max_hp += 20;
-//                     fighter.hp += 20;
-//                 }
-//                 1 => {
-//                     fighter.base_power += 1;
-//                 }
-//                 2 => {
-//                     fighter.base_defense += 1;
-//                 }
-//                 _ => unreachable!(),
-//             }
-//         }
-//     }
-// }
-
-// /// Advance to the next level
-// pub fn next_level(
-//     game_io: &mut GameFrontend,
-//     objects: &mut GameObjects,
-//     game_state: &mut GameState,
-// ) {
-//     game_state.log.add(
-//         "You take a moment to rest, and recover your strength.",
-//         colors::VIOLET,
-//     );
-//     // let heal_hp = objects[PLAYER].max_hp(game_state) / 2;
-//     // objects[PLAYER].heal(game_state, heal_hp);
-
-//     game_state.log.add(
-//         "After a rare moment of peace, you descend deeper into the heart of the dungeon...",
-//         colors::RED,
-//     );
-//     game_state.dungeon_level += 1;
-//     game_state.world = make_world(objects, game_state.dungeon_level);
-//     initialize_fov(game_io, &game_state.world);
-// }
 
 // /// Move the object with given id to the given position.
 // pub fn move_by(world: &World, objects: &mut GameObjects, id: usize, dx: i32, dy: i32) {

@@ -7,7 +7,7 @@ use tcod::{chars, console::*, input::Key};
 use crate::{
     core::{
         game_objects::GameObjects,
-        game_state::{GameState, LEVEL_UP_BASE, LEVEL_UP_FACTOR, PLAYER},
+        game_state::{GameState, PLAYER},
     },
     ui::{
         game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH},
@@ -296,32 +296,18 @@ pub fn show_character_screen(
     game_objects: &mut GameObjects,
 ) {
     if let Some(ref player) = game_objects[PLAYER] {
-        let level = player.level;
-        let level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR;
-        if let Some(fighter) = player.fighter.as_ref() {
-            let header: String = "Character Information".to_string();
-            let msg: String = format!(
-                "Level: {} \n\
-                 Experience: {} \n\
-                 Experience to level up: {} \n\
-                 \n\
-                 Maximum HP: {} \n\
-                 Attack: {} \n\
-                 Defense: {} ",
-                level,
-                fighter.xp,
-                level_up_xp,
-                player.max_hp(game_state),
-                player.power(game_state),
-                player.defense(game_state),
-            );
-            msgbox(
-                game_frontend,
-                game_input,
-                &header,
-                &msg,
-                CHARACTER_SCREEN_WIDTH,
-            );
-        }
+        let header: String = "Character Information".to_string();
+        let msg: String = format!(
+            "Energy: {} \n\
+             Alive: {}",
+            player.energy, player.alive,
+        );
+        msgbox(
+            game_frontend,
+            game_input,
+            &header,
+            &msg,
+            CHARACTER_SCREEN_WIDTH,
+        );
     };
 }
