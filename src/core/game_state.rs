@@ -40,6 +40,7 @@ pub enum ObjectProcResult {
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
     pub log: Messages,
+    pub turn: u128,
     pub dungeon_level: u32,
     current_obj_index: usize,
 }
@@ -52,6 +53,7 @@ impl GameState {
         GameState {
             // create the list of game messages and their colors, starts empty
             log: vec![],
+            turn: 0,
             dungeon_level: 1,
             current_obj_index: 0,
         }
@@ -78,6 +80,10 @@ impl GameState {
         // only increase counter if the object has made a move
         if process_result != ObjectProcResult::NoAction {
             self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
+            // also increase turn count if we're back at the player
+            if self.current_obj_index == PLAYER {
+                self.turn += 1;
+            }
         }
         process_result
     }
