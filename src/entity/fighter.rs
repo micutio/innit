@@ -1,13 +1,9 @@
-/// Module Fighter
-///
-/// This module contains the structures and methods that make up the combat system.
+//! Fighter contains the structures and methods that make up the combat system.
 
-// external imports
 use tcod::colors;
 
-// internal imports
-use entity::object::Object;
 use core::game_state::{MessageLog, Messages};
+use entity::object::Object;
 
 // combat related poperties and methods (monster, player, NPC)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

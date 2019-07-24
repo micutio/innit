@@ -1,6 +1,6 @@
-/// Module Ai
-///
-/// Structures and methods for constructing the game ai.
+//! Module Ai
+//!
+//! Structures and methods for constructing the game ai.
 // external imports
 // use rand::Rng;
 // use tcod::colors;

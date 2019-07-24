@@ -1,29 +1,22 @@
-/// Module Game_State
-///
-/// This module contains the struct that encompasses all parts of the game state:
 use tcod::colors::Color;
 
-use crate::{
-    core::{
-        game_objects::GameObjects, world::world_gen::WorldGen,
-        world::world_gen_rogue::RogueWorldGenerator,
-    },
-    entity::{action::*, object::Object},
-    ui::game_frontend::{AnimationType, FovMap},
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::world::world_gen::WorldGen;
+use crate::core::world::world_gen_rogue::RogueWorldGenerator;
+use crate::entity::action::*;
+use crate::entity::object::Object;
+use crate::ui::game_frontend::{AnimationType, FovMap};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
-
 pub const LEVEL_UP_BASE: i32 = 200;
 pub const LEVEL_UP_FACTOR: i32 = 150;
 // pub const LEVEL_SCREEN_WIDTH: i32 = 40;
 
-// Structures and functions for message output
-
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
 
+/// The message log can add text from any string collection.
 pub trait MessageLog {
     fn add<T: Into<String>>(&mut self, message: T, color: Color);
 }
@@ -45,8 +38,8 @@ pub enum ObjectProcResult {
     ReRender,
 }
 
-/// The game state struct contains all information necessary to represent
-/// the current state of the game, EXCEPT the object vector.
+/// The game state struct contains all information necessary to represent the current state of the
+/// game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
     pub log: Messages,

@@ -1,19 +1,31 @@
-/// Module Object
+use tcod::colors::{self, Color};
+use tcod::console::*;
+
+use crate::core::game_state::{GameState, MessageLog};
+use crate::core::world::world_gen::Tile;
+use crate::entity::action::*;
+use crate::entity::ai::Ai;
+use crate::entity::fighter::Fighter;
+
+/// # Object
 ///
 /// An Object represents the base structure for all entities in the game.
-use tcod::{
-    colors::{self, Color},
-    console::*,
-};
-
-use crate::{
-    core::{
-        game_state::{GameState, MessageLog},
-        world::world_gen::Tile,
-    },
-    entity::{action::*, ai::Ai, fighter::Fighter},
-};
-
+/// Most of the object components are organized in their own
+///
+/// ```Option<ComponentType>```
+///
+/// fields.
+/// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
+/// other hand, nearly all optional components are determined by the object's genome, except
+/// _next_action_.
+///
+/// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
+/// attributes pertaining to their specific domain as well as performable actions which are
+/// influenced or amplified by certain attributes.
+///
+/// ## Sensor
+///
+/// Attributes:
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x: i32,
@@ -100,13 +112,14 @@ impl Object {
         con.put_char(self.x, self.y, self.visual.character, BackgroundFlag::None);
     }
 
+    /// calculate distance to another object
     pub fn distance_to(&self, other: &Object) -> f32 {
         let dx = other.x - self.x;
         let dy = other.y - self.y;
         ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
     }
 
-    /// return distance between some coordinates and this object
+    /// return distance to given coordinates
     pub fn distance(&self, x: i32, y: i32) -> f32 {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }

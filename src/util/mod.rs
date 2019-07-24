@@ -1,9 +1,6 @@
-/// Module Utilites
-///
-/// This module contains useful utility functions that are unrelated
-/// to any of the main game modules.
-extern crate num;
+//! Utilites contains useful functions that are unrelated to any of the main game modules.
 
+extern crate num;
 use self::num::Num;
 
 /// Modulus function.

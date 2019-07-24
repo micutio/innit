@@ -1,34 +1,16 @@
-/// Module GUI
-///
-/// This module contains all structures and methods pertaining to the user interface.
-///
-/// Game frontend, input, state, engine etc are very common parameters
-/// for function calls in innit, therefore utmost consistency should be
-/// kept in the order of handing them over to functions.
-///
-/// Function parameter precedence:
-/// game_state, game_frontend, game_input, objects, anything else.
-use tcod::{
-    chars,
-    colors::{self, Color},
-    console::*,
-    map::FovAlgorithm,
-};
+use tcod::chars;
+use tcod::colors::{self, Color};
+use tcod::console::*;
+use tcod::map::FovAlgorithm;
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS},
-        world::world_gen::is_explored,
-    },
-    entity::object::Object,
-    game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH},
-    ui::{
-        color_palette::*,
-        dialog::*,
-        game_input::{GameInput, UiAction},
-    },
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, ObjectProcResult, PLAYER, TORCH_RADIUS};
+use crate::core::world::world_gen::is_explored;
+use crate::entity::object::Object;
+use crate::game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::ui::color_palette::*;
+use crate::ui::dialog::*;
+use crate::ui::game_input::{GameInput, UiAction};
 
 // game window properties
 pub const SCREEN_WIDTH: i32 = 80;
@@ -44,7 +26,7 @@ pub const BAR_WIDTH: i32 = 20;
 pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
-/// field of view mapping
+/// Field of view mapping.
 pub use tcod::map::Map as FovMap;
 
 /// GameFrontend holds the core components for game's input and output processing.

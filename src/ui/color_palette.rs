@@ -1,10 +1,6 @@
-/// Module Main
-///
-/// This module contains the color palette and related constants and methods
-/// for color calculation and manipulation.
-///
-/// TODO: Read constants from file.
-/// TODO: Better readable colors between dark and light scheme
+// TODO: Read constants from file.
+// TODO: Better readable colors between dark and light scheme
+
 use tcod::colors::Color;
 
 pub struct ColorPalette {

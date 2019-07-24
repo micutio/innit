@@ -1,19 +1,16 @@
-/// Module Game Objects
-///
+use std::ops::{Index, IndexMut};
+
+use crate::core::game_state::PLAYER;
+use crate::core::world::world_gen::Tile;
+use crate::entity::object::Object;
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+
 /// The game object struct contains all game objects, including
 /// * player character
 /// * non-player character
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
-use std::ops::{Index, IndexMut};
-
-use crate::{
-    core::{game_state::PLAYER, world::world_gen::Tile},
-    entity::object::Object,
-    game::{WORLD_HEIGHT, WORLD_WIDTH},
-};
-
 #[derive(Serialize, Deserialize, Default)]
 pub struct GameObjects {
     num_world_tiles: usize,

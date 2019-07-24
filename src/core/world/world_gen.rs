@@ -1,13 +1,11 @@
-/// Module World
-///
-/// The world generation module contains the trait that all world generators have to implement
-/// to be exchangably used to create the game environments.
+//! The world generation module contains the trait that all world generators have to implement to
+//! be exchangably used to create the game environments.
+
 use tcod::{chars, colors};
 
-use crate::{
-    core::game_objects::GameObjects,
-    entity::{ai::Ai, object::Object},
-};
+use crate::core::game_objects::GameObjects;
+use crate::entity::ai::Ai;
+use crate::entity::object::Object;
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.

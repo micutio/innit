@@ -1,31 +1,25 @@
-/// Module World Generator Rogue-style
-///
-/// This world generator is based on the genre-defining game `Rogue`.
-/// NOTE: In the future, NPCs should be generated based on a spawning table.
 use rand::Rng;
 use std::cmp;
 use tcod::colors;
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{from_dungeon_level, Transition, PLAYER},
-        world::world_gen::{Tile, WorldGen},
-    },
-    entity::{
-        action::AttackAction,
-        ai::Ai,
-        fighter::{DeathCallback, Fighter},
-        object::Object,
-    },
-    game::{WORLD_HEIGHT, WORLD_WIDTH},
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{from_dungeon_level, Transition, PLAYER};
+use crate::core::world::world_gen::{Tile, WorldGen};
+use crate::entity::action::AttackAction;
+use crate::entity::ai::Ai;
+use crate::entity::fighter::{DeathCallback, Fighter};
+use crate::entity::object::Object;
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
 const ROOM_MIN_SIZE: i32 = 6;
 const MAX_ROOMS: i32 = 30;
 
+/// Module World Generator Rogue-style
+///
+/// This world generator is based on the genre-defining game `Rogue`.
+/// NOTE: In the future, NPCs should be generated based on a spawning table.
 pub struct RogueWorldGenerator {
     rooms: Vec<Rect>,
 }

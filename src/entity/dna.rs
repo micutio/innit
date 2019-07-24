@@ -1,5 +1,3 @@
-/// Module DNA
-///
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
 /// Decoding DNA delivers attributes and functions that fall into one of three categories:
@@ -13,7 +11,7 @@
 ///
 /// List of potential genes:
 ///
-/// | Gene | Primary Trait | Trait Attributes | Potential Syngery    | Potential Anti-Synergy |
+/// | Gene | Primary Trait | Trait Attributes | Potential Synergy    | Potential Anti-Synergy |
 /// | ---- | ------------- | ---------------- | -------------------- | ---------------------- |
 /// |      | sensing       | range, accuracy  | movement (organelle) | camouflage?            |
 /// |      | movement      | speed, direction | sensing (organelle)  | camouflage?            |

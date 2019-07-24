@@ -1,26 +1,15 @@
-/// Module Game Input
-///
-/// User input processing
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::{
-        mpsc,
-        mpsc::{Receiver, Sender, TryRecvError},
-        Arc, Mutex,
-    },
-    thread::{self, JoinHandle},
-};
+use std::collections::{HashMap, VecDeque};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
 
 use tcod::input::{self, Event, Key, Mouse};
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, PLAYER},
-    },
-    entity::action::*,
-    ui::game_frontend::{re_render, FovMap, GameFrontend},
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, PLAYER};
+use crate::entity::action::*;
+use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
 /// Enum for thread control.
 #[derive(Debug, Clone, Copy)]

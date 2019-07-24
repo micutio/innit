@@ -1,8 +1,5 @@
-/// Module Action
-///
-/// This module provides the action interface, which is used to create any kind
-/// of action that can be performed by the player or an NPC.
-
+//! Module Action provides the action interface, which is used to create any kind of action that
+//! can be performed by the player or an NPC.
 
 use std::fmt::Debug;
 use tcod::colors;
