@@ -21,15 +21,17 @@ use crate::entity::fighter::Fighter;
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
 ///
-/// *Sensor*
-/// 
+/// **Sensor** - the object's organelle/perception
+///
 /// - sensing range
-/// 
-/// 
-/// *Actuator* - the object's body
-/// 
+///
+/// **Processor** - the object's brain
+///
+/// - reaction time bonus/penalty
+///
+/// **Actuator** - the object's body
+///
 /// - membrane integrity a.k.a health points
-/// - 
 ///
 /// Attributes:
 #[derive(Debug, Serialize, Deserialize)]
