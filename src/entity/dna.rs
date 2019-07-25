@@ -2,8 +2,37 @@ use crate::entity::action::Action;
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
-/// Decoding DNA delivers attributes and functions that fall into one of three categories:
-/// perception, orientation (a.k.a. processing), actuation.
+/// Decoding DNA delivers attributes and functions that fall into one of three gene types.
+///
+/// ## Gene Types
+///
+/// * perceptor - gathering information of the environment
+/// * processor - decision making
+/// * actuator - interacting with other objects and the game world
+///
+/// ## Shape of the DNA
+///
+/// +------+-----------+---------+
+/// | 0x00 | gene type | details |
+/// +------+-----------+---------+
+///
+/// ### perceptor details
+///
+/// +-------+----------+
+/// | range | accuracy |
+/// +-------+----------+
+///
+/// ### processor details
+///
+/// +----------+
+/// | capacity |
+/// +----------+
+///
+/// ### actuator details
+///
+/// +-------+------------+-----------+
+/// | speed | randomness | direction |
+/// +-------+------------+-----------+
 ///
 /// A DNA Genome is implemented as a string of hexadecimal numbers. The start of a gene is marked
 /// by the number zero. Genes can overlap, so that parsing the new gene resumes "in the middle" of
@@ -11,7 +40,7 @@ use crate::entity::action::Action;
 /// is then controlled by the cumulative occurrence of a gene.
 /// Basically: the more often a gene occurs, the stronger it's trait will be.
 ///
-/// List of potential genes:
+/// ## List of potential genes
 ///
 /// | Gene | Primary Trait | Trait Attributes | Potential Synergy    | Potential Anti-Synergy |
 /// | ---- | ------------- | ---------------- | -------------------- | ---------------------- |
