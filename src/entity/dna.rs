@@ -6,61 +6,181 @@ use crate::entity::action::Action;
 ///
 /// ## Gene Types
 ///
-/// * perceptor - gathering information of the environment
+/// * sensor - gathering information of the environment
 /// * processor - decision making
 /// * actuator - interacting with other objects and the game world
 ///
 /// ## Shape of the DNA
 ///
-/// +------+-----------+---------+
-/// | 0x00 | gene type | details |
-/// +------+-----------+---------+
+/// +------+--------------+---------------+-------------+
+/// | 0x00 | gene type ID | genome length | trait genes |
+/// +------+--------------+---------------+-------------+
 ///
-/// ### perceptor details
+/// ### sensor - ID 0x01
 ///
-/// +-------+----------+
-/// | range | accuracy |
-/// +-------+----------+
+/// #### Qualities
 ///
-/// ### processor details
+/// | Trait   | ID   | Attributes |
+/// | ------- | ---- | ---------- |
+/// | sensor  | 0x01 | range      |
 ///
-/// +----------+
-/// | capacity |
-/// +----------+
+/// ### processor - ID 0x02
 ///
-/// ### actuator details
+/// #### Qualities
 ///
-/// +-------+------------+-----------+
-/// | speed | randomness | direction |
-/// +-------+------------+-----------+
+/// | Trait         | ID   | Attributes |
+/// | ------------- | ---- | ---------- |
+/// | quick action  | 0x01 | count      |
+///
+/// ### actuator - ID 0x03
+///
+/// #### Qualities
+///
+/// | Trait   | ID   | Attributes |
+/// | ------- | ---- | ---------- |
+/// | move    | 0x01 | speed      |
+/// | attack  | 0x02 | damage     |
+/// | defend  | 0x03 | health     |
+/// | rest    | 0x04 | HP regen   |
 ///
 /// A DNA Genome is implemented as a string of hexadecimal numbers. The start of a gene is marked
 /// by the number zero. Genes can overlap, so that parsing the new gene resumes "in the middle" of
-/// a previous gene. The genes should be small and encoding the presence of a quality. Versatility
-/// is then controlled by the cumulative occurrence of a gene.
-/// Basically: the more often a gene occurs, the stronger it's trait will be.
-///
-/// ## List of potential genes
-///
-/// | Gene | Primary Trait | Trait Attributes | Potential Synergy    | Potential Anti-Synergy |
-/// | ---- | ------------- | ---------------- | -------------------- | ---------------------- |
-/// |      | sensing       | range, accuracy  | movement (organelle) | camouflage?            |
-/// |      | movement      | speed, direction | sensing (organelle)  | camouflage?            |
-/// |      | attack        | energy, damage   |                      | defense                |
-/// |      | defense       | membrane         |                      | attack                 |
-/// |      | camouflage    | energy, accuracy |                      |                        |
-///
+/// a previous gene. The genes should be small and encoding the presence of a quality. Attributes or
+/// versatility is then controlled by the cumulative occurrence of a gene.
+/// Basically: the more often a gene occurs, the stronger its trait will be.
+// TODO: How to handle synergies/anti-synergies?
+// TODO: How to calculate energy cost per action?
 // TODO: Design a DNA parser and a mapping from symbol to trait struct.
 // TODO: Can behavior be encoded in the genome too i.e., fight or flight?
 pub struct DNA {
-    sequence: String,
+    sequence: [char],
 }
+
+// TODO: Maybe do away with type IDs and just have one long running list of genes.
+const START: u8 = 0x00;
+const TYPE_SENSOR: u8 = 0x01;
+const TYPE_PROCESSOR: u8 = 0x02;
+const TYPE_ACTUATOR: u8 = 0x03;
 
 /// Not to be confused with Rust traits, object traits are the attributes and functions that the
 /// object receives via its DNA. This constructs the sensor, processor and actuator components of
 /// an object.
 // TODO: How to map genes to object traits?
-pub struct ObjectTraitBuilder {}
+// pub struct ObjectTraitBuilder {
+//     pointer: usize,
+// }
+
+// impl ObjectTraitBuilder {
+//     pub fn new() -> Self {
+//         ObjectTraitBuilder { pointer: 0 }
+//     }
+
+//     pub fn parse_dna(self, dna: &[char]) -> Self {
+
+//         self
+//     }
+// }
+pub fn build_object_traits(dna: &[u8]) -> (Sensor, Processor, Actuator) {
+    let mut sensor = Sensor {
+        range:   0,
+        actions: vec![],
+    };
+    let mut processor = Processor {
+        capacity: 0,
+        actions:  vec![],
+    };
+    let mut actuator = Actuator {
+        speed:   0,
+        actions: vec![],
+    };
+
+    let mut ptr = 1;
+
+    while ptr < dna.len() {
+        // in case the byte is greater than 3, "wrap around" and repeat the cycle 1, 2, 3
+        match (dna[ptr] % 4) as u8 {
+            START => {
+                ptr += 1;
+            }
+            TYPE_SENSOR => {
+                ptr = read_sensor(dna, &ptr, &mut sensor);
+            }
+            TYPE_PROCESSOR => {
+                ptr = read_processor(dna, &ptr, &mut processor);
+            }
+            TYPE_ACTUATOR => {
+                ptr = read_actuator(dna, &ptr, &mut actuator);
+            }
+            _x => panic!("[dna] read unknown gene {}", _x),
+        }
+    }
+
+    // TODO: How do we get the actions and how do we avoid duplicates?
+    (sensor, processor, actuator)
+}
+
+/// Read a gene from the dna and return the position of the next gene start.
+fn read_sensor(dna: &[u8], ptr: &usize, sensor: &mut Sensor) -> usize {
+    let mut next_start_ptr: usize = ptr + 1;
+    // read range
+    match get_value_at(dna, next_start_ptr) {
+        -1 => {
+            return next_start_ptr;
+        }
+        0 => {}
+        _x => {
+            sensor.range = (sensor.range + _x) / 2;
+            next_start_ptr += 1;
+        }
+    }
+    // TODO: add accuracy
+
+    next_start_ptr
+}
+
+/// Read a gene from the dna and return the position of the next gene start.
+fn read_processor(dna: &[u8], ptr: &usize, processor: &mut Processor) -> usize {
+    let mut next_start_ptr: usize = ptr + 1;
+    // read range
+    match get_value_at(dna, next_start_ptr) {
+        -1 => {
+            return next_start_ptr;
+        }
+        0 => {}
+        _x => {
+            processor.capacity = (processor.capacity + _x) / 2;
+            next_start_ptr += 1;
+        }
+    }
+
+    next_start_ptr
+}
+
+/// Read a gene from the dna and return the position of the next gene start.
+fn read_actuator(dna: &[u8], ptr: &usize, actuator: &mut Actuator) -> usize {
+    let mut next_start_ptr: usize = ptr + 1;
+    // read range
+    match get_value_at(dna, next_start_ptr) {
+        -1 => {
+            return next_start_ptr;
+        }
+        0 => {}
+        _x => {
+            actuator.speed = (actuator.speed + _x) / 2;
+            next_start_ptr += 1;
+        }
+    }
+
+    next_start_ptr
+}
+
+fn get_value_at(dna: &[u8], ptr: usize) -> i32 {
+    if dna.len() > ptr {
+        dna[ptr] as i32
+    } else {
+        -1
+    }
+}
 
 /// This is a reverse ObjectTraitBuilder. Instead of constructing taits out of DNA, it generates a
 /// DNA from a given set of object traits.
@@ -81,7 +201,7 @@ pub struct DnaGenerator {}
 /// - functions:
 ///   - sense environment
 pub struct Sensor {
-    range: i32,
+    range:   i32,
     actions: Vec<Box<dyn Action>>,
 }
 
@@ -94,7 +214,7 @@ pub struct Sensor {
 ///   - ai control [ai]
 pub struct Processor {
     capacity: i32,
-    actions: Vec<Box<dyn Action>>,
+    actions:  Vec<Box<dyn Action>>,
 }
 
 /// Actuators can actually be concrete body parts e.g., organelles, spikes
@@ -106,6 +226,6 @@ pub struct Processor {
 ///   - attack
 ///   - defend
 pub struct Actuator {
-    speed: i32,
+    speed:   i32,
     actions: Vec<Box<dyn Action>>,
 }
