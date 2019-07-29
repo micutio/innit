@@ -4,13 +4,9 @@
 use std::fmt::Debug;
 use tcod::colors;
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS},
-    },
-    entity::object::Object,
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS};
+use crate::entity::object::Object;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
