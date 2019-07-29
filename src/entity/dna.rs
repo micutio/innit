@@ -16,7 +16,7 @@ use crate::entity::action::Action;
 /// | 0x00 | gene type ID | genome length | trait genes |
 /// +------+--------------+---------------+-------------+
 ///
-/// ### sensor - ID 0x01
+/// ### sensor
 ///
 /// #### Qualities
 ///
@@ -24,24 +24,24 @@ use crate::entity::action::Action;
 /// | ------- | ---- | ---------- |
 /// | sensor  | 0x01 | range      |
 ///
-/// ### processor - ID 0x02
+/// ### processor
 ///
 /// #### Qualities
 ///
 /// | Trait         | ID   | Attributes |
 /// | ------------- | ---- | ---------- |
-/// | quick action  | 0x01 | count      |
+/// | quick action  | 0x02 | count      |
 ///
-/// ### actuator - ID 0x03
+/// ### actuator
 ///
 /// #### Qualities
 ///
 /// | Trait   | ID   | Attributes |
 /// | ------- | ---- | ---------- |
-/// | move    | 0x01 | speed      |
-/// | attack  | 0x02 | damage     |
-/// | defend  | 0x03 | health     |
-/// | rest    | 0x04 | HP regen   |
+/// | move    | 0x03 | speed      |
+/// | attack  | 0x04 | damage     |
+/// | defend  | 0x05 | health     |
+/// | rest    | 0x06 | HP regen   |
 ///
 /// A DNA Genome is implemented as a string of hexadecimal numbers. The start of a gene is marked
 /// by the number zero. Genes can overlap, so that parsing the new gene resumes "in the middle" of
@@ -57,10 +57,116 @@ pub struct DNA {
 }
 
 // TODO: Maybe do away with type IDs and just have one long running list of genes.
-const START: u8 = 0x00;
-const TYPE_SENSOR: u8 = 0x01;
-const TYPE_PROCESSOR: u8 = 0x02;
-const TYPE_ACTUATOR: u8 = 0x03;
+// const START: u8 = 0x00;
+// const TYPE_SENSOR: u8 = 0x01;
+// const TYPE_PROCESSOR: u8 = 0x02;
+// const TYPE_ACTUATOR: u8 = 0x03;
+
+#[derive(PartialEq, Eq, Hash)]
+enum ActionItem {
+    Sense {
+        code:  char,
+        name:  String,
+        range: i32,
+    },
+    QuickAction {
+        code:  char,
+        name:  String,
+        count: i32,
+    },
+    Move {
+        code:  char,
+        name:  String,
+        speed: i32,
+    },
+    Attack {
+        code:  char,
+        name:  String,
+        speed: i32,
+    },
+    Defend {
+        code:   char,
+        name:   String,
+        health: i32,
+    },
+    Rest {
+        code:  char,
+        name:  String,
+        regen: i32,
+    },
+}
+
+// In the following we describe each of the three integral components that give an object its body,
+// mind and behavior.
+// Each of them contains a list of actions related to their domain.
+// TODO: Should attributes be fix on o-trait level or full-on generic as list of attribute objects?
+// TODO: How to best model synergies and anti-synergies across o-traits?
+
+/// This may or may not be body parts. Actuators like organells can also benefit the attributes.
+/// Sensors contain:
+/// - attributes
+///   - range of effective sensing
+///   - accuracy of sensing [future feature]
+/// - functions:
+///   - sense environment
+pub struct Sensor {
+    range:   i32,
+    actions: Vec<ActionItem>,
+}
+
+/// Processors contain:
+/// - attributes:
+///   - capacity, a quantization/modifier of how energy-costly and complex the functions are
+/// - functions:
+///   - setting of primary/secondary actions [player]
+///   - decision making algorithm [player/ai]
+///   - ai control [ai]
+pub struct Processor {
+    capacity: i32,
+    actions:  Vec<ActionItem>,
+}
+
+/// Actuators can actually be concrete body parts e.g., organelles, spikes
+/// Actuators contain:
+/// - attributes:
+///   - speed, a modifier of the energy cost of the functions
+/// - functions:
+///   - move
+///   - attack
+///   - defend
+pub struct Actuator {
+    speed:   i32,
+    actions: Vec<ActionItem>,
+}
+
+/// ActionFactory takes an Action items with its parameters, add in-game situational parameters and
+/// returns a complete instantiated Action.
+pub struct ActionFactory {
+    abstract_item: Option<Box<dyn Action>>,
+}
+
+// impl ActionFactory {
+//     fn new() -> Self {
+//         ActionFactory {
+//             abstract_item: None,
+//         }
+//     }
+
+//     fn abstract_action_from(self, action_item: ActionItem) -> ActionFactory {
+//         let abstract_item = match action_item {
+//             ActionItem::Move{code, name, speed} => {
+//                 Some(Box::new(MoveAction::new()))
+//             }
+//             _ => None
+//         };
+//         self
+//     }
+// }
+
+/// This is a reverse ObjectTraitBuilder. Instead of constructing taits out of DNA, it generates a
+/// DNA from a given set of object traits.
+// TODO: How to map object traits to genes?
+pub struct DnaGenerator {}
 
 /// Not to be confused with Rust traits, object traits are the attributes and functions that the
 /// object receives via its DNA. This constructs the sensor, processor and actuator components of
@@ -180,52 +286,4 @@ fn get_value_at(dna: &[u8], ptr: usize) -> i32 {
     } else {
         -1
     }
-}
-
-/// This is a reverse ObjectTraitBuilder. Instead of constructing taits out of DNA, it generates a
-/// DNA from a given set of object traits.
-// TODO: How to map object traits to genes?
-pub struct DnaGenerator {}
-
-// In the following we describe each of the three integral components that give an object its body,
-// mind and behavior.
-// Each of them contains a list of actions related to their domain.
-// TODO: Should attributes be fix on o-trait level or full-on generic as list of attribute objects?
-// TODO: How to best model synergies and anti-synergies across o-traits?
-
-/// This may or may not be body parts. Actuators like organells can also benefit the attributes.
-/// Sensors contain:
-/// - attributes
-///   - range of effective sensing
-///   - accuracy of sensing [future feature]
-/// - functions:
-///   - sense environment
-pub struct Sensor {
-    range:   i32,
-    actions: Vec<Box<dyn Action>>,
-}
-
-/// Processors contain:
-/// - attributes:
-///   - capacity, a quantization/modifier of how energy-costly and complex the functions are
-/// - functions:
-///   - setting of primary/secondary actions [player]
-///   - decision making algorithm [player/ai]
-///   - ai control [ai]
-pub struct Processor {
-    capacity: i32,
-    actions:  Vec<Box<dyn Action>>,
-}
-
-/// Actuators can actually be concrete body parts e.g., organelles, spikes
-/// Actuators contain:
-/// - attributes:
-///   - speed, a modifier of the energy cost of the functions
-/// - functions:
-///   - move
-///   - attack
-///   - defend
-pub struct Actuator {
-    speed:   i32,
-    actions: Vec<Box<dyn Action>>,
 }
