@@ -29,9 +29,9 @@ pub struct MousePosition {
 /// - the cannel that allows the ui to communicate with the running thread
 /// - the handle of the input thread itself
 pub struct ConcurrentInput {
-    game_input_ref: Arc<Mutex<InputProcessor>>,
+    game_input_ref:  Arc<Mutex<InputProcessor>>,
     input_thread_tx: Sender<InputThreadCommand>,
-    input_thread: JoinHandle<()>,
+    input_thread:    JoinHandle<()>,
 }
 
 /// Since joining the thread consumes the handle, the concurrent input component
@@ -56,8 +56,8 @@ impl ConcurrentInput {
 pub struct GameInput {
     pub current_mouse_pos: MousePosition,
     pub names_under_mouse: String,
-    concurrent_input: Option<ConcurrentInput>,
-    next_action: Option<PlayerAction>,
+    concurrent_input:      Option<ConcurrentInput>,
+    next_action:           Option<PlayerAction>,
 }
 
 impl GameInput {
@@ -66,8 +66,8 @@ impl GameInput {
         GameInput {
             current_mouse_pos: MousePosition { x: 0, y: 0 },
             names_under_mouse: Default::default(),
-            concurrent_input: None,
-            next_action: None,
+            concurrent_input:  None,
+            next_action:       None,
         }
     }
 
@@ -120,7 +120,8 @@ impl GameInput {
 
     /// Check for new input data:
     /// - update inspection if the mouse has moved
-    /// - inject a new action from the queue into the player object if the current one has been consumed
+    /// - inject a new action from the queue into the player object if the current one has been
+    ///   consumed
     pub fn check_for_player_actions(
         &mut self,
         game_state: &mut GameState,
@@ -259,16 +260,16 @@ pub enum UiAction {
 
 /// The input processor maps user input to player actions.
 pub struct InputProcessor {
-    pub mouse_x: i32,
-    pub mouse_y: i32,
+    pub mouse_x:             i32,
+    pub mouse_y:             i32,
     pub next_player_actions: VecDeque<PlayerAction>,
 }
 
 impl InputProcessor {
     pub fn new() -> Self {
         InputProcessor {
-            mouse_x: 0,
-            mouse_y: 0,
+            mouse_x:             0,
+            mouse_y:             0,
             next_player_actions: VecDeque::new(),
         }
     }
@@ -438,8 +439,8 @@ pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action
 // ) -> Option<(i32, i32)> {
 //     use tcod::input::KeyCode::Escape;
 //     loop {
-//         // render the screen. this erases the inventory and shows the names of objects under the mouse
-//         game_io.root.flush();
+//         // render the screen. this erases the inventory and shows the names of objects under the
+// mouse         game_io.root.flush();
 //         let event = input::check_for_event(input::KEY_PRESS | input::MOUSE).map(|e| e.1);
 //         let mut key = None;
 //         match event {
@@ -451,9 +452,10 @@ pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action
 
 //         let (x, y) = (game_io.mouse.cx as i32, game_io.mouse.cy as i32);
 
-//         // accept the target if the player clicked in FOV, and in case a range is specified, if it's in that range
-//         let in_fov = (x < WORLD_WIDTH) && (y < WORLD_HEIGHT) && game_io.fov.is_in_fov(x, y);
-//         let in_range = max_range.map_or(true, |range| objects[PLAYER].distance(x, y) <= range);
+//         // accept the target if the player clicked in FOV, and in case a range is specified, if
+// it's in that range         let in_fov = (x < WORLD_WIDTH) && (y < WORLD_HEIGHT) &&
+// game_io.fov.is_in_fov(x, y);         let in_range = max_range.map_or(true, |range|
+// objects[PLAYER].distance(x, y) <= range);
 
 //         if game_io.mouse.lbutton_pressed && in_fov && in_range {
 //             return Some((x, y));
