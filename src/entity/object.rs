@@ -113,7 +113,7 @@ impl Object {
     }
 
     /// Set the color and then draw the char that represents this object at its position.
-    pub fn draw(&self, con: &mut Console) {
+    pub fn draw(&self, con: &mut dyn Console) {
         con.set_default_foreground(self.visual.color);
         con.put_char(self.x, self.y, self.visual.character, BackgroundFlag::None);
     }

@@ -24,12 +24,12 @@ pub fn new_game() -> (GameState, GameObjects) {
     let mut player = Object::new(0, 0, "player", '@', colors::WHITE, true, false, false);
     player.alive = true;
     player.fighter = Some(Fighter {
-        base_max_hp: 100,
-        hp: 100,
+        base_max_hp:  100,
+        hp:           100,
         base_defense: 1,
-        base_power: 2,
-        on_death: DeathCallback::Player,
-        xp: 0,
+        base_power:   2,
+        on_death:     DeathCallback::Player,
+        xp:           0,
     });
 
     // create array holding all GameObjects
@@ -107,7 +107,7 @@ pub fn game_loop(
 
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-pub fn load_game() -> Result<(GameState, GameObjects), Box<Error>> {
+pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
     let mut json_save_state = String::new();
     let mut file = File::open("savegame")?;
     file.read_to_string(&mut json_save_state)?;
@@ -116,7 +116,7 @@ pub fn load_game() -> Result<(GameState, GameObjects), Box<Error>> {
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<Error>> {
+pub fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
     let save_data = serde_json::to_string(&(game_state, objects))?;
     let mut file = File::create("savegame")?;
     file.write_all(save_data.as_bytes())?;
