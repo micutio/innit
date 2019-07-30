@@ -11,7 +11,7 @@ use crate::entity::fighter::Fighter;
 /// Most of the object components are organized in their own
 ///
 /// ```Option<ComponentType>```
-///
+/// 
 /// fields.
 /// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
 /// other hand, nearly all optional components are determined by the object's genome, except
@@ -36,29 +36,29 @@ use crate::entity::fighter::Fighter;
 /// Attributes:
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
-    pub x: i32,
-    pub y: i32,
-    pub alive: bool,
-    pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
-    pub dna: String,
-    pub visual: Visual,
-    pub physics: Physics,
-    pub tile: Option<Tile>,
-    pub fighter: Option<Fighter>,
-    pub ai: Option<Ai>,
+    pub x:           i32,
+    pub y:           i32,
+    pub alive:       bool,
+    pub energy:      i32, // could be changed into some pseudo-progress like allowed DNA length
+    pub dna:         String,
+    pub visual:      Visual,
+    pub physics:     Physics,
+    pub tile:        Option<Tile>,
+    pub fighter:     Option<Fighter>,
+    pub ai:          Option<Ai>,
     pub next_action: Option<Box<dyn Action>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Visual {
-    pub name: String,
+    pub name:      String,
     pub character: char,
-    pub color: Color,
+    pub color:     Color,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Physics {
-    pub is_blocking: bool,
+    pub is_blocking:       bool,
     pub is_blocking_sight: bool,
     pub is_always_visible: bool,
 }

@@ -39,8 +39,8 @@ pub enum ObjectProcResult {
 /// game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
-    pub log: Messages,
-    pub turn: u128,
+    pub log:           Messages,
+    pub turn:          u128,
     pub dungeon_level: u32,
     current_obj_index: usize,
 }
@@ -52,9 +52,9 @@ impl GameState {
 
         GameState {
             // create the list of game messages and their colors, starts empty
-            log: vec![],
-            turn: 0,
-            dungeon_level: 1,
+            log:               vec![],
+            turn:              0,
+            dungeon_level:     1,
             current_obj_index: 0,
         }
     }
@@ -94,7 +94,7 @@ impl GameState {
         fov_map: &FovMap,
         objects: &mut GameObjects,
         actor: &mut Object,
-        action: Box<Action>,
+        action: Box<dyn Action>,
     ) -> ObjectProcResult {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
@@ -131,14 +131,16 @@ impl GameState {
                 let _consequence_result =
                     self.process_action(fov_map, objects, actor, action.unwrap());
                 // TODO: Think of a way to handle both results of action and consequence.
-                // TODO: extract into function, recursively bubble up results and return the highest priority
+                // TODO: extract into function, recursively bubble up results and return the highest
+                // priority
                 ObjectProcResult::ReRender // use highest priority for now as a dummy
             }
         }
     }
 }
 
-// NOTE: All functions below are hot candidates for a rewrite because they might not fit into the new command pattern system.
+// NOTE: All functions below are hot candidates for a rewrite because they might not fit into the
+// new command pattern system.
 
 pub struct Transition {
     pub level: u32,

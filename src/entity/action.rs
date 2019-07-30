@@ -2,6 +2,7 @@
 //! can be performed by the player or an NPC.
 
 use std::fmt::Debug;
+
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
@@ -47,7 +48,8 @@ impl Action for PassAction {
     ) -> ActionResult {
         // do nothing
         // duh
-        // TODO: make sure all game log messages are only displayed if the cause is visible to the player
+        // TODO: make sure all game log messages are only displayed if the cause is visible to the
+        // player
         if let Some(player) = &game_objects[PLAYER] {
             if player.distance_to(&owner) <= TORCH_RADIUS as f32 && owner.tile.is_none() {
                 // don't record all tiles passing constantly
@@ -70,8 +72,8 @@ impl Action for PassAction {
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AttackAction {
-    base_power: i32,
-    target_id: Option<usize>,
+    base_power:  i32,
+    target_id:   Option<usize>,
     energy_cost: i32,
 }
 
@@ -128,10 +130,11 @@ pub enum Direction {
 }
 
 /// Move an object
-/// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
+/// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable
+/// action.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
-    direction: Direction,
+    direction:   Direction,
     energy_cost: i32,
 }
 
