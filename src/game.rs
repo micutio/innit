@@ -11,7 +11,7 @@ use core::game_objects::GameObjects;
 use core::game_state::{GameState, MessageLog, PLAYER};
 use entity::fighter::{DeathCallback, Fighter};
 use entity::object::Object;
-use ui::game_frontend::{handle_ui_actions, process_visual_feedback, GameFrontend};
+use ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
 
 // world constraints
@@ -61,7 +61,9 @@ pub fn game_loop(
     game_objects: &mut GameObjects,
 ) {
     while !game_frontend.root.window_closed() {
+        // ensure that the player action from previous turns is consumed
         assert!(game_input.is_action_consumed());
+
         // let the game engine process an object
         let process_result = game_state.process_object(game_objects, &game_frontend.fov);
         process_visual_feedback(
@@ -76,10 +78,11 @@ pub fn game_loop(
         game_input.check_for_player_actions(game_state, game_frontend, game_objects);
 
         // distinguish between in-game action and ui (=meta) actions
+        // TODO: Enable multi-key/mouse actions e.g., select target & attack.
         match game_input.get_next_action() {
             Some(PlayerAction::MetaAction(actual_action)) => {
-                debug!("process UI action: {:#?}", actual_action);
-                let is_exit_game = handle_ui_actions(
+                debug!("process meta action: {:#?}", actual_action);
+                let is_exit_game = handle_meta_actions(
                     game_frontend,
                     game_state,
                     game_objects,

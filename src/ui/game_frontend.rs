@@ -31,12 +31,12 @@ pub use tcod::map::Map as FovMap;
 
 /// GameFrontend holds the core components for game's input and output processing.
 pub struct GameFrontend {
-    pub root: Root,
-    pub con: Offscreen,
-    pub panel: Offscreen,
-    pub fov: FovMap,
-    pub input: Option<GameInput>,
-    pub coloring: ColorPalette,
+    pub root:      Root,
+    pub con:       Offscreen,
+    pub panel:     Offscreen,
+    pub fov:       FovMap,
+    pub input:     Option<GameInput>,
+    pub coloring:  ColorPalette,
     is_light_mode: bool,
 }
 
@@ -63,7 +63,8 @@ impl GameFrontend {
             panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             input: None,
-            coloring: ColorPalette::new_light(), // TODO: Save light and dark setting to config file.
+            coloring: ColorPalette::new_light(), /* TODO: Save light and dark setting to config
+                                                  * file. */
             is_light_mode: true,
         }
     }
@@ -595,7 +596,7 @@ fn render_bar(
     );
 }
 
-pub fn handle_ui_actions(
+pub fn handle_meta_actions(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     game_objects: &mut GameObjects,
