@@ -1,4 +1,5 @@
 use crate::entity::action::*;
+use crate::ui::game_input::PlayerInput;
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -65,25 +66,22 @@ pub struct DNA {
 #[derive(PartialEq, Eq, Hash)]
 enum ActionItem {
     Sense {
-        code:  char,
         name:  String,
         range: i32,
     },
     QuickAction {
-        code:  char,
         name:  String,
         count: i32,
     },
     Move {
-        code:  char,
-        name:  String,
-        speed: i32,
+        name:      String,
+        speed:     i32,
         direction: Direction,
     },
     Attack {
-        code:  char,
-        name:  String,
-        speed: i32,
+        name:      String,
+        speed:     i32,
+        target_id: i32,
     },
     Defend {
         code:   char,
@@ -91,10 +89,23 @@ enum ActionItem {
         health: i32,
     },
     Rest {
-        code:  char,
         name:  String,
         regen: i32,
     },
+}
+
+/// Construct a new player action from a given key code.
+// NOTE: In the future we'll have to consider mouse clicks as well.
+pub fn get_player_action(player_action: PlayerInput) -> Box<dyn Action> {
+    // TODO: Use actual action energy costs.
+    // No need to map `Esc` since we filter out exiting before instantiating
+    // any player actions.
+    // println!("player action: {:?}", player_action);
+    match player_action {
+        // TODO: Check if we can actually move!
+        PlayerInput::Move(direction) => Box::new(MoveAction::new(direction, 0)),
+        _ => Box::new(PassAction),
+    }
 }
 
 // In the following we describe each of the three integral components that give an object its body,

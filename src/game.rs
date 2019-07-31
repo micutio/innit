@@ -11,8 +11,9 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
 use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
+use crate::entity::dna::get_player_action;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
-use crate::ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
+use crate::ui::game_input::{GameInput, PlayerInput};
 use crate::ui::player::PLAYER;
 
 // world constraints
@@ -81,14 +82,14 @@ pub fn game_loop(
         // distinguish between in-game action and ui (=meta) actions
         // TODO: Enable multi-key/mouse actions e.g., select target & attack.
         match game_input.get_next_action() {
-            Some(PlayerAction::MetaAction(actual_action)) => {
-                debug!("process meta action: {:#?}", actual_action);
+            Some(PlayerInput::MetaInput(meta_action)) => {
+                debug!("process meta action: {:#?}", meta_action);
                 let is_exit_game = handle_meta_actions(
                     game_frontend,
                     game_state,
                     game_objects,
                     &mut Some(game_input),
-                    actual_action,
+                    meta_action,
                 );
                 if is_exit_game {
                     game_input.stop_concurrent_input();
@@ -99,7 +100,7 @@ pub fn game_loop(
                 debug!("inject ingame action {:#?} to player", ingame_action);
 
                 if let Some(ref mut player) = game_objects[PLAYER] {
-                    let player_next_action = Some(get_player_action_instance(ingame_action));
+                    let player_next_action = Some(get_player_action(ingame_action));
                     debug!("player action object: {:#?}", player_next_action);
                     player.set_next_action(player_next_action);
                 };

@@ -23,7 +23,7 @@ pub struct GameInput {
     pub names_under_mouse: String,
     current_mouse_pos:     MousePosition,
     concurrent_input:      Option<ConcurrentInput>,
-    next_action:           Option<PlayerAction>,
+    next_action:           Option<PlayerInput>,
 }
 
 impl GameInput {
@@ -80,7 +80,7 @@ impl GameInput {
     }
 
     /// Retrieve the next player action
-    pub fn get_next_action(&mut self) -> Option<PlayerAction> {
+    pub fn get_next_action(&mut self) -> Option<PlayerInput> {
         self.next_action.take()
     }
 
@@ -205,7 +205,7 @@ pub enum MyKeyCode {
     // B,
     C,
     // D,
-    // E,
+    E,
     // F,
     // G,
     // H,
@@ -217,7 +217,7 @@ pub enum MyKeyCode {
     // N,
     // O,
     // P,
-    // Q,
+    Q,
     // R,
     // S,
     // T,
@@ -252,9 +252,19 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
         } => self::MyKeyCode::C,
         Key {
             code: Char,
+            printable: 'e',
+            ..
+        } => self::MyKeyCode::E,
+        Key {
+            code: Char,
             printable: 'l',
             ..
         } => self::MyKeyCode::L,
+        Key {
+            code: Char,
+            printable: 'q',
+            ..
+        } => self::MyKeyCode::Q,
         // in-game actions
         Key { code: Up, .. } => self::MyKeyCode::Up,
         Key { code: Down, .. } => self::MyKeyCode::Down,
@@ -268,14 +278,13 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
 }
 
 #[derive(Clone, Debug)]
-pub enum PlayerAction {
-    MetaAction(UiAction),
+pub enum PlayerInput {
+    MetaInput(UiAction),
     // Pending,
     // DoNothing,
-    WalkNorth,
-    WalkSouth,
-    WalkEast,
-    WalkWest,
+    Move(Direction),
+    PrimaryAction,
+    SecondaryAction,
 }
 
 #[derive(Clone, Debug)]
@@ -291,7 +300,7 @@ pub enum UiAction {
 pub struct InputProcessor {
     pub mouse_x:             i32,
     pub mouse_y:             i32,
-    pub next_player_actions: VecDeque<PlayerAction>,
+    pub next_player_actions: VecDeque<PlayerInput>,
 }
 
 impl InputProcessor {
@@ -330,7 +339,7 @@ fn start_input_proc_thread(
     rx: Receiver<InputThreadCommand>,
 ) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
-    let key_to_action_mapping = create_key_mapping();
+    let input_binding = create_key_bindings();
 
     thread::spawn(move || {
         let mut mouse_x: i32 = 0;
@@ -359,8 +368,8 @@ fn start_input_proc_thread(
 
                 // lock our mutex and get to work
                 let mut input = game_input_buf.lock().unwrap();
-                // let player_action: PlayerAction =
-                if let Some(key) = key_to_action_mapping.get(&tcod_to_my_key_code(_key)) {
+                // let player_action: PlayerInput =
+                if let Some(key) = input_binding.get(&tcod_to_my_key_code(_key)) {
                     trace!("[input thread] push back {:?}", key);
                     input.next_player_actions.push_back(key.clone());
                 };
@@ -392,42 +401,28 @@ fn start_input_proc_thread(
 }
 
 /// Create a mapping between our own key codes and player actions.
-fn create_key_mapping() -> HashMap<MyKeyCode, PlayerAction> {
+fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
-    use self::PlayerAction::*;
+    use self::PlayerInput::*;
     use self::UiAction::*;
 
-    let mut key_map: HashMap<MyKeyCode, PlayerAction> = HashMap::new();
+    let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(Up, WalkNorth);
-    key_map.insert(Down, WalkSouth);
-    key_map.insert(Left, WalkWest);
-    key_map.insert(Right, WalkEast);
+    key_map.insert(Up, Move(Direction::North));
+    key_map.insert(Down, Move(Direction::South));
+    key_map.insert(Left, Move(Direction::West));
+    key_map.insert(Right, Move(Direction::East));
+    key_map.insert(Q, PrimaryAction);
+    key_map.insert(E, SecondaryAction);
     // set up all non-in-game actions.
-    key_map.insert(Esc, MetaAction(ExitGameLoop));
-    key_map.insert(F4, MetaAction(Fullscreen));
-    key_map.insert(C, MetaAction(CharacterScreen));
-    key_map.insert(L, MetaAction(ToggleDarkLightMode));
+    key_map.insert(Esc, MetaInput(ExitGameLoop));
+    key_map.insert(F4, MetaInput(Fullscreen));
+    key_map.insert(C, MetaInput(CharacterScreen));
+    key_map.insert(L, MetaInput(ToggleDarkLightMode));
 
     key_map
-}
-
-/// Construct a new player action from a given key code.
-// NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
-    // TODO: Use actual action energy costs.
-    // No need to map `Esc` since we filter out exiting before instantiating
-    // any player actions.
-    // println!("player action: {:?}", player_action);
-    match player_action {
-        PlayerAction::WalkNorth => Box::new(MoveAction::new(Direction::North, 0)),
-        PlayerAction::WalkSouth => Box::new(MoveAction::new(Direction::South, 0)),
-        PlayerAction::WalkEast => Box::new(MoveAction::new(Direction::East, 0)),
-        PlayerAction::WalkWest => Box::new(MoveAction::new(Direction::West, 0)),
-        _ => Box::new(PassAction),
-    }
 }
 
 // /// return the position of a tile left-clicked in player's FOV (optionally in a range),
