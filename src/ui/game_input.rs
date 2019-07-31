@@ -290,6 +290,7 @@ pub enum PlayerInput {
 #[derive(Clone, Debug)]
 pub enum UiAction {
     // UndefinedUi,
+    // TODO: Add `SetPrimaryAction`, `SetSecondaryAction`.
     ExitGameLoop,
     Fullscreen,
     CharacterScreen,
