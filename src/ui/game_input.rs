@@ -7,7 +7,7 @@ use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState};
+use crate::core::game_state::GameState;
 use crate::entity::action::*;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 use crate::ui::player::PLAYER;
@@ -276,7 +276,7 @@ impl InputProcessor {
     }
 }
 
-pub fn get_names_under_mouse(
+fn get_names_under_mouse(
     objects: &GameObjects,
     fov_map: &FovMap,
     mouse_x: i32,
