@@ -5,6 +5,7 @@ use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
+use crate::entity::dna::{Actuator, Processor, Sensor};
 use crate::entity::fighter::Fighter;
 
 /// An Object represents the base structure for all entities in the game.
@@ -46,6 +47,9 @@ pub struct Object {
     pub tile:        Option<Tile>,
     pub fighter:     Option<Fighter>,
     pub ai:          Option<Ai>,
+    pub sensor:      Option<Sensor>,
+    pub processor:   Option<Processor>,
+    pub actuator:    Option<Actuator>,
     pub next_action: Option<Box<dyn Action>>,
 }
 
@@ -99,6 +103,9 @@ impl Object {
             tile: None,
             fighter: None,
             ai: None,
+            sensor: None,
+            processor: None,
+            actuator: None,
             next_action: None,
         }
     }

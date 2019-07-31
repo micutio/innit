@@ -63,7 +63,7 @@ pub struct DNA {
 // const TYPE_PROCESSOR: u8 = 0x02;
 // const TYPE_ACTUATOR: u8 = 0x03;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 enum ActionItem {
     Sense {
         name:  String,
@@ -84,7 +84,6 @@ enum ActionItem {
         target_id: i32,
     },
     Defend {
-        code:   char,
         name:   String,
         health: i32,
     },
@@ -95,13 +94,15 @@ enum ActionItem {
 }
 
 /// Construct a new player action from a given key code.
+/// Get player's action item that corresponds with the player input and construct a new action
+/// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn get_player_action(player_action: PlayerInput) -> Box<dyn Action> {
+pub fn get_player_action(player_input: PlayerInput) -> Box<dyn Action> {
     // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     // println!("player action: {:?}", player_action);
-    match player_action {
+    match player_input {
         // TODO: Check if we can actually move!
         PlayerInput::Move(direction) => Box::new(MoveAction::new(direction, 0)),
         _ => Box::new(PassAction),
@@ -121,6 +122,7 @@ pub fn get_player_action(player_action: PlayerInput) -> Box<dyn Action> {
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sensor {
     range:   i32,
     actions: Vec<ActionItem>,
@@ -133,6 +135,7 @@ pub struct Sensor {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Processor {
     capacity: i32,
     actions:  Vec<ActionItem>,
@@ -146,6 +149,7 @@ pub struct Processor {
 ///   - move
 ///   - attack
 ///   - defend
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Actuator {
     speed:   i32,
     actions: Vec<ActionItem>,
