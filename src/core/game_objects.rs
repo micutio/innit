@@ -1,9 +1,9 @@
 use std::ops::{Index, IndexMut};
 
-use crate::core::game_state::PLAYER;
 use crate::core::world::world_gen::Tile;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::ui::player::PLAYER;
 
 /// The game object struct contains all game objects, including
 /// * player character

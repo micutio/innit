@@ -7,9 +7,10 @@ use std::thread::{self, JoinHandle};
 use tcod::input::{self, Event, Key, Mouse};
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, PLAYER};
+use crate::core::game_state::{GameState};
 use crate::entity::action::*;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
+use crate::ui::player::PLAYER;
 
 /// Enum for thread control.
 #[derive(Debug, Clone, Copy)]

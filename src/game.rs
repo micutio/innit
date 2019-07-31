@@ -7,12 +7,13 @@ use std::io::{Read, Write};
 
 use tcod::colors;
 
-use core::game_objects::GameObjects;
-use core::game_state::{GameState, MessageLog, PLAYER};
-use entity::fighter::{DeathCallback, Fighter};
-use entity::object::Object;
-use ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
-use ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, MessageLog};
+use crate::entity::fighter::{DeathCallback, Fighter};
+use crate::entity::object::Object;
+use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
+use crate::ui::game_input::{get_player_action_instance, GameInput, PlayerAction};
+use crate::ui::player::PLAYER;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;

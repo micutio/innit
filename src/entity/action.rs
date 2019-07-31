@@ -6,8 +6,9 @@ use std::fmt::Debug;
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, PLAYER, TORCH_RADIUS};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, TORCH_RADIUS};
 use crate::entity::object::Object;
+use crate::ui::player::PLAYER;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -121,7 +122,7 @@ impl Action for AttackAction {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Direction {
     North,
     South,

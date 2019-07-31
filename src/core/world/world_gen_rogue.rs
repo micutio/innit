@@ -3,12 +3,13 @@ use std::cmp;
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{from_dungeon_level, Transition, PLAYER};
+use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{Tile, WorldGen};
 use crate::entity::ai::Ai;
 use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::ui::player::PLAYER;
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -172,12 +173,12 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
                         false,
                     );
                     virus.fighter = Some(Fighter {
-                        base_max_hp: 10,
-                        hp: 10,
+                        base_max_hp:  10,
+                        hp:           10,
                         base_defense: 0,
-                        base_power: 3,
-                        on_death: DeathCallback::Monster,
-                        xp: 35,
+                        base_power:   3,
+                        on_death:     DeathCallback::Monster,
+                        xp:           35,
                     });
                     virus.ai = Some(Ai::Basic);
                     virus
@@ -194,12 +195,12 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
                         false,
                     );
                     bacteria.fighter = Some(Fighter {
-                        base_max_hp: 16,
-                        hp: 16,
+                        base_max_hp:  16,
+                        hp:           16,
                         base_defense: 1,
-                        base_power: 4,
-                        on_death: DeathCallback::Monster,
-                        xp: 100,
+                        base_power:   4,
+                        on_death:     DeathCallback::Monster,
+                        xp:           100,
                     });
                     bacteria.ai = Some(Ai::Basic);
                     bacteria

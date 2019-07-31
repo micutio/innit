@@ -1,4 +1,4 @@
-use crate::entity::action::Action;
+use crate::entity::action::*;
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -78,6 +78,7 @@ enum ActionItem {
         code:  char,
         name:  String,
         speed: i32,
+        direction: Direction,
     },
     Attack {
         code:  char,

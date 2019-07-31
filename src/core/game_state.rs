@@ -6,8 +6,8 @@ use crate::core::world::world_gen_rogue::RogueWorldGenerator;
 use crate::entity::action::*;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{AnimationType, FovMap};
+use crate::ui::player::PLAYER;
 
-pub const PLAYER: usize = 0; // player object reference, index of the object vector
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
 
 /// Messages are expressed as colored text.

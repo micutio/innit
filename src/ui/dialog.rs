@@ -4,17 +4,12 @@
 /// or simple message boxes.
 use tcod::{chars, console::*, input::Key};
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, PLAYER},
-    },
-    ui::{
-        game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH},
-        game_input::GameInput,
-    },
-    util::modulus,
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState};
+use crate::ui::game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::ui::game_input::GameInput;
+use crate::ui::player::PLAYER;
+use crate::util::modulus;
 
 // message box measurements
 pub const MSG_X: i32 = BAR_WIDTH + 2;
