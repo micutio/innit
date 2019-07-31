@@ -12,41 +12,6 @@ use crate::entity::action::*;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 use crate::ui::player::PLAYER;
 
-/// Enum for thread control.
-#[derive(Debug, Clone, Copy)]
-enum InputThreadCommand {
-    Resume,
-    Pause,
-    Stop,
-}
-
-pub struct MousePosition {
-    x: i32,
-    y: i32,
-}
-
-/// Concurrent input contains
-/// - the action queue that is shared between game and concurrent input listener thread
-/// - the cannel that allows the ui to communicate with the running thread
-/// - the handle of the input thread itself
-pub struct ConcurrentInput {
-    game_input_ref:  Arc<Mutex<InputProcessor>>,
-    input_thread_tx: Sender<InputThreadCommand>,
-    input_thread:    JoinHandle<()>,
-}
-
-/// Since joining the thread consumes the handle, the concurrent input component
-/// needs to be moved out of the game input structure before doing so.
-/// To restart the thread, the game input will instantiate a new concurrent component.
-impl ConcurrentInput {
-    fn join_thread(self) {
-        match self.input_thread.join() {
-            Ok(_) => debug!("successfully joined user input thread"),
-            Err(e) => error!("error while trying to join user input thread: {:#?}", e),
-        }
-    }
-}
-
 /// The game input contains fields for
 /// - current mouse position
 /// - the names of all objects currently `inspected` by the mouse cursor
@@ -55,8 +20,8 @@ impl ConcurrentInput {
 /// This encapsulated the complete game input handling and constitutes the
 /// interface towards the frontend.
 pub struct GameInput {
-    pub current_mouse_pos: MousePosition,
     pub names_under_mouse: String,
+    current_mouse_pos:     MousePosition,
     concurrent_input:      Option<ConcurrentInput>,
     next_action:           Option<PlayerAction>,
 }
@@ -197,10 +162,45 @@ impl GameInput {
     }
 }
 
+/// Enum for thread control.
+#[derive(Debug, Clone, Copy)]
+enum InputThreadCommand {
+    Resume,
+    Pause,
+    Stop,
+}
+
+struct MousePosition {
+    x: i32,
+    y: i32,
+}
+
+/// Concurrent input contains
+/// - the action queue that is shared between game and concurrent input listener thread
+/// - the cannel that allows the ui to communicate with the running thread
+/// - the handle of the input thread itself
+struct ConcurrentInput {
+    game_input_ref:  Arc<Mutex<InputProcessor>>,
+    input_thread_tx: Sender<InputThreadCommand>,
+    input_thread:    JoinHandle<()>,
+}
+
+/// Since joining the thread consumes the handle, the concurrent input component
+/// needs to be moved out of the game input structure before doing so.
+/// To restart the thread, the game input will instantiate a new concurrent component.
+impl ConcurrentInput {
+    fn join_thread(self) {
+        match self.input_thread.join() {
+            Ok(_) => debug!("successfully joined user input thread"),
+            Err(e) => error!("error while trying to join user input thread: {:#?}", e),
+        }
+    }
+}
+
 /// As tcod's key codes don't implement `Eq` and `Hash` they cannot be used
 /// as keys in a hash table. So to still be able to hash keys, we define our own.
 #[derive(PartialEq, Eq, Hash)]
-pub enum KeyCode {
+pub enum MyKeyCode {
     // A,
     // B,
     C,
@@ -237,6 +237,34 @@ pub enum KeyCode {
     // F2,
     // F3,
     F4,
+}
+
+/// Translate between tcod's keys and our own key codes.
+fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
+    use tcod::input::KeyCode::*;
+
+    match tcod_key {
+        // letters
+        Key {
+            code: Char,
+            printable: 'c',
+            ..
+        } => self::MyKeyCode::C,
+        Key {
+            code: Char,
+            printable: 'l',
+            ..
+        } => self::MyKeyCode::L,
+        // in-game actions
+        Key { code: Up, .. } => self::MyKeyCode::Up,
+        Key { code: Down, .. } => self::MyKeyCode::Down,
+        Key { code: Right, .. } => self::MyKeyCode::Right,
+        Key { code: Left, .. } => self::MyKeyCode::Left,
+        // non-in-game actions
+        Key { code: Escape, .. } => self::MyKeyCode::Esc,
+        Key { code: F4, .. } => self::MyKeyCode::F4,
+        _ => self::MyKeyCode::UndefinedKey,
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -332,7 +360,7 @@ fn start_input_proc_thread(
                 // lock our mutex and get to work
                 let mut input = game_input_buf.lock().unwrap();
                 // let player_action: PlayerAction =
-                if let Some(key) = key_to_action_mapping.get(&tcod_to_key_code(_key)) {
+                if let Some(key) = key_to_action_mapping.get(&tcod_to_my_key_code(_key)) {
                     trace!("[input thread] push back {:?}", key);
                     input.next_player_actions.push_back(key.clone());
                 };
@@ -363,41 +391,13 @@ fn start_input_proc_thread(
     })
 }
 
-/// Translate between tcod's keys and our own key codes.
-fn tcod_to_key_code(tcod_key: tcod::input::Key) -> self::KeyCode {
-    use tcod::input::KeyCode::*;
-
-    match tcod_key {
-        // letters
-        Key {
-            code: Char,
-            printable: 'c',
-            ..
-        } => self::KeyCode::C,
-        Key {
-            code: Char,
-            printable: 'l',
-            ..
-        } => self::KeyCode::L,
-        // in-game actions
-        Key { code: Up, .. } => self::KeyCode::Up,
-        Key { code: Down, .. } => self::KeyCode::Down,
-        Key { code: Right, .. } => self::KeyCode::Right,
-        Key { code: Left, .. } => self::KeyCode::Left,
-        // non-in-game actions
-        Key { code: Escape, .. } => self::KeyCode::Esc,
-        Key { code: F4, .. } => self::KeyCode::F4,
-        _ => self::KeyCode::UndefinedKey,
-    }
-}
-
 /// Create a mapping between our own key codes and player actions.
-fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
-    use self::KeyCode::*;
+fn create_key_mapping() -> HashMap<MyKeyCode, PlayerAction> {
+    use self::MyKeyCode::*;
     use self::PlayerAction::*;
     use self::UiAction::*;
 
-    let mut key_map: HashMap<KeyCode, PlayerAction> = HashMap::new();
+    let mut key_map: HashMap<MyKeyCode, PlayerAction> = HashMap::new();
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
@@ -415,7 +415,7 @@ fn create_key_mapping() -> HashMap<KeyCode, PlayerAction> {
 }
 
 /// Construct a new player action from a given key code.
-/// NOTE: In the future we'll have to consider mouse clicks as well.
+// NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn get_player_action_instance(player_action: PlayerAction) -> Box<dyn Action> {
     // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating
