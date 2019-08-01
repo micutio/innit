@@ -9,6 +9,7 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
+use crate::entity::dna::TraitID;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 use crate::ui::player::PLAYER;
 
@@ -280,11 +281,7 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
     MetaInput(UiAction),
-    // Pending,
-    // DoNothing,
-    Move(Direction),
-    PrimaryAction,
-    SecondaryAction,
+    PlayInput(PlayAction),
 }
 
 #[derive(Clone, Debug)]
@@ -295,6 +292,19 @@ pub enum UiAction {
     Fullscreen,
     CharacterScreen,
     ToggleDarkLightMode,
+}
+
+#[derive(Clone, Debug)]
+pub enum PlayAction {
+    Move(TraitID, PlayActionParameter),
+    PrimaryAction(PlayActionParameter),
+    SecondaryAction(PlayActionParameter),
+}
+
+#[derive(Clone, Debug)]
+pub enum PlayActionParameter {
+    Dir {dir: Direction},
+    Target {x: i32, y: i32},
 }
 
 /// The input processor maps user input to player actions.
@@ -368,14 +378,16 @@ fn start_input_proc_thread(
                 }
 
                 // lock our mutex and get to work
-                let mut input = game_input_buf.lock().unwrap();
-                // let player_action: PlayerInput =
-                if let Some(key) = input_binding.get(&tcod_to_my_key_code(_key)) {
-                    trace!("[input thread] push back {:?}", key);
-                    input.next_player_actions.push_back(key.clone());
+                let mut input_buffer = game_input_buf.lock().unwrap();
+                // TODO: Get bound input here and add context, a.k.a target, direction or whatever.
+                if let Some(player_input) = input_binding.get(&tcod_to_my_key_code(_key)) {
+                    trace!("[input thread] push back {:?}", player_input);
+                    input_buffer
+                        .next_player_actions
+                        .push_back(player_input.clone());
                 };
-                input.mouse_x = mouse_x;
-                input.mouse_y = mouse_y;
+                input_buffer.mouse_x = mouse_x;
+                input_buffer.mouse_y = mouse_y;
             }
 
             match rx.try_recv() {
@@ -411,12 +423,12 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(Up, Move(Direction::North));
-    key_map.insert(Down, Move(Direction::South));
-    key_map.insert(Left, Move(Direction::West));
-    key_map.insert(Right, Move(Direction::East));
-    key_map.insert(Q, PrimaryAction);
-    key_map.insert(E, SecondaryAction);
+    key_map.insert(Up, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::North})));
+    key_map.insert(Down, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::South})));
+    key_map.insert(Left, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::West})));
+    key_map.insert(Right, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::East})));
+    key_map.insert(Q, PlayInput(PlayAction::PrimaryAction(PlayActionParameter::Target{x: 0, y: 0})));
+    key_map.insert(E, PlayInput(PlayAction::SecondaryAction(PlayActionParameter::Target{x: 0, y: 0})));
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));

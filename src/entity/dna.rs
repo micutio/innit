@@ -1,5 +1,4 @@
-use crate::entity::action::*;
-use crate::ui::game_input::PlayerInput;
+use crate::{entity::action::*, ui::game_input::PlayerInput};
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -63,48 +62,43 @@ pub struct DNA {
 // const TYPE_PROCESSOR: u8 = 0x02;
 // const TYPE_ACTUATOR: u8 = 0x03;
 
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+pub enum SuperTrait {
+    Sense,
+    Process,
+    Actuate,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
+pub enum TraitID {
+    Sense,
+    QuickAction,
+    Move,
+    Attack,
+    Defend,
+    Rest,
+}
+
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-enum ActionItem {
-    Sense {
-        name:  String,
-        range: i32,
-    },
-    QuickAction {
-        name:  String,
-        count: i32,
-    },
-    Move {
-        name:      String,
-        speed:     i32,
-        direction: Direction,
-    },
-    Attack {
-        name:      String,
-        speed:     i32,
-        target_id: i32,
-    },
-    Defend {
-        name:   String,
-        health: i32,
-    },
-    Rest {
-        name:  String,
-        regen: i32,
-    },
+pub struct ActionPrototype {
+    super_trait: SuperTrait,
+        trait_id: TraitID,
+        name:        String,
+        parameter:       i32,
 }
 
 /// Construct a new player action from a given key code.
 /// Get player's action item that corresponds with the player input and construct a new action
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn get_player_action(player_input: PlayerInput) -> Box<dyn Action> {
+pub fn get_player_action(input: PlayerInput, prototype: Option<&ActionPrototype>) -> Box<dyn Action> {
     // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     // println!("player action: {:?}", player_action);
-    match player_input {
+    match (input, prototype) {
         // TODO: Check if we can actually move!
-        PlayerInput::Move(direction) => Box::new(MoveAction::new(direction, 0)),
+        PlayerInput::PlayInput(Move(TraitID::Move, direction), Some(ActionPrototype{super_trait, trait_id, name, parameter})) => Box::new(MoveAction::new(direction, *parameter)),
         _ => Box::new(PassAction),
     }
 }
@@ -124,8 +118,7 @@ pub fn get_player_action(player_input: PlayerInput) -> Box<dyn Action> {
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sensor {
-    range:   i32,
-    actions: Vec<ActionItem>,
+    actions: Vec<ActionPrototype>,
 }
 
 /// Processors contain:
@@ -137,8 +130,7 @@ pub struct Sensor {
 ///   - ai control [ai]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Processor {
-    capacity: i32,
-    actions:  Vec<ActionItem>,
+    actions: Vec<ActionPrototype>,
 }
 
 /// Actuators can actually be concrete body parts e.g., organelles, spikes
@@ -151,33 +143,8 @@ pub struct Processor {
 ///   - defend
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Actuator {
-    speed:   i32,
-    actions: Vec<ActionItem>,
+    actions: Vec<ActionPrototype>,
 }
-
-/// ActionFactory takes an Action items with its parameters, add in-game situational parameters and
-/// returns a complete instantiated Action.
-pub struct ActionFactory {
-    abstract_item: Option<Box<dyn Action>>,
-}
-
-// impl ActionFactory {
-//     fn new() -> Self {
-//         ActionFactory {
-//             abstract_item: None,
-//         }
-//     }
-
-//     fn abstract_action_from(self, action_item: ActionItem) -> ActionFactory {
-//         let abstract_item = match action_item {
-//             ActionItem::Move{code, name, speed} => {
-//                 Some(Box::new(MoveAction::new()))
-//             }
-//             _ => None
-//         };
-//         self
-//     }
-// }
 
 /// This is a reverse ObjectTraitBuilder. Instead of constructing taits out of DNA, it generates a
 /// DNA from a given set of object traits.
@@ -203,18 +170,9 @@ pub struct DnaGenerator {}
 //     }
 // }
 pub fn build_object_traits(dna: &[u8]) -> (Sensor, Processor, Actuator) {
-    let mut sensor = Sensor {
-        range:   0,
-        actions: vec![],
-    };
-    let mut processor = Processor {
-        capacity: 0,
-        actions:  vec![],
-    };
-    let mut actuator = Actuator {
-        speed:   0,
-        actions: vec![],
-    };
+    let mut sensor = Sensor { actions: vec![] };
+    let mut processor = Processor { actions: vec![] };
+    let mut actuator = Actuator { actions: vec![] };
 
     let mut ptr = 1;
 
@@ -251,7 +209,7 @@ fn read_sensor(dna: &[u8], ptr: &usize, sensor: &mut Sensor) -> usize {
         }
         0 => {}
         _x => {
-            sensor.range = (sensor.range + _x) / 2;
+            // sensor.range = (sensor.range + _x) / 2;
             next_start_ptr += 1;
         }
     }
@@ -270,7 +228,7 @@ fn read_processor(dna: &[u8], ptr: &usize, processor: &mut Processor) -> usize {
         }
         0 => {}
         _x => {
-            processor.capacity = (processor.capacity + _x) / 2;
+            // processor.capacity = (processor.capacity + _x) / 2;
             next_start_ptr += 1;
         }
     }
@@ -288,7 +246,7 @@ fn read_actuator(dna: &[u8], ptr: &usize, actuator: &mut Actuator) -> usize {
         }
         0 => {}
         _x => {
-            actuator.speed = (actuator.speed + _x) / 2;
+            // actuator.speed = (actuator.speed + _x) / 2;
             next_start_ptr += 1;
         }
     }
