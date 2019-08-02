@@ -1,4 +1,4 @@
-use crate::{entity::action::*, ui::game_input::PlayerInput};
+use crate::{entity::action::*, ui::game_input::PlayAction};
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -73,6 +73,8 @@ pub enum SuperTrait {
 pub enum TraitID {
     Sense,
     QuickAction,
+    PrimaryAction,
+    SecondaryAction,
     Move,
     Attack,
     Defend,
@@ -81,24 +83,31 @@ pub enum TraitID {
 
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
-    super_trait: SuperTrait,
-        trait_id: TraitID,
-        name:        String,
-        parameter:       i32,
+    pub super_trait: SuperTrait,
+    pub trait_id:    TraitID,
+    pub name:        String,
+    pub parameter:   i32,
 }
 
 /// Construct a new player action from a given key code.
 /// Get player's action item that corresponds with the player input and construct a new action
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn get_player_action(input: PlayerInput, prototype: Option<&ActionPrototype>) -> Box<dyn Action> {
+pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
+    use self::TraitID::*;
+    use ui::game_input::PlayActionParameter::*;
     // TODO: Use actual action energy costs.
     // No need to map `Esc` since we filter out exiting before instantiating
     // any player actions.
     // println!("player action: {:?}", player_action);
-    match (input, prototype) {
+    match input {
+        PlayAction {
+            trait_id: Move,
+            param: Orientation(dir),
+        } => Box::new(MoveAction::new(dir, prototype.parameter)),
         // TODO: Check if we can actually move!
-        PlayerInput::PlayInput(Move(TraitID::Move, direction), Some(ActionPrototype{super_trait, trait_id, name, parameter})) => Box::new(MoveAction::new(direction, *parameter)),
+        // (PlayInput(Move(TraitID::Move, Cardinal(Direction))), Some(action_prototype)) =>
+        // Box::new(MoveAction::new(Direction, action_prototype.parameter)),
         _ => Box::new(PassAction),
     }
 }

@@ -284,10 +284,9 @@ pub enum PlayerInput {
     PlayInput(PlayAction),
 }
 
+// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`.
 #[derive(Clone, Debug)]
 pub enum UiAction {
-    // UndefinedUi,
-    // TODO: Add `SetPrimaryAction`, `SetSecondaryAction`.
     ExitGameLoop,
     Fullscreen,
     CharacterScreen,
@@ -295,17 +294,26 @@ pub enum UiAction {
 }
 
 #[derive(Clone, Debug)]
-pub enum PlayAction {
-    Move(TraitID, PlayActionParameter),
-    PrimaryAction(PlayActionParameter),
-    SecondaryAction(PlayActionParameter),
+pub struct PlayAction {
+    pub trait_id: TraitID,
+    pub param: PlayActionParameter,
+}
+
+impl PlayAction {
+    pub fn new(trait_id: TraitID, param: PlayActionParameter) -> Self {
+        PlayAction {
+            trait_id,
+            param,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
 pub enum PlayActionParameter {
-    Dir {dir: Direction},
+    Orientation(Direction),
     Target {x: i32, y: i32},
 }
+
 
 /// The input processor maps user input to player actions.
 pub struct InputProcessor {
@@ -418,17 +426,18 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
     use self::PlayerInput::*;
     use self::UiAction::*;
+    use self::PlayActionParameter::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(Up, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::North})));
-    key_map.insert(Down, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::South})));
-    key_map.insert(Left, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::West})));
-    key_map.insert(Right, PlayInput(PlayAction::Move(TraitID::Move, PlayActionParameter::Dir{dir: Direction::East})));
-    key_map.insert(Q, PlayInput(PlayAction::PrimaryAction(PlayActionParameter::Target{x: 0, y: 0})));
-    key_map.insert(E, PlayInput(PlayAction::SecondaryAction(PlayActionParameter::Target{x: 0, y: 0})));
+    key_map.insert(Up,   PlayInput(PlayAction::new(TraitID::Move, Orientation(Direction::North))));
+    key_map.insert(Down, PlayInput(PlayAction::new(TraitID::Move, Orientation(Direction::South))));
+    key_map.insert(Left, PlayInput(PlayAction::new(TraitID::Move, Orientation(Direction::West))));
+    key_map.insert(Right, PlayInput(PlayAction::new(TraitID::Move, Orientation(Direction::East))));
+    key_map.insert(Q, PlayInput(PlayAction::new(TraitID::PrimaryAction, Target{x: 0, y: 0})));
+    key_map.insert(E, PlayInput(PlayAction::new(TraitID::SecondaryAction, Target{x: 0, y: 0})));
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));

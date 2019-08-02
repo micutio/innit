@@ -1,20 +1,30 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Write};
+use std::{
+    error::Error,
+    fs::File,
+    io::{Read, Write},
+};
 
 use tcod::colors;
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog};
-use crate::entity::fighter::{DeathCallback, Fighter};
-use crate::entity::object::Object;
-use crate::entity::dna::get_player_action;
-use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
-use crate::ui::game_input::{GameInput, PlayerInput};
-use crate::ui::player::PLAYER;
+use crate::{
+    core::{
+        game_objects::GameObjects,
+        game_state::{GameState, MessageLog},
+    },
+    entity::{
+        dna::get_player_action,
+        fighter::{DeathCallback, Fighter},
+        object::Object,
+    },
+    ui::{
+        game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend},
+        game_input::{GameInput, PlayerInput},
+        player::PLAYER,
+    },
+};
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -96,13 +106,26 @@ pub fn game_loop(
                     break;
                 }
             }
-            Some(ingame_action) => {
+            Some(PlayerInput::PlayInput(ingame_action)) => {
                 debug!("inject ingame action {:#?} to player", ingame_action);
-
+                debug!("attempting to get player {:#?}", game_objects[PLAYER]);
                 if let Some(ref mut player) = game_objects[PLAYER] {
-                    let player_next_action = Some(get_player_action(ingame_action));
-                    debug!("player action object: {:#?}", player_next_action);
-                    player.set_next_action(player_next_action);
+                    debug!(
+                        "attempting to get prototype {:#?}",
+                        player
+                            .actions
+                            .iter()
+                            .find(|a| a.trait_id == ingame_action.trait_id)
+                    );
+                    if let Some(prototype) = player
+                        .actions
+                        .iter()
+                        .find(|a| a.trait_id == ingame_action.trait_id)
+                    {
+                        let next_action = Some(get_player_action(ingame_action, prototype));
+                        debug!("player action object: {:#?}", next_action);
+                        player.set_next_action(next_action);
+                    }
                 };
             }
             None => {}
