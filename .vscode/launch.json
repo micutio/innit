@@ -7,7 +7,7 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'innit'",
+            "name": "Debug executable 'Innit'",
             "cargo": {
                 "args": [
                     "build",
