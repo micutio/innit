@@ -89,6 +89,10 @@ pub struct ActionPrototype {
     pub parameter:   i32,
 }
 
+/// Create a dna string (char array) from a set of traits.
+// TODO: Add parameters to control distribution of sense, process and 
+pub fn generate_dna()
+
 /// Construct a new player action from a given key code.
 /// Get player's action item that corresponds with the player input and construct a new action
 /// from the parameters in both
@@ -96,10 +100,6 @@ pub struct ActionPrototype {
 pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
     use self::TraitID::*;
     use ui::game_input::PlayActionParameter::*;
-    // TODO: Use actual action energy costs.
-    // No need to map `Esc` since we filter out exiting before instantiating
-    // any player actions.
-    // println!("player action: {:?}", player_action);
     match input {
         PlayAction {
             trait_id: Move,
@@ -154,11 +154,6 @@ pub struct Processor {
 pub struct Actuator {
     actions: Vec<ActionPrototype>,
 }
-
-/// This is a reverse ObjectTraitBuilder. Instead of constructing taits out of DNA, it generates a
-/// DNA from a given set of object traits.
-// TODO: How to map object traits to genes?
-pub struct DnaGenerator {}
 
 /// Not to be confused with Rust traits, object traits are the attributes and functions that the
 /// object receives via its DNA. This constructs the sensor, processor and actuator components of
