@@ -90,8 +90,24 @@ pub struct ActionPrototype {
 }
 
 /// Create a dna string (char array) from a set of traits.
-// TODO: Add parameters to control distribution of sense, process and 
-pub fn generate_dna()
+// TODO: Add parameters to control distribution of sense, process and actuate
+pub fn generate_dna() {
+    use self::TraitID::*;
+    let trait_set = [
+        Sense,
+        QuickAction,
+        PrimaryAction,
+        SecondaryAction,
+        Move,
+        Attack,
+        Defend,
+        Rest,
+    ];
+    // TODO:
+    //      - map traits to gray code
+    //      - randomly grab a trait and add trait id, length and random attribute value
+    //      - append to genome
+}
 
 /// Construct a new player action from a given key code.
 /// Get player's action item that corresponds with the player input and construct a new action
