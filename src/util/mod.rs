@@ -1,5 +1,7 @@
 //! Utilites contains useful functions that are unrelated to any of the main game modules.
 
+pub mod game_rng;
+
 extern crate num;
 use self::num::Num;
 
