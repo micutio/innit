@@ -1,4 +1,6 @@
-use crate::{entity::action::*, ui::game_input::PlayAction};
+use crate::entity::action::*;
+use crate::ui::game_input::PlayAction;
+use crate::util::game_rng::{GameRng, RngType};
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -91,7 +93,7 @@ pub struct ActionPrototype {
 
 /// Create a dna string (char array) from a set of traits.
 // TODO: Add parameters to control distribution of sense, process and actuate
-pub fn generate_dna() {
+pub fn generate_dna(game_rng: &mut GameRng<RngType>) {
     use self::TraitID::*;
     let trait_set = [
         Sense,
