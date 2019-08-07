@@ -1,6 +1,9 @@
+use rand::Rng;
+
 use crate::entity::action::*;
 use crate::ui::game_input::PlayAction;
 use crate::util::game_rng::{GameRng, RngType};
+use crate::util::generate_gray_code;
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
 /// module allows to generate objects from DNA and modify them using mutation as well as crossing.
@@ -91,24 +94,64 @@ pub struct ActionPrototype {
     pub parameter:   i32,
 }
 
-/// Create a dna string (char array) from a set of traits.
+// /// Create a dna string (char array) from a set of traits.
+// 
+// pub fn generate_dna(game_rng: &mut GameRng<RngType>) {
+//     use self::TraitID::*;
+//     let trait_set = [
+//         Sense,
+//         QuickAction,
+//         PrimaryAction,
+//         SecondaryAction,
+//         Move,
+//         Attack,
+//         Defend,
+//         Rest,
+//     ];
+//     // TODO:
+//     //      - map traits to gray code
+//     //      - 
+//     //      - append to genome
+// }
+
 // TODO: Add parameters to control distribution of sense, process and actuate
-pub fn generate_dna(game_rng: &mut GameRng<RngType>) {
-    use self::TraitID::*;
-    let trait_set = [
-        Sense,
-        QuickAction,
-        PrimaryAction,
-        SecondaryAction,
-        Move,
-        Attack,
-        Defend,
-        Rest,
-    ];
-    // TODO:
-    //      - map traits to gray code
-    //      - randomly grab a trait and add trait id, length and random attribute value
-    //      - append to genome
+#[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+pub struct DnaGenerator {
+    traits:    Vec<TraitID>,
+    gray_code: Vec<u32>,
+    avg_len: u32,
+}
+
+impl DnaGenerator {
+    pub fn new() -> Self {
+        use self::TraitID::*;
+        let traits = vec![
+            Sense,
+            QuickAction,
+            PrimaryAction,
+            SecondaryAction,
+            Move,
+            Attack,
+            Defend,
+            Rest,
+        ];
+        let traits_len = traits.len();
+        DnaGenerator {
+            traits,
+            gray_code: generate_gray_code(traits_len),
+            avg_len: 10,
+        }
+    }
+
+    pub fn new_dna(&self, game_rng: &mut GameRng<RngType>) -> Vec<char> {
+        let dna = vec![];
+        // randomly grab a trait and add trait id, length and random attribute value
+        for i in 0..10 {
+            let pick = game_rng.gen_range(0, self.traits.len());
+        }
+
+        dna
+    }
 }
 
 /// Construct a new player action from a given key code.
