@@ -6,12 +6,12 @@ use tcod::{chars, colors};
 use crate::core::game_objects::GameObjects;
 use crate::entity::ai::Ai;
 use crate::entity::object::Object;
-use crate::util::game_rng::{GameRng, RngType};
+use crate::util::game_rng::{GameRng};
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
-    fn make_world(&mut self, game_objects: &mut GameObjects, game_rng: &mut GameRng<RngType>, level: u32);
+    fn make_world(&mut self, game_objects: &mut GameObjects, game_rng: &mut GameRng, level: u32);
 }
 
 /// The tile is an object component that identifies an object as (mostly) fixed part of the game

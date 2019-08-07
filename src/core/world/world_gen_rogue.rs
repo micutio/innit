@@ -11,7 +11,7 @@ use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::player::PLAYER;
-use crate::util::game_rng::{GameRng, RngType};
+use crate::util::game_rng::{GameRng};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -36,7 +36,7 @@ impl WorldGen for RogueWorldGenerator {
     fn make_world(
         &mut self,
         game_objects: &mut GameObjects,
-        game_rng: &mut GameRng<RngType>,
+        game_rng: &mut GameRng,
         level: u32,
     ) {
         // fill the world with `unblocked` tiles
@@ -122,7 +122,7 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng<RngType>, room: Rect, level: u32) {
+fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 

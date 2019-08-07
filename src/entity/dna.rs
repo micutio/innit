@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::entity::action::*;
 use crate::ui::game_input::PlayAction;
-use crate::util::game_rng::{GameRng, RngType};
+use crate::util::game_rng::{GameRng};
 use crate::util::generate_gray_code;
 
 /// The DNA contains all core information, excluding temporary info such as position etc. This
@@ -143,7 +143,7 @@ impl DnaGenerator {
         }
     }
 
-    pub fn new_dna(&self, game_rng: &mut GameRng<RngType>) -> Vec<char> {
+    pub fn new_dna(&self, game_rng: &mut GameRng) -> Vec<char> {
         let dna = vec![];
         // randomly grab a trait and add trait id, length and random attribute value
         for i in 0..10 {

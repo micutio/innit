@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::mem;
 
 // Type of RNG to be used in-game.
-pub type RngType = Isaac64Rng;
+pub type GameRng = SerializableRng<Isaac64Rng>;
 
-/// Seed of the RNG - depends on the GameRngType.
+/// Seed of the RNG - depends on the SerializableRngType.
 pub const RNG_SEED: [u8; 32] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
 ];
@@ -18,27 +18,27 @@ pub const RNG_SEED: [u8; 32] = [
 /// For an example implementation of serializable RNG, refer to
 ///     https://github.com/rsaarelm/calx/blob/45a8d78edda35f2acd59bf9d2bf96fbb98b214ed/calx-alg/src/rng.rs#L33-L84
 #[derive(Clone, Debug)]
-pub struct GameRng<T> {
+pub struct SerializableRng<T> {
     inner: T,
 }
 
-impl<T: Rng + 'static> GameRng<T> {
-    pub fn new(inner: T) -> GameRng<T> {
-        GameRng { inner }
+impl<T: Rng + 'static> SerializableRng<T> {
+    pub fn new(inner: T) -> SerializableRng<T> {
+        SerializableRng { inner }
     }
 }
 
-impl<T: SeedableRng + Rng + 'static> SeedableRng for GameRng<T> {
+impl<T: SeedableRng + Rng + 'static> SeedableRng for SerializableRng<T> {
     // For implementing seed refer to: https://rust-random.github.io/rand/rand_core/trait.SeedableRng.html
     type Seed = <T as SeedableRng>::Seed;
 
-    // fn from_seed(seed: <T as rand::SeedableRng>::Seed) -> GameRng<T> {
-    fn from_seed(seed: Self::Seed) -> GameRng<T> {
-        GameRng::new(SeedableRng::from_seed(seed))
+    // fn from_seed(seed: <T as rand::SeedableRng>::Seed) -> SerializableRng<T> {
+    fn from_seed(seed: Self::Seed) -> SerializableRng<T> {
+        SerializableRng::new(SeedableRng::from_seed(seed))
     }
 }
 
-impl<T: Rng + 'static> Serialize for GameRng<T> {
+impl<T: Rng + 'static> Serialize for SerializableRng<T> {
     /// Serialize the rng as a binary blob.
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         let mut vec = Vec::new();
@@ -53,13 +53,13 @@ impl<T: Rng + 'static> Serialize for GameRng<T> {
     }
 }
 
-impl<'a, T: Rng + 'static> Deserialize<'a> for GameRng<T> {
+impl<'a, T: Rng + 'static> Deserialize<'a> for SerializableRng<T> {
     /// Deserialize the rng from a binary blob.
     fn deserialize<D: serde::Deserializer<'a>>(d: D) -> Result<Self, D::Error> {
         let bin_blob: Vec<u8> = serde::Deserialize::deserialize(d)?;
         unsafe {
             if bin_blob.len() == mem::size_of::<T>() {
-                Ok(GameRng::new(mem::transmute_copy(&bin_blob[0])))
+                Ok(SerializableRng::new(mem::transmute_copy(&bin_blob[0])))
             } else {
                 Err(serde::de::Error::invalid_length(
                     bin_blob.len(),
@@ -70,7 +70,7 @@ impl<'a, T: Rng + 'static> Deserialize<'a> for GameRng<T> {
     }
 }
 
-impl<T: Rng> RngCore for GameRng<T> {
+impl<T: Rng> RngCore for SerializableRng<T> {
     fn next_u32(&mut self) -> u32 {
         self.inner.next_u32()
     }

@@ -9,7 +9,7 @@ use crate::entity::action::*;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::ui::player::PLAYER;
-use crate::util::game_rng::{GameRng, RngType, RNG_SEED};
+use crate::util::game_rng::{GameRng, RNG_SEED};
 
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
 
@@ -45,7 +45,7 @@ pub struct GameState {
     pub log:           Messages,
     pub turn:          u128,
     pub dungeon_level: u32,
-    pub game_rng:      GameRng<RngType>,
+    pub game_rng:      GameRng,
     current_obj_index: usize,
 }
 
