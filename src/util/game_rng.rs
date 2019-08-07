@@ -58,3 +58,15 @@ impl<'a, T: Rng + 'static> Deserialize<'a> for GameRng<T> {
         }
     }
 }
+
+/// Gaem specific methods for random number generators.
+pub trait RngExtended {
+    /// Return true or false with 50/50 chance of being true
+    fn coinflip(&mut self) -> bool;
+}
+
+impl <T: Rng> RngExtended for T {
+    fn coinflip(&mut self) -> bool {
+        self.gen_bool(0.5)
+    }
+}
