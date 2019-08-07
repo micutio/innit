@@ -1,5 +1,6 @@
 use rand::Rng;
 use std::cmp;
+
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
