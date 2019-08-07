@@ -1,10 +1,12 @@
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngCore, SeedableRng};
+use rand_core::{impls, Error};
+// use rand_core::{RngCore, impls};
 use rand_isaac::isaac64::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::mem;
 
 // Type of RNG to be used in-game.
-pub type GameRngType = Isaac64Rng;
+pub type RngType = Isaac64Rng;
 
 /// Seed of the RNG - depends on the GameRngType.
 pub const RNG_SEED: [u8; 32] = [
@@ -13,7 +15,7 @@ pub const RNG_SEED: [u8; 32] = [
 
 /// A seedable random number generator that can be serialized for consistent random number
 /// generation. For more info on Rust RNGs, refer to https://rust-random.github.io/book/guide-rngs.html
-/// For infor on serializable RNG, refer to
+/// For an example implementation of serializable RNG, refer to
 ///     https://github.com/rsaarelm/calx/blob/45a8d78edda35f2acd59bf9d2bf96fbb98b214ed/calx-alg/src/rng.rs#L33-L84
 #[derive(Clone, Debug)]
 pub struct GameRng<T> {
@@ -65,6 +67,25 @@ impl<'a, T: Rng + 'static> Deserialize<'a> for GameRng<T> {
                 ))
             }
         }
+    }
+}
+
+impl<T: Rng> RngCore for GameRng<T> {
+    fn next_u32(&mut self) -> u32 {
+        self.inner.next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.inner.next_u64()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        impls::fill_bytes_via_next(self, dest)
+    }
+
+    #[allow(clippy::unit_arg)]
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        Ok(self.fill_bytes(dest))
     }
 }
 

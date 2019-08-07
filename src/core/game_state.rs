@@ -9,7 +9,7 @@ use crate::entity::action::*;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::ui::player::PLAYER;
-use crate::util::game_rng::{GameRng, GameRngType, RNG_SEED};
+use crate::util::game_rng::{GameRng, RngType, RNG_SEED};
 
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
 
@@ -45,21 +45,22 @@ pub struct GameState {
     pub log:           Messages,
     pub turn:          u128,
     pub dungeon_level: u32,
-    pub game_rng:      GameRng<GameRngType>,
+    pub game_rng:      GameRng<RngType>,
     current_obj_index: usize,
 }
 
 impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
         let mut world_generator = RogueWorldGenerator::new();
-        world_generator.make_world(game_objects, level);
+        let mut game_rng = GameRng::from_seed(RNG_SEED);
+        world_generator.make_world(game_objects, &mut game_rng, level);
 
         GameState {
             // create the list of game messages and their colors, starts empty
             log:               vec![],
             turn:              0,
             dungeon_level:     1,
-            game_rng:          GameRng::from_seed(RNG_SEED),
+            game_rng,
             current_obj_index: 0,
         }
     }

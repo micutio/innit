@@ -11,6 +11,7 @@ use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::player::PLAYER;
+use crate::util::game_rng::{GameRng, RngType};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -32,18 +33,23 @@ impl RogueWorldGenerator {
 }
 
 impl WorldGen for RogueWorldGenerator {
-    fn make_world(&mut self, game_objects: &mut GameObjects, level: u32) {
+    fn make_world(
+        &mut self,
+        game_objects: &mut GameObjects,
+        game_rng: &mut GameRng<RngType>,
+        level: u32,
+    ) {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
         for _ in 0..MAX_ROOMS {
             // random width and height
-            let w = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
-            let h = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let w = game_rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let h = game_rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
 
             // random position without exceeding the boundaries of the map
-            let x = rand::thread_rng().gen_range(0, WORLD_WIDTH - w);
-            let y = rand::thread_rng().gen_range(0, WORLD_HEIGHT - h);
+            let x = game_rng.gen_range(0, WORLD_WIDTH - w);
+            let y = game_rng.gen_range(0, WORLD_HEIGHT - h);
 
             // create room and store in vector
             let new_room = Rect::new(x, y, w, h);
@@ -57,7 +63,7 @@ impl WorldGen for RogueWorldGenerator {
                 create_room(game_objects, new_room);
 
                 // add some content to the room
-                place_objects(game_objects, new_room, level);
+                place_objects(game_objects, game_rng, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -116,7 +122,7 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
+fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng<RngType>, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
@@ -153,14 +159,14 @@ fn place_objects(objects: &mut GameObjects, room: Rect, level: u32) {
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = rand::thread_rng().gen_range(0, max_monsters + 1);
+    let num_monsters = game_rng.gen_range(0, max_monsters + 1);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
-        let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
+        let x = game_rng.gen_range(room.x1 + 1, room.x2);
+        let y = game_rng.gen_range(room.y1 + 1, room.y2);
 
         if !objects.is_blocked(x, y) {
-            let mut monster = match monster_chances[monster_dist.sample(&mut rand::thread_rng())].0
+            let mut monster = match monster_chances[monster_dist.sample(game_rng)].0
             {
                 "virus" => {
                     let mut virus = Object::new(
