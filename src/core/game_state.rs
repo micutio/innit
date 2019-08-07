@@ -1,3 +1,5 @@
+use rand::SeedableRng;
+
 use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
@@ -7,7 +9,7 @@ use crate::entity::action::*;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::ui::player::PLAYER;
-use crate::util::game_rng::GameRng;
+use crate::util::game_rng::{GameRng, GameRngType, RNG_SEED};
 
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
 
@@ -43,7 +45,7 @@ pub struct GameState {
     pub log:           Messages,
     pub turn:          u128,
     pub dungeon_level: u32,
-    // pub game_rng: GameRng,
+    pub game_rng:      GameRng<GameRngType>,
     current_obj_index: usize,
 }
 
@@ -57,6 +59,7 @@ impl GameState {
             log:               vec![],
             turn:              0,
             dungeon_level:     1,
+            game_rng:          GameRng::from_seed(RNG_SEED),
             current_obj_index: 0,
         }
     }

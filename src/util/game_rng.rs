@@ -1,6 +1,15 @@
 use rand::{Rng, SeedableRng};
+use rand_isaac::isaac64::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::mem;
+
+// Type of RNG to be used in-game.
+pub type GameRngType = Isaac64Rng;
+
+/// Seed of the RNG - depends on the GameRngType.
+pub const RNG_SEED: [u8; 32] = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
+];
 
 /// A seedable random number generator that can be serialized for consistent random number
 /// generation. For more info on Rust RNGs, refer to https://rust-random.github.io/book/guide-rngs.html
@@ -65,7 +74,7 @@ pub trait RngExtended {
     fn coinflip(&mut self) -> bool;
 }
 
-impl <T: Rng> RngExtended for T {
+impl<T: Rng> RngExtended for T {
     fn coinflip(&mut self) -> bool {
         self.gen_bool(0.5)
     }
