@@ -2,21 +2,6 @@ use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use std::mem;
 
-const N: usize = 64;
-pub struct GameRngSeed(pub [u8; N]);
-
-impl Default for GameRngSeed {
-    fn default() -> GameRngSeed {
-        GameRngSeed([0; N])
-    }
-}
-
-impl AsMut<[u8]> for GameRngSeed {
-    fn as_mut(&mut self) -> &mut [u8] {
-        &mut self.0
-    }
-}
-
 /// A seedable random number generator that can be serialized for consistent random number
 /// generation. For more info on Rust RNGs, refer to https://rust-random.github.io/book/guide-rngs.html
 /// For infor on serializable RNG, refer to
