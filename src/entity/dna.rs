@@ -119,9 +119,12 @@ impl DnaGenerator {
         let mut dna: Vec<char> = vec![];
         // randomly grab a trait and add trait id, length and random attribute value
         for _ in 0..10 {
-            let pick = game_rng.gen_range(0, self.traits.len());
+            // push 0x00 first as the genome start symbol
+            dna.push(0 as u8 as char);
+            // pick random trait number from list
+            let trait_num = game_rng.gen_range(0, self.traits.len());
             // add trait id
-            dna.push(self.gray_code[pick] as char);
+            dna.push(self.gray_code[trait_num] as char);
             // add length // TODO: encode length in TraitID
             dna.push(1 as char);
             // add random attribute value
