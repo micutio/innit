@@ -57,9 +57,9 @@ impl GameState {
 
         GameState {
             // create the list of game messages and their colors, starts empty
-            log:               vec![],
-            turn:              0,
-            dungeon_level:     1,
+            log: vec![],
+            turn: 0,
+            dungeon_level: 1,
             game_rng,
             current_obj_index: 0,
         }

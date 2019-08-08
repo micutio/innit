@@ -11,8 +11,8 @@ pub fn modulus<T: Num + PartialOrd + Copy>(a: T, b: T) -> T {
     ((a % b) + b) % b
 }
 
-pub fn generate_gray_code(n: usize) -> Vec<u32> {
-    (0..n as u32).map(|x| x ^ (x >> 1)).collect::<Vec<u32>>()
+pub fn generate_gray_code(n: u8) -> Vec<u8> {
+    (0..n as u8).map(|x| x ^ (x >> 1)).collect::<Vec<u8>>()
 }
 
 // /// Helper function to convert from a binary number to *reflected binary* gray code.
@@ -29,9 +29,9 @@ pub fn generate_gray_code(n: usize) -> Vec<u32> {
 /// A 4-bit variant changes a binary number (abcd)2 to (abcd)2 ^ (00ab)2,
 /// then to (abcd)2 ^ (00ab)2 ^ (0abc)2 ^ (000a)2.
 /// Taken from Wikipedia.
-pub fn gray_to_binary32(mut x: u32) -> u32 {
-    x = x ^ (x >> 16);
-    x = x ^ (x >> 8);
+pub fn gray_to_binary32(mut x: u8) -> u8 {
+    // x = x ^ (x >> 16);
+    // x = x ^ (x >> 8);
     x = x ^ (x >> 4);
     x = x ^ (x >> 2);
     x = x ^ (x >> 1);
