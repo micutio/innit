@@ -52,6 +52,7 @@
 // TODO: Can behavior be encoded in the genome too i.e., fight or flight?
 
 use rand::Rng;
+use std::collections::HashMap;
 
 use crate::entity::action::*;
 use crate::ui::game_input::PlayAction;
@@ -195,4 +196,26 @@ pub struct Processor {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Actuator {
     actions: Vec<ActionPrototype>,
+}
+
+/// The gene library lets the user define genes.
+/// Input should look like this:
+///   - trait name
+///   - super trait
+///   - attributes
+///   - action
+///   - synergies
+///   - anti-synergies
+///
+/// Actions can be chosen from a pool of predefined methods.
+// TODO: How to encode non-action attributes e.g, cell membrane thickness?
+pub struct GeneLibrary {
+    /// Traits are now supposed to be generic, so enums are no longer the way to go
+    // TODO: Re-use enum TraitID to identify actions instead. They are basically already doing it.
+    gray_to_trait: HashMap<char, String>,
+    /// This one should be straight forward. Lets the custom traits make use of supertrait specific
+    /// attributes.
+    trait_to_super: HashMap<String, SuperTrait>,
+    /// As mentioned above, re-use TraitIDs to allow mappings to actions.
+    trait_to_action: HashMap<String, TraitID>,
 }
