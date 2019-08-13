@@ -67,11 +67,11 @@ pub enum SuperTrait {
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
-pub enum TraitID {
+pub enum ActionId {
     Sense,
-    QuickAction,
-    PrimaryAction,
-    SecondaryAction,
+    Quick,
+    Primary,
+    Secondary,
     Move,
     Attack,
     Defend,
@@ -81,59 +81,9 @@ pub enum TraitID {
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
     pub super_trait: SuperTrait,
-    pub trait_id:    TraitID,
+    pub trait_id:    ActionId,
     pub name:        String,
     pub parameter:   i32,
-}
-
-// TODO: Add parameters to control distribution of sense, process and actuate!
-// TODO: Use above parameters for NPC definitions, readable from datafiles!
-#[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct DnaGenerator {
-    traits:    Vec<TraitID>,
-    gray_code: Vec<u8>,
-    avg_len:   u32,
-}
-
-impl DnaGenerator {
-    pub fn new() -> Self {
-        use self::TraitID::*;
-        let traits = vec![
-            Sense,
-            QuickAction,
-            PrimaryAction,
-            SecondaryAction,
-            Move,
-            Attack,
-            Defend,
-            Rest,
-        ];
-        let traits_len = traits.len();
-        DnaGenerator {
-            traits,
-            gray_code: generate_gray_code(traits_len as u8),
-            avg_len: 10,
-        }
-    }
-
-    pub fn new_dna(&self, game_rng: &mut GameRng) -> Vec<char> {
-        let mut dna: Vec<char> = vec![];
-        // randomly grab a trait and add trait id, length and random attribute value
-        for _ in 0..10 {
-            // push 0x00 first as the genome start symbol
-            dna.push(0 as u8 as char);
-            // pick random trait number from list
-            let trait_num = game_rng.gen_range(0, self.traits.len());
-            // add trait id
-            dna.push(self.gray_code[trait_num] as char);
-            // add length // TODO: encode length in TraitID
-            dna.push(1 as char);
-            // add random attribute value
-            dna.push(game_rng.gen_range(0, 16) as u8 as char);
-        }
-        debug!("new dna generated: {:?}", dna);
-        dna
-    }
 }
 
 /// Construct a new player action from a given key code.
@@ -141,7 +91,7 @@ impl DnaGenerator {
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
-    use self::TraitID::*;
+    use self::ActionId::*;
     use ui::game_input::PlayActionParameter::*;
     match input {
         PlayAction {
@@ -149,7 +99,7 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
             param: Orientation(dir),
         } => Box::new(MoveAction::new(dir, prototype.parameter)),
         // TODO: Check if we can actually move!
-        // (PlayInput(Move(TraitID::Move, Cardinal(Direction))), Some(action_prototype)) =>
+        // (PlayInput(Move(ActionId::Move, Cardinal(Direction))), Some(action_prototype)) =>
         // Box::new(MoveAction::new(Direction, action_prototype.parameter)),
         _ => Box::new(PassAction),
     }
@@ -209,13 +159,59 @@ pub struct Actuator {
 ///
 /// Actions can be chosen from a pool of predefined methods.
 // TODO: How to encode non-action attributes e.g, cell membrane thickness?
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
-    // TODO: Re-use enum TraitID to identify actions instead. They are basically already doing it.
-    gray_to_trait: HashMap<char, String>,
+    // TODO: Re-use enum ActionId to identify actions instead. They are basically already doing it.
+    gray_to_trait: HashMap<u8, String>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
-    trait_to_super: HashMap<String, SuperTrait>,
+    trait_to_super: HashMap<u8, SuperTrait>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
-    trait_to_action: HashMap<String, TraitID>,
+    trait_to_action: HashMap<u8, ActionId>,
+    /// Vector of gray code with index corresponding to its binary representation
+    gray_code: Vec<u8>,
+    /// Count the number of traits we have, sort of as a running id.
+    trait_count: usize,
+}
+
+impl GeneLibrary {
+    pub fn new() -> Self {
+        GeneLibrary {
+            gray_to_trait:   HashMap::new(),
+            trait_to_super:  HashMap::new(),
+            trait_to_action: HashMap::new(),
+            gray_code:       generate_gray_code(4),
+            trait_count:     0,
+        }
+    }
+
+    pub fn add_trait(&mut self, name: String, super_trait: SuperTrait, action: ActionId) {
+        let trait_code = self.gray_code[self.trait_count];
+        self.gray_to_trait.insert(trait_code, name);
+        self.trait_to_super.insert(trait_code, super_trait);
+        self.trait_to_action.insert(trait_code, action);
+        self.trait_count += 1;
+    }
+
+    // TODO: Add parameters to control distribution of sense, process and actuate!
+    // TODO: Use above parameters for NPC definitions, readable from datafiles!
+    pub fn new_dna(&self, game_rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
+        let mut dna = Vec::new();
+        // randomly grab a trait and add trait id, length and random attribute value
+        for _ in 0..10 {
+            // push 0x00 first as the genome start symbol
+            dna.push(0 as u8);
+            // pick random trait number from list
+            let trait_num = game_rng.gen_range(0, self.trait_count);
+            // add trait id
+            dna.push(self.gray_code[trait_num]);
+            // add length // TODO: encode length in ActionId
+            dna.push(1);
+            // add random attribute value
+            dna.push(game_rng.gen_range(0, 16) as u8);
+        }
+        debug!("new dna generated: {:?}", dna);
+        dna
+    }
 }
