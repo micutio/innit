@@ -6,6 +6,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
 use crate::entity::action::*;
+use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::ui::player::PLAYER;
@@ -46,6 +47,7 @@ pub struct GameState {
     pub turn:          u128,
     pub dungeon_level: u32,
     pub game_rng:      GameRng,
+    gene_library:      GeneLibrary,
     current_obj_index: usize,
 }
 
@@ -61,10 +63,12 @@ impl GameState {
             turn: 0,
             dungeon_level: 1,
             game_rng,
+            gene_library: GeneLibrary::new(),
             current_obj_index: 0,
         }
     }
 
+    /// Process an object's turn i.e., let it perform as many actions as it has enery for.
     // TODO: Implement energy costs for actions.
     pub fn process_object(
         &mut self,
@@ -94,7 +98,7 @@ impl GameState {
         process_result
     }
 
-    /// Process an action of a given object.
+    /// Process an action of the given object.
     fn process_action(
         &mut self,
         fov_map: &FovMap,
@@ -162,41 +166,3 @@ pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
         .find(|transition| level >= transition.level)
         .map_or(0, |transition| transition.value)
 }
-
-// /// Move the object with given id to the given position.
-// pub fn move_by(world: &World, objects: &mut GameObjects, id: usize, dx: i32, dy: i32) {
-//     // move by the given amount
-//     if let Some(ref mut object) = objects[id] {
-//         let (x, y) = object.pos();
-//             if !is_blocked(world, objects, x + dx, y + dy) {
-//                 object.set_pos(x + dx, y + dy);
-//             }
-//     }
-// }
-
-// Move the object with given id towards a target.
-// pub fn move_towards(
-//     world: &World,
-//     objects: &mut GameObjects,
-//     id: usize,
-//     target_x: i32,
-//     target_y: i32,
-// ) {
-//     // vector from this object to the target, and distance
-//     match objects[id] {
-//         Some(obj) => {
-//             let dx = target_x - obj.x;
-//             let dy = target_y - obj.y;
-//             let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
-
-//             // normalize it to length 1 (preserving direction), then round it and
-//             // convert to integer so the movement is restricted to the map grid
-//             let dx = (dx as f32 / distance).round() as i32;
-//             let dy = (dy as f32 / distance).round() as i32;
-//             move_by(world, objects, id, dx, dy);
-//         }
-//         None => {
-
-//         }
-//     }
-// }
