@@ -125,6 +125,7 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Sensor {
     actions: Vec<ActionPrototype>,
+    // attributes: Vec<AttributeObject>,
 }
 
 impl Sensor {
@@ -309,6 +310,9 @@ impl GeneLibrary {
         // read trait id
         match dna.get(start_ptr) {
             Some(val) => match self.trait_to_super.get(val) {
+                // Add trait to list in respective super trait object.
+                // Later in each super trait, accumulate traits and instantiate Prototype with count
+                // as parameter/attribute.
                 Some(SuperTrait::Sense) => {
                     // do something with sense
                 }
