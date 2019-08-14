@@ -52,10 +52,11 @@
 // TODO: Can behavior be encoded in the genome too i.e., fight or flight?
 
 use rand::Rng;
+use std::cmp;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Read;
 
 use crate::entity::action::*;
 use crate::ui::game_input::PlayAction;
@@ -121,9 +122,17 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Sensor {
     actions: Vec<ActionPrototype>,
+}
+
+impl Sensor {
+    pub fn new() -> Self {
+        Sensor {
+            actions: Vec::new(),
+        }
+    }
 }
 
 /// Processors contain:
@@ -133,9 +142,17 @@ pub struct Sensor {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Processor {
     actions: Vec<ActionPrototype>,
+}
+
+impl Processor {
+    pub fn new() -> Self {
+        Processor {
+            actions: Vec::new(),
+        }
+    }
 }
 
 /// Actuators can actually be concrete body parts e.g., organelles, spikes
@@ -146,9 +163,17 @@ pub struct Processor {
 ///   - move
 ///   - attack
 ///   - defend
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Actuator {
     actions: Vec<ActionPrototype>,
+}
+
+impl Actuator {
+    pub fn new() -> Self {
+        Actuator {
+            actions: Vec::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -172,7 +197,7 @@ pub struct GeneRecord {
 ///
 /// Actions can be chosen from a pool of predefined methods.
 // TODO: How to encode non-action attributes e.g, cell membrane thickness?
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
     // TODO: Re-use enum ActionId to identify actions instead. They are basically already doing it.
@@ -208,6 +233,28 @@ impl GeneLibrary {
         self.trait_count += 1;
     }
 
+    fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
+        let mut json_genes = String::new();
+        let mut file = File::open("data/genes")?;
+        file.read_to_string(&mut json_genes)?;
+        let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
+        Ok(result)
+    }
+
+    pub fn init_genes(&mut self) {
+        match GeneLibrary::read_genes_from_file() {
+            Ok(genes) => {
+                for gene in genes {
+                    debug!("adding gene {:?} to the library", gene);
+                    self.add_gene(gene);
+                }
+            }
+            Err(..) => {
+                error!("[dna] Enable to read gene file!");
+            }
+        }
+    }
+
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
     pub fn new_dna(&self, game_rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
@@ -229,25 +276,54 @@ impl GeneLibrary {
         dna
     }
 
-    fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
-        let mut json_genes = String::new();
-        let mut file = File::open("data/genes")?;
-        file.read_to_string(&mut json_genes)?;
-        let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
-        Ok(result)
+    pub fn decode_dna(&self, dna: &[u8]) -> (Sensor, Processor, Actuator) {
+        let mut start_ptr: usize = 0;
+        let mut end_ptr: usize = dna.len();
+        let mut sensor = Sensor::new();
+        let mut processor = Processor::new();
+        let mut actuator = Actuator::new();
+
+        self.decode_gene(
+            dna,
+            start_ptr,
+            end_ptr,
+            &mut sensor,
+            &mut processor,
+            &mut actuator,
+        );
+
+        (sensor, processor, actuator)
     }
 
-    pub fn init_genes(&mut self) {
-        match GeneLibrary::read_genes_from_file() {
-            Ok(genes) => {
-                for gene in genes {
-                    debug!("adding gene {:?} to the library", gene);
-                    self.add_gene(gene);
+    fn decode_gene(
+        &self,
+        dna: &[u8],
+        mut start_ptr: usize,
+        mut end_ptr: usize,
+        s: &mut Sensor,
+        p: &mut Processor,
+        a: &mut Actuator,
+    ) {
+        // pointing at 0x00 now
+        start_ptr += 1;
+        // read trait id
+        match dna.get(start_ptr) {
+            Some(val) => match self.trait_to_super.get(val) {
+                Some(SuperTrait::Sense) => {
+                    // do something with sense
                 }
-            }
-            Err(..) => {
-                error!("[dna] Enable to read gene file!");
-            }
+                Some(SuperTrait::Process) => {
+                    // do something with process
+                }
+                Some(SuperTrait::Actuate) => {
+                    // do something with actuate
+                }
+                None => return,
+            },
+            None => return,
         }
+        // read length
+        end_ptr = cmp::min(end_ptr, dna[start_ptr] as usize);
+        //
     }
 }
