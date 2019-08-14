@@ -10,6 +10,11 @@
         "action": "Primary"
     },
     {
+        "name": "Generic Memory",
+        "super_trait": "Process",
+        "action": "Sense"
+    },
+    {
         "name": "Cilium",
         "super_trait": "Actuate",
         "action": "Move"
