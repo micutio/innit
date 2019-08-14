@@ -1,30 +1,22 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use std::{
-    error::Error,
-    fs::File,
-    io::{Read, Write},
-};
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
 
 use tcod::colors;
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, MessageLog},
-    },
-    entity::{
-        dna::get_player_action,
-        fighter::{DeathCallback, Fighter},
-        object::Object,
-    },
-    ui::{
-        game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend},
-        game_input::{GameInput, PlayerInput},
-        player::PLAYER,
-    },
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, MessageLog};
+use crate::entity::dna::get_player_action;
+use crate::entity::fighter::{DeathCallback, Fighter};
+use crate::entity::object::Object;
+use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
+use crate::ui::game_input::{GameInput, PlayerInput};
+use crate::ui::player::PLAYER;
+
+const SAVEGAME: &str = "data/savegame";
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -137,7 +129,7 @@ pub fn game_loop(
 /// from which the game is resumed in the game loop.
 pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
     let mut json_save_state = String::new();
-    let mut file = File::open("savegame")?;
+    let mut file = File::open(SAVEGAME)?;
     file.read_to_string(&mut json_save_state)?;
     let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
     Ok(result)
@@ -146,7 +138,7 @@ pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
 /// Serialize and store GameState and Objects into a JSON file.
 pub fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
     let save_data = serde_json::to_string(&(game_state, objects))?;
-    let mut file = File::create("savegame")?;
+    let mut file = File::create(SAVEGAME)?;
     file.write_all(save_data.as_bytes())?;
     Ok(())
 }
