@@ -2,6 +2,8 @@
 //! module allows to generate objects from DNA and modify them using mutation as well as crossing.
 //! Decoding DNA delivers attributes and functions that fall into one of three gene types.
 //!
+//! Inspiration: https://creatures.fandom.com/wiki/ChiChi_Norn_Genome
+//!
 //! ## Gene Types
 //!
 //! * sensor - gathering information of the environment
