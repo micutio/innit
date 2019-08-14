@@ -53,6 +53,9 @@
 
 use rand::Rng;
 use std::collections::HashMap;
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
 
 use crate::entity::action::*;
 use crate::ui::game_input::PlayAction;
@@ -148,6 +151,16 @@ pub struct Actuator {
     actions: Vec<ActionPrototype>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeneRecord {
+    name:        String,
+    super_trait: SuperTrait,
+    action:      ActionId,
+    /* attributes: Vec<?>,
+     * synergies: Vec<?>,
+     * anti-synergies: Vec<?>, */
+}
+
 /// The gene library lets the user define genes.
 /// Input should look like this:
 ///   - trait name
@@ -186,11 +199,12 @@ impl GeneLibrary {
         }
     }
 
-    pub fn add_trait(&mut self, name: String, super_trait: SuperTrait, action: ActionId) {
+    fn add_gene(&mut self, gene: GeneRecord) {
+        debug!("[dna] adding new gene to the library: {:?}", gene);
         let trait_code = self.gray_code[self.trait_count];
-        self.gray_to_trait.insert(trait_code, name);
-        self.trait_to_super.insert(trait_code, super_trait);
-        self.trait_to_action.insert(trait_code, action);
+        self.gray_to_trait.insert(trait_code, gene.name);
+        self.trait_to_super.insert(trait_code, gene.super_trait);
+        self.trait_to_action.insert(trait_code, gene.action);
         self.trait_count += 1;
     }
 
@@ -213,5 +227,27 @@ impl GeneLibrary {
         }
         debug!("new dna generated: {:?}", dna);
         dna
+    }
+
+    fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
+        let mut json_genes = String::new();
+        let mut file = File::open("data/genes")?;
+        file.read_to_string(&mut json_genes)?;
+        let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
+        Ok(result)
+    }
+
+    pub fn init_genes(&mut self) {
+        match GeneLibrary::read_genes_from_file() {
+            Ok(genes) => {
+                for gene in genes {
+                    debug!("adding gene {:?} to the library", gene);
+                    self.add_gene(gene);
+                }
+            }
+            Err(..) => {
+                error!("[dna] Enable to read gene file!");
+            }
+        }
     }
 }

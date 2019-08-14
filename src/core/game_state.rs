@@ -56,6 +56,8 @@ impl GameState {
         let mut world_generator = RogueWorldGenerator::new();
         let mut game_rng = GameRng::from_seed(RNG_SEED);
         world_generator.make_world(game_objects, &mut game_rng, level);
+        let mut gene_library = GeneLibrary::new();
+        gene_library.init_genes();
 
         GameState {
             // create the list of game messages and their colors, starts empty
@@ -63,7 +65,7 @@ impl GameState {
             turn: 0,
             dungeon_level: 1,
             game_rng,
-            gene_library: GeneLibrary::new(),
+            gene_library,
             current_obj_index: 0,
         }
     }
