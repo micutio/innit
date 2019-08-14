@@ -24,8 +24,17 @@ pub const WORLD_HEIGHT: i32 = 43;
 
 /// Create a new game by instantiating the game engine, game state and object vector.
 pub fn new_game() -> (GameState, GameObjects) {
+    // create array holding all GameObjects
+    let mut objects = GameObjects::new();
+
+    // create game state holding most game-relevant information
+    //  - also creates map and player starting position
+    let level = 1;
+    let mut game_state = GameState::new(&mut objects, level);
+
     // create object representing the player
-    let mut player = Object::new(0, 0, "player", '@', colors::WHITE, true, false, false);
+    let dna = game_state.gene_library.new_dna(&mut game_state.game_rng, 10);
+    let mut player = Object::new(0, 0, dna, "player", '@', colors::WHITE, true, false, false);
     player.alive = true;
     player.fighter = Some(Fighter {
         base_max_hp:  100,
@@ -35,15 +44,8 @@ pub fn new_game() -> (GameState, GameObjects) {
         on_death:     DeathCallback::Player,
         xp:           0,
     });
-
-    // create array holding all GameObjects
-    let mut objects = GameObjects::new();
     objects.set_player(player);
-    let level = 1;
-
-    // create game state holding most game-relevant information
-    //  - also creates map and player starting position
-    let mut game_state = GameState::new(&mut objects, level);
+    
 
     // a warm welcoming message
     game_state.log.add(

@@ -5,7 +5,7 @@ use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::dna::{ActionPrototype};
+use crate::entity::dna::ActionPrototype;
 use crate::entity::fighter::Fighter;
 
 /// An Object represents the base structure for all entities in the game.
@@ -41,7 +41,7 @@ pub struct Object {
     pub y:           i32,
     pub alive:       bool,
     pub energy:      i32, // could be changed into some pseudo-progress like allowed DNA length
-    pub dna:         String,
+    pub dna:         Vec<u8>,
     pub visual:      Visual,
     pub physics:     Physics,
     pub actions:     Vec<ActionPrototype>,
@@ -70,7 +70,7 @@ impl Object {
     pub fn new(
         x: i32,
         y: i32,
-        // dna: &str, // TODO change constructor
+        dna: Vec<u8>,
         name: &str,
         character: char,
         color: Color,
@@ -95,7 +95,7 @@ impl Object {
             y,
             alive: false,
             energy: 0,
-            dna: "".into(), // dna.into(),
+            dna,
             visual,
             physics,
             actions: Vec::new(),

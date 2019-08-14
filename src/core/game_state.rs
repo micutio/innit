@@ -47,7 +47,7 @@ pub struct GameState {
     pub turn:          u128,
     pub dungeon_level: u32,
     pub game_rng:      GameRng,
-    gene_library:      GeneLibrary,
+    pub gene_library:      GeneLibrary,
     current_obj_index: usize,
 }
 
