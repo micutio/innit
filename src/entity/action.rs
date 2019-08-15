@@ -21,6 +21,18 @@ pub enum ActionResult {
     Consequence { action: Option<Box<dyn Action>> },
 }
 
+struct ActionObject<T: Action + Copy> {
+    action: T,
+}
+
+impl<T> ActionObject<T> where T: Action + Copy {
+    fn instantiate(&self) -> ActionObject<T> {
+        ActionObject {
+            action: self.action,
+        }
+    }
+}
+
 /// Prototype for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
 #[typetag::serde(tag = "type")]

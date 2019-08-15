@@ -73,7 +73,7 @@ pub enum SuperTrait {
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
-pub enum ActionId {
+pub enum TraitAction {
     Sense,
     Quick,
     Primary,
@@ -87,7 +87,7 @@ pub enum ActionId {
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
     pub super_trait: SuperTrait,
-    pub trait_id:    ActionId,
+    pub trait_id:    TraitAction,
     pub name:        String,
     pub parameter:   i32,
 }
@@ -97,7 +97,7 @@ pub struct ActionPrototype {
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
-    use self::ActionId::*;
+    use self::TraitAction::*;
     use ui::game_input::PlayActionParameter::*;
     match input {
         PlayAction {
@@ -105,7 +105,7 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
             param: Orientation(dir),
         } => Box::new(MoveAction::new(dir, prototype.parameter)),
         // TODO: Check if we can actually move!
-        // (PlayInput(Move(ActionId::Move, Cardinal(Direction))), Some(action_prototype)) =>
+        // (PlayInput(Move(TraitAction::Move, Cardinal(Direction))), Some(action_prototype)) =>
         // Box::new(MoveAction::new(Direction, action_prototype.parameter)),
         _ => Box::new(PassAction),
     }
@@ -127,6 +127,7 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Sensor {
     actions: Vec<ActionPrototype>,
+    attr_range: i32,
     // attributes: Vec<AttributeObject>,
 }
 
@@ -134,6 +135,7 @@ impl Sensor {
     pub fn new() -> Self {
         Sensor {
             actions: Vec::new(),
+            attr_range: 0,
         }
     }
 }
@@ -183,7 +185,7 @@ impl Actuator {
 pub struct GeneRecord {
     name:        String,
     super_trait: SuperTrait,
-    action:      ActionId,
+    action:      TraitAction,
     /* attributes: Vec<?>,
      * synergies: Vec<?>,
      * anti-synergies: Vec<?>, */
@@ -203,13 +205,13 @@ pub struct GeneRecord {
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
-    // TODO: Re-use enum ActionId to identify actions instead. They are basically already doing it.
+    // TODO: Re-use enum TraitAction to identify actions instead. They are basically already doing it.
     gray_to_trait: HashMap<u8, String>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
     trait_to_super: HashMap<u8, SuperTrait>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
-    trait_to_action: HashMap<u8, ActionId>,
+    trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
     gray_code: Vec<u8>,
     /// Count the number of traits we have, sort of as a running id.
@@ -263,14 +265,14 @@ impl GeneLibrary {
     pub fn new_dna(&self, game_rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
         let mut dna = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
-        for _ in 0..10 {
+        for _ in 0..avg_genome_len {
             // push 0x00 first as the genome start symbol
             dna.push(0 as u8);
             // pick random trait number from list
             let trait_num = game_rng.gen_range(0, self.trait_count);
             // add trait id
             dna.push(self.gray_code[trait_num]);
-            // add length // TODO: encode length in ActionId
+            // add length // TODO: encode length in TraitAction
             dna.push(1);
             // add random attribute value
             dna.push(game_rng.gen_range(0, 16) as u8);
@@ -282,18 +284,24 @@ impl GeneLibrary {
     pub fn decode_dna(&self, dna: &[u8]) -> (Sensor, Processor, Actuator) {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = dna.len();
+        let mut sensor_trait_list: Vec<u8> = Vec::new();
+        let mut processor_trait_list: Vec<u8> = Vec::new();
+        let mut actuator_trait_list: Vec<u8> = Vec::new();
+
+        while start_ptr < dna.len() {
+            let (start_ptr, end_ptr) = self.decode_gene(
+                dna,
+                start_ptr,
+                end_ptr,
+                &mut sensor_trait_list,
+                &mut processor_trait_list,
+                &mut actuator_trait_list,
+            );
+        }
+
         let mut sensor = Sensor::new();
         let mut processor = Processor::new();
         let mut actuator = Actuator::new();
-
-        self.decode_gene(
-            dna,
-            start_ptr,
-            end_ptr,
-            &mut sensor,
-            &mut processor,
-            &mut actuator,
-        );
 
         (sensor, processor, actuator)
     }
@@ -303,10 +311,10 @@ impl GeneLibrary {
         dna: &[u8],
         mut start_ptr: usize,
         mut end_ptr: usize,
-        s: &mut Sensor,
-        p: &mut Processor,
-        a: &mut Actuator,
-    ) {
+        s: &mut Vec<u8>,
+        p: &mut Vec<u8>,
+        a: &mut Vec<u8>,
+    ) -> (usize, usize) {
         // pointing at 0x00 now
         start_ptr += 1;
         // read trait id
@@ -315,21 +323,18 @@ impl GeneLibrary {
                 // Add trait to list in respective super trait object.
                 // Later in each super trait, accumulate traits and instantiate Prototype with count
                 // as parameter/attribute.
-                Some(SuperTrait::Sense) => {
-                    // do something with sense
-                }
-                Some(SuperTrait::Process) => {
-                    // do something with process
-                }
-                Some(SuperTrait::Actuate) => {
-                    // do something with actuate
-                }
-                None => return,
+                Some(SuperTrait::Sense) => s.push(*val),
+                Some(SuperTrait::Process) => p.push(*val),
+                Some(SuperTrait::Actuate) => a.push(*val),
+                // Some(0) => self.decode_gene(dna, start_ptr, end_ptr, s, p, a),
+                None => return (start_ptr, end_ptr),
             },
-            None => return,
+            None => return (start_ptr, end_ptr),
         }
         // read length
         end_ptr = cmp::min(end_ptr, dna[start_ptr] as usize);
-        //
+        // read attributes push( (id, val) )
+
+        (start_ptr, end_ptr)
     }
 }
