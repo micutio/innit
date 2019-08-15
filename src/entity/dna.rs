@@ -12,36 +12,10 @@
 //!
 //! ## Shape of the DNA
 //!
-//! +------+--------------+---------------+-------------+
-//! | 0x00 | gene type ID | genome length | trait genes |
-//! +------+--------------+---------------+-------------+
+//! +------+-----------+---------------+-------------+
+//! | 0x00 | gene name | genome length | trait genes |
+//! +------+-----------+---------------+-------------+
 //!
-//! ### sensor
-//!
-//! #### Qualities
-//!
-//! | Trait   | ID   | Attributes |
-//! | ------- | ---- | ---------- |
-//! | sensor  | 0x01 | range      |
-//!
-//! ### processor
-//!
-//! #### Qualities
-//!
-//! | Trait         | ID   | Attributes |
-//! | ------------- | ---- | ---------- |
-//! | quick action  | 0x02 | count      |
-//!
-//! ### actuator
-//!
-//! #### Qualities
-//!
-//! | Trait   | ID   | Attributes |
-//! | ------- | ---- | ---------- |
-//! | move    | 0x03 | speed      |
-//! | attack  | 0x04 | damage     |
-//! | defend  | 0x05 | health     |
-//! | rest    | 0x06 | HP regen   |
 //!
 //! A DNA Genome is implemented as a string of hexadecimal numbers. The start of a gene is marked
 //! by the number zero. Genes can overlap, so that parsing the new gene resumes "in the middle" of
@@ -82,6 +56,12 @@ pub enum TraitAction {
     Attack,
     Defend,
     Rest,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
+pub enum TraitAttribute {
+    SensingRange,
+    Hp,
 }
 
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
@@ -126,16 +106,16 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Sensor {
-    actions: Vec<ActionPrototype>,
-    attr_range: i32,
+    actions:     Vec<ActionPrototype>,
+    sense_range: i32,
     // attributes: Vec<AttributeObject>,
 }
 
 impl Sensor {
     pub fn new() -> Self {
         Sensor {
-            actions: Vec::new(),
-            attr_range: 0,
+            actions:     Vec::new(),
+            sense_range: 0,
         }
     }
 }
@@ -171,16 +151,20 @@ impl Processor {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Actuator {
     actions: Vec<ActionPrototype>,
+    hp:      i32,
 }
 
 impl Actuator {
     pub fn new() -> Self {
         Actuator {
             actions: Vec::new(),
+            hp:      0,
         }
     }
 }
 
+/// Gene Records hold all necessary information for a single gene.
+/// Genes can either encode actions, attributes or both.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeneRecord {
     name:        String,
@@ -205,7 +189,8 @@ pub struct GeneRecord {
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
-    // TODO: Re-use enum TraitAction to identify actions instead. They are basically already doing it.
+    // TODO: Re-use enum TraitAction to identify actions instead. They are basically already doing
+    // it.
     gray_to_trait: HashMap<u8, String>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
