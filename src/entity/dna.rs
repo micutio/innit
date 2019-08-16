@@ -41,12 +41,24 @@ use crate::util::generate_gray_code;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub enum SuperTrait {
-    Sense,
-    Process,
-    Actuate,
+    Sensing,
+    Processing,
+    Actuating,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+pub enum SubTrait {
+    StAttribute(TraitAttribute),
+    StAction(TraitAction),
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+pub enum TraitAttribute {
+    SensingRange,
+    Hp,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TraitAction {
     Sense,
     Quick,
@@ -56,12 +68,6 @@ pub enum TraitAction {
     Attack,
     Defend,
     Rest,
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone)]
-pub enum TraitAttribute {
-    SensingRange,
-    Hp,
 }
 
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
@@ -191,12 +197,12 @@ pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
     // TODO: Re-use enum TraitAction to identify actions instead. They are basically already doing
     // it.
-    gray_to_trait: HashMap<u8, String>,
+    gray_to_trait: HashMap<u8, SubTrait>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
-    trait_to_super: HashMap<u8, SuperTrait>,
+    trait_to_super: HashMap<SubTrait, SuperTrait>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
-    trait_to_action: HashMap<u8, TraitAction>,
+    // trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
     gray_code: Vec<u8>,
     /// Count the number of traits we have, sort of as a running id.
@@ -205,22 +211,78 @@ pub struct GeneLibrary {
 
 impl GeneLibrary {
     pub fn new() -> Self {
+        let traits: Vec<SubTrait> = vec![
+            SubTrait::StAttribute(TraitAttribute::SensingRange),
+            SubTrait::StAction(TraitAction::Sense),
+            SubTrait::StAction(TraitAction::Quick),
+            SubTrait::StAction(TraitAction::Primary),
+            SubTrait::StAction(TraitAction::Secondary),
+            SubTrait::StAction(TraitAction::Move),
+            SubTrait::StAction(TraitAction::Attack),
+            SubTrait::StAction(TraitAction::Defend),
+            SubTrait::StAttribute(TraitAttribute::Hp),
+            SubTrait::StAction(TraitAction::Rest),
+        ];
+        // TODO: Introduce constant N for total number of traits to assert gray code vector length.
+        let gray_code = generate_gray_code(4);
+        let gray_to_trait: HashMap<u8, SubTrait> = traits
+            .iter()
+            .enumerate()
+            .map(|(x, y)| (gray_code[x], *y))
+            .collect();
+
+        // TODO: This is really unwieldy.
+        // At least extract to it's own function or better yet, try to make it more generic.
+        let mut trait_to_super: HashMap<SubTrait, SuperTrait> = HashMap::new();
+        trait_to_super.insert(
+            SubTrait::StAttribute(TraitAttribute::SensingRange),
+            SuperTrait::Sensing,
+        );
+        trait_to_super.insert(SubTrait::StAction(TraitAction::Sense), SuperTrait::Sensing);
+        trait_to_super.insert(
+            SubTrait::StAction(TraitAction::Quick),
+            SuperTrait::Processing,
+        );
+        trait_to_super.insert(
+            SubTrait::StAction(TraitAction::Primary),
+            SuperTrait::Processing,
+        );
+        trait_to_super.insert(
+            SubTrait::StAction(TraitAction::Secondary),
+            SuperTrait::Processing,
+        );
+        trait_to_super.insert(SubTrait::StAction(TraitAction::Move), SuperTrait::Actuating);
+        trait_to_super.insert(
+            SubTrait::StAction(TraitAction::Attack),
+            SuperTrait::Actuating,
+        );
+        trait_to_super.insert(
+            SubTrait::StAction(TraitAction::Defend),
+            SuperTrait::Actuating,
+        );
+        trait_to_super.insert(
+            SubTrait::StAttribute(TraitAttribute::Hp),
+            SuperTrait::Actuating,
+        );
+        trait_to_super.insert(SubTrait::StAction(TraitAction::Rest), SuperTrait::Actuating);
+
+        // actual constructor
         GeneLibrary {
-            gray_to_trait:   HashMap::new(),
-            trait_to_super:  HashMap::new(),
-            trait_to_action: HashMap::new(),
-            gray_code:       generate_gray_code(4),
-            trait_count:     0,
+            gray_to_trait,
+            trait_to_super,
+            gray_code: generate_gray_code(4),
+            trait_count: 0,
         }
     }
 
     fn add_gene(&mut self, gene: GeneRecord) {
         debug!("[dna] adding new gene to the library: {:?}", gene);
-        let trait_code = self.gray_code[self.trait_count];
-        self.gray_to_trait.insert(trait_code, gene.name);
-        self.trait_to_super.insert(trait_code, gene.super_trait);
-        self.trait_to_action.insert(trait_code, gene.action);
-        self.trait_count += 1;
+        // TODO: Redo this. Is this even still necessary?
+        // let trait_code = self.gray_code[self.trait_count];
+        // self.gray_to_trait.insert(trait_code, gene.name);
+        // self.trait_to_super.insert(trait_code, gene.super_trait);
+        // self.trait_to_action.insert(trait_code, gene.action);
+        // self.trait_count += 1;
     }
 
     fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
@@ -269,26 +331,15 @@ impl GeneLibrary {
     pub fn decode_dna(&self, dna: &[u8]) -> (Sensor, Processor, Actuator) {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = dna.len();
-        let mut sensor_trait_list: Vec<u8> = Vec::new();
-        let mut processor_trait_list: Vec<u8> = Vec::new();
-        let mut actuator_trait_list: Vec<u8> = Vec::new();
+        let mut trait_builder: TraitBuilder = TraitBuilder::new();
 
         while start_ptr < dna.len() {
-            let (start_ptr, end_ptr) = self.decode_gene(
-                dna,
-                start_ptr,
-                end_ptr,
-                &mut sensor_trait_list,
-                &mut processor_trait_list,
-                &mut actuator_trait_list,
-            );
+            let (s_ptr, e_ptr) = self.decode_gene(dna, start_ptr, end_ptr, &mut trait_builder);
+            start_ptr = s_ptr;
+            end_ptr = e_ptr;
         }
 
-        let mut sensor = Sensor::new();
-        let mut processor = Processor::new();
-        let mut actuator = Actuator::new();
-
-        (sensor, processor, actuator)
+        trait_builder.finalize()
     }
 
     fn decode_gene(
@@ -296,30 +347,73 @@ impl GeneLibrary {
         dna: &[u8],
         mut start_ptr: usize,
         mut end_ptr: usize,
-        s: &mut Vec<u8>,
-        p: &mut Vec<u8>,
-        a: &mut Vec<u8>,
+        trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
         start_ptr += 1;
-        // read trait id
-        match dna.get(start_ptr) {
-            Some(val) => match self.trait_to_super.get(val) {
-                // Add trait to list in respective super trait object.
-                // Later in each super trait, accumulate traits and instantiate Prototype with count
-                // as parameter/attribute.
-                Some(SuperTrait::Sense) => s.push(*val),
-                Some(SuperTrait::Process) => p.push(*val),
-                Some(SuperTrait::Actuate) => a.push(*val),
-                // Some(0) => self.decode_gene(dna, start_ptr, end_ptr, s, p, a),
-                None => return (start_ptr, end_ptr),
-            },
-            None => return (start_ptr, end_ptr),
-        }
         // read length
-        end_ptr = cmp::min(end_ptr, dna[start_ptr] as usize);
-        // read attributes push( (id, val) )
+        end_ptr = cmp::min(end_ptr, start_ptr + dna[start_ptr] as usize);
+        start_ptr += 1;
+        // read trait ids - actions and attributes
+        for i in start_ptr..end_ptr {
+            // if we reached the end of the genome, return the current position
+            if i >= dna.len() {
+                return (i, end_ptr);
+            }
+            // take u8 word and map it to action/attribute
+        }
 
         (start_ptr, end_ptr)
+    }
+}
+
+#[derive(Default)]
+struct TraitBuilder {
+    sensor:            Sensor,
+    processor:         Processor,
+    actuator:          Actuator,
+    sensor_actions:    Vec<TraitAction>,
+    processor_actions: Vec<TraitAction>,
+    actuator_actions:  Vec<TraitAction>,
+}
+
+impl TraitBuilder {
+    pub fn new() -> Self {
+        TraitBuilder {
+            sensor:            Sensor::new(),
+            processor:         Processor::new(),
+            actuator:          Actuator::new(),
+            sensor_actions:    Vec::new(),
+            processor_actions: Vec::new(),
+            actuator_actions:  Vec::new(),
+        }
+    }
+
+    pub fn add_attribute(&mut self, attr: TraitAttribute) {
+        match attr {
+            TraitAttribute::SensingRange => self.sensor.sense_range += 1,
+            TraitAttribute::Hp => self.actuator.hp += 1,
+        }
+    }
+
+    pub fn add_action(&mut self, actn: TraitAction) {
+        match actn {
+            TraitAction::Sense => {
+                self.sensor_actions.push(actn);
+            }
+            TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
+                self.processor_actions.push(actn);
+            }
+            TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
+                self.actuator_actions.push(actn);
+            }
+        }
+    }
+
+    // Finalize all actions, return the super trait components and consume itself.
+    pub fn finalize(self) -> (Sensor, Processor, Actuator) {
+        // TODO: count occurences of all actions in sensor, processor and actuator action lists
+        // instantiate an action or prototype with count as additional parameter
+        (self.sensor, self.processor, self.actuator)
     }
 }
