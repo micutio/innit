@@ -124,6 +124,8 @@ impl Sensor {
             sense_range: 0,
         }
     }
+
+    // TODO: Implement creating action(prototypes) from given action traits and prototypes.
 }
 
 /// Processors contain:
@@ -339,6 +341,7 @@ impl GeneLibrary {
             end_ptr = e_ptr;
         }
 
+        // return sensor, processor and actuator instances
         trait_builder.finalize()
     }
 
@@ -361,6 +364,11 @@ impl GeneLibrary {
                 return (i, end_ptr);
             }
             // take u8 word and map it to action/attribute
+            match self.gray_to_trait.get(&dna[i]) {
+                Some(SubTrait::StAttribute(attr)) => trait_builder.add_attribute(*attr),
+                Some(SubTrait::StAction(actn)) => trait_builder.add_action(*actn),
+                None => {}
+            }
         }
 
         (start_ptr, end_ptr)
@@ -372,9 +380,9 @@ struct TraitBuilder {
     sensor:            Sensor,
     processor:         Processor,
     actuator:          Actuator,
-    sensor_actions:    Vec<TraitAction>,
-    processor_actions: Vec<TraitAction>,
-    actuator_actions:  Vec<TraitAction>,
+    sensor_actions:    HashMap<TraitAction, i32>,
+    processor_actions: HashMap<TraitAction, i32>,
+    actuator_actions:  HashMap<TraitAction, i32>,
 }
 
 impl TraitBuilder {
@@ -383,9 +391,9 @@ impl TraitBuilder {
             sensor:            Sensor::new(),
             processor:         Processor::new(),
             actuator:          Actuator::new(),
-            sensor_actions:    Vec::new(),
-            processor_actions: Vec::new(),
-            actuator_actions:  Vec::new(),
+            sensor_actions:    HashMap::new(),
+            processor_actions: HashMap::new(),
+            actuator_actions:  HashMap::new(),
         }
     }
 
@@ -399,13 +407,18 @@ impl TraitBuilder {
     pub fn add_action(&mut self, actn: TraitAction) {
         match actn {
             TraitAction::Sense => {
-                self.sensor_actions.push(actn);
+                // increase the counter for the given action or insert a 0 as default value;
+                // below is the long form...
+                //  let count = self.sensor_actions.entry(actn).or_insert(0);
+                //  *count += 1;
+                // ... which shortens to the following:
+                *self.sensor_actions.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
-                self.processor_actions.push(actn);
+                *self.processor_actions.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
-                self.actuator_actions.push(actn);
+                *self.actuator_actions.entry(actn).or_insert(0) += 1;
             }
         }
     }
