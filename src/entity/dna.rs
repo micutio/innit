@@ -72,10 +72,8 @@ pub enum TraitAction {
 
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
-    pub super_trait: SuperTrait,
-    pub trait_id:    TraitAction,
-    pub name:        String,
-    pub parameter:   i32,
+    pub trait_id:  TraitAction,
+    pub parameter: i32,
 }
 
 /// Construct a new player action from a given key code.
@@ -377,23 +375,23 @@ impl GeneLibrary {
 
 #[derive(Default)]
 struct TraitBuilder {
-    sensor:            Sensor,
-    processor:         Processor,
-    actuator:          Actuator,
-    sensor_actions:    HashMap<TraitAction, i32>,
-    processor_actions: HashMap<TraitAction, i32>,
-    actuator_actions:  HashMap<TraitAction, i32>,
+    sensor:               Sensor,
+    processor:            Processor,
+    actuator:             Actuator,
+    sensor_action_acc:    HashMap<TraitAction, i32>,
+    processor_action_acc: HashMap<TraitAction, i32>,
+    actuator_action_acc:  HashMap<TraitAction, i32>,
 }
 
 impl TraitBuilder {
     pub fn new() -> Self {
         TraitBuilder {
-            sensor:            Sensor::new(),
-            processor:         Processor::new(),
-            actuator:          Actuator::new(),
-            sensor_actions:    HashMap::new(),
-            processor_actions: HashMap::new(),
-            actuator_actions:  HashMap::new(),
+            sensor:               Sensor::new(),
+            processor:            Processor::new(),
+            actuator:             Actuator::new(),
+            sensor_action_acc:    HashMap::new(),
+            processor_action_acc: HashMap::new(),
+            actuator_action_acc:  HashMap::new(),
         }
     }
 
@@ -409,24 +407,51 @@ impl TraitBuilder {
             TraitAction::Sense => {
                 // increase the counter for the given action or insert a 0 as default value;
                 // below is the long form...
-                //  let count = self.sensor_actions.entry(actn).or_insert(0);
+                //  let count = self.sensor_action_acc.entry(actn).or_insert(0);
                 //  *count += 1;
                 // ... which shortens to the following:
-                *self.sensor_actions.entry(actn).or_insert(0) += 1;
+                *self.sensor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
-                *self.processor_actions.entry(actn).or_insert(0) += 1;
+                *self.processor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
-                *self.actuator_actions.entry(actn).or_insert(0) += 1;
+                *self.actuator_action_acc.entry(actn).or_insert(0) += 1;
             }
         }
     }
 
     // Finalize all actions, return the super trait components and consume itself.
-    pub fn finalize(self) -> (Sensor, Processor, Actuator) {
+    pub fn finalize(mut self) -> (Sensor, Processor, Actuator) {
         // TODO: count occurences of all actions in sensor, processor and actuator action lists
         // instantiate an action or prototype with count as additional parameter
+        self.sensor.actions = self
+            .sensor_action_acc
+            .iter()
+            .map(|(trait_id, parameter)| ActionPrototype {
+                trait_id:  *trait_id,
+                parameter: *parameter,
+            })
+            .collect();
+
+        self.processor.actions = self
+            .processor_action_acc
+            .iter()
+            .map(|(trait_id, parameter)| ActionPrototype {
+                trait_id:  *trait_id,
+                parameter: *parameter,
+            })
+            .collect();
+
+        self.actuator.actions = self
+            .actuator_action_acc
+            .iter()
+            .map(|(trait_id, parameter)| ActionPrototype {
+                trait_id:  *trait_id,
+                parameter: *parameter,
+            })
+            .collect();
+
         (self.sensor, self.processor, self.actuator)
     }
 }
