@@ -1,11 +1,11 @@
-use tcod::colors::{self, Color};
+use tcod::colors::{Color};
 use tcod::console::*;
 
 use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::dna::{ActionPrototype, Actuator, Processor, Sensor};
+use crate::entity::dna::{ActionPrototype, Actuators, Processors, Sensors};
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -45,9 +45,9 @@ pub struct Object {
     pub physics:     Physics,
     pub actions:     Vec<ActionPrototype>,
     pub tile:        Option<Tile>,
-    pub sensors:     Sensor,
-    pub processors:  Processor,
-    pub actuators:   Actuator,
+    pub sensors:     Sensors,
+    pub processors:  Processors,
+    pub actuators:   Actuators,
     pub next_action: Option<Box<dyn Action>>,
     pub ai:          Option<Ai>,
 }
@@ -79,9 +79,9 @@ impl Object {
         is_blocking: bool,
         is_blocking_sight: bool,
         is_always_visible: bool,
-        sensors: Sensor,
-        processors: Processor,
-        actuators: Actuator,
+        sensors: Sensors,
+        processors: Processors,
+        actuators: Actuators,
         ai: Option<Ai>,
     ) -> Self {
         let visual = Visual {

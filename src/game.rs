@@ -9,7 +9,7 @@ use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
-use crate::entity::dna::get_player_action;
+use crate::entity::dna::{get_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
@@ -117,24 +117,80 @@ pub fn game_loop(
             }
             Some(PlayerInput::PlayInput(ingame_action)) => {
                 debug!("inject ingame action {:#?} to player", ingame_action);
-                debug!("attempting to get player {:#?}", game_objects[PLAYER]);
                 if let Some(ref mut player) = game_objects[PLAYER] {
-                    debug!(
-                        "attempting to get prototype {:#?}",
-                        player
-                            .actions
-                            .iter()
-                            .find(|a| a.trait_id == ingame_action.trait_id)
-                    );
-                    if let Some(prototype) = player
-                        .actions
-                        .iter()
-                        .find(|a| a.trait_id == ingame_action.trait_id)
-                    {
-                        let next_action = Some(get_player_action(ingame_action, prototype));
-                        debug!("player action object: {:#?}", next_action);
-                        player.set_next_action(next_action);
+                    use self::SuperTrait::*;
+                    if let SubTrait::StAction(action_trait) = ingame_action.trait_id {
+                        match game_state
+                            .gene_library
+                            .trait_to_super
+                            .get(&ingame_action.trait_id)
+                        {
+                            Some(Sensing) => {
+                                if let Some(prototype) = player
+                                    .sensors
+                                    .actions
+                                    .iter()
+                                    .find(|a| a.trait_id == action_trait)
+                                {
+                                    let next_action =
+                                        Some(get_player_action(ingame_action, prototype));
+                                    debug!("player action object: {:#?}", next_action);
+                                    player.set_next_action(next_action);
+                                }
+                            }
+                            Some(Processing) => {
+                                if let Some(prototype) = player
+                                    .processors
+                                    .actions
+                                    .iter()
+                                    .find(|a| a.trait_id == action_trait)
+                                {
+                                    let next_action =
+                                        Some(get_player_action(ingame_action, prototype));
+                                    debug!("player action object: {:#?}", next_action);
+                                    player.set_next_action(next_action);
+                                }
+                            }
+                            Some(Actuating) => {
+                                if let Some(prototype) = player
+                                    .actuators
+                                    .actions
+                                    .iter()
+                                    .find(|a| a.trait_id == action_trait)
+                                {
+                                    let next_action =
+                                        Some(get_player_action(ingame_action, prototype));
+                                    debug!("player action object: {:#?}", next_action);
+                                    player.set_next_action(next_action);
+                                }
+                            }
+                            None => {}
+                        }
                     }
+
+                    // match ingame_action.trait_id {
+                    //     StAction(Move) => {
+
+                    //     }
+                    //     _ => {}
+                    // }
+
+                    // debug!(
+                    //     "attempting to get prototype {:#?}",
+                    //     player
+                    //         .actions
+                    //         .iter()
+                    //         .find(|a| a.trait_id == ingame_action.trait_id)
+                    // );
+                    // if let Some(prototype) = player
+                    //     .actions
+                    //     .iter()
+                    //     .find(|a| a.trait_id == ingame_action.trait_id)
+                    // {
+                    //     let next_action = Some(get_player_action(ingame_action, prototype));
+                    //     debug!("player action object: {:#?}", next_action);
+                    //     player.set_next_action(next_action);
+                    // }
                 };
             }
             None => {}

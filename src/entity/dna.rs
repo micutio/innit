@@ -81,11 +81,12 @@ pub struct ActionPrototype {
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
+    use self::SubTrait::*;
     use self::TraitAction::*;
     use ui::game_input::PlayActionParameter::*;
     match input {
         PlayAction {
-            trait_id: Move,
+            trait_id: StAction(Move),
             param: Orientation(dir),
         } => Box::new(MoveAction::new(dir, prototype.parameter)),
         // TODO: Check if we can actually move!
@@ -109,15 +110,15 @@ pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<
 /// - functions:
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Sensor {
-    actions:     Vec<ActionPrototype>,
-    sense_range: i32,
+pub struct Sensors {
+    pub actions:     Vec<ActionPrototype>,
+    pub sense_range: i32,
     // attributes: Vec<AttributeObject>,
 }
 
-impl Sensor {
+impl Sensors {
     pub fn new() -> Self {
-        Sensor {
+        Sensors {
             actions:     Vec::new(),
             sense_range: 0,
         }
@@ -134,13 +135,13 @@ impl Sensor {
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Processor {
-    actions: Vec<ActionPrototype>,
+pub struct Processors {
+    pub actions: Vec<ActionPrototype>,
 }
 
-impl Processor {
+impl Processors {
     pub fn new() -> Self {
-        Processor {
+        Processors {
             actions: Vec::new(),
         }
     }
@@ -155,14 +156,14 @@ impl Processor {
 ///   - attack
 ///   - defend
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Actuator {
-    actions: Vec<ActionPrototype>,
-    hp:      i32,
+pub struct Actuators {
+    pub actions: Vec<ActionPrototype>,
+    pub hp:      i32,
 }
 
-impl Actuator {
+impl Actuators {
     pub fn new() -> Self {
-        Actuator {
+        Actuators {
             actions: Vec::new(),
             hp:      0,
         }
@@ -200,7 +201,7 @@ pub struct GeneLibrary {
     gray_to_trait: HashMap<u8, SubTrait>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
-    trait_to_super: HashMap<SubTrait, SuperTrait>,
+    pub trait_to_super: HashMap<SubTrait, SuperTrait>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
     // trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
@@ -328,7 +329,7 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn decode_dna(&self, dna: &[u8]) -> (Sensor, Processor, Actuator) {
+    pub fn decode_dna(&self, dna: &[u8]) -> (Sensors, Processors, Actuators) {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new();
@@ -375,9 +376,9 @@ impl GeneLibrary {
 
 #[derive(Default)]
 struct TraitBuilder {
-    sensor:               Sensor,
-    processor:            Processor,
-    actuator:             Actuator,
+    sensors:               Sensors,
+    processors:            Processors,
+    actuators:             Actuators,
     sensor_action_acc:    HashMap<TraitAction, i32>,
     processor_action_acc: HashMap<TraitAction, i32>,
     actuator_action_acc:  HashMap<TraitAction, i32>,
@@ -386,9 +387,9 @@ struct TraitBuilder {
 impl TraitBuilder {
     pub fn new() -> Self {
         TraitBuilder {
-            sensor:               Sensor::new(),
-            processor:            Processor::new(),
-            actuator:             Actuator::new(),
+            sensors:               Sensors::new(),
+            processors:            Processors::new(),
+            actuators:             Actuators::new(),
             sensor_action_acc:    HashMap::new(),
             processor_action_acc: HashMap::new(),
             actuator_action_acc:  HashMap::new(),
@@ -397,8 +398,8 @@ impl TraitBuilder {
 
     pub fn add_attribute(&mut self, attr: TraitAttribute) {
         match attr {
-            TraitAttribute::SensingRange => self.sensor.sense_range += 1,
-            TraitAttribute::Hp => self.actuator.hp += 1,
+            TraitAttribute::SensingRange => self.sensors.sense_range += 1,
+            TraitAttribute::Hp => self.actuators.hp += 1,
         }
     }
 
@@ -422,10 +423,10 @@ impl TraitBuilder {
     }
 
     // Finalize all actions, return the super trait components and consume itself.
-    pub fn finalize(mut self) -> (Sensor, Processor, Actuator) {
+    pub fn finalize(mut self) -> (Sensors, Processors, Actuators) {
         // TODO: count occurences of all actions in sensor, processor and actuator action lists
         // instantiate an action or prototype with count as additional parameter
-        self.sensor.actions = self
+        self.sensors.actions = self
             .sensor_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
@@ -434,7 +435,7 @@ impl TraitBuilder {
             })
             .collect();
 
-        self.processor.actions = self
+        self.processors.actions = self
             .processor_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
@@ -443,7 +444,7 @@ impl TraitBuilder {
             })
             .collect();
 
-        self.actuator.actions = self
+        self.actuators.actions = self
             .actuator_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
@@ -452,6 +453,6 @@ impl TraitBuilder {
             })
             .collect();
 
-        (self.sensor, self.processor, self.actuator)
+        (self.sensors, self.processors, self.actuators)
     }
 }

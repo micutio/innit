@@ -9,7 +9,7 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
-use crate::entity::dna::TraitAction;
+use crate::entity::dna::{SubTrait, TraitAction};
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 use crate::ui::player::PLAYER;
 
@@ -295,12 +295,12 @@ pub enum UiAction {
 
 #[derive(Clone, Debug)]
 pub struct PlayAction {
-    pub trait_id: TraitAction,
+    pub trait_id: SubTrait,
     pub param:    PlayActionParameter,
 }
 
 impl PlayAction {
-    pub fn new(trait_id: TraitAction, param: PlayActionParameter) -> Self {
+    pub fn new(trait_id: SubTrait, param: PlayActionParameter) -> Self {
         PlayAction { trait_id, param }
     }
 }
@@ -423,6 +423,9 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::PlayActionParameter::*;
     use self::PlayerInput::*;
     use self::UiAction::*;
+    use self::SubTrait::*;
+    use self::Direction::*;
+    use self::TraitAction::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
@@ -431,39 +434,39 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     key_map.insert(
         Up,
         PlayInput(PlayAction::new(
-            TraitAction::Move,
-            Orientation(Direction::North),
+            StAction(Move),
+            Orientation(North),
         )),
     );
     key_map.insert(
         Down,
         PlayInput(PlayAction::new(
-            TraitAction::Move,
-            Orientation(Direction::South),
+            StAction(Move),
+            Orientation(South),
         )),
     );
     key_map.insert(
         Left,
         PlayInput(PlayAction::new(
-            TraitAction::Move,
-            Orientation(Direction::West),
+            StAction(Move),
+            Orientation(West),
         )),
     );
     key_map.insert(
         Right,
         PlayInput(PlayAction::new(
-            TraitAction::Move,
-            Orientation(Direction::East),
+            StAction(Move),
+            Orientation(East),
         )),
     );
     key_map.insert(
         Q,
-        PlayInput(PlayAction::new(TraitAction::Primary, Target { x: 0, y: 0 })),
+        PlayInput(PlayAction::new(StAction(Primary), Target { x: 0, y: 0 })),
     );
     key_map.insert(
         E,
         PlayInput(PlayAction::new(
-            TraitAction::Secondary,
+            StAction(Secondary),
             Target { x: 0, y: 0 },
         )),
     );
