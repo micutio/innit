@@ -80,7 +80,7 @@ pub struct ActionPrototype {
 /// Get player's action item that corresponds with the player input and construct a new action
 /// from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn get_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
+pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
     use self::SubTrait::*;
     use self::TraitAction::*;
     use ui::game_input::PlayActionParameter::*;

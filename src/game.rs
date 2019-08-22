@@ -9,7 +9,7 @@ use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
-use crate::entity::dna::{get_player_action, SubTrait, SuperTrait};
+use crate::entity::dna::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
@@ -133,7 +133,7 @@ pub fn game_loop(
                                     .find(|a| a.trait_id == action_trait)
                                 {
                                     let next_action =
-                                        Some(get_player_action(ingame_action, prototype));
+                                        Some(build_player_action(ingame_action, prototype));
                                     debug!("player action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
                                 }
@@ -146,7 +146,7 @@ pub fn game_loop(
                                     .find(|a| a.trait_id == action_trait)
                                 {
                                     let next_action =
-                                        Some(get_player_action(ingame_action, prototype));
+                                        Some(build_player_action(ingame_action, prototype));
                                     debug!("player action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
                                 }
@@ -159,7 +159,7 @@ pub fn game_loop(
                                     .find(|a| a.trait_id == action_trait)
                                 {
                                     let next_action =
-                                        Some(get_player_action(ingame_action, prototype));
+                                        Some(build_player_action(ingame_action, prototype));
                                     debug!("player action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
                                 }
@@ -187,7 +187,7 @@ pub fn game_loop(
                     //     .iter()
                     //     .find(|a| a.trait_id == ingame_action.trait_id)
                     // {
-                    //     let next_action = Some(get_player_action(ingame_action, prototype));
+                    //     let next_action = Some(build_player_action(ingame_action, prototype));
                     //     debug!("player action object: {:#?}", next_action);
                     //     player.set_next_action(next_action);
                     // }
