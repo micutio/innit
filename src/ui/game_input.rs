@@ -41,7 +41,7 @@ impl GameInput {
     /// Start a new instance of the input listener thread.
     pub fn start_concurrent_input(&mut self) {
         let (tx, rx) = mpsc::channel();
-        let game_input = Arc::new(Mutex::new(InputProcessor::new()));
+        let game_input = Arc::new(Mutex::new(InputContainer::new()));
         let mut game_input_ref = Arc::clone(&game_input);
         let input_thread = start_input_proc_thread(&mut game_input_ref, rx);
 
@@ -181,7 +181,7 @@ struct MousePosition {
 /// - the cannel that allows the ui to communicate with the running thread
 /// - the handle of the input thread itself
 struct ConcurrentInput {
-    game_input_ref:  Arc<Mutex<InputProcessor>>,
+    game_input_ref:  Arc<Mutex<InputContainer>>,
     input_thread_tx: Sender<InputThreadCommand>,
     input_thread:    JoinHandle<()>,
 }
@@ -296,35 +296,31 @@ pub enum UiAction {
 #[derive(Clone, Debug)]
 pub struct PlayAction {
     pub trait_id: TraitAction,
-    pub param: PlayActionParameter,
+    pub param:    PlayActionParameter,
 }
 
 impl PlayAction {
     pub fn new(trait_id: TraitAction, param: PlayActionParameter) -> Self {
-        PlayAction {
-            trait_id,
-            param,
-        }
+        PlayAction { trait_id, param }
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum PlayActionParameter {
     Orientation(Direction),
-    Target {x: i32, y: i32},
+    Target { x: i32, y: i32 },
 }
 
-
 /// The input processor maps user input to player actions.
-pub struct InputProcessor {
+pub struct InputContainer {
     pub mouse_x:             i32,
     pub mouse_y:             i32,
     pub next_player_actions: VecDeque<PlayerInput>,
 }
 
-impl InputProcessor {
+impl InputContainer {
     pub fn new() -> Self {
-        InputProcessor {
+        InputContainer {
             mouse_x:             0,
             mouse_y:             0,
             next_player_actions: VecDeque::new(),
@@ -348,13 +344,13 @@ fn get_names_under_mouse(
         .collect::<Vec<_>>()
         .join(", ")
 
-    //names//.join(", ") // return names separated by commas
+    // names//.join(", ") // return names separated by commas
 }
 
 /// Start an input processing thread.
 /// Listen to keystrokes and mouse movement at the same time.
 fn start_input_proc_thread(
-    game_input: &mut Arc<Mutex<InputProcessor>>,
+    game_input: &mut Arc<Mutex<InputContainer>>,
     rx: Receiver<InputThreadCommand>,
 ) -> JoinHandle<()> {
     let game_input_buf = Arc::clone(&game_input);
@@ -424,20 +420,53 @@ fn start_input_proc_thread(
 /// Create a mapping between our own key codes and player actions.
 fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
+    use self::PlayActionParameter::*;
     use self::PlayerInput::*;
     use self::UiAction::*;
-    use self::PlayActionParameter::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(Up,   PlayInput(PlayAction::new(TraitAction::Move, Orientation(Direction::North))));
-    key_map.insert(Down, PlayInput(PlayAction::new(TraitAction::Move, Orientation(Direction::South))));
-    key_map.insert(Left, PlayInput(PlayAction::new(TraitAction::Move, Orientation(Direction::West))));
-    key_map.insert(Right, PlayInput(PlayAction::new(TraitAction::Move, Orientation(Direction::East))));
-    key_map.insert(Q, PlayInput(PlayAction::new(TraitAction::Primary, Target{x: 0, y: 0})));
-    key_map.insert(E, PlayInput(PlayAction::new(TraitAction::Secondary, Target{x: 0, y: 0})));
+    key_map.insert(
+        Up,
+        PlayInput(PlayAction::new(
+            TraitAction::Move,
+            Orientation(Direction::North),
+        )),
+    );
+    key_map.insert(
+        Down,
+        PlayInput(PlayAction::new(
+            TraitAction::Move,
+            Orientation(Direction::South),
+        )),
+    );
+    key_map.insert(
+        Left,
+        PlayInput(PlayAction::new(
+            TraitAction::Move,
+            Orientation(Direction::West),
+        )),
+    );
+    key_map.insert(
+        Right,
+        PlayInput(PlayAction::new(
+            TraitAction::Move,
+            Orientation(Direction::East),
+        )),
+    );
+    key_map.insert(
+        Q,
+        PlayInput(PlayAction::new(TraitAction::Primary, Target { x: 0, y: 0 })),
+    );
+    key_map.insert(
+        E,
+        PlayInput(PlayAction::new(
+            TraitAction::Secondary,
+            Target { x: 0, y: 0 },
+        )),
+    );
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));
