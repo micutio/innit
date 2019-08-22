@@ -5,8 +5,10 @@
 use tcod::{chars, console::*, input::Key};
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState};
-use crate::ui::game_frontend::{GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::core::game_state::GameState;
+use crate::ui::game_frontend::{
+    GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH,
+};
 use crate::ui::game_input::GameInput;
 use crate::ui::player::PLAYER;
 use crate::util::modulus;

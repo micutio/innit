@@ -376,9 +376,9 @@ impl GeneLibrary {
 
 #[derive(Default)]
 struct TraitBuilder {
-    sensors:               Sensors,
-    processors:            Processors,
-    actuators:             Actuators,
+    sensors:              Sensors,
+    processors:           Processors,
+    actuators:            Actuators,
     sensor_action_acc:    HashMap<TraitAction, i32>,
     processor_action_acc: HashMap<TraitAction, i32>,
     actuator_action_acc:  HashMap<TraitAction, i32>,
@@ -387,9 +387,9 @@ struct TraitBuilder {
 impl TraitBuilder {
     pub fn new() -> Self {
         TraitBuilder {
-            sensors:               Sensors::new(),
-            processors:            Processors::new(),
-            actuators:             Actuators::new(),
+            sensors:              Sensors::new(),
+            processors:           Processors::new(),
+            actuators:            Actuators::new(),
             sensor_action_acc:    HashMap::new(),
             processor_action_acc: HashMap::new(),
             actuator_action_acc:  HashMap::new(),

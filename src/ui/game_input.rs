@@ -419,13 +419,13 @@ fn start_input_proc_thread(
 
 /// Create a mapping between our own key codes and player actions.
 fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
+    use self::Direction::*;
     use self::MyKeyCode::*;
     use self::PlayActionParameter::*;
     use self::PlayerInput::*;
-    use self::UiAction::*;
     use self::SubTrait::*;
-    use self::Direction::*;
     use self::TraitAction::*;
+    use self::UiAction::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
@@ -433,31 +433,19 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     // set up all in-game actions
     key_map.insert(
         Up,
-        PlayInput(PlayAction::new(
-            StAction(Move),
-            Orientation(North),
-        )),
+        PlayInput(PlayAction::new(StAction(Move), Orientation(North))),
     );
     key_map.insert(
         Down,
-        PlayInput(PlayAction::new(
-            StAction(Move),
-            Orientation(South),
-        )),
+        PlayInput(PlayAction::new(StAction(Move), Orientation(South))),
     );
     key_map.insert(
         Left,
-        PlayInput(PlayAction::new(
-            StAction(Move),
-            Orientation(West),
-        )),
+        PlayInput(PlayAction::new(StAction(Move), Orientation(West))),
     );
     key_map.insert(
         Right,
-        PlayInput(PlayAction::new(
-            StAction(Move),
-            Orientation(East),
-        )),
+        PlayInput(PlayAction::new(StAction(Move), Orientation(East))),
     );
     key_map.insert(
         Q,
@@ -465,10 +453,7 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     );
     key_map.insert(
         E,
-        PlayInput(PlayAction::new(
-            StAction(Secondary),
-            Target { x: 0, y: 0 },
-        )),
+        PlayInput(PlayAction::new(StAction(Secondary), Target { x: 0, y: 0 })),
     );
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
