@@ -509,20 +509,21 @@ fn render_ui(
 
     // show player's stats
     if let Some(ref player) = game_objects[PLAYER] {
-        let hp = player.fighter.map_or(0, |f| f.hp);
-        let max_hp = player.fighter.map_or(0, |f| f.base_max_hp);
-        render_bar(
-            &mut game_frontend.panel,
-            1,
-            1,
-            BAR_WIDTH,
-            "HP",
-            hp,
-            max_hp,
-            game_frontend.coloring.fg_dialog,
-            colors::DARK_RED,
-            colors::DARKEST_RED,
-        );
+        // TODO: Create new stats display.
+        // let hp = player.fighter.map_or(0, |f| f.hp);
+        // let max_hp = player.fighter.map_or(0, |f| f.base_max_hp);
+        // render_bar(
+        //     &mut game_frontend.panel,
+        //     1,
+        //     1,
+        //     BAR_WIDTH,
+        //     "HP",
+        //     hp,
+        //     max_hp,
+        //     game_frontend.coloring.fg_dialog,
+        //     colors::DARK_RED,
+        //     colors::DARKEST_RED,
+        // );
         game_frontend.panel.print_ex(
             1,
             2,

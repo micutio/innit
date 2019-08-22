@@ -10,7 +10,6 @@ use tcod::colors;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
 use crate::entity::dna::get_player_action;
-use crate::entity::fighter::{DeathCallback, Fighter};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
@@ -33,19 +32,35 @@ pub fn new_game() -> (GameState, GameObjects) {
     let mut game_state = GameState::new(&mut objects, level);
 
     // create object representing the player
-    let dna = game_state.gene_library.new_dna(&mut game_state.game_rng, 10);
-    let mut player = Object::new(0, 0, dna, "player", '@', colors::WHITE, true, false, false);
+    let dna = game_state
+        .gene_library
+        .new_dna(&mut game_state.game_rng, 10);
+    let (sensors, processors, actuators) = game_state.gene_library.decode_dna(&dna);
+    let mut player = Object::new(
+        0,
+        0,
+        dna,
+        "player",
+        '@',
+        colors::WHITE,
+        true,
+        false,
+        false,
+        sensors,
+        processors,
+        actuators,
+        None,
+    );
     player.alive = true;
-    player.fighter = Some(Fighter {
-        base_max_hp:  100,
-        hp:           100,
-        base_defense: 1,
-        base_power:   2,
-        on_death:     DeathCallback::Player,
-        xp:           0,
-    });
+    // player.fighter = Some(Fighter {
+    //     base_max_hp:  100,
+    //     hp:           100,
+    //     base_defense: 1,
+    //     base_power:   2,
+    //     on_death:     DeathCallback::Player,
+    //     xp:           0,
+    // });
     objects.set_player(player);
-    
 
     // a warm welcoming message
     game_state.log.add(

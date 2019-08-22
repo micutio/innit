@@ -47,7 +47,7 @@ pub struct GameState {
     pub turn:          u128,
     pub dungeon_level: u32,
     pub game_rng:      GameRng,
-    pub gene_library:      GeneLibrary,
+    pub gene_library:  GeneLibrary,
     current_obj_index: usize,
 }
 
@@ -55,9 +55,9 @@ impl GameState {
     pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
         let mut world_generator = RogueWorldGenerator::new();
         let mut game_rng = GameRng::from_seed(RNG_SEED);
-        world_generator.make_world(game_objects, &mut game_rng, level);
         let mut gene_library = GeneLibrary::new();
         gene_library.init_genes();
+        world_generator.make_world(game_objects, &mut game_rng, &mut gene_library, level);
 
         GameState {
             // create the list of game messages and their colors, starts empty

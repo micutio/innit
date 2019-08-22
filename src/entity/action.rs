@@ -25,7 +25,10 @@ struct ActionObject<T: Action + Copy> {
     action: T,
 }
 
-impl<T> ActionObject<T> where T: Action + Copy {
+impl<T> ActionObject<T>
+where
+    T: Action + Copy,
+{
     fn instantiate(&self) -> ActionObject<T> {
         ActionObject {
             action: self.action,
@@ -115,10 +118,8 @@ impl Action for AttackAction {
         match self.target_id {
             Some(target_id) => {
                 // TODO: Replace with defend action.
-                // unwrap should be safe to use here because the object not available
-                // in `objects` is the owner of this action.
                 if let Some(ref mut target) = objects[target_id] {
-                    target.take_damage(self.base_power, game_state);
+                    // target.take_damage(self.base_power, game_state);
                     return ActionResult::Success {
                         callback: ObjectProcResult::CheckEnterFOV,
                     };

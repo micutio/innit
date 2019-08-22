@@ -5,8 +5,7 @@ use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::dna::ActionPrototype;
-use crate::entity::fighter::Fighter;
+use crate::entity::dna::{ActionPrototype, Actuator, Processor, Sensor};
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -46,9 +45,11 @@ pub struct Object {
     pub physics:     Physics,
     pub actions:     Vec<ActionPrototype>,
     pub tile:        Option<Tile>,
-    pub fighter:     Option<Fighter>,
-    pub ai:          Option<Ai>,
+    pub sensors:     Sensor,
+    pub processors:  Processor,
+    pub actuators:   Actuator,
     pub next_action: Option<Box<dyn Action>>,
+    pub ai:          Option<Ai>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,6 +67,7 @@ pub struct Physics {
 }
 
 impl Object {
+    // NOTE: Rather use builder pattern here
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: i32,
@@ -77,6 +79,10 @@ impl Object {
         is_blocking: bool,
         is_blocking_sight: bool,
         is_always_visible: bool,
+        sensors: Sensor,
+        processors: Processor,
+        actuators: Actuator,
+        ai: Option<Ai>,
     ) -> Self {
         let visual = Visual {
             name: name.into(),
@@ -100,9 +106,11 @@ impl Object {
             physics,
             actions: Vec::new(),
             tile: None,
-            fighter: None,
-            ai: None,
+            sensors,
+            processors,
+            actuators,
             next_action: None,
+            ai,
         }
     }
 
@@ -148,73 +156,75 @@ impl Object {
         self.next_action = next_action;
     }
 
-    pub fn take_damage(&mut self, damage: i32, game_state: &mut GameState) -> Option<i32> {
-        // apply damage if possible
-        if let Some(fighter) = self.fighter.as_mut() {
-            if damage > 0 {
-                fighter.hp -= damage;
-            }
-        }
+    // TODO: Re-write or delete the methods below!
 
-        // check for death, trigger death callback function
-        if let Some(fighter) = self.fighter {
-            if fighter.hp <= 0 {
-                self.alive = false;
-                fighter.on_death.callback(self, &mut game_state.log);
-                return Some(fighter.xp);
-            }
-        }
-        None
-    }
+    // pub fn take_damage(&mut self, damage: i32, game_state: &mut GameState) -> Option<i32> {
+    //     // apply damage if possible
+    //     if let Some(fighter) = self.fighter.as_mut() {
+    //         if damage > 0 {
+    //             fighter.hp -= damage;
+    //         }
+    //     }
 
-    pub fn power(&self, _game_state: &GameState) -> i32 {
-        self.fighter.map_or(0, |f| f.base_power)
-    }
+    //     // check for death, trigger death callback function
+    //     if let Some(fighter) = self.fighter {
+    //         if fighter.hp <= 0 {
+    //             self.alive = false;
+    //             fighter.on_death.callback(self, &mut game_state.log);
+    //             return Some(fighter.xp);
+    //         }
+    //     }
+    //     None
+    // }
 
-    pub fn attack(&mut self, target: &mut Object, game_state: &mut GameState) {
-        // simple formula for attack damage
-        let damage = self.power(game_state) - target.defense(game_state);
-        if damage > 0 {
-            // make the target take some damage
-            game_state.log.add(
-                format!(
-                    "{} attacks {} for {} hit points.",
-                    self.visual.name, target.visual.name, damage
-                ),
-                colors::WHITE,
-            );
-            // target.take_damage(damage, messages);
-            if let Some(xp) = target.take_damage(damage, game_state) {
-                // yield experience to the player
-                self.fighter.as_mut().unwrap().xp += xp;
-            }
-        } else {
-            game_state.log.add(
-                format!(
-                    "{} attacks {} but it has no effect!",
-                    self.visual.name, target.visual.name
-                ),
-                colors::WHITE,
-            );
-        }
-    }
+    // pub fn power(&self, _game_state: &GameState) -> i32 {
+    //     self.fighter.map_or(0, |f| f.base_power)
+    // }
 
-    pub fn defense(&self, _game_state: &GameState) -> i32 {
-        self.fighter.map_or(0, |f| f.base_defense)
-    }
+    // pub fn attack(&mut self, target: &mut Object, game_state: &mut GameState) {
+    //     // simple formula for attack damage
+    //     let damage = self.power(game_state) - target.defense(game_state);
+    //     if damage > 0 {
+    //         // make the target take some damage
+    //         game_state.log.add(
+    //             format!(
+    //                 "{} attacks {} for {} hit points.",
+    //                 self.visual.name, target.visual.name, damage
+    //             ),
+    //             colors::WHITE,
+    //         );
+    //         // target.take_damage(damage, messages);
+    //         if let Some(xp) = target.take_damage(damage, game_state) {
+    //             // yield experience to the player
+    //             self.fighter.as_mut().unwrap().xp += xp;
+    //         }
+    //     } else {
+    //         game_state.log.add(
+    //             format!(
+    //                 "{} attacks {} but it has no effect!",
+    //                 self.visual.name, target.visual.name
+    //             ),
+    //             colors::WHITE,
+    //         );
+    //     }
+    // }
 
-    pub fn max_hp(&self, _game_state: &GameState) -> i32 {
-        self.fighter.map_or(0, |f| f.base_max_hp)
-    }
+    // pub fn defense(&self, _game_state: &GameState) -> i32 {
+    //     self.fighter.map_or(0, |f| f.base_defense)
+    // }
 
-    /// heal by the given amount, without going over the maxmimum
-    pub fn heal(&mut self, game_state: &GameState, amount: i32) {
-        let max_hp = self.max_hp(game_state);
-        if let Some(ref mut fighter) = self.fighter {
-            fighter.hp += amount;
-            if fighter.hp > max_hp {
-                fighter.hp = max_hp;
-            }
-        }
-    }
+    // pub fn max_hp(&self, _game_state: &GameState) -> i32 {
+    //     self.fighter.map_or(0, |f| f.base_max_hp)
+    // }
+
+    // /// heal by the given amount, without going over the maxmimum
+    // pub fn heal(&mut self, game_state: &GameState, amount: i32) {
+    //     let max_hp = self.max_hp(game_state);
+    //     if let Some(ref mut fighter) = self.fighter {
+    //         fighter.hp += amount;
+    //         if fighter.hp > max_hp {
+    //             fighter.hp = max_hp;
+    //         }
+    //     }
+    // }
 }

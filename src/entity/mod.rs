@@ -1,5 +1,7 @@
 pub mod action;
 pub mod ai;
-pub mod fighter;
-pub mod object;
 pub mod dna;
+pub mod object;
+
+// TODO: deprecate fighter
+// pub mod fighter;

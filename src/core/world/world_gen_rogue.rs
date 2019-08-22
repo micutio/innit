@@ -7,11 +7,11 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{Tile, WorldGen};
 use crate::entity::ai::Ai;
-use crate::entity::fighter::{DeathCallback, Fighter};
+use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::player::PLAYER;
-use crate::util::game_rng::{GameRng};
+use crate::util::game_rng::GameRng;
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -37,6 +37,7 @@ impl WorldGen for RogueWorldGenerator {
         &mut self,
         game_objects: &mut GameObjects,
         game_rng: &mut GameRng,
+        gene_library: &mut GeneLibrary,
         level: u32,
     ) {
         // fill the world with `unblocked` tiles
@@ -60,10 +61,10 @@ impl WorldGen for RogueWorldGenerator {
 
             if !failed {
                 // no intersections, we have a valid room.
-                create_room(game_objects, new_room);
+                create_room(game_objects, game_rng, gene_library, new_room);
 
                 // add some content to the room
-                place_objects(game_objects, game_rng, new_room, level);
+                place_objects(game_objects, game_rng, gene_library, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -81,12 +82,26 @@ impl WorldGen for RogueWorldGenerator {
                     // connect both rooms with a horizontal and a vertical tunnel - in random order
                     if rand::random() {
                         // move horizontally, then vertically
-                        create_h_tunnel(game_objects, prev_x, new_x, prev_y);
-                        create_v_tunnel(game_objects, prev_y, new_y, new_x);
+                        create_h_tunnel(
+                            game_objects,
+                            game_rng,
+                            gene_library,
+                            prev_x,
+                            new_x,
+                            prev_y,
+                        );
+                        create_v_tunnel(game_objects, game_rng, gene_library, prev_y, new_y, new_x);
                     } else {
                         // move vertically, then horizontally
-                        create_v_tunnel(game_objects, prev_y, new_y, prev_x);
-                        create_h_tunnel(game_objects, prev_x, new_x, new_y);
+                        create_v_tunnel(
+                            game_objects,
+                            game_rng,
+                            gene_library,
+                            prev_y,
+                            new_y,
+                            prev_x,
+                        );
+                        create_h_tunnel(game_objects, game_rng, gene_library, prev_x, new_x, new_y);
                     }
                 }
                 // finally, append new room to list
@@ -96,33 +111,58 @@ impl WorldGen for RogueWorldGenerator {
     }
 }
 
-fn create_room(objects: &mut GameObjects, room: Rect) {
+fn create_room(
+    objects: &mut GameObjects,
+    game_rng: &mut GameRng,
+    gene_library: &mut GeneLibrary,
+    room: Rect,
+) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
                 .get_tile_at(x as usize, y as usize)
-                .replace(Tile::empty(x, y));
+                .replace(Tile::empty(game_rng, gene_library, x, y));
         }
     }
 }
 
-fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
+fn create_h_tunnel(
+    objects: &mut GameObjects,
+    game_rng: &mut GameRng,
+    gene_library: &mut GeneLibrary,
+    x1: i32,
+    x2: i32,
+    y: i32,
+) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y));
+            .replace(Tile::empty(game_rng, gene_library, x, y));
     }
 }
 
-fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
+fn create_v_tunnel(
+    objects: &mut GameObjects,
+    game_rng: &mut GameRng,
+    gene_library: &mut GeneLibrary,
+    y1: i32,
+    y2: i32,
+    x: i32,
+) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y));
+            .replace(Tile::empty(game_rng, gene_library, x, y));
     }
 }
 
-fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng, room: Rect, level: u32) {
+fn place_objects(
+    objects: &mut GameObjects,
+    game_rng: &mut GameRng,
+    gene_library: &mut GeneLibrary,
+    room: Rect,
+    level: u32,
+) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
@@ -166,10 +206,11 @@ fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng, room: Rect, 
         let y = game_rng.gen_range(room.y1 + 1, room.y2);
 
         if !objects.is_blocked(x, y) {
-            let mut monster = match monster_chances[monster_dist.sample(game_rng)].0
-            {
+            let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
                 "virus" => {
-                    let mut virus = Object::new(
+                    let dna = gene_library.new_dna(game_rng, 10);
+                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
+                    Object::new(
                         x,
                         y,
                         Vec::new(),
@@ -179,20 +220,16 @@ fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng, room: Rect, 
                         true,
                         false,
                         false,
-                    );
-                    virus.fighter = Some(Fighter {
-                        base_max_hp:  10,
-                        hp:           10,
-                        base_defense: 0,
-                        base_power:   3,
-                        on_death:     DeathCallback::Monster,
-                        xp:           35,
-                    });
-                    virus.ai = Some(Ai::Basic);
-                    virus
+                        sensors,
+                        processors,
+                        actuators,
+                        Some(Ai::Basic),
+                    )
                 }
                 "bacteria" => {
-                    let mut bacteria = Object::new(
+                    let dna = gene_library.new_dna(game_rng, 10);
+                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
+                    Object::new(
                         x,
                         y,
                         Vec::new(),
@@ -202,17 +239,11 @@ fn place_objects(objects: &mut GameObjects, game_rng: &mut GameRng, room: Rect, 
                         true,
                         false,
                         false,
-                    );
-                    bacteria.fighter = Some(Fighter {
-                        base_max_hp:  16,
-                        hp:           16,
-                        base_defense: 1,
-                        base_power:   4,
-                        on_death:     DeathCallback::Monster,
-                        xp:           100,
-                    });
-                    bacteria.ai = Some(Ai::Basic);
-                    bacteria
+                        sensors,
+                        processors,
+                        actuators,
+                        Some(Ai::Basic),
+                    )
                 }
                 _ => unreachable!(),
             };
