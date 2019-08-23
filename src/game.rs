@@ -59,7 +59,12 @@ pub fn new_game() -> (GameState, GameObjects) {
 
     // generate world terrain
     let mut world_generator = RogueWorldGenerator::new();
-    world_generator.make_world(&mut game_objects, &mut game_state.game_rng, &mut game_state.gene_library, level);
+    world_generator.make_world(
+        &mut game_objects,
+        &mut game_state.game_rng,
+        &mut game_state.gene_library,
+        level,
+    );
 
     // a warm welcoming message
     game_state.log.add(

@@ -606,9 +606,11 @@ pub fn handle_meta_actions(
     action: UiAction,
 ) -> bool {
     // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
+    debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
-            save_game(game_state, game_objects).unwrap();
+            let result = save_game(game_state, game_objects);
+            result.unwrap();
             return true;
         }
         UiAction::ToggleDarkLightMode => {

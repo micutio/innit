@@ -47,8 +47,11 @@ pub enum SuperTrait {
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+#[serde(untagged)]
 pub enum SubTrait {
+    // #[serde(rename = "sttraitattribute")]
     StAttribute(TraitAttribute),
+    // #[serde(rename = "sttraitaction")]
     StAction(TraitAction),
 }
 
