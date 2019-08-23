@@ -355,17 +355,17 @@ impl GeneLibrary {
         trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
-        println!("start_ptr at 0x00 = {}", start_ptr);
+        // println!("start_ptr at 0x00 = {}", start_ptr);
         start_ptr += 1;
         // read length
-        println!("start_ptr at len = {}", start_ptr);
+        // println!("start_ptr at len = {}", start_ptr);
         end_ptr = cmp::min(end_ptr, start_ptr + dna[start_ptr] as usize);
         start_ptr += 1;
-        println!("start_ptr at iteration start = {}", start_ptr);
-        println!("new end_ptr = {}", end_ptr);
+        // println!("start_ptr at iteration start = {}", start_ptr);
+        // println!("new end_ptr = {}", end_ptr);
         // read trait ids - actions and attributes
         for i in start_ptr..=end_ptr {
-            println!("iteration -> i = {}", i);
+            // println!("iteration -> i = {}", i);
             // if we reached the end of the genome, return the current position
             if i >= dna.len() {
                 return (i, end_ptr);
@@ -380,7 +380,7 @@ impl GeneLibrary {
 
         start_ptr = end_ptr + 1;
         end_ptr = dna.len();
-        println!("returning start_ptr {}, end_ptr {}", start_ptr, end_ptr);
+        // println!("returning start_ptr {}, end_ptr {}", start_ptr, end_ptr);
         (start_ptr, end_ptr)
     }
 }
