@@ -9,6 +9,8 @@ use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
+use crate::core::world::world_gen::WorldGen;
+use crate::core::world::world_gen_rogue::RogueWorldGenerator;
 use crate::entity::dna::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
@@ -23,15 +25,16 @@ pub const WORLD_HEIGHT: i32 = 43;
 
 /// Create a new game by instantiating the game engine, game state and object vector.
 pub fn new_game() -> (GameState, GameObjects) {
-    // create array holding all GameObjects
-    let mut objects = GameObjects::new();
-
-    // create game state holding most game-relevant information
-    //  - also creates map and player starting position
+    // create game state holding game-relevant information
     let level = 1;
-    let mut game_state = GameState::new(&mut objects, level);
+    let mut game_state = GameState::new(level);
+
+    // create blank game world
+    let mut game_objects = GameObjects::new();
+    game_objects.init_world(&mut game_state.game_rng, &mut game_state.gene_library);
 
     // create object representing the player
+    // TODO: store player starting position in world generator and set player object later
     let dna = game_state
         .gene_library
         .new_dna(&mut game_state.game_rng, 10);
@@ -52,15 +55,11 @@ pub fn new_game() -> (GameState, GameObjects) {
         None,
     );
     player.alive = true;
-    // player.fighter = Some(Fighter {
-    //     base_max_hp:  100,
-    //     hp:           100,
-    //     base_defense: 1,
-    //     base_power:   2,
-    //     on_death:     DeathCallback::Player,
-    //     xp:           0,
-    // });
-    objects.set_player(player);
+    game_objects.set_player(player);
+
+    // generate world terrain
+    let mut world_generator = RogueWorldGenerator::new();
+    world_generator.make_world(&mut game_objects, &mut game_state.game_rng, &mut game_state.gene_library, level);
 
     // a warm welcoming message
     game_state.log.add(
@@ -68,7 +67,7 @@ pub fn new_game() -> (GameState, GameObjects) {
         colors::RED,
     );
 
-    (game_state, objects)
+    (game_state, game_objects)
 }
 
 /// Central function of the game.

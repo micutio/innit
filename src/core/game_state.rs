@@ -3,8 +3,6 @@ use rand::SeedableRng;
 use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::world::world_gen::WorldGen;
-use crate::core::world::world_gen_rogue::RogueWorldGenerator;
 use crate::entity::action::*;
 use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
@@ -52,20 +50,14 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new(game_objects: &mut GameObjects, level: u32) -> Self {
-        let mut world_generator = RogueWorldGenerator::new();
-        let mut game_rng = GameRng::from_seed(RNG_SEED);
-        let mut gene_library = GeneLibrary::new();
-        gene_library.init_genes();
-        world_generator.make_world(game_objects, &mut game_rng, &mut gene_library, level);
-
+    pub fn new(level: u32) -> Self {
         GameState {
             // create the list of game messages and their colors, starts empty
             log: vec![],
             turn: 0,
             dungeon_level: 1,
-            game_rng,
-            gene_library,
+            game_rng: GameRng::from_seed(RNG_SEED),
+            gene_library: GeneLibrary::new(),
             current_obj_index: 0,
         }
     }

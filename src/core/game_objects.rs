@@ -13,7 +13,7 @@ use crate::util::game_rng::GameRng;
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct GameObjects {
     num_world_tiles: usize,
     obj_vec:         Vec<Option<Object>>,
@@ -23,8 +23,8 @@ impl GameObjects {
     pub fn new() -> Self {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
         let mut obj_vec = Vec::new();
-        obj_vec.push(None);
-        obj_vec.resize_with(num_world_tiles + 1, || None);
+        // obj_vec.push(None);
+        // obj_vec.resize_with(num_world_tiles + 1, || None);
 
         GameObjects {
             num_world_tiles,
@@ -40,10 +40,11 @@ impl GameObjects {
     /// Allocate enough space in the object vector to fit the player and all world tiles.
     pub fn init_world(&mut self, game_rng: &mut GameRng, gene_library: &mut GeneLibrary) {
         assert!(self.obj_vec.is_empty());
-        // self.obj_vec.push(None);
-        // self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
+        self.obj_vec.push(None);
+        self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
+                // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                     .replace(Tile::wall(game_rng, gene_library, x, y));
             }
@@ -59,6 +60,7 @@ impl GameObjects {
                 );
             }
             None => {
+                debug!("setting player object {:?}", object);
                 self.obj_vec[PLAYER].replace(object);
             }
         }

@@ -70,7 +70,10 @@ impl WorldGen for RogueWorldGenerator {
                 if self.rooms.is_empty() {
                     // this is the first room, save position as starting point for the player
                     if let Some(ref mut player) = game_objects[PLAYER] {
+                        debug!("setting new player position: ({},{})", new_x, new_y);
                         player.set_pos(new_x, new_y);
+                    } else {
+                        error!("cannot find player in game_objects!");
                     }
                 } else {
                     // all rooms after the first:

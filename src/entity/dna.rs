@@ -272,7 +272,7 @@ impl GeneLibrary {
             gray_to_trait,
             trait_to_super,
             gray_code: generate_gray_code(4),
-            trait_count: 0,
+            trait_count: traits.len(),
         }
     }
 
@@ -303,7 +303,7 @@ impl GeneLibrary {
                 }
             }
             Err(..) => {
-                error!("[dna] Enable to read gene file!");
+                error!("[dna] Unable to read gene file!");
             }
         }
     }
@@ -325,7 +325,7 @@ impl GeneLibrary {
             // add random attribute value
             dna.push(game_rng.gen_range(0, 16) as u8);
         }
-        debug!("new dna generated: {:?}", dna);
+        // debug!("new dna generated: {:?}", dna);
         dna
     }
 

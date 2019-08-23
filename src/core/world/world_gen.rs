@@ -62,7 +62,7 @@ impl Tile {
             x,
             y,
             Vec::new(),
-            "empty tile",
+            "wall tile",
             '\t',
             colors::BLACK,
             true,
