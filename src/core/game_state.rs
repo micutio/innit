@@ -53,11 +53,11 @@ impl GameState {
     pub fn new(level: u32) -> Self {
         GameState {
             // create the list of game messages and their colors, starts empty
-            log: vec![],
-            turn: 0,
-            dungeon_level: 1,
-            game_rng: GameRng::from_seed(RNG_SEED),
-            gene_library: GeneLibrary::new(),
+            log:               vec![],
+            turn:              0,
+            dungeon_level:     level,
+            game_rng:          GameRng::from_seed(RNG_SEED),
+            gene_library:      GeneLibrary::new(),
             current_obj_index: 0,
         }
     }

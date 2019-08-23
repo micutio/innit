@@ -55,6 +55,7 @@ pub fn new_game() -> (GameState, GameObjects) {
         None,
     );
     player.alive = true;
+    debug!("created player object {}", player);
     game_objects.set_player(player);
 
     // generate world terrain
