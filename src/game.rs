@@ -56,7 +56,11 @@ pub fn new_game() -> (GameState, GameObjects) {
     );
     player.alive = true;
     debug!("created player object {}", player);
+    debug!("player sensors: {:?}", player.sensors);
+    debug!("player processors: {:?}", player.processors);
+    debug!("player actuators: {:?}", player.actuators);
     game_objects.set_player(player);
+
 
     // generate world terrain
     let mut world_generator = RogueWorldGenerator::new();

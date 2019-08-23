@@ -235,10 +235,7 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "\n\
-             {} [{}] @ ({},{})\n\
-             alive: {}\n\
-             energy: {}\n",
+            "{} [{}] at ({},{}), alive: {}, energy: {}",
             self.visual.name, self.visual.character, self.x, self.y, self.alive, self.energy
         )
     }

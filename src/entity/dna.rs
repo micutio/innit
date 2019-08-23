@@ -338,6 +338,7 @@ impl GeneLibrary {
         let mut trait_builder: TraitBuilder = TraitBuilder::new();
 
         while start_ptr < dna.len() {
+            println!("start_ptr: {}, end_ptr: {}", start_ptr, end_ptr);
             let (s_ptr, e_ptr) = self.decode_gene(dna, start_ptr, end_ptr, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
