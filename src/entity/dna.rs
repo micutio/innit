@@ -112,7 +112,7 @@ pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Bo
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Sensors {
     pub actions:     Vec<ActionPrototype>,
     pub sense_range: i32,
@@ -137,7 +137,7 @@ impl Sensors {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Processors {
     pub actions: Vec<ActionPrototype>,
 }
@@ -158,7 +158,7 @@ impl Processors {
 ///   - move
 ///   - attack
 ///   - defend
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<ActionPrototype>,
     pub hp:      i32,
@@ -232,7 +232,7 @@ impl GeneLibrary {
         let gray_to_trait: HashMap<u8, SubTrait> = traits
             .iter()
             .enumerate()
-            .map(|(x, y)| (gray_code[x], *y))
+            .map(|(x, y)| (gray_code[x + 1], *y))
             .collect();
 
         // TODO: This is really unwieldy.
@@ -337,7 +337,7 @@ impl GeneLibrary {
         let mut end_ptr: usize = dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new();
 
-        while start_ptr < dna.len() {
+        while start_ptr < dna.len() - 2 {
             let (s_ptr, e_ptr) = self.decode_gene(dna, start_ptr, end_ptr, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
@@ -355,12 +355,17 @@ impl GeneLibrary {
         trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
+        println!("start_ptr at 0x00 = {}", start_ptr);
         start_ptr += 1;
         // read length
+        println!("start_ptr at len = {}", start_ptr);
         end_ptr = cmp::min(end_ptr, start_ptr + dna[start_ptr] as usize);
         start_ptr += 1;
+        println!("start_ptr at iteration start = {}", start_ptr);
+        println!("new end_ptr = {}", end_ptr);
         // read trait ids - actions and attributes
-        for i in start_ptr..end_ptr {
+        for i in start_ptr..=end_ptr {
+            println!("iteration -> i = {}", i);
             // if we reached the end of the genome, return the current position
             if i >= dna.len() {
                 return (i, end_ptr);
@@ -373,6 +378,9 @@ impl GeneLibrary {
             }
         }
 
+        start_ptr = end_ptr + 1;
+        end_ptr = dna.len();
+        println!("returning start_ptr {}, end_ptr {}", start_ptr, end_ptr);
         (start_ptr, end_ptr)
     }
 }
