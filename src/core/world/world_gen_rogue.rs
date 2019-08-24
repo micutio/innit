@@ -10,7 +10,7 @@ use crate::entity::ai::Ai;
 use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::ui::player::PLAYER;
+use crate::player::PLAYER;
 use crate::util::game_rng::GameRng;
 
 // room generation constraints
