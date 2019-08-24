@@ -284,7 +284,7 @@ pub enum PlayerInput {
     PlayInput(PlayAction),
 }
 
-// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`.
+// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`, `SetQuickAction`
 #[derive(Clone, Debug)]
 pub enum UiAction {
     ExitGameLoop,

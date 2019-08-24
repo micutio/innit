@@ -64,8 +64,8 @@ impl GameFrontend {
             panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             input: None,
-            coloring: ColorPalette::new_light(), /* TODO: Save light and dark setting to config
-                                                  * file. */
+            // TODO: Save light and dark setting to config
+            coloring: ColorPalette::new_light(),
             is_light_mode: true,
         }
     }
@@ -82,7 +82,7 @@ impl GameFrontend {
 }
 
 /// Specification of animations and their parameters.
-/// TODO: Outsource (heh) this to its own module.
+// TODO: Move this to its own module.
 #[derive(PartialEq, Debug)]
 pub enum AnimationType {
     /// Gradual transition of the world hue and or brightness
@@ -626,8 +626,6 @@ pub fn handle_meta_actions(
             re_render(game_state, game_frontend, game_objects, "");
         }
         UiAction::CharacterScreen => {
-            // TODO: move this to separate function
-            // show character information
             show_character_screen(game_state, game_frontend, game_input, game_objects);
         }
 

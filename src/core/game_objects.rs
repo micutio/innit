@@ -22,7 +22,7 @@ pub struct GameObjects {
 impl GameObjects {
     pub fn new() -> Self {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
-        let mut obj_vec = Vec::new();
+        let obj_vec = Vec::new();
         // obj_vec.push(None);
         // obj_vec.resize_with(num_world_tiles + 1, || None);
 

@@ -20,20 +20,7 @@ use crate::entity::dna::{ActionPrototype, Actuators, Processors, Sensors};
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
-///
-/// **Sensor** - the object's organelle/perception
-///
-/// - sensing range
-///
-/// **Processor** - the object's brain
-///
-/// - reaction time bonus/penalty
-///
-/// **Actuator** - the object's body
-///
-/// - membrane integrity a.k.a health points
-///
-/// Attributes:
+// TODO: Use builder pattern to construct new objects.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x:           i32,
@@ -67,7 +54,6 @@ pub struct Physics {
 }
 
 impl Object {
-    // NOTE: Rather use builder pattern here
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: i32,
@@ -155,76 +141,4 @@ impl Object {
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
         self.next_action = next_action;
     }
-
-    // TODO: Re-write or delete the methods below!
-
-    // pub fn take_damage(&mut self, damage: i32, game_state: &mut GameState) -> Option<i32> {
-    //     // apply damage if possible
-    //     if let Some(fighter) = self.fighter.as_mut() {
-    //         if damage > 0 {
-    //             fighter.hp -= damage;
-    //         }
-    //     }
-
-    //     // check for death, trigger death callback function
-    //     if let Some(fighter) = self.fighter {
-    //         if fighter.hp <= 0 {
-    //             self.alive = false;
-    //             fighter.on_death.callback(self, &mut game_state.log);
-    //             return Some(fighter.xp);
-    //         }
-    //     }
-    //     None
-    // }
-
-    // pub fn power(&self, _game_state: &GameState) -> i32 {
-    //     self.fighter.map_or(0, |f| f.base_power)
-    // }
-
-    // pub fn attack(&mut self, target: &mut Object, game_state: &mut GameState) {
-    //     // simple formula for attack damage
-    //     let damage = self.power(game_state) - target.defense(game_state);
-    //     if damage > 0 {
-    //         // make the target take some damage
-    //         game_state.log.add(
-    //             format!(
-    //                 "{} attacks {} for {} hit points.",
-    //                 self.visual.name, target.visual.name, damage
-    //             ),
-    //             colors::WHITE,
-    //         );
-    //         // target.take_damage(damage, messages);
-    //         if let Some(xp) = target.take_damage(damage, game_state) {
-    //             // yield experience to the player
-    //             self.fighter.as_mut().unwrap().xp += xp;
-    //         }
-    //     } else {
-    //         game_state.log.add(
-    //             format!(
-    //                 "{} attacks {} but it has no effect!",
-    //                 self.visual.name, target.visual.name
-    //             ),
-    //             colors::WHITE,
-    //         );
-    //     }
-    // }
-
-    // pub fn defense(&self, _game_state: &GameState) -> i32 {
-    //     self.fighter.map_or(0, |f| f.base_defense)
-    // }
-
-    // pub fn max_hp(&self, _game_state: &GameState) -> i32 {
-    //     self.fighter.map_or(0, |f| f.base_max_hp)
-    // }
-
-    // /// heal by the given amount, without going over the maxmimum
-    // pub fn heal(&mut self, game_state: &GameState, amount: i32) {
-    //     let max_hp = self.max_hp(game_state);
-    //     if let Some(ref mut fighter) = self.fighter {
-    //         fighter.hp += amount;
-    //         if fighter.hp > max_hp {
-    //             fighter.hp = max_hp;
-    //         }
-    //     }
-    // }
 }

@@ -296,8 +296,8 @@ pub fn show_character_screen(
         let header: String = "Character Information".to_string();
         let msg: String = format!(
             "Energy: {} \n\
-             Alive: {} \n\"
-             Turn: {}",
+             Alive:  {} \n\
+             Turn:   {}",
             player.energy, player.alive, game_state.turn
         );
         msgbox(
