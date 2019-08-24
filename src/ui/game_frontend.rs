@@ -4,7 +4,7 @@ use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectProcResult, TORCH_RADIUS};
+use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
 use crate::game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
@@ -225,9 +225,13 @@ fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjec
 
 fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     if let Some(ref player) = game_objects[PLAYER] {
-        game_frontend
-            .fov
-            .compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG);
+        game_frontend.fov.compute_fov(
+            player.x,
+            player.y,
+            player.sensors.sense_range,
+            FOV_LIGHT_WALLS,
+            FOV_ALG,
+        );
     }
 }
 
@@ -252,8 +256,10 @@ fn init_object_visuals(
 fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: (i32, i32) = (0, 0);
+    let mut player_sense_range: f32 = 0.0;
     if let Some(ref mut player) = game_objects[PLAYER] {
         player_pos = (player.x, player.y);
+        player_sense_range = player.sensors.sense_range as f32;
         player.visual.color = game_frontend.coloring.player;
     }
 
@@ -287,12 +293,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fwft,
                             fwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
                         ),
                         colors::lerp(
                             bwft,
                             bwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
                         ),
                     ),
                     // (true, false) => COLOR_ground_in_fov,
@@ -300,12 +306,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fgft,
                             fgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
                         ),
                         colors::lerp(
                             bgft,
                             bgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / TORCH_RADIUS as f32,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
                         ),
                     ),
                 };

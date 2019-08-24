@@ -10,8 +10,6 @@ use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::util::game_rng::{GameRng, RNG_SEED};
 
-pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
-
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
 
@@ -55,7 +53,7 @@ impl GameState {
             // create the list of game messages and their colors, starts empty
             log:               vec![],
             turn:              0,
-            dungeon_level:     1,
+            dungeon_level:     level,
             game_rng:          GameRng::from_seed(RNG_SEED),
             gene_library:      GeneLibrary::new(),
             current_obj_index: 0,
@@ -144,7 +142,7 @@ impl GameState {
 }
 
 // NOTE: All functions below are hot candidates for a rewrite because they might not fit into the
-// new command pattern system.
+//       new command pattern system.
 
 pub struct Transition {
     pub level: u32,
