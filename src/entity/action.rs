@@ -6,9 +6,9 @@ use std::fmt::Debug;
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, TORCH_RADIUS};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::entity::object::Object;
-use crate::ui::player::PLAYER;
+use crate::player::PLAYER;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -67,7 +67,9 @@ impl Action for PassAction {
         // TODO: make sure all game log messages are only displayed if the cause is visible to the
         // player
         if let Some(player) = &game_objects[PLAYER] {
-            if player.distance_to(&owner) <= TORCH_RADIUS as f32 && owner.tile.is_none() {
+            if player.distance_to(&owner) <= player.sensors.sense_range as f32
+                && owner.tile.is_none()
+            {
                 // don't record all tiles passing constantly
                 game_state.log.add(
                     format!("{} passes their turn", owner.visual.name),

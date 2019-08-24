@@ -14,9 +14,7 @@ pub fn modulus<T: Num + PartialOrd + Copy>(a: T, b: T) -> T {
 pub fn generate_gray_code(n: u8) -> Vec<u8> {
     let base: u8 = 2;
     let code_len: u8 = base.pow(u32::from(n));
-    (0..code_len)
-        .map(|x| x ^ (x >> 1))
-        .collect::<Vec<u8>>()
+    (0..code_len).map(|x| x ^ (x >> 1)).collect::<Vec<u8>>()
 }
 
 // /// Helper function to convert from a binary number to *reflected binary* gray code.

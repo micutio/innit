@@ -13,7 +13,8 @@ extern crate tcod;
 mod core;
 mod entity;
 mod game;
-pub mod test;
+mod player;
+mod test;
 mod ui;
 mod util;
 

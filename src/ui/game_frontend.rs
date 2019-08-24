@@ -8,10 +8,10 @@ use crate::core::game_state::{GameState, ObjectProcResult, TORCH_RADIUS};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
 use crate::game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::player::PLAYER;
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
 use crate::ui::game_input::{GameInput, UiAction};
-use crate::ui::player::PLAYER;
 
 // game window properties
 pub const SCREEN_WIDTH: i32 = 80;

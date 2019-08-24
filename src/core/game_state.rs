@@ -6,8 +6,8 @@ use crate::core::game_objects::GameObjects;
 use crate::entity::action::*;
 use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
+use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
-use crate::ui::player::PLAYER;
 use crate::util::game_rng::{GameRng, RNG_SEED};
 
 pub const TORCH_RADIUS: i32 = 10; // TODO: Replace with something like object -> perception -> range.
@@ -53,11 +53,11 @@ impl GameState {
     pub fn new(level: u32) -> Self {
         GameState {
             // create the list of game messages and their colors, starts empty
-            log: vec![],
-            turn: 0,
-            dungeon_level: 1,
-            game_rng: GameRng::from_seed(RNG_SEED),
-            gene_library: GeneLibrary::new(),
+            log:               vec![],
+            turn:              0,
+            dungeon_level:     1,
+            game_rng:          GameRng::from_seed(RNG_SEED),
+            gene_library:      GeneLibrary::new(),
             current_obj_index: 0,
         }
     }
