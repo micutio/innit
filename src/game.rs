@@ -13,9 +13,9 @@ use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
 use crate::entity::dna::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
+use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
-use crate::ui::player::PLAYER;
 
 const SAVEGAME: &str = "data/savegame";
 

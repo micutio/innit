@@ -24,8 +24,9 @@
 //! Basically: the more often a gene occurs, the stronger its trait will be.
 // TODO: How to handle synergies/anti-synergies?
 // TODO: How to calculate energy cost per action?
-// TODO: Design a DNA parser and a mapping from symbol to trait struct.
 // TODO: Can behavior be encoded in the genome too i.e., fight or flight?
+// TODO: Should attributes be fix on trait level or full-on generic as list of attribute objects?
+// TODO: How to best model synergies and anti-synergies across traits?
 
 use rand::Rng;
 use std::cmp;
@@ -92,18 +93,9 @@ pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Bo
             trait_id: StAction(Move),
             param: Orientation(dir),
         } => Box::new(MoveAction::new(dir, prototype.parameter)),
-        // TODO: Check if we can actually move!
-        // (PlayInput(Move(TraitAction::Move, Cardinal(Direction))), Some(action_prototype)) =>
-        // Box::new(MoveAction::new(Direction, action_prototype.parameter)),
         _ => Box::new(PassAction),
     }
 }
-
-// In the following we describe each of the three integral components that give an object its body,
-// mind and behavior.
-// Each of them contains a list of actions related to their domain.
-// TODO: Should attributes be fix on o-trait level or full-on generic as list of attribute objects?
-// TODO: How to best model synergies and anti-synergies across o-traits?
 
 /// This may or may not be body parts. Actuators like organells can also benefit the attributes.
 /// Sensors contain:
@@ -112,11 +104,10 @@ pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Bo
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Sensors {
     pub actions:     Vec<ActionPrototype>,
     pub sense_range: i32,
-    // attributes: Vec<AttributeObject>,
 }
 
 impl Sensors {
@@ -126,8 +117,6 @@ impl Sensors {
             sense_range: 0,
         }
     }
-
-    // TODO: Implement creating action(prototypes) from given action traits and prototypes.
 }
 
 /// Processors contain:
@@ -137,7 +126,7 @@ impl Sensors {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Processors {
     pub actions: Vec<ActionPrototype>,
 }
@@ -158,7 +147,7 @@ impl Processors {
 ///   - move
 ///   - attack
 ///   - defend
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<ActionPrototype>,
     pub hp:      i32,
@@ -199,8 +188,6 @@ pub struct GeneRecord {
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
-    // TODO: Re-use enum TraitAction to identify actions instead. They are basically already doing
-    // it.
     gray_to_trait: HashMap<u8, SubTrait>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
@@ -232,7 +219,7 @@ impl GeneLibrary {
         let gray_to_trait: HashMap<u8, SubTrait> = traits
             .iter()
             .enumerate()
-            .map(|(x, y)| (gray_code[x], *y))
+            .map(|(x, y)| (gray_code[x + 1], *y))
             .collect();
 
         // TODO: This is really unwieldy.
@@ -323,7 +310,7 @@ impl GeneLibrary {
             let trait_num = game_rng.gen_range(0, self.trait_count);
             // add trait id
             dna.push(self.gray_code[trait_num]);
-            // add length // TODO: encode length in TraitAction
+            // add length
             dna.push(1);
             // add random attribute value
             dna.push(game_rng.gen_range(0, 16) as u8);
@@ -337,8 +324,7 @@ impl GeneLibrary {
         let mut end_ptr: usize = dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new();
 
-        while start_ptr < dna.len() {
-            println!("start_ptr: {}, end_ptr: {}", start_ptr, end_ptr);
+while start_ptr < dna.len() - 2 {
             let (s_ptr, e_ptr) = self.decode_gene(dna, start_ptr, end_ptr, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
@@ -356,12 +342,17 @@ impl GeneLibrary {
         trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
+        // println!("start_ptr at 0x00 = {}", start_ptr);
         start_ptr += 1;
         // read length
+        // println!("start_ptr at len = {}", start_ptr);
         end_ptr = cmp::min(end_ptr, start_ptr + dna[start_ptr] as usize);
         start_ptr += 1;
+        // println!("start_ptr at iteration start = {}", start_ptr);
+        // println!("new end_ptr = {}", end_ptr);
         // read trait ids - actions and attributes
-        for i in start_ptr..end_ptr {
+        for i in start_ptr..=end_ptr {
+            // println!("iteration -> i = {}", i);
             // if we reached the end of the genome, return the current position
             if i >= dna.len() {
                 return (i, end_ptr);
@@ -374,6 +365,9 @@ impl GeneLibrary {
             }
         }
 
+        start_ptr = end_ptr + 1;
+        end_ptr = dna.len();
+        // println!("returning start_ptr {}, end_ptr {}", start_ptr, end_ptr);
         (start_ptr, end_ptr)
     }
 }
@@ -428,7 +422,6 @@ impl TraitBuilder {
 
     // Finalize all actions, return the super trait components and consume itself.
     pub fn finalize(mut self) -> (Sensors, Processors, Actuators) {
-        // TODO: count occurences of all actions in sensor, processor and actuator action lists
         // instantiate an action or prototype with count as additional parameter
         self.sensors.actions = self
             .sensor_action_acc

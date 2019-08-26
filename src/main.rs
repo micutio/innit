@@ -13,10 +13,12 @@ extern crate tcod;
 mod core;
 mod entity;
 mod game;
+mod player;
+mod test;
 mod ui;
 mod util;
 
-use ui::game_frontend::{main_menu, GameFrontend};
+use crate::ui::game_frontend::{main_menu, GameFrontend};
 
 pub fn launch_game() {
     let mut game_frontend: GameFrontend = GameFrontend::new();

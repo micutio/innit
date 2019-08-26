@@ -38,7 +38,6 @@ pub fn player_death(player: &mut Object, messages: &mut Messages) {
     messages.add("You died!", colors::RED);
 
     // for added effect, transform the player into a corpse
-    // TODO: move color and character change to module game_io or object!
     player.visual.character = '%';
     player.visual.color = colors::DARK_RED;
 }

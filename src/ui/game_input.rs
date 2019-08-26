@@ -10,8 +10,8 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
 use crate::entity::dna::{SubTrait, TraitAction};
+use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
-use crate::ui::player::PLAYER;
 
 /// The game input contains fields for
 /// - current mouse position
@@ -284,7 +284,7 @@ pub enum PlayerInput {
     PlayInput(PlayAction),
 }
 
-// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`.
+// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`, `SetQuickAction`
 #[derive(Clone, Debug)]
 pub enum UiAction {
     ExitGameLoop,

@@ -6,11 +6,11 @@ use tcod::{chars, console::*, input::Key};
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
+use crate::player::PLAYER;
 use crate::ui::game_frontend::{
     GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH,
 };
 use crate::ui::game_input::GameInput;
-use crate::ui::player::PLAYER;
 use crate::util::modulus;
 
 // message box measurements
@@ -296,8 +296,8 @@ pub fn show_character_screen(
         let header: String = "Character Information".to_string();
         let msg: String = format!(
             "Energy: {} \n\
-             Alive: {} \n\"
-             Turn: {}",
+             Alive:  {} \n\
+             Turn:   {}",
             player.energy, player.alive, game_state.turn
         );
         msgbox(

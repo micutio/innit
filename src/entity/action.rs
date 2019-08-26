@@ -1,14 +1,16 @@
 //! Module Action provides the action interface, which is used to create any kind of action that
 //! can be performed by the player or an NPC.
 
+// TODO: Create actions for setting and using quick/primary/secondary actions.
+
 use std::fmt::Debug;
 
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, TORCH_RADIUS};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::entity::object::Object;
-use crate::ui::player::PLAYER;
+use crate::player::PLAYER;
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
@@ -19,21 +21,6 @@ pub enum ActionResult {
     Failure,
     /// Another action happens automatically after this one.
     Consequence { action: Option<Box<dyn Action>> },
-}
-
-struct ActionObject<T: Action + Copy> {
-    action: T,
-}
-
-impl<T> ActionObject<T>
-where
-    T: Action + Copy,
-{
-    fn instantiate(&self) -> ActionObject<T> {
-        ActionObject {
-            action: self.action,
-        }
-    }
 }
 
 /// Prototype for all actions.
@@ -64,10 +51,10 @@ impl Action for PassAction {
     ) -> ActionResult {
         // do nothing
         // duh
-        // TODO: make sure all game log messages are only displayed if the cause is visible to the
-        // player
         if let Some(player) = &game_objects[PLAYER] {
-            if player.distance_to(&owner) <= TORCH_RADIUS as f32 && owner.tile.is_none() {
+            if player.distance_to(&owner) <= player.sensors.sense_range as f32
+                && owner.tile.is_none()
+            {
                 // don't record all tiles passing constantly
                 game_state.log.add(
                     format!("{} passes their turn", owner.visual.name),
@@ -144,8 +131,7 @@ pub enum Direction {
 }
 
 /// Move an object
-/// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable
-/// action.
+// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
     direction:   Direction,
