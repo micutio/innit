@@ -31,7 +31,7 @@ pub fn new_game() -> (GameState, GameObjects) {
 
     // create blank game world
     let mut game_objects = GameObjects::new();
-    game_objects.init_world(&mut game_state.game_rng, &mut game_state.gene_library);
+    game_objects.init_world();
 
     // create object representing the player
     // TODO: store player starting position in world generator and set player object later

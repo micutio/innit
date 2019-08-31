@@ -1,11 +1,9 @@
 use std::ops::{Index, IndexMut};
 
 use crate::core::world::world_gen::Tile;
-use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
-use crate::util::game_rng::GameRng;
 
 /// The game object struct contains all game objects, including
 /// * player character
@@ -19,6 +17,7 @@ pub struct GameObjects {
     obj_vec:         Vec<Option<Object>>,
 }
 
+// TODO: Create method to init all tiles with dna and super trait containers!
 impl GameObjects {
     pub fn new() -> Self {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
@@ -38,7 +37,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn init_world(&mut self, game_rng: &mut GameRng, gene_library: &mut GeneLibrary) {
+    pub fn init_world(&mut self) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);

@@ -61,7 +61,7 @@ impl WorldGen for RogueWorldGenerator {
 
             if !failed {
                 // no intersections, we have a valid room.
-                create_room(game_objects, game_rng, gene_library, new_room);
+                create_room(game_objects, new_room);
 
                 // add some content to the room
                 place_objects(game_objects, game_rng, gene_library, new_room, level);
@@ -100,12 +100,7 @@ impl WorldGen for RogueWorldGenerator {
     }
 }
 
-fn create_room(
-    objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    gene_library: &mut GeneLibrary,
-    room: Rect,
-) {
+fn create_room(objects: &mut GameObjects, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
