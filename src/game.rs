@@ -39,28 +39,18 @@ pub fn new_game() -> (GameState, GameObjects) {
         .gene_library
         .new_dna(&mut game_state.game_rng, 10);
     let (sensors, processors, actuators) = game_state.gene_library.decode_dna(&dna);
-    let mut player = Object::new(
-        0,
-        0,
-        dna,
-        "player",
-        '@',
-        colors::WHITE,
-        true,
-        false,
-        false,
-        sensors,
-        processors,
-        actuators,
-        None,
-    );
-    player.alive = true;
+    let player = Object::new()
+        .position(0, 0)
+        .living(true)
+        .visualize("player", 'a', colors::WHITE)
+        .physical(true, false, false)
+        .genome(dna, sensors, processors, actuators);
+
     debug!("created player object {}", player);
     debug!("player sensors: {:?}", player.sensors);
     debug!("player processors: {:?}", player.processors);
     debug!("player actuators: {:?}", player.actuators);
     game_objects.set_player(player);
-
 
     // generate world terrain
     let mut world_generator = RogueWorldGenerator::new();

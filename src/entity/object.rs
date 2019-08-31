@@ -3,11 +3,10 @@ use std::fmt;
 use tcod::colors::Color;
 use tcod::console::*;
 
-use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::dna::{ActionPrototype, Actuators, Processors, Sensors};
+use crate::entity::dna::{Actuators, Processors, Sensors};
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -23,7 +22,7 @@ use crate::entity::dna::{ActionPrototype, Actuators, Processors, Sensors};
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
 // TODO: Use builder pattern to construct new objects.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Object {
     pub x:           i32,
     pub y:           i32,
@@ -32,80 +31,144 @@ pub struct Object {
     pub dna:         Vec<u8>,
     pub visual:      Visual,
     pub physics:     Physics,
-    pub actions:     Vec<ActionPrototype>,
-    pub tile:        Option<Tile>,
     pub sensors:     Sensors,
     pub processors:  Processors,
     pub actuators:   Actuators,
-    pub next_action: Option<Box<dyn Action>>,
+    pub tile:        Option<Tile>,
     pub ai:          Option<Ai>,
+    pub next_action: Option<Box<dyn Action>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Visual {
     pub name:      String,
     pub character: char,
     pub color:     Color,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl Visual {
+    pub fn new() -> Self {
+        Visual {
+            name:      "unknown".into(),
+            character: '_',
+            color:     Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Physics {
     pub is_blocking:       bool,
     pub is_blocking_sight: bool,
     pub is_always_visible: bool,
 }
 
+impl Physics {
+    pub fn new() -> Self {
+        Physics {
+            is_blocking:       false,
+            is_blocking_sight: false,
+            is_always_visible: false,
+        }
+    }
+}
+
 impl Object {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        x: i32,
-        y: i32,
-        dna: Vec<u8>,
-        name: &str,
-        character: char,
-        color: Color,
-        is_blocking: bool,
-        is_blocking_sight: bool,
-        is_always_visible: bool,
-        sensors: Sensors,
-        processors: Processors,
-        actuators: Actuators,
-        ai: Option<Ai>,
-    ) -> Self {
-        let visual = Visual {
-            name: name.into(),
-            character,
-            color,
-        };
-
-        let physics = Physics {
-            is_blocking,
-            is_blocking_sight,
-            is_always_visible,
-        };
-
+    /// The Object constructor uses the builder pattern.
+    pub fn new() -> Self {
         Object {
-            x,
-            y,
-            alive: false,
-            energy: 0,
-            dna,
-            visual,
-            physics,
-            actions: Vec::new(),
-            tile: None,
-            sensors,
-            processors,
-            actuators,
+            x:           0,
+            y:           0,
+            alive:       false,
+            energy:      0,
+            dna:         Vec::new(),
+            visual:      Visual::new(),
+            physics:     Physics::new(),
+            sensors:     Sensors::new(),
+            processors:  Processors::new(),
+            actuators:   Actuators::new(),
+            tile:        None,
+            ai:          None,
             next_action: None,
-            ai,
         }
     }
 
+    /// Set the object's position in the world. Part of the builder pattern.
+    pub fn position(mut self, x: i32, y: i32) -> Object {
+        self.x = x;
+        self.y = y;
+        self
+    }
+
+    /// Set whether this object is alive (true) or dead (false). Part of the builder pattern.
+    pub fn living(mut self, alive: bool) -> Object {
+        self.alive = alive;
+        self
+    }
+
+    /// Set the current energy of the object. Part of the builder pattern.
+    pub fn energize(mut self, energy: i32) -> Object {
+        self.energy = energy;
+        self
+    }
+
+    /// Initialize the visual properties of the object. Part of the builder pattern.
+    pub fn visualize(mut self, name: &str, character: char, color: Color) -> Object {
+        self.visual.name = name.into();
+        self.visual.character = character;
+        self.visual.color = color;
+        self
+    }
+
+    pub fn physical(
+        mut self,
+        is_blocking: bool,
+        is_blocking_sight: bool,
+        is_always_visible: bool,
+    ) -> Object {
+        self.physics.is_blocking = is_blocking;
+        self.physics.is_blocking_sight = is_blocking_sight;
+        self.physics.is_always_visible = is_always_visible;
+        self
+    }
+
+    /// Set the object's dna and super traits. Part of the builder pattern.
+    pub fn genome(
+        mut self,
+        dna: Vec<u8>,
+        sensors: Sensors,
+        processors: Processors,
+        actuators: Actuators,
+    ) -> Object {
+        self.dna = dna;
+        self.sensors = sensors;
+        self.processors = processors;
+        self.actuators = actuators;
+        self
+    }
+
+    /// Transform the object into a tile. Part of the builder pattern.
+    pub fn tile_explored(mut self, is_explored: bool) -> Object {
+        self.tile = Some(Tile { is_explored });
+        self
+    }
+
+    /// Transform the object into an NPC. Part of the builder pattern.
+    pub fn ai(mut self, ai: Ai) -> Object {
+        self.ai = Some(ai);
+        self
+    }
+
+    /// Retrieve the current postition of the object.
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }
 
+    /// Set the current position of the object.
     pub fn set_pos(&mut self, x: i32, y: i32) {
         self.x = x;
         self.y = y;
@@ -117,18 +180,19 @@ impl Object {
         con.put_char(self.x, self.y, self.visual.character, BackgroundFlag::None);
     }
 
-    /// calculate distance to another object
+    /// Calculate the distance of this object to another object.
     pub fn distance_to(&self, other: &Object) -> f32 {
         let dx = other.x - self.x;
         let dy = other.y - self.y;
         ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
     }
 
-    /// return distance to given coordinates
+    /// Return distance of this object to a given coordinate.
     pub fn distance(&self, x: i32, y: i32) -> f32 {
         (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
+    /// Determine and return the next action the object will take.
     pub fn get_next_action(&mut self) -> Option<Box<dyn Action>> {
         match &self.ai {
             Some(_) => {
@@ -140,6 +204,7 @@ impl Object {
         }
     }
 
+    /// Inject the next action this object will take into the object.
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
         self.next_action = next_action;
     }

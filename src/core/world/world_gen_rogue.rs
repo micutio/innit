@@ -85,26 +85,12 @@ impl WorldGen for RogueWorldGenerator {
                     // connect both rooms with a horizontal and a vertical tunnel - in random order
                     if rand::random() {
                         // move horizontally, then vertically
-                        create_h_tunnel(
-                            game_objects,
-                            game_rng,
-                            gene_library,
-                            prev_x,
-                            new_x,
-                            prev_y,
-                        );
-                        create_v_tunnel(game_objects, game_rng, gene_library, prev_y, new_y, new_x);
+                        create_h_tunnel(game_objects, prev_x, new_x, prev_y);
+                        create_v_tunnel(game_objects, prev_y, new_y, new_x);
                     } else {
                         // move vertically, then horizontally
-                        create_v_tunnel(
-                            game_objects,
-                            game_rng,
-                            gene_library,
-                            prev_y,
-                            new_y,
-                            prev_x,
-                        );
-                        create_h_tunnel(game_objects, game_rng, gene_library, prev_x, new_x, new_y);
+                        create_v_tunnel(game_objects, prev_y, new_y, prev_x);
+                        create_h_tunnel(game_objects, prev_x, new_x, new_y);
                     }
                 }
                 // finally, append new room to list
@@ -124,38 +110,24 @@ fn create_room(
         for y in (room.y1 + 1)..room.y2 {
             objects
                 .get_tile_at(x as usize, y as usize)
-                .replace(Tile::empty(game_rng, gene_library, x, y));
+                .replace(Tile::empty(x, y));
         }
     }
 }
 
-fn create_h_tunnel(
-    objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    gene_library: &mut GeneLibrary,
-    x1: i32,
-    x2: i32,
-    y: i32,
-) {
+fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(game_rng, gene_library, x, y));
+            .replace(Tile::empty(x, y));
     }
 }
 
-fn create_v_tunnel(
-    objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    gene_library: &mut GeneLibrary,
-    y1: i32,
-    y2: i32,
-    x: i32,
-) {
+fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(game_rng, gene_library, x, y));
+            .replace(Tile::empty(x, y));
     }
 }
 
@@ -213,40 +185,26 @@ fn place_objects(
                 "virus" => {
                     let dna = gene_library.new_dna(game_rng, 10);
                     let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
-                    Object::new(
-                        x,
-                        y,
-                        Vec::new(),
-                        "virus",
-                        'v',
-                        colors::DESATURATED_GREEN,
-                        true,
-                        false,
-                        false,
-                        sensors,
-                        processors,
-                        actuators,
-                        Some(Ai::Basic),
-                    )
+
+                    Object::new()
+                        .position(x, y)
+                        .living(true)
+                        .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                        .physical(true, false, false)
+                        .genome(dna, sensors, processors, actuators)
+                        .ai(Ai::Basic)
                 }
                 "bacteria" => {
                     let dna = gene_library.new_dna(game_rng, 10);
                     let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
-                    Object::new(
-                        x,
-                        y,
-                        Vec::new(),
-                        "bacteria",
-                        'b',
-                        colors::DARKER_GREEN,
-                        true,
-                        false,
-                        false,
-                        sensors,
-                        processors,
-                        actuators,
-                        Some(Ai::Basic),
-                    )
+
+                    Object::new()
+                        .position(x, y)
+                        .living(true)
+                        .visualize("bacteria", 'b', colors::DARKER_GREEN)
+                        .physical(true, false, false)
+                        .genome(dna, sensors, processors, actuators)
+                        .ai(Ai::Basic)
                 }
                 _ => unreachable!(),
             };

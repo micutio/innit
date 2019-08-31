@@ -318,9 +318,9 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
 
                 if let Some(tile) = &mut tile_object.tile {
                     if visible {
-                        tile.explored = true;
+                        tile.is_explored = true;
                     }
-                    if tile.explored {
+                    if tile.is_explored {
                         // show explored tiles only (any visible tile is explored already)
                         tile_object.visual.color = tile_color_fg;
                         game_frontend.con.set_char_background(

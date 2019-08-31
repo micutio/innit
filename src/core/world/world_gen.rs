@@ -25,59 +25,31 @@ pub trait WorldGen {
 /// world.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Tile {
-    pub explored: bool,
+    pub is_explored: bool,
 }
 
 impl Tile {
-    pub fn empty(game_rng: &mut GameRng, gene_library: &mut GeneLibrary, x: i32, y: i32) -> Object {
-        let dna = gene_library.new_dna(game_rng, 10);
-        let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
-        let mut tile_object = Object::new(
-            // block_sight: false,
-            // explored: false,
-            x,
-            y,
-            Vec::new(),
-            "empty tile",
-            chars::UMLAUT,
-            colors::BLACK,
-            false,
-            false,
-            false,
-            sensors,
-            processors,
-            actuators,
-            Some(Ai::Basic),
-        );
-        tile_object.tile = Some(Tile { explored: false });
-        tile_object
+    pub fn empty(x: i32, y: i32) -> Object {
+        Object::new()
+            .position(x, y)
+            .living(true)
+            .visualize("empty tile", chars::UMLAUT, colors::BLACK)
+            .physical(false, false, false)
+            .tile_explored(false)
+            .ai(Ai::Basic)
     }
 
-    pub fn wall(game_rng: &mut GameRng, gene_library: &mut GeneLibrary, x: i32, y: i32) -> Object {
-        let dna = gene_library.new_dna(game_rng, 10);
-        let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
-        let mut tile_object = Object::new(
-            // block_sight: false,
-            // explored: false,
-            x,
-            y,
-            Vec::new(),
-            "wall tile",
-            '\t',
-            colors::BLACK,
-            true,
-            true,
-            false,
-            sensors,
-            processors,
-            actuators,
-            Some(Ai::Basic),
-        );
-        tile_object.tile = Some(Tile { explored: false });
-        tile_object
+    pub fn wall(x: i32, y: i32) -> Object {
+        Object::new()
+            .position(x, y)
+            .living(true)
+            .visualize("wall tile", '\t', colors::BLACK)
+            .physical(true, true, false)
+            .tile_explored(false)
+            .ai(Ai::Basic)
     }
 }
 
 pub fn is_explored(tile: &Tile) -> Option<&bool> {
-    Some(&tile.explored)
+    Some(&tile.is_explored)
 }
