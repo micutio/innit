@@ -21,7 +21,6 @@ const MAX_ROOMS: i32 = 30;
 /// Module World Generator Rogue-style
 ///
 /// This world generator is based on the genre-defining game `Rogue`.
-/// NOTE: In the future, NPCs should be generated based on a spawning table.
 pub struct RogueWorldGenerator {
     rooms: Vec<Rect>,
 }

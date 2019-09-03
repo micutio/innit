@@ -1,5 +1,6 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be exchangably used to create the game environments.
+// TODO: WorldGen should offer an API to define spawn and drop tables.
 
 use tcod::{chars, colors};
 

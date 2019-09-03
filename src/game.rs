@@ -167,30 +167,6 @@ pub fn game_loop(
                             None => {}
                         }
                     }
-
-                    // match ingame_action.trait_id {
-                    //     StAction(Move) => {
-
-                    //     }
-                    //     _ => {}
-                    // }
-
-                    // debug!(
-                    //     "attempting to get prototype {:#?}",
-                    //     player
-                    //         .actions
-                    //         .iter()
-                    //         .find(|a| a.trait_id == ingame_action.trait_id)
-                    // );
-                    // if let Some(prototype) = player
-                    //     .actions
-                    //     .iter()
-                    //     .find(|a| a.trait_id == ingame_action.trait_id)
-                    // {
-                    //     let next_action = Some(build_player_action(ingame_action, prototype));
-                    //     debug!("player action object: {:#?}", next_action);
-                    //     player.set_next_action(next_action);
-                    // }
                 };
             }
             None => {}
