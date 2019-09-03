@@ -42,7 +42,7 @@ pub fn new_game() -> (GameState, GameObjects) {
     let player = Object::new()
         .position(0, 0)
         .living(true)
-        .visualize("player", 'a', colors::WHITE)
+        .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
         .genome(dna, sensors, processors, actuators);
 
