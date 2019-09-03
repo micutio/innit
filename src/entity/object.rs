@@ -21,7 +21,6 @@ use crate::entity::dna::{Actuators, Processors, Sensors};
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
-// TODO: Use builder pattern to construct new objects.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Object {
     pub x:           i32,

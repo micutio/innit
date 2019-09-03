@@ -184,7 +184,6 @@ pub struct GeneRecord {
 ///   - anti-synergies
 ///
 /// Actions can be chosen from a pool of predefined methods.
-// TODO: How to encode non-action attributes e.g, cell membrane thickness?
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
