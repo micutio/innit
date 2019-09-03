@@ -1,9 +1,11 @@
 use std::ops::{Index, IndexMut};
 
 use crate::core::world::world_gen::Tile;
+use crate::entity::dna::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
+use crate::util::game_rng::GameRng;
 
 /// The game object struct contains all game objects, including
 /// * player character
@@ -17,7 +19,6 @@ pub struct GameObjects {
     obj_vec:         Vec<Option<Object>>,
 }
 
-// TODO: Create method to init all tiles with dna and super trait containers!
 impl GameObjects {
     pub fn new() -> Self {
         let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
@@ -37,7 +38,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn init_world(&mut self) {
+    pub fn blank_world(&mut self) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
@@ -46,6 +47,21 @@ impl GameObjects {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                     .replace(Tile::wall(x, y));
+            }
+        }
+    }
+
+    pub fn set_tiles_dna(&mut self, game_rng: &mut GameRng, gene_library: &GeneLibrary) {
+        for y in 0..WORLD_HEIGHT {
+            for x in 0..WORLD_WIDTH {
+                // debug!("setting tile dna at ({}, {})", x, y);
+                if let Some(tile) =
+                    &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
+                {
+                    let dna = gene_library.new_dna(game_rng, 10);
+                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
+                    tile.change_genome(dna, sensors, processors, actuators);
+                }
             }
         }
     }
@@ -101,20 +117,6 @@ impl GameObjects {
             }
         }
     }
-
-    // /// Remove all objects that are not the player or world tiles.
-    // /// NOTE: This means we cannot go back to a dungeon level once we leave it.
-    // pub fn truncate(&mut self) {
-    //     // PLayer is the first element, remove everything else.
-    //     // NOTE: works only if player is the first object!
-    //     self.obj_vec.truncate(self.num_world_tiles);
-    //     for y in 0..WORLD_HEIGHT {
-    //         for x in 0..WORLD_WIDTH {
-    //             self.obj_vec[(y as usize) * (WORLD_WIDTH as usize) + (x as usize)]
-    //                 .replace(Tile::wall(x, y));
-    //         }
-    //     }
-    // }
 
     /// Check wether there is an objects blocking access to the given world coordinate
     pub fn is_blocked(&self, x: i32, y: i32) -> bool {

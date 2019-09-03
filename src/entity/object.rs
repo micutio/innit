@@ -174,6 +174,20 @@ impl Object {
         self.y = y;
     }
 
+    /// Set the object's current dna and resulting super traits.
+    pub fn change_genome(
+        &mut self,
+        dna: Vec<u8>,
+        sensors: Sensors,
+        processors: Processors,
+        actuators: Actuators,
+    ) {
+        self.dna = dna;
+        self.sensors = sensors;
+        self.processors = processors;
+        self.actuators = actuators;
+    }
+
     /// Set the color and then draw the char that represents this object at its position.
     pub fn draw(&self, con: &mut dyn Console) {
         con.set_default_foreground(self.visual.color);

@@ -31,10 +31,11 @@ pub fn new_game() -> (GameState, GameObjects) {
 
     // create blank game world
     let mut game_objects = GameObjects::new();
-    game_objects.init_world();
+    game_objects.blank_world();
+    game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
 
     // create object representing the player
-    // TODO: store player starting position in world generator and set player object later
+    // NOTE: Better to store player starting position in world gen and set player object later.
     let dna = game_state
         .gene_library
         .new_dna(&mut game_state.game_rng, 10);
