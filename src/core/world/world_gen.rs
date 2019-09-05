@@ -6,7 +6,7 @@ use tcod::{chars, colors};
 
 use crate::core::game_objects::GameObjects;
 use crate::entity::ai::Ai;
-use crate::entity::dna::GeneLibrary;
+use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::util::game_rng::GameRng;
 

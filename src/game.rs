@@ -11,7 +11,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
-use crate::entity::dna::{build_player_action, SubTrait, SuperTrait};
+use crate::entity::genetics::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};

@@ -7,7 +7,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{Tile, WorldGen};
 use crate::entity::ai::Ai;
-use crate::entity::dna::GeneLibrary;
+use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;

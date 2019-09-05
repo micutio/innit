@@ -9,7 +9,7 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
-use crate::entity::dna::{SubTrait, TraitAction};
+use crate::entity::genetics::{SubTrait, TraitAction};
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
@@ -423,9 +423,9 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
     use self::PlayActionParameter::*;
     use self::PlayerInput::*;
+    use self::UiAction::*;
     use self::SubTrait::*;
     use self::TraitAction::*;
-    use self::UiAction::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 

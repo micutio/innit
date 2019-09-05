@@ -333,6 +333,17 @@ impl GeneLibrary {
         trait_builder.finalize()
     }
 
+    /// Combine *new_dna()* and *decode_dna()* into a single function call.
+    pub fn new_genetics(
+        &self,
+        game_rng: &mut GameRng,
+        avg_genome_len: usize,
+    ) -> (Vec<u8>, Sensors, Processors, Actuators) {
+        let dna = self.new_dna(game_rng, avg_genome_len);
+        let (s, p, a) = self.decode_dna(&dna);
+        (dna, s, p, a)
+    }
+
     fn decode_gene(
         &self,
         dna: &[u8],

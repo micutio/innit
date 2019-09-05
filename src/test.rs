@@ -1,6 +1,6 @@
 #[test]
 fn test_dna_encoding() {
-    use crate::entity::dna::{
+    use crate::entity::genetics::{
         ActionPrototype, Actuators, GeneLibrary, Processors, Sensors, TraitAction,
     };
     use crate::util::generate_gray_code;

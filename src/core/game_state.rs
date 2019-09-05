@@ -4,7 +4,7 @@ use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::*;
-use crate::entity::dna::GeneLibrary;
+use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};

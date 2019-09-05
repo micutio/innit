@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use crate::core::world::world_gen::Tile;
-use crate::entity::dna::GeneLibrary;
+use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
