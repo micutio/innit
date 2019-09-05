@@ -36,16 +36,13 @@ pub fn new_game() -> (GameState, GameObjects) {
 
     // create object representing the player
     // NOTE: Better to store player starting position in world gen and set player object later.
-    let dna = game_state
-        .gene_library
-        .new_dna(&mut game_state.game_rng, 10);
-    let (sensors, processors, actuators) = game_state.gene_library.decode_dna(&dna);
+    let (sensors, processors, actuators, dna) = game_state.gene_library.new_genetics(&mut game_state.game_rng, 10);
     let player = Object::new()
         .position(0, 0)
         .living(true)
         .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
-        .genome(dna, sensors, processors, actuators);
+        .genome(sensors, processors, actuators, dna);
 
     debug!("created player object {}", player);
     debug!("player sensors: {:?}", player.sensors);

@@ -6,7 +6,7 @@ use tcod::console::*;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::genetics::{Actuators, Processors, Sensors};
+use crate::entity::genetics::{Actuators, Processors, Sensors, Dna};
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -27,7 +27,7 @@ pub struct Object {
     pub y:           i32,
     pub alive:       bool,
     pub energy:      i32, // could be changed into some pseudo-progress like allowed DNA length
-    pub dna:         Vec<u8>,
+    pub dna:         Dna,
     pub visual:      Visual,
     pub physics:     Physics,
     pub sensors:     Sensors,
@@ -84,7 +84,7 @@ impl Object {
             y:           0,
             alive:       false,
             energy:      0,
-            dna:         Vec::new(),
+            dna:         Dna::new(),
             visual:      Visual::new(),
             physics:     Physics::new(),
             sensors:     Sensors::new(),
@@ -138,15 +138,15 @@ impl Object {
     /// Set the object's dna and super traits. Part of the builder pattern.
     pub fn genome(
         mut self,
-        dna: Vec<u8>,
         sensors: Sensors,
         processors: Processors,
         actuators: Actuators,
+        dna: Dna,
     ) -> Object {
-        self.dna = dna;
         self.sensors = sensors;
         self.processors = processors;
         self.actuators = actuators;
+        self.dna = dna;
         self
     }
 
@@ -176,15 +176,15 @@ impl Object {
     /// Set the object's current dna and resulting super traits.
     pub fn change_genome(
         &mut self,
-        dna: Vec<u8>,
         sensors: Sensors,
         processors: Processors,
         actuators: Actuators,
+        dna: Dna,
     ) {
-        self.dna = dna;
         self.sensors = sensors;
         self.processors = processors;
         self.actuators = actuators;
+        self.dna = dna;
     }
 
     /// Set the color and then draw the char that represents this object at its position.

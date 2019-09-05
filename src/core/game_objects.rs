@@ -58,9 +58,8 @@ impl GameObjects {
                 if let Some(tile) =
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
-                    let dna = gene_library.new_dna(game_rng, 10);
-                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
-                    tile.change_genome(dna, sensors, processors, actuators);
+                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
+                    tile.change_genome(sensors, processors, actuators, dna);
                 }
             }
         }

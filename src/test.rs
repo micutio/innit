@@ -41,7 +41,7 @@ fn test_dna_encoding() {
         hp:      0,
     };
 
-    let (_s, _p, _a) = gene_lib.decode_dna(&dna);
+    let (_s, _p, _a, _) = gene_lib.decode_dna(&dna);
     println!("{:?}", _s);
     println!("{:?}", _p);
     println!("{:?}", _a);

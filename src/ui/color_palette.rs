@@ -21,7 +21,10 @@ pub struct ColorPalette {
     pub fg_ground_fov_true:  Color,
     pub fg_ground_fov_false: Color,
 
-    pub player: Color,
+    pub cyan:    Color,
+    pub magenta: Color,
+    pub yellow:  Color,
+    pub player:  Color,
 }
 
 impl ColorPalette {
@@ -92,6 +95,21 @@ impl ColorPalette {
                 g: 210,
                 b: 210,
             },
+            cyan:                Color {
+                r: 0,
+                g: 255,
+                b: 255,
+            },
+            magenta:             Color {
+                r: 255,
+                g: 0,
+                b: 255,
+            },
+            yellow:              Color {
+                r: 255,
+                g: 255,
+                b: 0,
+            },
             player:              Color {
                 r: 100,
                 g: 100,
@@ -160,6 +178,21 @@ impl ColorPalette {
                 r: 40,
                 g: 40,
                 b: 40,
+            },
+            cyan:                Color {
+                r: 0,
+                g: 200,
+                b: 200,
+            },
+            magenta:             Color {
+                r: 200,
+                g: 0,
+                b: 200,
+            },
+            yellow:              Color {
+                r: 200,
+                g: 200,
+                b: 0,
             },
             player:              Color {
                 r: 170,

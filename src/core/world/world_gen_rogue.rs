@@ -177,27 +177,25 @@ fn place_objects(
         if !objects.is_blocked(x, y) {
             let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
                 "virus" => {
-                    let dna = gene_library.new_dna(game_rng, 10);
-                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
+                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
 
                     Object::new()
                         .position(x, y)
                         .living(true)
                         .visualize("virus", 'v', colors::DESATURATED_GREEN)
                         .physical(true, false, false)
-                        .genome(dna, sensors, processors, actuators)
+                        .genome(sensors, processors, actuators, dna)
                         .ai(Ai::Basic)
                 }
                 "bacteria" => {
-                    let dna = gene_library.new_dna(game_rng, 10);
-                    let (sensors, processors, actuators) = gene_library.decode_dna(&dna);
+                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
 
                     Object::new()
                         .position(x, y)
                         .living(true)
                         .visualize("bacteria", 'b', colors::DARKER_GREEN)
                         .physical(true, false, false)
-                        .genome(dna, sensors, processors, actuators)
+                        .genome(sensors, processors, actuators, dna)
                         .ai(Ai::Basic)
                 }
                 _ => unreachable!(),

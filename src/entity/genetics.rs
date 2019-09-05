@@ -174,6 +174,21 @@ pub struct GeneRecord {
      * anti-synergies: Vec<?>, */
 }
 
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Dna {
+    pub raw:        Vec<u8>,
+    pub simplified: Vec<SuperTrait>,
+}
+
+impl Dna {
+    pub fn new() -> Dna {
+        Dna {
+            raw: Vec::new(),
+            simplified: Vec::new(),
+        }
+    }
+}
+
 /// The gene library lets the user define genes.
 /// Input should look like this:
 ///   - trait name
@@ -318,7 +333,7 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn decode_dna(&self, dna: &[u8]) -> (Sensors, Processors, Actuators) {
+    pub fn decode_dna(&self, dna: &[u8]) -> (Sensors, Processors, Actuators, Dna) {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new();
@@ -338,10 +353,11 @@ impl GeneLibrary {
         &self,
         game_rng: &mut GameRng,
         avg_genome_len: usize,
-    ) -> (Vec<u8>, Sensors, Processors, Actuators) {
+    ) -> (Sensors, Processors, Actuators, Dna) {
         let dna = self.new_dna(game_rng, avg_genome_len);
-        let (s, p, a) = self.decode_dna(&dna);
-        (dna, s, p, a)
+        let (s, p, a, mut d) = self.decode_dna(&dna);
+        d.raw = dna;
+        (s, p, a, d)
     }
 
     fn decode_gene(
@@ -390,6 +406,7 @@ struct TraitBuilder {
     sensor_action_acc:    HashMap<TraitAction, i32>,
     processor_action_acc: HashMap<TraitAction, i32>,
     actuator_action_acc:  HashMap<TraitAction, i32>,
+    dna: Dna,
 }
 
 impl TraitBuilder {
@@ -401,13 +418,20 @@ impl TraitBuilder {
             sensor_action_acc:    HashMap::new(),
             processor_action_acc: HashMap::new(),
             actuator_action_acc:  HashMap::new(),
+            dna: Dna{ raw: Vec::new(), simplified: Vec::new()},
         }
     }
 
     pub fn add_attribute(&mut self, attr: TraitAttribute) {
         match attr {
-            TraitAttribute::SensingRange => self.sensors.sense_range += 1,
-            TraitAttribute::Hp => self.actuators.hp += 1,
+            TraitAttribute::SensingRange => {
+                self.dna.simplified.push(SuperTrait::Sensing);
+                self.sensors.sense_range += 1;
+            }
+            TraitAttribute::Hp => {
+                self.dna.simplified.push(SuperTrait::Actuating);
+                self.actuators.hp += 1;
+            }
         }
     }
 
@@ -419,19 +443,22 @@ impl TraitBuilder {
                 //  let count = self.sensor_action_acc.entry(actn).or_insert(0);
                 //  *count += 1;
                 // ... which shortens to the following:
+                self.dna.simplified.push(SuperTrait::Sensing);
                 *self.sensor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
+                self.dna.simplified.push(SuperTrait::Processing);
                 *self.processor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
+                self.dna.simplified.push(SuperTrait::Actuating);
                 *self.actuator_action_acc.entry(actn).or_insert(0) += 1;
             }
         }
     }
 
     // Finalize all actions, return the super trait components and consume itself.
-    pub fn finalize(mut self) -> (Sensors, Processors, Actuators) {
+    pub fn finalize(mut self) -> (Sensors, Processors, Actuators, Dna) {
         // instantiate an action or prototype with count as additional parameter
         self.sensors.actions = self
             .sensor_action_acc
@@ -460,6 +487,6 @@ impl TraitBuilder {
             })
             .collect();
 
-        (self.sensors, self.processors, self.actuators)
+        (self.sensors, self.processors, self.actuators, self.dna)
     }
 }
