@@ -6,6 +6,7 @@ use tcod::map::FovAlgorithm;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
+use crate::entity::genetics::{Dna, SuperTrait};
 use crate::entity::object::Object;
 use crate::game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
@@ -530,6 +531,15 @@ fn render_ui(
         //     colors::DARK_RED,
         //     colors::DARKEST_RED,
         // );
+        render_dna_short(
+            &mut game_frontend.panel,
+            &game_frontend.coloring,
+            1,
+            1,
+            BAR_WIDTH,
+            &player.dna,
+        );
+
         game_frontend.panel.print_ex(
             1,
             2,
@@ -564,6 +574,114 @@ fn render_ui(
             game_frontend.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         }
     }
+}
+
+pub fn handle_meta_actions(
+    game_frontend: &mut GameFrontend,
+    game_state: &mut GameState,
+    game_objects: &mut GameObjects,
+    game_input: &mut Option<&mut GameInput>,
+    action: UiAction,
+) -> bool {
+    // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
+    debug!("received action {:?}", action);
+    match action {
+        UiAction::ExitGameLoop => {
+            let result = save_game(game_state, game_objects);
+            result.unwrap();
+            return true;
+        }
+        UiAction::ToggleDarkLightMode => {
+            game_frontend.toggle_dark_light_mode();
+            recompute_fov(game_frontend, game_objects);
+            initialize_fov(game_frontend, game_objects);
+            re_render(game_state, game_frontend, game_objects, "");
+        }
+        UiAction::CharacterScreen => {
+            show_character_screen(game_state, game_frontend, game_input, game_objects);
+        }
+
+        UiAction::Fullscreen => {
+            let fullscreen = game_frontend.root.is_fullscreen();
+            game_frontend.root.set_fullscreen(!fullscreen);
+            initialize_fov(game_frontend, game_objects);
+        }
+    }
+    re_render(game_state, game_frontend, game_objects, "");
+    false
+}
+
+/// Render a generic progress or status bar in the UI.
+#[allow(clippy::too_many_arguments)]
+fn render_dna_short(
+    panel: &mut Offscreen,
+    coloring: &ColorPalette,
+    x: i32,
+    y: i32,
+    total_width: i32,
+    dna: &Dna,
+) {
+    // get sensor/processor/actuator counts
+    let sensor_count = dna
+        .simplified
+        .iter()
+        .filter(|x| **x == SuperTrait::Sensing)
+        .count();
+    let processor_count = dna
+        .simplified
+        .iter()
+        .filter(|x| **x == SuperTrait::Processing)
+        .count();
+    let actuator_count = dna
+        .simplified
+        .iter()
+        .filter(|x| **x == SuperTrait::Actuating)
+        .count();
+    let maximum = dna.simplified.len();
+    // render a bar (HP, EXP, etc)
+    let sensor_width = (sensor_count as f32 / maximum as f32 * total_width as f32) as i32;
+    let processor_width = (processor_count as f32 / maximum as f32 * total_width as f32) as i32;
+    let actuator_width = (actuator_count as f32 / maximum as f32 * total_width as f32) as i32;
+
+    // render each super trait count
+    panel.set_default_background(coloring.cyan);
+    if sensor_width > 0 {
+        panel.rect(x, y, sensor_width, 1, false, BackgroundFlag::Screen);
+    }
+    // render each super trait count
+    panel.set_default_background(coloring.magenta);
+    if processor_width > 0 {
+        panel.rect(
+            x + sensor_width,
+            y,
+            processor_width,
+            1,
+            false,
+            BackgroundFlag::Screen,
+        );
+    }
+    // render each super trait count
+    panel.set_default_background(coloring.yellow);
+    if actuator_width > 0 {
+        panel.rect(
+            x + sensor_width + processor_width,
+            y,
+            actuator_width,
+            1,
+            false,
+            BackgroundFlag::Screen,
+        );
+    }
+
+    // put some text in the center
+    panel.set_default_foreground(coloring.text);
+    panel.print_ex(
+        x + total_width / 2,
+        y,
+        BackgroundFlag::None,
+        TextAlignment::Center,
+        "DNA".to_string(),
+    );
 }
 
 /// Render a generic progress or status bar in the UI.
@@ -602,39 +720,4 @@ fn render_bar(
         TextAlignment::Center,
         &format!("{}: {}/{}", name, value, maximum),
     );
-}
-
-pub fn handle_meta_actions(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    game_objects: &mut GameObjects,
-    game_input: &mut Option<&mut GameInput>,
-    action: UiAction,
-) -> bool {
-    // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
-    debug!("received action {:?}", action);
-    match action {
-        UiAction::ExitGameLoop => {
-            let result = save_game(game_state, game_objects);
-            result.unwrap();
-            return true;
-        }
-        UiAction::ToggleDarkLightMode => {
-            game_frontend.toggle_dark_light_mode();
-            recompute_fov(game_frontend, game_objects);
-            initialize_fov(game_frontend, game_objects);
-            re_render(game_state, game_frontend, game_objects, "");
-        }
-        UiAction::CharacterScreen => {
-            show_character_screen(game_state, game_frontend, game_input, game_objects);
-        }
-
-        UiAction::Fullscreen => {
-            let fullscreen = game_frontend.root.is_fullscreen();
-            game_frontend.root.set_fullscreen(!fullscreen);
-            initialize_fov(game_frontend, game_objects);
-        }
-    }
-    re_render(game_state, game_frontend, game_objects, "");
-    false
 }

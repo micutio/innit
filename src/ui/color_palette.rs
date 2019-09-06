@@ -25,6 +25,7 @@ pub struct ColorPalette {
     pub magenta: Color,
     pub yellow:  Color,
     pub player:  Color,
+    pub text: Color,
 }
 
 impl ColorPalette {
@@ -115,6 +116,11 @@ impl ColorPalette {
                 g: 100,
                 b: 100,
             },
+            text:              Color {
+                r: 60,
+                g: 60,
+                b: 66,
+            },
         }
     }
 
@@ -198,6 +204,11 @@ impl ColorPalette {
                 r: 170,
                 g: 170,
                 b: 170,
+            },
+            text:              Color {
+                r: 160,
+                g: 160,
+                b: 166,
             },
         }
     }
