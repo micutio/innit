@@ -539,13 +539,13 @@ fn render_ui(
             BAR_WIDTH,
             &player.dna,
         );
-
-        game_frontend.panel.print_ex(
+        render_dna_long(
+            &mut game_frontend.panel,
+            &game_frontend.coloring,
             1,
             2,
-            BackgroundFlag::None,
-            TextAlignment::Left,
-            format!("Dungeon level: {}", game_state.dungeon_level),
+            BAR_WIDTH,
+            &player.dna,
         );
 
         // show names of objects under the mouse
@@ -671,6 +671,40 @@ fn render_dna_short(
             false,
             BackgroundFlag::Screen,
         );
+    }
+
+    // put some text in the center
+    panel.set_default_foreground(coloring.text);
+    panel.print_ex(
+        x + total_width / 2,
+        y,
+        BackgroundFlag::None,
+        TextAlignment::Center,
+        "Traits".to_string(),
+    );
+}
+
+/// Render a generic progress or status bar in the UI.
+#[allow(clippy::too_many_arguments)]
+fn render_dna_long(
+    panel: &mut Offscreen,
+    coloring: &ColorPalette,
+    x: i32,
+    y: i32,
+    total_width: i32,
+    dna: &Dna,
+) {
+    let traits_len = dna.simplified.len();
+    let bar_width = (total_width as f32 / traits_len as f32) as i32;
+    let mut offset = 0;
+    for super_trait in dna.simplified.iter() {
+        match super_trait {
+            SuperTrait::Sensing => panel.set_default_background(coloring.cyan),
+            SuperTrait::Processing => panel.set_default_background(coloring.magenta),
+            SuperTrait::Actuating => panel.set_default_background(coloring.yellow),
+        }
+        panel.rect(x + offset, y, bar_width, 1, false, BackgroundFlag::Screen);
+        offset += bar_width;
     }
 
     // put some text in the center
