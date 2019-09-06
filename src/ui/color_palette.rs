@@ -25,7 +25,6 @@ pub struct ColorPalette {
     pub magenta: Color,
     pub yellow:  Color,
     pub player:  Color,
-    pub text: Color,
 }
 
 impl ColorPalette {
@@ -98,28 +97,23 @@ impl ColorPalette {
             },
             cyan:                Color {
                 r: 0,
-                g: 255,
-                b: 255,
+                g: 190,
+                b: 190,
             },
             magenta:             Color {
-                r: 255,
+                r: 190,
                 g: 0,
-                b: 255,
+                b: 190,
             },
             yellow:              Color {
-                r: 255,
-                g: 255,
+                r: 190,
+                g: 190,
                 b: 0,
             },
             player:              Color {
                 r: 100,
                 g: 100,
                 b: 100,
-            },
-            text:              Color {
-                r: 60,
-                g: 60,
-                b: 66,
             },
         }
     }
@@ -187,28 +181,23 @@ impl ColorPalette {
             },
             cyan:                Color {
                 r: 0,
-                g: 200,
-                b: 200,
+                g: 120,
+                b: 120,
             },
             magenta:             Color {
-                r: 200,
+                r: 120,
                 g: 0,
-                b: 200,
+                b: 120,
             },
             yellow:              Color {
-                r: 200,
-                g: 200,
+                r: 120,
+                g: 120,
                 b: 0,
             },
             player:              Color {
                 r: 170,
                 g: 170,
                 b: 170,
-            },
-            text:              Color {
-                r: 160,
-                g: 160,
-                b: 166,
             },
         }
     }

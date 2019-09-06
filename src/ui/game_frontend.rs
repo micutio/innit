@@ -674,7 +674,7 @@ fn render_dna_short(
     }
 
     // put some text in the center
-    panel.set_default_foreground(coloring.text);
+    panel.set_default_foreground(coloring.fg_dialog);
     panel.print_ex(
         x + total_width / 2,
         y,
@@ -697,6 +697,7 @@ fn render_dna_long(
     let traits_len = dna.simplified.len();
     let bar_width = (total_width as f32 / traits_len as f32) as i32;
     let mut offset = 0;
+    println!("number of traits {}, bar width {}", traits_len, bar_width);
     for super_trait in dna.simplified.iter() {
         match super_trait {
             SuperTrait::Sensing => panel.set_default_background(coloring.cyan),
@@ -708,7 +709,7 @@ fn render_dna_long(
     }
 
     // put some text in the center
-    panel.set_default_foreground(coloring.text);
+    panel.set_default_foreground(coloring.fg_dialog);
     panel.print_ex(
         x + total_width / 2,
         y,
