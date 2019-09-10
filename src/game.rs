@@ -32,11 +32,12 @@ pub fn new_game() -> (GameState, GameObjects) {
     // create blank game world
     let mut game_objects = GameObjects::new();
     game_objects.blank_world();
-    game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
 
     // create object representing the player
     // NOTE: Better to store player starting position in world gen and set player object later.
-    let (sensors, processors, actuators, dna) = game_state.gene_library.new_genetics(&mut game_state.game_rng, 10);
+    let (sensors, processors, actuators, dna) = game_state
+        .gene_library
+        .new_genetics(&mut game_state.game_rng, 10);
     let player = Object::new()
         .position(0, 0)
         .living(true)
@@ -58,6 +59,7 @@ pub fn new_game() -> (GameState, GameObjects) {
         &mut game_state.gene_library,
         level,
     );
+    game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
 
     // a warm welcoming message
     game_state.log.add(
