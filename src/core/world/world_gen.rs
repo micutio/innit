@@ -8,6 +8,8 @@ use crate::core::game_objects::GameObjects;
 use crate::entity::ai::Ai;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
+use crate::game::DEBUG_MODE;
+use crate::ui::game_frontend::GameFrontend;
 use crate::util::game_rng::GameRng;
 
 /// The world generation trait only requests to implement a method that
@@ -15,6 +17,7 @@ use crate::util::game_rng::GameRng;
 pub trait WorldGen {
     fn make_world(
         &mut self,
+        game_frontend: &mut GameFrontend,
         game_objects: &mut GameObjects,
         game_rng: &mut GameRng,
         gene_library: &mut GeneLibrary,
@@ -34,9 +37,9 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", chars::UMLAUT, colors::BLACK)
-            .physical(false, false, false)
-            .tile_explored(false)
+            .visualize("empty tile", chars::UMLAUT, colors::WHITE)
+            .physical(false, false, DEBUG_MODE)
+            .tile_explored(DEBUG_MODE)
             .ai(Ai::Basic)
     }
 
@@ -44,9 +47,9 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("wall tile", '\t', colors::BLACK)
-            .physical(true, true, false)
-            .tile_explored(false)
+            .visualize("wall tile", '\t', colors::WHITE)
+            .physical(true, true, DEBUG_MODE)
+            .tile_explored(DEBUG_MODE)
             .ai(Ai::Basic)
     }
 }

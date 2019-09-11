@@ -1,7 +1,8 @@
 use rand::Rng;
-use std::cmp;
+use std::{cmp, thread, time};
 
 use tcod::colors;
+use tcod::console::*;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
@@ -9,8 +10,9 @@ use crate::core::world::world_gen::{Tile, WorldGen};
 use crate::entity::ai::Ai;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
-use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
+use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::GameRng;
 
 // room generation constraints
@@ -34,6 +36,7 @@ impl RogueWorldGenerator {
 impl WorldGen for RogueWorldGenerator {
     fn make_world(
         &mut self,
+        game_frontend: &mut GameFrontend,
         game_objects: &mut GameObjects,
         game_rng: &mut GameRng,
         gene_library: &mut GeneLibrary,
@@ -94,6 +97,16 @@ impl WorldGen for RogueWorldGenerator {
                 }
                 // finally, append new room to list
                 self.rooms.push(new_room);
+            }
+
+            if DEBUG_MODE {
+                let ten_millis = time::Duration::from_millis(100);
+                thread::sleep(ten_millis);
+
+                game_frontend.con.clear();
+                render_objects(game_frontend, game_objects);
+                blit_consoles(game_frontend);
+                game_frontend.root.flush();
             }
         }
     }
@@ -177,7 +190,8 @@ fn place_objects(
         if !objects.is_blocked(x, y) {
             let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
                 "virus" => {
-                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
+                    let (sensors, processors, actuators, dna) =
+                        gene_library.new_genetics(game_rng, 10);
 
                     Object::new()
                         .position(x, y)
@@ -188,7 +202,8 @@ fn place_objects(
                         .ai(Ai::Basic)
                 }
                 "bacteria" => {
-                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
+                    let (sensors, processors, actuators, dna) =
+                        gene_library.new_genetics(game_rng, 10);
 
                     Object::new()
                         .position(x, y)

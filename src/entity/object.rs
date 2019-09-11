@@ -6,7 +6,7 @@ use tcod::console::*;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
-use crate::entity::genetics::{Actuators, Processors, Sensors, Dna};
+use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own

@@ -8,7 +8,9 @@ use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, SuperTrait};
 use crate::entity::object::Object;
-use crate::game::{game_loop, load_game, new_game, save_game, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{
+    game_loop, load_game, new_game, save_game, DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH,
+};
 use crate::player::PLAYER;
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
@@ -127,7 +129,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut game_state, mut game_objects) = new_game();
+                let (mut game_state, mut game_objects) = new_game(game_frontend);
                 // initialize_fov(game_frontend, &mut objects);
                 let mut game_input = GameInput::new();
                 init_object_visuals(
@@ -394,7 +396,7 @@ pub fn re_render(
     // step 1/2: update visibility of objects and world tiles
     update_visibility(game_frontend, game_objects);
     // step 2/2: render everything
-    render_objects(game_frontend, game_state, game_objects, names_under_mouse);
+    render_all(game_frontend, game_state, game_objects, names_under_mouse);
 
     // draw everything on the window at once
     game_frontend.root.flush();
@@ -404,12 +406,18 @@ pub fn re_render(
 /// Right now this happens because we are updating explored tiles here too.
 /// Is there a way to auto-update explored and visible tiles/objects when the player moves?
 /// But visibility can also be influenced by other things.
-fn render_objects(
+fn render_all(
     game_frontend: &mut GameFrontend,
     game_state: &mut GameState,
     game_objects: &GameObjects,
     names_under_mouse: &str,
 ) {
+    render_objects(game_frontend, game_objects);
+    render_ui(game_frontend, game_state, game_objects, names_under_mouse);
+    blit_consoles(game_frontend);
+}
+
+pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     let mut to_draw: Vec<&Object> = game_objects
         .get_vector()
         .iter()
@@ -419,6 +427,7 @@ fn render_objects(
             game_frontend.fov.is_in_fov(o.x, o.y)
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
+                || (o.tile.is_some() && DEBUG_MODE)
         })
         .collect();
     // sort, so that non-blocking objects come first
@@ -427,8 +436,9 @@ fn render_objects(
     for object in &to_draw {
         object.draw(&mut game_frontend.con);
     }
+}
 
-    render_ui(game_frontend, game_state, game_objects, names_under_mouse);
+pub fn blit_consoles(game_frontend: &mut GameFrontend) {
     // blit contents of `game_frontend.panel` to the root console
     blit(
         &game_frontend.panel,

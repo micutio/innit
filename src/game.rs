@@ -19,12 +19,14 @@ use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
 
+pub const DEBUG_MODE: bool = true;
+
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
 pub const WORLD_HEIGHT: i32 = 43;
 
 /// Create a new game by instantiating the game engine, game state and object vector.
-pub fn new_game() -> (GameState, GameObjects) {
+pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     // create game state holding game-relevant information
     let level = 1;
     let mut game_state = GameState::new(level);
@@ -54,6 +56,7 @@ pub fn new_game() -> (GameState, GameObjects) {
     // generate world terrain
     let mut world_generator = RogueWorldGenerator::new();
     world_generator.make_world(
+        game_frontend,
         &mut game_objects,
         &mut game_state.game_rng,
         &mut game_state.gene_library,
