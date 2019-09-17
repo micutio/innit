@@ -19,7 +19,7 @@ use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
 
-pub const DEBUG_MODE: bool = true;
+pub const DEBUG_MODE: bool = false;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -35,24 +35,6 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     let mut game_objects = GameObjects::new();
     game_objects.blank_world();
 
-    // create object representing the player
-    // NOTE: Better to store player starting position in world gen and set player object later.
-    let (sensors, processors, actuators, dna) = game_state
-        .gene_library
-        .new_genetics(&mut game_state.game_rng, 10);
-    let player = Object::new()
-        .position(0, 0)
-        .living(true)
-        .visualize("player", '@', colors::WHITE)
-        .physical(true, false, false)
-        .genome(sensors, processors, actuators, dna);
-
-    debug!("created player object {}", player);
-    debug!("player sensors: {:?}", player.sensors);
-    debug!("player processors: {:?}", player.processors);
-    debug!("player actuators: {:?}", player.actuators);
-    game_objects.set_player(player);
-
     // generate world terrain
     let mut world_generator = RogueWorldGenerator::new();
     world_generator.make_world(
@@ -63,6 +45,24 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
         level,
     );
     game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
+
+    // create object representing the player
+    let (sensors, processors, actuators, dna) = game_state
+        .gene_library
+        .new_genetics(&mut game_state.game_rng, 10);
+    let (new_x, new_y) = world_generator.get_player_start_pos();
+    let player = Object::new()
+        .position(new_x, new_y)
+        .living(true)
+        .visualize("player", '@', colors::WHITE)
+        .physical(true, false, false)
+        .genome(sensors, processors, actuators, dna);
+
+    debug!("created player object {}", player);
+    debug!("player sensors: {:?}", player.sensors);
+    debug!("player processors: {:?}", player.processors);
+    debug!("player actuators: {:?}", player.actuators);
+    game_objects.set_player(player);
 
     // a warm welcoming message
     game_state.log.add(

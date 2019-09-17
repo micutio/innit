@@ -23,6 +23,8 @@ pub trait WorldGen {
         gene_library: &mut GeneLibrary,
         level: u32,
     );
+
+    fn get_player_start_pos(&self) -> (i32, i32);
 }
 
 /// The tile is an object component that identifies an object as (mostly) fixed part of the game

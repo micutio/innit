@@ -25,11 +25,15 @@ const MAX_ROOMS: i32 = 30;
 /// This world generator is based on the genre-defining game `Rogue`.
 pub struct RogueWorldGenerator {
     rooms: Vec<Rect>,
+    player_start: (i32, i32),
 }
 
 impl RogueWorldGenerator {
     pub fn new() -> Self {
-        RogueWorldGenerator { rooms: vec![] }
+        RogueWorldGenerator {
+            rooms: vec![],
+            player_start: (0, 0),
+        }
     }
 }
 
@@ -71,12 +75,9 @@ impl WorldGen for RogueWorldGenerator {
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
                     // this is the first room, save position as starting point for the player
-                    if let Some(ref mut player) = game_objects[PLAYER] {
-                        debug!("setting new player position: ({},{})", new_x, new_y);
-                        player.set_pos(new_x, new_y);
-                    } else {
-                        error!("cannot find player in game_objects!");
-                    }
+                    debug!("setting new player start position: ({}, {})", new_x, new_y);
+                    // player.set_pos(new_x, new_y);
+                    self.player_start = (new_x, new_y);
                 } else {
                     // all rooms after the first:
                     // connect it to the previous room with a tunnel
@@ -109,6 +110,10 @@ impl WorldGen for RogueWorldGenerator {
                 game_frontend.root.flush();
             }
         }
+    }
+
+    fn get_player_start_pos(&self) -> (i32, i32) {
+        self.player_start
     }
 }
 
