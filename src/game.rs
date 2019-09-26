@@ -11,6 +11,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
+use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::genetics::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;
 use crate::player::PLAYER;
@@ -19,7 +20,7 @@ use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
 
-pub const DEBUG_MODE: bool = false;
+pub const DEBUG_MODE: bool = true;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
@@ -36,7 +37,8 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     game_objects.blank_world();
 
     // generate world terrain
-    let mut world_generator = RogueWorldGenerator::new();
+    // let mut world_generator = RogueWorldGenerator::new();
+    let mut world_generator = OrganicsWorldGenerator::new();
     world_generator.make_world(
         game_frontend,
         &mut game_objects,

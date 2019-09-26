@@ -11,7 +11,7 @@ use crate::entity::ai::Ai;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
-use crate::player::PLAYER;
+// use crate::player::PLAYER;
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::GameRng;
 

@@ -93,10 +93,16 @@ impl<T: Rng> RngCore for SerializableRng<T> {
 pub trait RngExtended {
     /// Return true or false with 50/50 chance of being true
     fn coinflip(&mut self) -> bool;
+
+    fn flip_with_prob(&mut self, probability: f64) -> bool;
 }
 
-impl<T: Rng> RngExtended for T {
+impl<T: Rng> RngExtended for SerializableRng<T> {
     fn coinflip(&mut self) -> bool {
         self.gen_bool(0.5)
+    }
+
+    fn flip_with_prob(&mut self, probability: f64) -> bool {
+        self.gen_bool(probability)
     }
 }
