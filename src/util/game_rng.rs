@@ -28,6 +28,14 @@ impl<T: Rng + 'static> SerializableRng<T> {
     }
 }
 
+impl<T: SeedableRng + 'static> SerializableRng<T> {
+    pub fn new_from_u64_seed(seed: u64) -> SerializableRng<T> {
+        SerializableRng {
+            inner: SeedableRng::seed_from_u64(seed),
+        }
+    }
+}
+
 impl<T: SeedableRng + Rng + 'static> SeedableRng for SerializableRng<T> {
     // For implementing seed refer to: https://rust-random.github.io/rand/rand_core/trait.SeedableRng.html
     type Seed = <T as SeedableRng>::Seed;
