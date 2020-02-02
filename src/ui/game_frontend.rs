@@ -8,9 +8,8 @@ use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, SuperTrait};
 use crate::entity::object::Object;
-use crate::game::{
-    game_loop, load_game, new_game, save_game, DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH,
-};
+use crate::game::{game_loop, load_game, new_game, save_game};
+use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;

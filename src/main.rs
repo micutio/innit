@@ -21,11 +21,12 @@ mod util;
 use crate::ui::game_frontend::{main_menu, GameFrontend};
 
 pub fn launch_game() {
-    let mut game_frontend: GameFrontend = GameFrontend::new();
-    main_menu(&mut game_frontend);
+    main_menu(&mut GameFrontend::new());
 }
 
-// For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
+/// For game testing run with
+/// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
+/// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 pub fn main() {
     pretty_env_logger::init();
     launch_game();
