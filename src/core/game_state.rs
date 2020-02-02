@@ -1,4 +1,4 @@
-use rand::{RngCore, SeedableRng};
+use rand::RngCore;
 
 use tcod::colors::Color;
 
@@ -8,7 +8,7 @@ use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
-use crate::util::game_rng::{GameRng, RNG_SEED};
+use crate::util::game_rng::GameRng;
 
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
@@ -39,11 +39,11 @@ pub enum ObjectProcResult {
 /// game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
-    pub log:           Messages,
-    pub turn:          u128,
+    pub log: Messages,
+    pub turn: u128,
     pub dungeon_level: u32,
-    pub game_rng:      GameRng,
-    pub gene_library:  GeneLibrary,
+    pub game_rng: GameRng,
+    pub gene_library: GeneLibrary,
     current_obj_index: usize,
 }
 
@@ -51,12 +51,12 @@ impl GameState {
     pub fn new(level: u32) -> Self {
         GameState {
             // create the list of game messages and their colors, starts empty
-            log:           vec![],
-            turn:          0,
+            log: vec![],
+            turn: 0,
             dungeon_level: level,
             // game_rng:          GameRng::from_seed(RNG_SEED),
-            game_rng:          GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
-            gene_library:      GeneLibrary::new(),
+            game_rng: GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
+            gene_library: GeneLibrary::new(),
             current_obj_index: 0,
         }
     }
