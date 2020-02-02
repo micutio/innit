@@ -1,4 +1,4 @@
-use rand::SeedableRng;
+use rand::{RngCore, SeedableRng};
 
 use tcod::colors::Color;
 
@@ -51,10 +51,11 @@ impl GameState {
     pub fn new(level: u32) -> Self {
         GameState {
             // create the list of game messages and their colors, starts empty
-            log:               vec![],
-            turn:              0,
-            dungeon_level:     level,
-            game_rng:          GameRng::from_seed(RNG_SEED),
+            log:           vec![],
+            turn:          0,
+            dungeon_level: level,
+            // game_rng:          GameRng::from_seed(RNG_SEED),
+            game_rng:          GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
             gene_library:      GeneLibrary::new(),
             current_obj_index: 0,
         }
