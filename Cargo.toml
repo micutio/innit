@@ -3,6 +3,7 @@ name = "innit"
 version = "0.0.1"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
+edition = "2018"
 
 [dependencies]
 log = "0.4"

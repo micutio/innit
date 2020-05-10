@@ -87,7 +87,7 @@ pub struct ActionPrototype {
 pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
     use self::SubTrait::*;
     use self::TraitAction::*;
-    use ui::game_input::PlayActionParameter::*;
+    use crate::ui::game_input::PlayActionParameter::*;
     match input {
         PlayAction {
             trait_id: StAction(Move),

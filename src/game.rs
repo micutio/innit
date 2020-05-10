@@ -10,7 +10,7 @@ use tcod::colors;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::WorldGen;
-use crate::core::world::world_gen_rogue::RogueWorldGenerator;
+
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::genetics::{build_player_action, SubTrait, SuperTrait};
 use crate::entity::object::Object;

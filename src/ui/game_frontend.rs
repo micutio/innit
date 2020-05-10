@@ -373,7 +373,7 @@ pub fn process_visual_feedback(
             );
         }
 
-        ObjectProcResult::Animate { anim_type } => {
+        ObjectProcResult::Animate { anim_type: _ } => {
             // TODO: Play animation.
             info!("animation");
         }

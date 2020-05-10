@@ -1,14 +1,14 @@
-use std::{thread, time};
+
 
 use tcod::console::*;
 
-use core::game_objects::GameObjects;
-use core::world::world_gen::{Tile, WorldGen};
-use entity::genetics::GeneLibrary;
-use game::DEBUG_MODE;
-use game::{WORLD_HEIGHT, WORLD_WIDTH};
-use ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
-use util::game_rng::{GameRng, RngExtended};
+use crate::core::game_objects::GameObjects;
+use crate::core::world::world_gen::{Tile, WorldGen};
+use crate::entity::genetics::GeneLibrary;
+use crate::game::DEBUG_MODE;
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
+use crate::util::game_rng::{GameRng, RngExtended};
 
 const CA_CYCLES: i32 = 2;
 
@@ -32,8 +32,8 @@ impl WorldGen for OrganicsWorldGenerator {
         game_frontend: &mut GameFrontend,
         game_objects: &mut GameObjects,
         game_rng: &mut GameRng,
-        gene_library: &mut GeneLibrary,
-        level: u32,
+        _gene_library: &mut GeneLibrary,
+        _level: u32,
     ) {
         // step 1: generate foundation pattern
         for y in 2..WORLD_HEIGHT - 2 {

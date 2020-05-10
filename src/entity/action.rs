@@ -98,14 +98,14 @@ impl AttackAction {
 impl Action for AttackAction {
     fn perform(
         &self,
-        game_state: &mut GameState,
+        _game_state: &mut GameState,
         objects: &mut GameObjects,
         _owner: &mut Object,
     ) -> ActionResult {
         match self.target_id {
             Some(target_id) => {
                 // TODO: Replace with defend action.
-                if let Some(ref mut target) = objects[target_id] {
+                if let Some(ref mut _target) = objects[target_id] {
                     // target.take_damage(self.base_power, game_state);
                     return ActionResult::Success {
                         callback: ObjectProcResult::CheckEnterFOV,
