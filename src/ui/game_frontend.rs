@@ -34,12 +34,12 @@ pub use tcod::map::Map as FovMap;
 
 /// GameFrontend holds the core components for game's input and output processing.
 pub struct GameFrontend {
-    pub root:      Root,
-    pub con:       Offscreen,
-    pub panel:     Offscreen,
-    pub fov:       FovMap,
-    pub input:     Option<GameInput>,
-    pub coloring:  ColorPalette,
+    pub root: Root,
+    pub con: Offscreen,
+    pub panel: Offscreen,
+    pub fov: FovMap,
+    pub input: Option<GameInput>,
+    pub coloring: ColorPalette,
     is_light_mode: bool,
 }
 
@@ -67,7 +67,7 @@ impl GameFrontend {
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             input: None,
             // TODO: Save light and dark setting to config
-            coloring: ColorPalette::new_light(),
+            coloring: ColorPalette::new_dark(),
             is_light_mode: true,
         }
     }
