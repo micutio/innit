@@ -50,7 +50,7 @@ pub struct GameState {
 impl GameState {
     pub fn new(level: u32) -> Self {
         GameState {
-            // create the list of game messages and their colors, starts empty
+            // create the list of game messages and their colours, starts empty
             log: vec![],
             turn: 0,
             dungeon_level: level,
@@ -61,7 +61,7 @@ impl GameState {
         }
     }
 
-    /// Process an object's turn i.e., let it perform as many actions as it has enery for.
+    /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     // TODO: Implement energy costs for actions.
     pub fn process_object(
         &mut self,

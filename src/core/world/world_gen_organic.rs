@@ -1,7 +1,3 @@
-
-
-use tcod::console::*;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::world::world_gen::{Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
@@ -10,7 +6,11 @@ use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::{GameRng, RngExtended};
 
-const CA_CYCLES: i32 = 2;
+use std::collections::HashSet;
+
+use tcod::console::*;
+
+const CA_CYCLES: i32 = 20;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -36,31 +36,38 @@ impl WorldGen for OrganicsWorldGenerator {
         _level: u32,
     ) {
         // step 1: generate foundation pattern
-        for y in 2..WORLD_HEIGHT - 2 {
-            for x in 2..WORLD_WIDTH - 2 {
-                // debug!("setting tile dna at ({}, {})", x, y);
-                let probability = ((f64::from(x) - (f64::from(WORLD_WIDTH) / 2.0)).abs()
-                    + (f64::from(y) - (f64::from(WORLD_HEIGHT) / 2.0)).abs())
-                    / (f64::from(WORLD_WIDTH + WORLD_HEIGHT));
-                println!("#1 probability: {}", probability);
-                if game_rng.flip_with_prob((1.0 - probability) / 10.0) {
-                    game_objects
-                        .get_tile_at(x as usize, y as usize)
-                        .replace(Tile::empty(x, y));
-                    self.player_start = (x, y);
-                    println!("#1 flipped {}, {}", x, y);
-                }
+        let mid_x = WORLD_WIDTH / 2;
+        let mid_y = WORLD_HEIGHT / 2;
+        for y in mid_y - 3..mid_y + 3 {
+            for x in mid_x - 3..mid_x + 3 {
+                game_objects
+                    .get_tile_at(x as usize, y as usize)
+                    .replace(Tile::empty(x, y));
+                self.player_start = (x, y);
+                println!("#1 flipped {}, {}", x, y);
             }
             visualize_map(game_frontend, game_objects);
         }
 
-        // step 2: use cellular automaton to fill in and smoothe out
-        for y in 2..WORLD_HEIGHT - 2 {
-            for x in 2..WORLD_WIDTH - 2 {
-                if update_from_neighbors(game_objects, game_rng, x, y) {
-                    println!("#2 flipped {}, {}", x, y);
+        let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
+        // step 2: use cellular automaton to fill in and smooth out
+        for _ in 0..CA_CYCLES {
+            for y in 2..WORLD_HEIGHT - 2 {
+                for x in 2..WORLD_WIDTH - 2 {
+                    // note whether a cell has changed
+                    if update_from_neighbours(game_objects, game_rng, x, y) {
+                        println!("#2 flipped {}, {}", x, y);
+                        changed_tiles.insert((x, y));
+                    }
                 }
             }
+            // perform actual update
+            for (j, k) in &changed_tiles {
+                game_objects
+                    .get_tile_at(*j as usize, *k as usize)
+                    .replace(Tile::empty(*j, *k));
+            }
+            changed_tiles.clear();
             visualize_map(game_frontend, game_objects);
         }
     }
@@ -82,48 +89,37 @@ fn visualize_map(game_frontend: &mut GameFrontend, game_objects: &mut GameObject
     }
 }
 
-fn update_from_neighbors(
+fn update_from_neighbours(
     game_objects: &mut GameObjects,
     game_rng: &mut GameRng,
     x: i32,
     y: i32,
 ) -> bool {
     let directions = [
-        (-1, -1),
+        // (-1, -1),
         (-1, 0),
-        (-1, 1),
+        // (-1, 1),
         (0, -1),
         (0, 1),
-        (1, -1),
+        // (1, -1),
         (1, 0),
-        (1, 1),
+        // (1, 1),
     ];
 
-    let mut neighbor_count: usize = 0;
+    let mut neighbour_count: usize = 0;
     let mut access_count: usize = 0;
     for (i, j) in directions.iter() {
         let nx = x + i;
         let ny = y + j;
         if nx >= 2 && nx <= (WORLD_WIDTH - 2) && ny >= 2 && ny <= (WORLD_HEIGHT - 2) {
-            neighbor_count += 1;
-            if let Some(neighbor_tile) = &mut game_objects.get_tile_at(nx as usize, ny as usize) {
-                if neighbor_tile.physics.is_blocking {
+            neighbour_count += 1;
+            if let Some(neighbour_tile) = &mut game_objects.get_tile_at(nx as usize, ny as usize) {
+                if !neighbour_tile.physics.is_blocking {
                     access_count += 1;
                 }
             }
         }
     }
 
-    let mut has_changed: bool = false;
-    println!(
-        "#2 probability: {}",
-        (access_count as f64 / neighbor_count as f64) as f64
-    );
-    if game_rng.flip_with_prob((access_count as f64 / neighbor_count as f64) / 10.0 as f64) {
-        has_changed = true;
-        game_objects
-            .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y));
-    }
-    has_changed
+    (access_count == 1 || access_count == 2) && game_rng.coinflip()
 }
