@@ -10,7 +10,7 @@ use std::collections::HashSet;
 
 use tcod::console::*;
 
-const CA_CYCLES: i32 = 20;
+const CA_CYCLES: i32 = 45;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -97,29 +97,27 @@ fn update_from_neighbours(
 ) -> bool {
     let directions = [
         // (-1, -1),
-        (-1, 0),
+        (-1, 0, 2.0),
         // (-1, 1),
-        (0, -1),
-        (0, 1),
+        (0, -1, 1.0),
+        (0, 1, 1.0),
         // (1, -1),
-        (1, 0),
+        (1, 0, 2.0),
         // (1, 1),
     ];
 
-    let mut neighbour_count: usize = 0;
-    let mut access_count: usize = 0;
-    for (i, j) in directions.iter() {
+    let mut access_count: f64 = 0.0;
+    for (i, j, weight) in directions.iter() {
         let nx = x + i;
         let ny = y + j;
         if nx >= 2 && nx <= (WORLD_WIDTH - 2) && ny >= 2 && ny <= (WORLD_HEIGHT - 2) {
-            neighbour_count += 1;
             if let Some(neighbour_tile) = &mut game_objects.get_tile_at(nx as usize, ny as usize) {
                 if !neighbour_tile.physics.is_blocking {
-                    access_count += 1;
+                    access_count += weight;
                 }
             }
         }
     }
 
-    (access_count == 1 || access_count == 2) && game_rng.coinflip()
+    game_rng.flip_with_prob(access_count / 8.0)
 }
