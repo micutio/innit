@@ -3,7 +3,7 @@
 
 # Reference: https://rust-lang.github.io/rustfmt/
 
-# merge_imports = true
+merge_imports = true
 comment_width = 100
 normalize_comments = true
 wrap_comments = true

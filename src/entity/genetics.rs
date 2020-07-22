@@ -76,7 +76,7 @@ pub enum TraitAction {
 
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
-    pub trait_id:  TraitAction,
+    pub trait_id: TraitAction,
     pub parameter: i32,
 }
 
@@ -106,14 +106,14 @@ pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Bo
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Sensors {
-    pub actions:     Vec<ActionPrototype>,
+    pub actions: Vec<ActionPrototype>,
     pub sense_range: i32,
 }
 
 impl Sensors {
     pub fn new() -> Self {
         Sensors {
-            actions:     Vec::new(),
+            actions: Vec::new(),
             sense_range: 0,
         }
     }
@@ -150,14 +150,14 @@ impl Processors {
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<ActionPrototype>,
-    pub hp:      i32,
+    pub hp: i32,
 }
 
 impl Actuators {
     pub fn new() -> Self {
         Actuators {
             actions: Vec::new(),
-            hp:      0,
+            hp: 0,
         }
     }
 }
@@ -166,9 +166,9 @@ impl Actuators {
 /// Genes can either encode actions, attributes or both.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeneRecord {
-    name:        String,
+    name: String,
     super_trait: SuperTrait,
-    action:      TraitAction,
+    action: TraitAction,
     /* attributes: Vec<?>,
      * synergies: Vec<?>,
      * anti-synergies: Vec<?>, */
@@ -176,7 +176,7 @@ pub struct GeneRecord {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Dna {
-    pub raw:        Vec<u8>,
+    pub raw: Vec<u8>,
     pub simplified: Vec<SuperTrait>,
 }
 
@@ -400,25 +400,28 @@ impl GeneLibrary {
 
 #[derive(Default)]
 struct TraitBuilder {
-    sensors:              Sensors,
-    processors:           Processors,
-    actuators:            Actuators,
-    sensor_action_acc:    HashMap<TraitAction, i32>,
+    sensors: Sensors,
+    processors: Processors,
+    actuators: Actuators,
+    sensor_action_acc: HashMap<TraitAction, i32>,
     processor_action_acc: HashMap<TraitAction, i32>,
-    actuator_action_acc:  HashMap<TraitAction, i32>,
+    actuator_action_acc: HashMap<TraitAction, i32>,
     dna: Dna,
 }
 
 impl TraitBuilder {
     pub fn new() -> Self {
         TraitBuilder {
-            sensors:              Sensors::new(),
-            processors:           Processors::new(),
-            actuators:            Actuators::new(),
-            sensor_action_acc:    HashMap::new(),
+            sensors: Sensors::new(),
+            processors: Processors::new(),
+            actuators: Actuators::new(),
+            sensor_action_acc: HashMap::new(),
             processor_action_acc: HashMap::new(),
-            actuator_action_acc:  HashMap::new(),
-            dna: Dna{ raw: Vec::new(), simplified: Vec::new()},
+            actuator_action_acc: HashMap::new(),
+            dna: Dna {
+                raw: Vec::new(),
+                simplified: Vec::new(),
+            },
         }
     }
 
@@ -464,7 +467,7 @@ impl TraitBuilder {
             .sensor_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id:  *trait_id,
+                trait_id: *trait_id,
                 parameter: *parameter,
             })
             .collect();
@@ -473,7 +476,7 @@ impl TraitBuilder {
             .processor_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id:  *trait_id,
+                trait_id: *trait_id,
                 parameter: *parameter,
             })
             .collect();
@@ -482,7 +485,7 @@ impl TraitBuilder {
             .actuator_action_acc
             .iter()
             .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id:  *trait_id,
+                trait_id: *trait_id,
                 parameter: *parameter,
             })
             .collect();

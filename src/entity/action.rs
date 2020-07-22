@@ -75,8 +75,8 @@ impl Action for PassAction {
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AttackAction {
-    base_power:  i32,
-    target_id:   Option<usize>,
+    base_power: i32,
+    target_id: Option<usize>,
     energy_cost: i32,
 }
 
@@ -134,7 +134,7 @@ pub enum Direction {
 // TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
-    direction:   Direction,
+    direction: Direction,
     energy_cost: i32,
 }
 

@@ -16,7 +16,7 @@ use crate::util::game_rng::GameRng;
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct GameObjects {
     num_world_tiles: usize,
-    obj_vec:         Vec<Option<Object>>,
+    obj_vec: Vec<Option<Object>>,
 }
 
 impl GameObjects {
@@ -59,7 +59,8 @@ impl GameObjects {
                 if let Some(tile) =
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
-                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(game_rng, 10);
+                    let (sensors, processors, actuators, dna) =
+                        gene_library.new_genetics(game_rng, 10);
                     tile.change_genome(sensors, processors, actuators, dna);
                 }
             }

@@ -12,7 +12,7 @@ use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 /// Most of the object components are organized in their own
 ///
 /// ```Option<ComponentType>```
-/// 
+///
 /// fields.
 /// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
 /// other hand, nearly all optional components are determined by the object's genome, except
@@ -23,34 +23,34 @@ use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 /// influenced or amplified by certain attributes.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Object {
-    pub x:           i32,
-    pub y:           i32,
-    pub alive:       bool,
-    pub energy:      i32, // could be changed into some pseudo-progress like allowed DNA length
-    pub dna:         Dna,
-    pub visual:      Visual,
-    pub physics:     Physics,
-    pub sensors:     Sensors,
-    pub processors:  Processors,
-    pub actuators:   Actuators,
-    pub tile:        Option<Tile>,
-    pub ai:          Option<Ai>,
+    pub x: i32,
+    pub y: i32,
+    pub alive: bool,
+    pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
+    pub dna: Dna,
+    pub visual: Visual,
+    pub physics: Physics,
+    pub sensors: Sensors,
+    pub processors: Processors,
+    pub actuators: Actuators,
+    pub tile: Option<Tile>,
+    pub ai: Option<Ai>,
     pub next_action: Option<Box<dyn Action>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Visual {
-    pub name:      String,
+    pub name: String,
     pub character: char,
-    pub color:     Color,
+    pub color: Color,
 }
 
 impl Visual {
     pub fn new() -> Self {
         Visual {
-            name:      "unknown".into(),
+            name: "unknown".into(),
             character: '_',
-            color:     Color {
+            color: Color {
                 r: 255,
                 g: 255,
                 b: 255,
@@ -61,7 +61,7 @@ impl Visual {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Physics {
-    pub is_blocking:       bool,
+    pub is_blocking: bool,
     pub is_blocking_sight: bool,
     pub is_always_visible: bool,
 }
@@ -69,7 +69,7 @@ pub struct Physics {
 impl Physics {
     pub fn new() -> Self {
         Physics {
-            is_blocking:       false,
+            is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
         }
@@ -80,18 +80,18 @@ impl Object {
     /// The Object constructor uses the builder pattern.
     pub fn new() -> Self {
         Object {
-            x:           0,
-            y:           0,
-            alive:       false,
-            energy:      0,
-            dna:         Dna::new(),
-            visual:      Visual::new(),
-            physics:     Physics::new(),
-            sensors:     Sensors::new(),
-            processors:  Processors::new(),
-            actuators:   Actuators::new(),
-            tile:        None,
-            ai:          None,
+            x: 0,
+            y: 0,
+            alive: false,
+            energy: 0,
+            dna: Dna::new(),
+            visual: Visual::new(),
+            physics: Physics::new(),
+            sensors: Sensors::new(),
+            processors: Processors::new(),
+            actuators: Actuators::new(),
+            tile: None,
+            ai: None,
             next_action: None,
         }
     }

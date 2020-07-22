@@ -22,23 +22,23 @@ fn test_dna_encoding() {
     ];
     // create artifical sensor component for comparison
     let s = Sensors {
-        actions:     Vec::new(),
+        actions: Vec::new(),
         sense_range: 1,
     };
 
     let p = Processors {
         actions: vec![ActionPrototype {
-            trait_id:  TraitAction::Quick,
+            trait_id: TraitAction::Quick,
             parameter: 1,
         }],
     };
 
     let a = Actuators {
         actions: vec![ActionPrototype {
-            trait_id:  TraitAction::Move,
+            trait_id: TraitAction::Move,
             parameter: 1,
         }],
-        hp:      0,
+        hp: 0,
     };
 
     let (_s, _p, _a, _) = gene_lib.decode_dna(&dna);

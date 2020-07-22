@@ -22,9 +22,9 @@ use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 /// interface towards the frontend.
 pub struct GameInput {
     pub names_under_mouse: String,
-    current_mouse_pos:     MousePosition,
-    concurrent_input:      Option<ConcurrentInput>,
-    next_action:           Option<PlayerInput>,
+    current_mouse_pos: MousePosition,
+    concurrent_input: Option<ConcurrentInput>,
+    next_action: Option<PlayerInput>,
 }
 
 impl GameInput {
@@ -33,8 +33,8 @@ impl GameInput {
         GameInput {
             current_mouse_pos: MousePosition { x: 0, y: 0 },
             names_under_mouse: Default::default(),
-            concurrent_input:  None,
-            next_action:       None,
+            concurrent_input: None,
+            next_action: None,
         }
     }
 
@@ -181,9 +181,9 @@ struct MousePosition {
 /// - the cannel that allows the ui to communicate with the running thread
 /// - the handle of the input thread itself
 struct ConcurrentInput {
-    game_input_ref:  Arc<Mutex<InputContainer>>,
+    game_input_ref: Arc<Mutex<InputContainer>>,
     input_thread_tx: Sender<InputThreadCommand>,
-    input_thread:    JoinHandle<()>,
+    input_thread: JoinHandle<()>,
 }
 
 /// Since joining the thread consumes the handle, the concurrent input component
@@ -296,7 +296,7 @@ pub enum UiAction {
 #[derive(Clone, Debug)]
 pub struct PlayAction {
     pub trait_id: SubTrait,
-    pub param:    PlayActionParameter,
+    pub param: PlayActionParameter,
 }
 
 impl PlayAction {
@@ -313,16 +313,16 @@ pub enum PlayActionParameter {
 
 /// The input processor maps user input to player actions.
 pub struct InputContainer {
-    pub mouse_x:             i32,
-    pub mouse_y:             i32,
+    pub mouse_x: i32,
+    pub mouse_y: i32,
     pub next_player_actions: VecDeque<PlayerInput>,
 }
 
 impl InputContainer {
     pub fn new() -> Self {
         InputContainer {
-            mouse_x:             0,
-            mouse_y:             0,
+            mouse_x: 0,
+            mouse_y: 0,
             next_player_actions: VecDeque::new(),
         }
     }
@@ -423,9 +423,9 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
     use self::PlayActionParameter::*;
     use self::PlayerInput::*;
-    use self::UiAction::*;
     use self::SubTrait::*;
     use self::TraitAction::*;
+    use self::UiAction::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
