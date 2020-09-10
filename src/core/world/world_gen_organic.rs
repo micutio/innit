@@ -38,8 +38,8 @@ impl WorldGen for OrganicsWorldGenerator {
         // step 1: generate foundation pattern
         let mid_x = WORLD_WIDTH / 2;
         let mid_y = WORLD_HEIGHT / 2;
-        for y in mid_y - 3..mid_y + 3 {
-            for x in mid_x - 3..mid_x + 3 {
+        for y in mid_y - 2..mid_y + 2 {
+            for x in mid_x - 2..mid_x + 2 {
                 game_objects
                     .get_tile_at(x as usize, y as usize)
                     .replace(Tile::empty(x, y));
@@ -89,6 +89,7 @@ fn visualize_map(game_frontend: &mut GameFrontend, game_objects: &mut GameObject
     }
 }
 
+// TODO: If return true, flip to walkable, if false flip back to wall!
 fn update_from_neighbours(
     game_objects: &mut GameObjects,
     game_rng: &mut GameRng,
@@ -97,12 +98,12 @@ fn update_from_neighbours(
 ) -> bool {
     let directions = [
         // (-1, -1),
-        (-1, 0, 2.0),
+        (-1, 0, 4.0),
         // (-1, 1),
         (0, -1, 1.0),
         (0, 1, 1.0),
         // (1, -1),
-        (1, 0, 2.0),
+        (1, 0, 4.0),
         // (1, 1),
     ];
 
@@ -119,5 +120,5 @@ fn update_from_neighbours(
         }
     }
 
-    game_rng.flip_with_prob(access_count / 8.0)
+    game_rng.flip_with_prob(access_count / 16.0)
 }
