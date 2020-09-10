@@ -40,20 +40,22 @@ use crate::ui::game_input::PlayAction;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 
+/// All traits belong to one of three major categories, called trait families.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
-pub enum SuperTrait {
+pub enum TraitFamily {
     Sensing,
     Processing,
     Actuating,
 }
 
+/// Traits can influence attributes and actions.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 #[serde(untagged)]
-pub enum SubTrait {
+pub enum Trait {
     // #[serde(rename = "sttraitattribute")]
-    StAttribute(TraitAttribute),
+    TAttribute(TraitAttribute),
     // #[serde(rename = "sttraitaction")]
-    StAction(TraitAction),
+    TAction(TraitAction),
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
@@ -81,23 +83,23 @@ pub struct ActionPrototype {
 }
 
 /// Construct a new player action from a given key code.
-/// Get player's action item that corresponds with the player input and construct a new action
-/// from the parameters in both
+/// Get player's action item that corresponds with the player input and
+/// construct a new action from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
 pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
-    use self::SubTrait::*;
+    use self::Trait::*;
     use self::TraitAction::*;
     use crate::ui::game_input::PlayActionParameter::*;
     match input {
         PlayAction {
-            trait_id: StAction(Move),
+            trait_id: TAction(Move),
             param: Orientation(dir),
         } => Box::new(MoveAction::new(dir, prototype.parameter)),
         _ => Box::new(PassAction),
     }
 }
 
-/// This may or may not be body parts. Actuators like organells can also benefit the attributes.
+/// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
 /// Sensors contain:
 /// - attributes
 ///   - range of effective sensing
@@ -167,7 +169,7 @@ impl Actuators {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeneRecord {
     name: String,
-    super_trait: SuperTrait,
+    super_trait: TraitFamily,
     action: TraitAction,
     /* attributes: Vec<?>,
      * synergies: Vec<?>,
@@ -177,7 +179,7 @@ pub struct GeneRecord {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Dna {
     pub raw: Vec<u8>,
-    pub simplified: Vec<SuperTrait>,
+    pub simplified: Vec<TraitFamily>,
 }
 
 impl Dna {
@@ -202,10 +204,10 @@ impl Dna {
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go
-    gray_to_trait: HashMap<u8, SubTrait>,
+    gray_to_trait: HashMap<u8, Trait>,
     /// This one should be straight forward. Lets the custom traits make use of supertrait specific
     /// attributes.
-    pub trait_to_super: HashMap<SubTrait, SuperTrait>,
+    pub trait_by_family: HashMap<Trait, TraitFamily>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
     // trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
@@ -216,21 +218,21 @@ pub struct GeneLibrary {
 
 impl GeneLibrary {
     pub fn new() -> Self {
-        let traits: Vec<SubTrait> = vec![
-            SubTrait::StAttribute(TraitAttribute::SensingRange),
-            SubTrait::StAction(TraitAction::Sense),
-            SubTrait::StAction(TraitAction::Quick),
-            SubTrait::StAction(TraitAction::Primary),
-            SubTrait::StAction(TraitAction::Secondary),
-            SubTrait::StAction(TraitAction::Move),
-            SubTrait::StAction(TraitAction::Attack),
-            SubTrait::StAction(TraitAction::Defend),
-            SubTrait::StAttribute(TraitAttribute::Hp),
-            SubTrait::StAction(TraitAction::Rest),
+        let traits: Vec<Trait> = vec![
+            Trait::TAttribute(TraitAttribute::SensingRange),
+            Trait::TAction(TraitAction::Sense),
+            Trait::TAction(TraitAction::Quick),
+            Trait::TAction(TraitAction::Primary),
+            Trait::TAction(TraitAction::Secondary),
+            Trait::TAction(TraitAction::Move),
+            Trait::TAction(TraitAction::Attack),
+            Trait::TAction(TraitAction::Defend),
+            Trait::TAttribute(TraitAttribute::Hp),
+            Trait::TAction(TraitAction::Rest),
         ];
         // TODO: Introduce constant N for total number of traits to assert gray code vector length.
         let gray_code = generate_gray_code(4);
-        let gray_to_trait: HashMap<u8, SubTrait> = traits
+        let gray_to_trait: HashMap<u8, Trait> = traits
             .iter()
             .enumerate()
             .map(|(x, y)| (gray_code[x + 1], *y))
@@ -238,43 +240,34 @@ impl GeneLibrary {
 
         // TODO: This is really unwieldy.
         // At least extract to it's own function or better yet, try to make it more generic.
-        let mut trait_to_super: HashMap<SubTrait, SuperTrait> = HashMap::new();
+        let mut trait_to_super: HashMap<Trait, TraitFamily> = HashMap::new();
         trait_to_super.insert(
-            SubTrait::StAttribute(TraitAttribute::SensingRange),
-            SuperTrait::Sensing,
+            Trait::TAttribute(TraitAttribute::SensingRange),
+            TraitFamily::Sensing,
         );
-        trait_to_super.insert(SubTrait::StAction(TraitAction::Sense), SuperTrait::Sensing);
+        trait_to_super.insert(Trait::TAction(TraitAction::Sense), TraitFamily::Sensing);
+        trait_to_super.insert(Trait::TAction(TraitAction::Quick), TraitFamily::Processing);
         trait_to_super.insert(
-            SubTrait::StAction(TraitAction::Quick),
-            SuperTrait::Processing,
-        );
-        trait_to_super.insert(
-            SubTrait::StAction(TraitAction::Primary),
-            SuperTrait::Processing,
+            Trait::TAction(TraitAction::Primary),
+            TraitFamily::Processing,
         );
         trait_to_super.insert(
-            SubTrait::StAction(TraitAction::Secondary),
-            SuperTrait::Processing,
+            Trait::TAction(TraitAction::Secondary),
+            TraitFamily::Processing,
         );
-        trait_to_super.insert(SubTrait::StAction(TraitAction::Move), SuperTrait::Actuating);
+        trait_to_super.insert(Trait::TAction(TraitAction::Move), TraitFamily::Actuating);
+        trait_to_super.insert(Trait::TAction(TraitAction::Attack), TraitFamily::Actuating);
+        trait_to_super.insert(Trait::TAction(TraitAction::Defend), TraitFamily::Actuating);
         trait_to_super.insert(
-            SubTrait::StAction(TraitAction::Attack),
-            SuperTrait::Actuating,
+            Trait::TAttribute(TraitAttribute::Hp),
+            TraitFamily::Actuating,
         );
-        trait_to_super.insert(
-            SubTrait::StAction(TraitAction::Defend),
-            SuperTrait::Actuating,
-        );
-        trait_to_super.insert(
-            SubTrait::StAttribute(TraitAttribute::Hp),
-            SuperTrait::Actuating,
-        );
-        trait_to_super.insert(SubTrait::StAction(TraitAction::Rest), SuperTrait::Actuating);
+        trait_to_super.insert(Trait::TAction(TraitAction::Rest), TraitFamily::Actuating);
 
         // actual constructor
         GeneLibrary {
             gray_to_trait,
-            trait_to_super,
+            trait_by_family: trait_to_super,
             gray_code: generate_gray_code(4),
             trait_count: traits.len(),
         }
@@ -385,8 +378,8 @@ impl GeneLibrary {
             }
             // take u8 word and map it to action/attribute
             match self.gray_to_trait.get(&dna[i]) {
-                Some(SubTrait::StAttribute(attr)) => trait_builder.add_attribute(*attr),
-                Some(SubTrait::StAction(actn)) => trait_builder.add_action(*actn),
+                Some(Trait::TAttribute(attr)) => trait_builder.add_attribute(*attr),
+                Some(Trait::TAction(actn)) => trait_builder.add_action(*actn),
                 None => {}
             }
         }
@@ -428,11 +421,11 @@ impl TraitBuilder {
     pub fn add_attribute(&mut self, attr: TraitAttribute) {
         match attr {
             TraitAttribute::SensingRange => {
-                self.dna.simplified.push(SuperTrait::Sensing);
+                self.dna.simplified.push(TraitFamily::Sensing);
                 self.sensors.sense_range += 1;
             }
             TraitAttribute::Hp => {
-                self.dna.simplified.push(SuperTrait::Actuating);
+                self.dna.simplified.push(TraitFamily::Actuating);
                 self.actuators.hp += 1;
             }
         }
@@ -446,15 +439,15 @@ impl TraitBuilder {
                 //  let count = self.sensor_action_acc.entry(actn).or_insert(0);
                 //  *count += 1;
                 // ... which shortens to the following:
-                self.dna.simplified.push(SuperTrait::Sensing);
+                self.dna.simplified.push(TraitFamily::Sensing);
                 *self.sensor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
-                self.dna.simplified.push(SuperTrait::Processing);
+                self.dna.simplified.push(TraitFamily::Processing);
                 *self.processor_action_acc.entry(actn).or_insert(0) += 1;
             }
             TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
-                self.dna.simplified.push(SuperTrait::Actuating);
+                self.dna.simplified.push(TraitFamily::Actuating);
                 *self.actuator_action_acc.entry(actn).or_insert(0) += 1;
             }
         }

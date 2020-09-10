@@ -9,7 +9,7 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
-use crate::entity::genetics::{SubTrait, TraitAction};
+use crate::entity::genetics::{Trait, TraitAction};
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
@@ -295,12 +295,12 @@ pub enum UiAction {
 
 #[derive(Clone, Debug)]
 pub struct PlayAction {
-    pub trait_id: SubTrait,
+    pub trait_id: Trait,
     pub param: PlayActionParameter,
 }
 
 impl PlayAction {
-    pub fn new(trait_id: SubTrait, param: PlayActionParameter) -> Self {
+    pub fn new(trait_id: Trait, param: PlayActionParameter) -> Self {
         PlayAction { trait_id, param }
     }
 }
@@ -423,7 +423,7 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     use self::MyKeyCode::*;
     use self::PlayActionParameter::*;
     use self::PlayerInput::*;
-    use self::SubTrait::*;
+    use self::Trait::*;
     use self::TraitAction::*;
     use self::UiAction::*;
 
@@ -433,27 +433,27 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     // set up all in-game actions
     key_map.insert(
         Up,
-        PlayInput(PlayAction::new(StAction(Move), Orientation(North))),
+        PlayInput(PlayAction::new(TAction(Move), Orientation(North))),
     );
     key_map.insert(
         Down,
-        PlayInput(PlayAction::new(StAction(Move), Orientation(South))),
+        PlayInput(PlayAction::new(TAction(Move), Orientation(South))),
     );
     key_map.insert(
         Left,
-        PlayInput(PlayAction::new(StAction(Move), Orientation(West))),
+        PlayInput(PlayAction::new(TAction(Move), Orientation(West))),
     );
     key_map.insert(
         Right,
-        PlayInput(PlayAction::new(StAction(Move), Orientation(East))),
+        PlayInput(PlayAction::new(TAction(Move), Orientation(East))),
     );
     key_map.insert(
         Q,
-        PlayInput(PlayAction::new(StAction(Primary), Target { x: 0, y: 0 })),
+        PlayInput(PlayAction::new(TAction(Primary), Target { x: 0, y: 0 })),
     );
     key_map.insert(
         E,
-        PlayInput(PlayAction::new(StAction(Secondary), Target { x: 0, y: 0 })),
+        PlayInput(PlayAction::new(TAction(Secondary), Target { x: 0, y: 0 })),
     );
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));

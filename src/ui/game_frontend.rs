@@ -6,7 +6,7 @@ use tcod::map::FovAlgorithm;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
-use crate::entity::genetics::{Dna, SuperTrait};
+use crate::entity::genetics::{Dna, TraitFamily};
 use crate::entity::object::Object;
 use crate::game::{game_loop, load_game, new_game, save_game};
 use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
@@ -634,17 +634,17 @@ fn render_dna_short(
     let sensor_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == SuperTrait::Sensing)
+        .filter(|x| **x == TraitFamily::Sensing)
         .count();
     let processor_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == SuperTrait::Processing)
+        .filter(|x| **x == TraitFamily::Processing)
         .count();
     let actuator_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == SuperTrait::Actuating)
+        .filter(|x| **x == TraitFamily::Actuating)
         .count();
     let maximum = dna.simplified.len();
     // render a bar (HP, EXP, etc)
@@ -709,9 +709,9 @@ fn render_dna_long(
     println!("number of traits {}, bar width {}", traits_len, bar_width);
     for super_trait in dna.simplified.iter() {
         match super_trait {
-            SuperTrait::Sensing => panel.set_default_background(coloring.cyan),
-            SuperTrait::Processing => panel.set_default_background(coloring.magenta),
-            SuperTrait::Actuating => panel.set_default_background(coloring.yellow),
+            TraitFamily::Sensing => panel.set_default_background(coloring.cyan),
+            TraitFamily::Processing => panel.set_default_background(coloring.magenta),
+            TraitFamily::Actuating => panel.set_default_background(coloring.yellow),
         }
         panel.rect(x + offset, y, bar_width, 1, false, BackgroundFlag::Screen);
         offset += bar_width;

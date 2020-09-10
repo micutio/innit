@@ -13,7 +13,7 @@ use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
-use crate::entity::genetics::{build_player_action, SubTrait, SuperTrait};
+use crate::entity::genetics::{build_player_action, Trait, TraitFamily};
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
@@ -123,11 +123,11 @@ pub fn game_loop(
             Some(PlayerInput::PlayInput(ingame_action)) => {
                 debug!("inject ingame action {:#?} to player", ingame_action);
                 if let Some(ref mut player) = game_objects[PLAYER] {
-                    use self::SuperTrait::*;
-                    if let SubTrait::StAction(action_trait) = ingame_action.trait_id {
+                    use self::TraitFamily::*;
+                    if let Trait::TAction(action_trait) = ingame_action.trait_id {
                         match game_state
                             .gene_library
-                            .trait_to_super
+                            .trait_by_family
                             .get(&ingame_action.trait_id)
                         {
                             Some(Sensing) => {
@@ -139,8 +139,14 @@ pub fn game_loop(
                                 {
                                     let next_action =
                                         Some(build_player_action(ingame_action, prototype));
-                                    debug!("player action object: {:#?}", next_action);
+                                    debug!("player sensing action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
+                                } else {
+                                    /// TODO: Find a way to handle this in a way that the player easily understands.
+                                    println!(
+                                        "Your body does not have sensors for {:#?}!",
+                                        action_trait
+                                    );
                                 }
                             }
                             Some(Processing) => {
@@ -152,8 +158,14 @@ pub fn game_loop(
                                 {
                                     let next_action =
                                         Some(build_player_action(ingame_action, prototype));
-                                    debug!("player action object: {:#?}", next_action);
+                                    debug!("player processing action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
+                                } else {
+                                    /// TODO: Find a way to handle this in a way that the player easily understands.
+                                    println!(
+                                        "Your body does not have processors for {:#?}!",
+                                        action_trait
+                                    );
                                 }
                             }
                             Some(Actuating) => {
@@ -165,8 +177,14 @@ pub fn game_loop(
                                 {
                                     let next_action =
                                         Some(build_player_action(ingame_action, prototype));
-                                    debug!("player action object: {:#?}", next_action);
+                                    debug!("player actuating action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
+                                } else {
+                                    /// TODO: Find a way to handle this in a way that the player easily understands.
+                                    println!(
+                                        "Your body does not have actuators to {:#?}!",
+                                        action_trait
+                                    );
                                 }
                             }
                             None => {}
