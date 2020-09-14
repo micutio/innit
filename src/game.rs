@@ -21,6 +21,7 @@ use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
 
+// TODO: Make this changeable via command line flag!
 pub const DEBUG_MODE: bool = true;
 
 // world constraints

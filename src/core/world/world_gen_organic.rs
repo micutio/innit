@@ -79,7 +79,16 @@ impl WorldGen for OrganicsWorldGenerator {
         }
 
         // world gen done, now insert objects
-        place_objects(game_objects, game_rng, gene_library, level);
+        place_objects(
+            game_objects,
+            game_rng,
+            gene_library,
+            level,
+            Transition {
+                level: 6,
+                value: 500,
+            },
+        );
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -138,6 +147,7 @@ fn place_objects(
     game_rng: &mut GameRng,
     gene_library: &mut GeneLibrary,
     level: u32,
+    transition: Transition,
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -153,10 +163,7 @@ fn place_objects(
                 level: 4,
                 value: 300,
             },
-            Transition {
-                level: 6,
-                value: 500,
-            },
+            transition,
         ],
         level,
     );
