@@ -131,6 +131,8 @@ pub fn game_loop(
                             .get(&ingame_action.trait_id)
                         {
                             Some(Sensing) => {
+                                // iterate over all sensing actions and find one that matches the
+                                // prototype
                                 if let Some(prototype) = player
                                     .sensors
                                     .actions
@@ -142,7 +144,7 @@ pub fn game_loop(
                                     debug!("player sensing action object: {:#?}", next_action);
                                     player.set_next_action(next_action);
                                 } else {
-                                    /// TODO: Find a way to handle this in a way that the player easily understands.
+                                    /// TODO: Handle this in a way that the player easily understands.
                                     println!(
                                         "Your body does not have sensors for {:#?}!",
                                         action_trait
@@ -150,6 +152,8 @@ pub fn game_loop(
                                 }
                             }
                             Some(Processing) => {
+                                // iterate over all processing actions and find one that matches the
+                                // prototype
                                 if let Some(prototype) = player
                                     .processors
                                     .actions
@@ -169,6 +173,8 @@ pub fn game_loop(
                                 }
                             }
                             Some(Actuating) => {
+                                // iterate over all actuating actions and find one that matches the
+                                // prototype
                                 if let Some(prototype) = player
                                     .actuators
                                     .actions

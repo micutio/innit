@@ -123,6 +123,7 @@ impl Object {
         self
     }
 
+    /// Initialize the physical properties of the object. Part of the builder pattern.
     pub fn physical(
         mut self,
         is_blocking: bool,
@@ -162,7 +163,7 @@ impl Object {
         self
     }
 
-    /// Retrieve the current postition of the object.
+    /// Retrieve the current position of the object.
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }

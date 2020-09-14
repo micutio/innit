@@ -97,7 +97,7 @@ impl<T: Rng> RngCore for SerializableRng<T> {
     }
 }
 
-/// Gaem specific methods for random number generators.
+/// Game specific methods for random number generators.
 pub trait RngExtended {
     /// Return true or false with 50/50 chance of being true
     fn coinflip(&mut self) -> bool;
