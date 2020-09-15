@@ -66,10 +66,10 @@ pub enum TraitAttribute {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TraitAction {
-    Sense,
-    Quick,
-    Primary,
-    Secondary,
+    Sense,     // sensing
+    Quick,     // quick action
+    Primary,   // primary action
+    Secondary, // secondary action
     Move,
     Attack,
     Defend,
@@ -203,9 +203,10 @@ impl Dna {
 /// Actions can be chosen from a pool of predefined methods.
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
-    /// Traits are now supposed to be generic, so enums are no longer the way to go
+    /// Traits are now supposed to be generic, so enums are no longer the way to go.
+    /// Traits are encoded in gray code.
     gray_to_trait: HashMap<u8, Trait>,
-    /// This one should be straight forward. Lets the custom traits make use of supertrait specific
+    /// This one should be straight forward. Lets the custom traits make use of trait-family specific
     /// attributes.
     pub trait_by_family: HashMap<Trait, TraitFamily>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
@@ -240,34 +241,34 @@ impl GeneLibrary {
 
         // TODO: This is really unwieldy.
         // At least extract to it's own function or better yet, try to make it more generic.
-        let mut trait_to_super: HashMap<Trait, TraitFamily> = HashMap::new();
-        trait_to_super.insert(
+        let mut trait_by_family: HashMap<Trait, TraitFamily> = HashMap::new();
+        trait_by_family.insert(
             Trait::TAttribute(TraitAttribute::SensingRange),
             TraitFamily::Sensing,
         );
-        trait_to_super.insert(Trait::TAction(TraitAction::Sense), TraitFamily::Sensing);
-        trait_to_super.insert(Trait::TAction(TraitAction::Quick), TraitFamily::Processing);
-        trait_to_super.insert(
+        trait_by_family.insert(Trait::TAction(TraitAction::Sense), TraitFamily::Sensing);
+        trait_by_family.insert(Trait::TAction(TraitAction::Quick), TraitFamily::Processing);
+        trait_by_family.insert(
             Trait::TAction(TraitAction::Primary),
             TraitFamily::Processing,
         );
-        trait_to_super.insert(
+        trait_by_family.insert(
             Trait::TAction(TraitAction::Secondary),
             TraitFamily::Processing,
         );
-        trait_to_super.insert(Trait::TAction(TraitAction::Move), TraitFamily::Actuating);
-        trait_to_super.insert(Trait::TAction(TraitAction::Attack), TraitFamily::Actuating);
-        trait_to_super.insert(Trait::TAction(TraitAction::Defend), TraitFamily::Actuating);
-        trait_to_super.insert(
+        trait_by_family.insert(Trait::TAction(TraitAction::Move), TraitFamily::Actuating);
+        trait_by_family.insert(Trait::TAction(TraitAction::Attack), TraitFamily::Actuating);
+        trait_by_family.insert(Trait::TAction(TraitAction::Defend), TraitFamily::Actuating);
+        trait_by_family.insert(
             Trait::TAttribute(TraitAttribute::Hp),
             TraitFamily::Actuating,
         );
-        trait_to_super.insert(Trait::TAction(TraitAction::Rest), TraitFamily::Actuating);
+        trait_by_family.insert(Trait::TAction(TraitAction::Rest), TraitFamily::Actuating);
 
         // actual constructor
         GeneLibrary {
             gray_to_trait,
-            trait_by_family: trait_to_super,
+            trait_by_family,
             gray_code: generate_gray_code(4),
             trait_count: traits.len(),
         }
