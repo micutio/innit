@@ -56,6 +56,31 @@ impl Tile {
     }
 }
 
+/// For use in lambdas.
 pub fn is_explored(tile: &Tile) -> Option<&bool> {
     Some(&tile.is_explored)
+}
+
+pub enum Monster {
+    Bacteria,
+    Virus,
+}
+
+pub fn new_monster(
+    game_rng: &mut GameRng,
+    gene_lib: &GeneLibrary,
+    monster: Monster,
+    x: i32,
+    y: i32,
+    level: u32,
+) -> Object {
+    match monster {
+        Bacteria => Object::new()
+            .position(x, y)
+            .living(true)
+            .visualize("virus", 'v', colors::DESATURATED_GREEN)
+            .physical(true, false, false)
+            .genome(gene_lib.new_genetics(game_rng, 10))
+            .ai(Ai::Basic),
+    }
 }

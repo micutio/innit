@@ -1,15 +1,12 @@
 use rand::Rng;
 use std::{cmp, thread, time};
 
-use tcod::colors;
 use tcod::console::*;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
-use crate::core::world::world_gen::{Tile, WorldGen};
-use crate::entity::ai::Ai;
+use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
-use crate::entity::object::Object;
 use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
 // use crate::player::PLAYER;
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
@@ -194,30 +191,8 @@ fn place_objects(
 
         if !objects.is_blocked(x, y) {
             let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
-                "virus" => {
-                    let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(game_rng, 10);
-
-                    Object::new()
-                        .position(x, y)
-                        .living(true)
-                        .visualize("virus", 'v', colors::DESATURATED_GREEN)
-                        .physical(true, false, false)
-                        .genome(sensors, processors, actuators, dna)
-                        .ai(Ai::Basic)
-                }
-                "bacteria" => {
-                    let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(game_rng, 10);
-
-                    Object::new()
-                        .position(x, y)
-                        .living(true)
-                        .visualize("bacteria", 'b', colors::DARKER_GREEN)
-                        .physical(true, false, false)
-                        .genome(sensors, processors, actuators, dna)
-                        .ai(Ai::Basic)
-                }
+                "virus" => new_monster(game_rng, &gene_library, Monster::Virus, x, y, level),
+                "bacteria" => new_monster(game_rng, &gene_library, Monster::Bacteria, x, y, level),
                 _ => unreachable!(),
             };
 

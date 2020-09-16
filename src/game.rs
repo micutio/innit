@@ -51,16 +51,17 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
 
     // create object representing the player
-    let (sensors, processors, actuators, dna) = game_state
-        .gene_library
-        .new_genetics(&mut game_state.game_rng, 10);
     let (new_x, new_y) = world_generator.get_player_start_pos();
     let player = Object::new()
         .position(new_x, new_y)
         .living(true)
         .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
-        .genome(sensors, processors, actuators, dna);
+        .genome(
+            game_state
+                .gene_library
+                .new_genetics(&mut game_state.game_rng, 10),
+        );
 
     debug!("created player object {}", player);
     debug!("player sensors: {:?}", player.sensors);

@@ -139,10 +139,7 @@ impl Object {
     /// Set the object's dna and super traits. Part of the builder pattern.
     pub fn genome(
         mut self,
-        sensors: Sensors,
-        processors: Processors,
-        actuators: Actuators,
-        dna: Dna,
+        (sensors, processors, actuators, dna): (Sensors, Processors, Actuators, Dna),
     ) -> Object {
         self.sensors = sensors;
         self.processors = processors;
