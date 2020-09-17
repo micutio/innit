@@ -42,7 +42,7 @@ impl Tile {
             .visualize("empty tile", chars::UMLAUT, colors::WHITE)
             .physical(false, false, DEBUG_MODE)
             .tile_explored(DEBUG_MODE)
-            .ai(Ai::Basic)
+            .ai(true)
     }
 
     pub fn wall(x: i32, y: i32) -> Object {
@@ -52,7 +52,7 @@ impl Tile {
             .visualize("wall tile", '\t', colors::WHITE)
             .physical(true, true, DEBUG_MODE)
             .tile_explored(DEBUG_MODE)
-            .ai(Ai::Basic)
+            .ai(true)
     }
 }
 
@@ -75,12 +75,19 @@ pub fn new_monster(
     level: u32,
 ) -> Object {
     match monster {
-        Bacteria => Object::new()
+        Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
             .visualize("virus", 'v', colors::DESATURATED_GREEN)
             .physical(true, false, false)
             .genome(gene_lib.new_genetics(game_rng, 10))
-            .ai(Ai::Basic),
+            .ai(true),
+        Monster::Bacteria => Object::new()
+            .position(x, y)
+            .living(true)
+            .visualize("bacteria", 'b', colors::DARKER_GREEN)
+            .physical(true, false, false)
+            .genome(gene_lib.new_genetics(game_rng, 10))
+            .ai(true),
     }
 }

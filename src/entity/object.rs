@@ -34,7 +34,7 @@ pub struct Object {
     pub processors: Processors,
     pub actuators: Actuators,
     pub tile: Option<Tile>,
-    pub ai: Option<Ai>,
+    pub ai: bool,
     pub next_action: Option<Box<dyn Action>>,
 }
 
@@ -91,7 +91,7 @@ impl Object {
             processors: Processors::new(),
             actuators: Actuators::new(),
             tile: None,
-            ai: None,
+            ai: false,
             next_action: None,
         }
     }
@@ -155,8 +155,8 @@ impl Object {
     }
 
     /// Transform the object into an NPC. Part of the builder pattern.
-    pub fn ai(mut self, ai: Ai) -> Object {
-        self.ai = Some(ai);
+    pub fn ai(mut self, ai: bool) -> Object {
+        self.ai = ai;
         self
     }
 
@@ -205,13 +205,11 @@ impl Object {
 
     /// Determine and return the next action the object will take.
     pub fn get_next_action(&mut self) -> Option<Box<dyn Action>> {
-        match &self.ai {
-            Some(_) => {
-                // TODO: Call ai function to figure out next action!
-                let pass = PassAction;
-                Some(Box::new(pass))
-            }
-            None => self.next_action.take(),
+        if self.ai {
+            let pass = PassAction;
+            Some(Box::new(pass))
+        } else {
+            self.next_action.take()
         }
     }
 
