@@ -9,13 +9,22 @@ use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
+use crate::entity::action::Target::BlockingObject;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
+
+pub enum Target {
+    SelfObject,
+    EmptyObject,
+    BlockingObject,
+    None,
+    Any,
+}
 
 /// Result of performing an action.
 /// It can succeed, fail and cause direct consequences.
 pub enum ActionResult {
-    /// Sucessfully finished action
+    /// Successfully finished action
     Success { callback: ObjectProcResult },
     /// Failed to perform an action, ideally without any side effect.
     Failure,
@@ -34,7 +43,7 @@ pub trait Action: Debug {
         owner: &mut Object,
     ) -> ActionResult;
 
-    fn get_energy_cost(&self) -> i32;
+    fn target(&self) -> Target;
 }
 
 /// Dummy action for passing the turn.
@@ -67,8 +76,8 @@ impl Action for PassAction {
         }
     }
 
-    fn get_energy_cost(&self) -> i32 {
-        0 // being lazy is easy
+    fn target(&self) -> Target {
+        Target::None
     }
 }
 
@@ -77,15 +86,13 @@ impl Action for PassAction {
 pub struct AttackAction {
     base_power: i32,
     target_id: Option<usize>,
-    energy_cost: i32,
 }
 
 impl AttackAction {
-    pub fn new(base_power: i32, energy_cost: i32) -> Self {
+    pub fn new(base_power: i32) -> Self {
         AttackAction {
             base_power,
             target_id: None,
-            energy_cost,
         }
     }
 
@@ -117,8 +124,8 @@ impl Action for AttackAction {
         }
     }
 
-    fn get_energy_cost(&self) -> i32 {
-        self.energy_cost
+    fn target(&self) -> Target {
+        Target::BlockingObject
     }
 }
 
@@ -135,15 +142,11 @@ pub enum Direction {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
     direction: Direction,
-    energy_cost: i32,
 }
 
 impl MoveAction {
-    pub fn new(direction: Direction, energy_cost: i32) -> Self {
-        MoveAction {
-            direction,
-            energy_cost,
-        }
+    pub fn new(direction: Direction) -> Self {
+        MoveAction { direction }
     }
 }
 
@@ -182,7 +185,7 @@ impl Action for MoveAction {
         }
     }
 
-    fn get_energy_cost(&self) -> i32 {
-        self.energy_cost
+    fn target(&self) -> Target {
+        Target::EmptyObject
     }
 }

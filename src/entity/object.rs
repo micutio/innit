@@ -3,10 +3,12 @@ use std::fmt;
 use tcod::colors::Color;
 use tcod::console::*;
 
+use crate::core::game_objects::GameObjects;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::ai::Ai;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
+use crate::util::game_rng::GameRng;
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -34,7 +36,7 @@ pub struct Object {
     pub processors: Processors,
     pub actuators: Actuators,
     pub tile: Option<Tile>,
-    pub ai: bool,
+    pub ai: Option<Box<dyn Ai>>,
     pub next_action: Option<Box<dyn Action>>,
 }
 
@@ -91,7 +93,7 @@ impl Object {
             processors: Processors::new(),
             actuators: Actuators::new(),
             tile: None,
-            ai: false,
+            ai: None,
             next_action: None,
         }
     }
@@ -155,8 +157,8 @@ impl Object {
     }
 
     /// Transform the object into an NPC. Part of the builder pattern.
-    pub fn ai(mut self, ai: bool) -> Object {
-        self.ai = ai;
+    pub fn ai(mut self, ai: Box<dyn Ai>) -> Object {
+        self.ai = Some(ai);
         self
     }
 
@@ -204,10 +206,16 @@ impl Object {
     }
 
     /// Determine and return the next action the object will take.
-    pub fn get_next_action(&mut self) -> Option<Box<dyn Action>> {
-        if self.ai {
-            let pass = PassAction;
-            Some(Box::new(pass))
+    pub fn get_next_action(
+        &mut self,
+        game_objects: &mut GameObjects,
+        game_rng: &mut GameRng,
+    ) -> Option<Box<dyn Action>> {
+        // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
+        if let Some(ai) = self.ai.take() {
+            let next_ai_action = ai.act(self, game_objects, game_rng);
+            self.ai = Some(ai);
+            Some(Box::new(next_ai_action))
         } else {
             self.next_action.take()
         }

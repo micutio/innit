@@ -71,7 +71,7 @@ impl GameState {
         let mut process_result = ObjectProcResult::NoAction;
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
-            if let Some(next_action) = active_object.get_next_action() {
+            if let Some(next_action) = active_object.get_next_action(objects, &mut self.game_rng) {
                 // perform action
                 process_result =
                     self.process_action(fov_map, objects, &mut active_object, next_action);
