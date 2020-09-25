@@ -13,12 +13,25 @@ use crate::entity::action::Target::BlockingObject;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 
+/// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 pub enum Target {
-    SelfObject,
     EmptyObject,
     BlockingObject,
     None,
     Any,
+}
+
+/// Move an object
+// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MoveAction {
+    direction: Direction,
+}
+
+impl MoveAction {
+    pub fn new(direction: Direction) -> Self {
+        MoveAction { direction }
+    }
 }
 
 /// Result of performing an action.
@@ -135,18 +148,18 @@ pub enum Direction {
     South,
     East,
     West,
+    Center,
 }
 
-/// Move an object
-// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MoveAction {
-    direction: Direction,
-}
-
-impl MoveAction {
-    pub fn new(direction: Direction) -> Self {
-        MoveAction { direction }
+impl Direction {
+    fn to_xy(&self) -> (i32, i32) {
+        match self {
+            Direction::North => (0, -1),
+            Direction::South => (0, 1),
+            Direction::East => (1, 0),
+            Direction::West => (-1, 0),
+            Direction::Center => (0, 0),
+        }
     }
 }
 
@@ -158,14 +171,7 @@ impl Action for MoveAction {
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
-        use self::Direction::*;
-        let (dx, dy) = match self.direction {
-            North => (0, -1),
-            South => (0, 1),
-            East => (1, 0),
-            West => (-1, 0),
-        };
-
+        let (dx, dy) = self.direction.to_xy();
         let (x, y) = owner.pos();
         if !&objects.is_blocked(x + dx, y + dy) {
             info!(
