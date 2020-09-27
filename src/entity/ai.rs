@@ -27,7 +27,13 @@ pub trait Ai: Debug {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct PassiveAi;
+pub struct PassiveAi;
+
+impl PassiveAi {
+    pub fn new() -> Self {
+        PassiveAi {}
+    }
+}
 
 #[typetag::serde]
 impl Ai for PassiveAi {
@@ -42,7 +48,13 @@ impl Ai for PassiveAi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct RandomAi;
+pub struct RandomAi;
+
+impl RandomAi {
+    pub fn new() -> Self {
+        RandomAi {}
+    }
+}
 
 #[typetag::serde]
 impl Ai for RandomAi {
@@ -53,7 +65,8 @@ impl Ai for RandomAi {
         game_rng: &mut GameRng,
     ) -> Box<dyn Action> {
         // iterate over all available actions and pick one at random with randomised target
-
+        let mut result: Option<Box<dyn Action>> = None;
+        while result.is_none() {}
         // dummy return for now
         Box::new(PassAction)
     }

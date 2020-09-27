@@ -21,16 +21,24 @@ pub enum Target {
     Any,
 }
 
-/// Move an object
-// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MoveAction {
-    direction: Direction,
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
+pub enum Direction {
+    North,
+    South,
+    East,
+    West,
+    Center,
 }
 
-impl MoveAction {
-    pub fn new(direction: Direction) -> Self {
-        MoveAction { direction }
+impl Direction {
+    fn to_xy(&self) -> (i32, i32) {
+        match self {
+            Direction::North => (0, -1),
+            Direction::South => (0, 1),
+            Direction::East => (1, 0),
+            Direction::West => (-1, 0),
+            Direction::Center => (0, 0),
+        }
     }
 }
 
@@ -142,24 +150,17 @@ impl Action for AttackAction {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
-pub enum Direction {
-    North,
-    South,
-    East,
-    West,
-    Center,
+/// Move an object
+// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MoveAction {
+    direction: Direction,
 }
 
-impl Direction {
-    fn to_xy(&self) -> (i32, i32) {
-        match self {
-            Direction::North => (0, -1),
-            Direction::South => (0, 1),
-            Direction::East => (1, 0),
-            Direction::West => (-1, 0),
-            Direction::Center => (0, 0),
-        }
+impl MoveAction {
+    // TODO: use level
+    pub fn new(direction: Direction, level: i32) -> Self {
+        MoveAction { direction }
     }
 }
 

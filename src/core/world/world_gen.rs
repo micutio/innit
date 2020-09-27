@@ -5,7 +5,7 @@
 use tcod::{chars, colors};
 
 use crate::core::game_objects::GameObjects;
-use crate::entity::ai::Ai;
+use crate::entity::ai::{PassiveAi, RandomAi};
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::game::DEBUG_MODE;
@@ -42,7 +42,7 @@ impl Tile {
             .visualize("empty tile", chars::UMLAUT, colors::WHITE)
             .physical(false, false, DEBUG_MODE)
             .tile_explored(DEBUG_MODE)
-            .ai(true)
+            .ai(Box::new(PassiveAi::new()))
     }
 
     pub fn wall(x: i32, y: i32) -> Object {
@@ -52,7 +52,7 @@ impl Tile {
             .visualize("wall tile", '\t', colors::WHITE)
             .physical(true, true, DEBUG_MODE)
             .tile_explored(DEBUG_MODE)
-            .ai(true)
+            .ai(Box::new(PassiveAi::new()))
     }
 }
 
@@ -81,13 +81,13 @@ pub fn new_monster(
             .visualize("virus", 'v', colors::DESATURATED_GREEN)
             .physical(true, false, false)
             .genome(gene_lib.new_genetics(game_rng, 10))
-            .ai(true),
+            .ai(Box::new(RandomAi::new())),
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
             .visualize("bacteria", 'b', colors::DARKER_GREEN)
             .physical(true, false, false)
             .genome(gene_lib.new_genetics(game_rng, 10))
-            .ai(true),
+            .ai(Box::new(RandomAi::new())),
     }
 }

@@ -397,6 +397,7 @@ struct TraitBuilder {
     sensors: Sensors,
     processors: Processors,
     actuators: Actuators,
+    // accumulated traits, mapping trait to count
     sensor_action_acc: HashMap<TraitAction, i32>,
     processor_action_acc: HashMap<TraitAction, i32>,
     actuator_action_acc: HashMap<TraitAction, i32>,

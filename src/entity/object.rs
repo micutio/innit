@@ -215,7 +215,7 @@ impl Object {
         if let Some(ai) = self.ai.take() {
             let next_ai_action = ai.act(self, game_objects, game_rng);
             self.ai = Some(ai);
-            Some(Box::new(next_ai_action))
+            Some(next_ai_action)
         } else {
             self.next_action.take()
         }
