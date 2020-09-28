@@ -58,6 +58,22 @@ pub enum Trait {
     TAction(TraitAction),
 }
 
+// Genetic traits are linked to actions and attributes.
+// Actions are supposed to be linked to key inputs.
+// Relationships:
+//      - an attribute can be influenced by multiple traits
+//      - an action can be influenced by multiple traits
+//      - traits need to know how often they appear in the genome
+//      - attributes and actions need to know this too!
+//
+// alternative:
+// pub struct GeneTrait {
+//     pub trait_name: String,
+//     pub trait_family: TraitFamily,
+//     pub attribute: TraitAttribute, // Vec<TraitAttribute>
+//     pub action: Box<dyn Action>, // TraitAction
+// }
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TraitAttribute {
     SensingRange,
@@ -76,6 +92,9 @@ pub enum TraitAction {
     Rest,
 }
 
+/// Action prototypes consist of a trait action as well as a count of this trait's occurrences in
+/// the genome.
+/// TODO: Instead of prototypes, immediately instantiate action and hand over target at action call!
 #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct ActionPrototype {
     pub trait_id: TraitAction,
@@ -456,6 +475,7 @@ impl TraitBuilder {
     }
 
     // Finalize all actions, return the super trait components and consume itself.
+    //
     pub fn finalize(mut self) -> (Sensors, Processors, Actuators, Dna) {
         // instantiate an action or prototype with count as additional parameter
         self.sensors.actions = self

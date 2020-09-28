@@ -1,5 +1,7 @@
 //! Module Action provides the action interface, which is used to create any kind of action that
 //! can be performed by the player or an NPC.
+//! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
+//! actuating) of an object
 
 // TODO: Create actions for setting and using quick/primary/secondary actions.
 
@@ -55,6 +57,7 @@ pub enum ActionResult {
 
 /// Prototype for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
+/// TODO: Add target here and remove action prototypes!
 #[typetag::serde(tag = "type")]
 pub trait Action: Debug {
     fn perform(
