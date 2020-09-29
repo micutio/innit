@@ -11,12 +11,12 @@ use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
-use crate::entity::action::Target::BlockingObject;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
-pub enum Target {
+#[derive(Clone, Debug)]
+pub enum TargetCategory {
     EmptyObject,
     BlockingObject,
     None,
@@ -24,7 +24,7 @@ pub enum Target {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
-pub enum Direction {
+pub enum Target {
     North,
     South,
     East,
@@ -32,14 +32,14 @@ pub enum Direction {
     Center,
 }
 
-impl Direction {
+impl Target {
     fn to_xy(&self) -> (i32, i32) {
         match self {
-            Direction::North => (0, -1),
-            Direction::South => (0, 1),
-            Direction::East => (1, 0),
-            Direction::West => (-1, 0),
-            Direction::Center => (0, 0),
+            Target::North => (0, -1),
+            Target::South => (0, 1),
+            Target::East => (1, 0),
+            Target::West => (-1, 0),
+            Target::Center => (0, 0),
         }
     }
 }
@@ -67,7 +67,9 @@ pub trait Action: Debug {
         owner: &mut Object,
     ) -> ActionResult;
 
-    fn target(&self) -> Target;
+    fn get_target_category(&self) -> TargetCategory;
+
+    fn set_target(&mut self, t: Target);
 }
 
 /// Dummy action for passing the turn.
@@ -100,28 +102,26 @@ impl Action for PassAction {
         }
     }
 
-    fn target(&self) -> Target {
-        Target::None
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
     }
+
+    fn set_target(&mut self, _: Target) {}
 }
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AttackAction {
     base_power: i32,
-    target_id: Option<usize>,
+    target: Target,
 }
 
 impl AttackAction {
     pub fn new(base_power: i32) -> Self {
         AttackAction {
             base_power,
-            target_id: None,
+            target: Target::Center,
         }
-    }
-
-    pub fn acquire_target(&mut self, target_id: usize) {
-        self.target_id = Some(target_id);
     }
 }
 
@@ -133,7 +133,7 @@ impl Action for AttackAction {
         objects: &mut GameObjects,
         _owner: &mut Object,
     ) -> ActionResult {
-        match self.target_id {
+        let target_id = //TODO {
             Some(target_id) => {
                 // TODO: Replace with defend action.
                 if let Some(ref mut _target) = objects[target_id] {
@@ -148,8 +148,12 @@ impl Action for AttackAction {
         }
     }
 
-    fn target(&self) -> Target {
-        Target::BlockingObject
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::BlockingObject
+    }
+
+    fn set_target(&mut self, target: Target) {
+        self.target = target;
     }
 }
 
@@ -157,12 +161,12 @@ impl Action for AttackAction {
 // TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MoveAction {
-    direction: Direction,
+    direction: Target,
 }
 
 impl MoveAction {
     // TODO: use level
-    pub fn new(direction: Direction, level: i32) -> Self {
+    pub fn new(direction: Target) -> Self {
         MoveAction { direction }
     }
 }
@@ -195,7 +199,7 @@ impl Action for MoveAction {
         }
     }
 
-    fn target(&self) -> Target {
-        Target::EmptyObject
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::EmptyObject
     }
 }

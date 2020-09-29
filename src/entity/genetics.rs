@@ -36,7 +36,8 @@ use std::fs::File;
 use std::io::Read;
 
 use crate::entity::action::*;
-use crate::ui::game_input::PlayAction;
+use crate::entity::object::Object;
+use crate::ui::game_input::PlayerAction;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 
@@ -48,15 +49,15 @@ pub enum TraitFamily {
     Actuating,
 }
 
-/// Traits can influence attributes and actions.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
-#[serde(untagged)]
-pub enum Trait {
-    // #[serde(rename = "sttraitattribute")]
-    TAttribute(TraitAttribute),
-    // #[serde(rename = "sttraitaction")]
-    TAction(TraitAction),
-}
+// /// Traits can influence attributes and actions.
+// #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+// #[serde(untagged)]
+// pub enum Trait {
+//     // #[serde(rename = "sttraitattribute")]
+//     TAttribute(TraitAttribute),
+//     // #[serde(rename = "sttraitaction")]
+//     TAction(TraitAction),
+// }
 
 // Genetic traits are linked to actions and attributes.
 // Actions are supposed to be linked to key inputs.
@@ -67,12 +68,13 @@ pub enum Trait {
 //      - attributes and actions need to know this too!
 //
 // alternative:
-// pub struct GeneTrait {
-//     pub trait_name: String,
-//     pub trait_family: TraitFamily,
-//     pub attribute: TraitAttribute, // Vec<TraitAttribute>
-//     pub action: Box<dyn Action>, // TraitAction
-// }
+
+pub struct GeneTrait {
+    pub trait_name: String,
+    pub trait_family: TraitFamily,
+    pub attribute: TraitAttribute, // Vec<TraitAttribute>
+    pub action: Box<dyn Action>,   // TraitAction
+}
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TraitAttribute {
@@ -92,28 +94,24 @@ pub enum TraitAction {
     Rest,
 }
 
-/// Action prototypes consist of a trait action as well as a count of this trait's occurrences in
-/// the genome.
-/// TODO: Instead of prototypes, immediately instantiate action and hand over target at action call!
-#[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct ActionPrototype {
-    pub trait_id: TraitAction,
-    pub parameter: i32,
-}
+// /// Action prototypes consist of a trait action as well as a count of this trait's occurrences in
+// /// the genome.
+// /// TODO: Instead of prototypes, immediately instantiate action and hand over target at action call!
+// #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+// pub struct ActionPrototype {
+//     pub trait_id: TraitAction,
+//     pub parameter: i32,
+// }
 
 /// Construct a new player action from a given key code.
 /// Get player's action item that corresponds with the player input and
 /// construct a new action from the parameters in both
 // NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Box<dyn Action> {
-    use self::Trait::*;
-    use self::TraitAction::*;
-    use crate::ui::game_input::PlayActionParameter::*;
+pub fn build_player_action(player: &mut Object, input: PlayerAction) -> Box<dyn Action> {
+    use crate::ui::game_input::PlayerAction::*;
+
     match input {
-        PlayAction {
-            trait_id: TAction(Move),
-            param: Orientation(dir),
-        } => Box::new(MoveAction::new(dir, prototype.parameter)),
+        DefaultAction(dir) => player.getDefaultAction(dir),
         _ => Box::new(PassAction),
     }
 }
@@ -127,7 +125,7 @@ pub fn build_player_action(input: PlayAction, prototype: &ActionPrototype) -> Bo
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Sensors {
-    pub actions: Vec<ActionPrototype>,
+    pub actions: Vec<(Box<dyn Action>, i32)>,
     pub sense_range: i32,
 }
 
@@ -149,7 +147,7 @@ impl Sensors {
 ///   - ai control [ai]
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Processors {
-    pub actions: Vec<ActionPrototype>,
+    pub actions: Vec<(Box<dyn Action>, i32)>,
 }
 
 impl Processors {
@@ -170,7 +168,7 @@ impl Processors {
 ///   - defend
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Actuators {
-    pub actions: Vec<ActionPrototype>,
+    pub actions: Vec<(Box<dyn Action>, i32)>,
     pub hp: i32,
 }
 

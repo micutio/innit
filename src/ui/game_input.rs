@@ -9,7 +9,6 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
-use crate::entity::genetics::{Trait, TraitAction};
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
@@ -281,7 +280,7 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
     MetaInput(UiAction),
-    PlayInput(PlayAction),
+    PlayInput(PlayerAction),
 }
 
 // TODO: Add `SetPrimaryAction`, `SetSecondaryAction`, `SetQuickAction`
@@ -294,21 +293,9 @@ pub enum UiAction {
 }
 
 #[derive(Clone, Debug)]
-pub struct PlayAction {
-    pub trait_id: Trait,
-    pub param: PlayActionParameter,
-}
-
-impl PlayAction {
-    pub fn new(trait_id: Trait, param: PlayActionParameter) -> Self {
-        PlayAction { trait_id, param }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum PlayActionParameter {
-    Orientation(Direction),
-    Target { x: i32, y: i32 },
+pub enum PlayerAction {
+    DefaultAction(Target), // using the arrow keys or 'W','A','S','D'
+    QuickAction(),         // using 'Q', un-targeted quick action
 }
 
 /// The input processor maps user input to player actions.
@@ -371,7 +358,7 @@ fn start_input_proc_thread(
                     Some((_, Event::Mouse(_m))) => {
                         mouse_x = _m.cx as i32;
                         mouse_y = _m.cy as i32;
-                        trace!("mouse moved {},{}", _m.cx, _m.cy);
+                        trace!("mouse moved to {},{}", _m.cx, _m.cy);
                     }
                     // get used key to create next user action
                     Some((_, Event::Key(k))) => {
@@ -419,42 +406,21 @@ fn start_input_proc_thread(
 
 /// Create a mapping between our own key codes and player actions.
 fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
-    use self::Direction::*;
     use self::MyKeyCode::*;
-    use self::PlayActionParameter::*;
+    use self::PlayerAction::*;
     use self::PlayerInput::*;
-    use self::Trait::*;
-    use self::TraitAction::*;
+    use self::Target::*;
     use self::UiAction::*;
 
     let mut key_map: HashMap<MyKeyCode, PlayerInput> = HashMap::new();
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(
-        Up,
-        PlayInput(PlayAction::new(TAction(Move), Orientation(North))),
-    );
-    key_map.insert(
-        Down,
-        PlayInput(PlayAction::new(TAction(Move), Orientation(South))),
-    );
-    key_map.insert(
-        Left,
-        PlayInput(PlayAction::new(TAction(Move), Orientation(West))),
-    );
-    key_map.insert(
-        Right,
-        PlayInput(PlayAction::new(TAction(Move), Orientation(East))),
-    );
-    key_map.insert(
-        Q,
-        PlayInput(PlayAction::new(TAction(Primary), Target { x: 0, y: 0 })),
-    );
-    key_map.insert(
-        E,
-        PlayInput(PlayAction::new(TAction(Secondary), Target { x: 0, y: 0 })),
-    );
+    key_map.insert(Up, PlayInput(DefaultAction(North)));
+    key_map.insert(Down, PlayInput(DefaultAction(South)));
+    key_map.insert(Left, PlayInput(DefaultAction(West)));
+    key_map.insert(Right, PlayInput(DefaultAction(East)));
+    key_map.insert(Q, PlayInput(QuickAction()));
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));

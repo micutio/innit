@@ -38,6 +38,7 @@ pub struct Object {
     pub tile: Option<Tile>,
     pub ai: Option<Box<dyn Ai>>,
     pub next_action: Option<Box<dyn Action>>,
+    // TODO: add default action to walk mapping!
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
