@@ -131,20 +131,31 @@ impl Action for AttackAction {
         &self,
         _game_state: &mut GameState,
         objects: &mut GameObjects,
-        _owner: &mut Object,
+        owner: &mut Object,
     ) -> ActionResult {
-        let target_id = //TODO {
-            Some(target_id) => {
-                // TODO: Replace with defend action.
-                if let Some(ref mut _target) = objects[target_id] {
-                    // target.take_damage(self.base_power, game_state);
-                    return ActionResult::Success {
-                        callback: ObjectProcResult::CheckEnterFOV,
-                    };
-                }
-                ActionResult::Failure
+        // get coords of self position plus direction
+        // find any objects that are at that position and blocking
+        // assert that there is only one available
+        // return
+        let target_pos: (i32, i32) = (
+            owner.x + self.target.to_xy().0,
+            owner.y + self.target.to_xy().1,
+        );
+        let valid_targets: Vec<&Object> = objects
+            .get_vector()
+            .iter()
+            .flatten()
+            .filter(|o| o.physics.is_blocking && o.pos().eq(&target_pos))
+            .collect();
+
+        assert!(valid_targets.len() <= 1);
+        if let Some(target_obj) = valid_targets.first() {
+            // TODO: Take damage
+            ActionResult::Success {
+                callback: ObjectProcResult::CheckEnterFOV,
             }
-            None => ActionResult::Failure,
+        } else {
+            ActionResult::Failure
         }
     }
 
@@ -201,5 +212,9 @@ impl Action for MoveAction {
 
     fn get_target_category(&self) -> TargetCategory {
         TargetCategory::EmptyObject
+    }
+
+    fn set_target(&mut self, target: Target) {
+        self.direction = target;
     }
 }

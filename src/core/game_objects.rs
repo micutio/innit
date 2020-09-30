@@ -119,7 +119,7 @@ impl GameObjects {
         }
     }
 
-    /// Check wether there is an objects blocking access to the given world coordinate
+    /// Check whether there is an objects blocking access to the given world coordinate
     pub fn is_blocked(&self, x: i32, y: i32) -> bool {
         self.obj_vec
             .iter()
@@ -133,6 +133,16 @@ impl GameObjects {
 
     pub fn get_vector(&self) -> &Vec<Option<Object>> {
         &self.obj_vec
+    }
+
+    /// Return a Vec slice with all tiles in the world.
+    pub fn get_tiles(&self) -> &Vec<Option<Object>> {
+        &self.obj_vec[1..(WORLD_HEIGHT * WORLD_WIDTH)]
+    }
+
+    /// Return a Vec slice with all objects that are not tiles in the world.
+    pub fn get_non_tiles(&self) -> &Vec<Option<Object>> {
+        &self.obj_vec[WORLD_HEIGHT * WORLD_WIDTH..]
     }
 }
 
