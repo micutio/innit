@@ -103,19 +103,6 @@ pub enum TraitAction {
 //     pub parameter: i32,
 // }
 
-/// Construct a new player action from a given key code.
-/// Get player's action item that corresponds with the player input and
-/// construct a new action from the parameters in both
-// NOTE: In the future we'll have to consider mouse clicks as well.
-pub fn build_player_action(player: &mut Object, input: PlayerAction) -> Box<dyn Action> {
-    use crate::ui::game_input::PlayerAction::*;
-
-    match input {
-        DefaultAction(dir) => player.getDefaultAction(dir),
-        _ => Box::new(PassAction),
-    }
-}
-
 /// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
 /// Sensors contain:
 /// - attributes

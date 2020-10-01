@@ -59,7 +59,7 @@ pub enum ActionResult {
 /// They need to be `performable` and have a cost (even if it's 0).
 /// TODO: Add target here and remove action prototypes!
 #[typetag::serde(tag = "type")]
-pub trait Action: Debug {
+pub trait Action: ActionClone + Debug {
     fn perform(
         &self,
         game_state: &mut GameState,
@@ -72,8 +72,27 @@ pub trait Action: Debug {
     fn set_target(&mut self, t: Target);
 }
 
+trait ActionClone {
+    fn clone_action(&self) -> Box<dyn Action>;
+}
+
+impl<T> ActionClone for T
+where
+    T: Action + Clone + 'static,
+{
+    fn clone_action(&self) -> Box<dyn Action> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Action> {
+    fn clone(&self) -> Self {
+        self.clone_action()
+    }
+}
+
 /// Dummy action for passing the turn.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PassAction;
 
 #[typetag::serde]
@@ -110,7 +129,7 @@ impl Action for PassAction {
 }
 
 /// Attack another object.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AttackAction {
     base_power: i32,
     target: Target,
@@ -170,7 +189,7 @@ impl Action for AttackAction {
 
 /// Move an object
 // TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MoveAction {
     direction: Target,
 }

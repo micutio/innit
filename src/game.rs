@@ -13,7 +13,7 @@ use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::core::world::world_gen_rogue::RogueWorldGenerator;
-use crate::entity::genetics::{build_player_action, Trait, TraitFamily};
+use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
@@ -127,9 +127,11 @@ pub fn game_loop(
                 if let Some(ref mut player) = game_objects[PLAYER] {
                     use crate::ui::game_input::PlayerAction::*;
                     match in_game_action {
-                        DefaultAction(dir) => player.set_next_action(player.getDefaultAction(dir)),
+                        DefaultAction(dir) => {
+                            player.set_next_action(Some(player.get_default_action(dir)))
+                        }
                         // _ => Box::new(PassAction),
-                        QuickAction() => player.set_next_action(player.getQuickAction()),
+                        QuickAction() => player.set_next_action(Some(player.get_quick_action())),
                     }
                     // use self::TraitFamily::*;
                     // if let Trait::TAction(action_trait) = ingame_action.trait_id {

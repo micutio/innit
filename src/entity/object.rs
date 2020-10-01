@@ -23,7 +23,7 @@ use crate::util::game_rng::GameRng;
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
     pub x: i32,
     pub y: i32,
@@ -37,7 +37,9 @@ pub struct Object {
     pub actuators: Actuators,
     pub tile: Option<Tile>,
     pub ai: Option<Box<dyn Ai>>,
-    pub next_action: Option<Box<dyn Action>>,
+    next_action: Option<Box<dyn Action>>,
+    default_action: Box<dyn Action>,
+    quick_action: Box<dyn Action>,
     // TODO: add default action to walk mapping!
 }
 
@@ -96,6 +98,8 @@ impl Object {
             tile: None,
             ai: None,
             next_action: None,
+            default_action: Box::new(PassAction),
+            quick_action: Box::new(PassAction),
         }
     }
 
@@ -225,6 +229,17 @@ impl Object {
     /// Inject the next action this object will take into the object.
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
         self.next_action = next_action;
+    }
+
+    pub fn get_default_action(&self, target: Target) -> Box<dyn Action> {
+        // Some(def_action.clone())
+        let mut action_clone = self.default_action.clone();
+        action_clone.set_target(target);
+        action_clone
+    }
+
+    pub fn get_quick_action(&self) -> Box<dyn Action> {
+        self.quick_action.clone()
     }
 }
 
