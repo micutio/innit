@@ -196,8 +196,10 @@ pub struct MoveAction {
 
 impl MoveAction {
     // TODO: use level
-    pub fn new(direction: Target) -> Self {
-        MoveAction { direction }
+    pub fn new() -> Self {
+        MoveAction {
+            direction: Target::Center,
+        }
     }
 }
 

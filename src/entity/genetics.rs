@@ -49,6 +49,25 @@ pub enum TraitFamily {
     Actuating,
 }
 
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+pub enum TraitAttribute {
+    SensingRange,
+    Hp,
+    None,
+}
+
+// #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
+// pub enum TraitAction {
+//     Sense,     // sensing
+//     Quick,     // quick action
+//     Primary,   // primary action
+//     Secondary, // secondary action
+//     Move,
+//     Attack,
+//     Defend,
+//     Rest,
+// }
+
 // /// Traits can influence attributes and actions.
 // #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 // #[serde(untagged)]
@@ -69,30 +88,20 @@ pub enum TraitFamily {
 //
 // alternative:
 
-pub struct GeneTrait {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute, // Vec<TraitAttribute>
     pub action: Box<dyn Action>,   // TraitAction
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
-pub enum TraitAttribute {
-    SensingRange,
-    Hp,
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
-pub enum TraitAction {
-    Sense,     // sensing
-    Quick,     // quick action
-    Primary,   // primary action
-    Secondary, // secondary action
-    Move,
-    Attack,
-    Defend,
-    Rest,
-}
+const MOVE_TRAIT: GeneticTrait = GeneticTrait {
+    trait_name: "move".into(),
+    trait_family: TraitFamily::Actuating,
+    attribute: TraitAttribute::None,
+    action: Box::new(MoveAction::new()),
+};
 
 // /// Action prototypes consist of a trait action as well as a count of this trait's occurrences in
 // /// the genome.
@@ -110,7 +119,7 @@ pub enum TraitAction {
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
-#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Sensors {
     pub actions: Vec<(Box<dyn Action>, i32)>,
     pub sense_range: i32,
@@ -132,7 +141,7 @@ impl Sensors {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
-#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Processors {
     pub actions: Vec<(Box<dyn Action>, i32)>,
 }
@@ -153,7 +162,7 @@ impl Processors {
 ///   - move
 ///   - attack
 ///   - defend
-#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<(Box<dyn Action>, i32)>,
     pub hp: i32,
@@ -168,17 +177,17 @@ impl Actuators {
     }
 }
 
-/// Gene Records hold all necessary information for a single gene.
-/// Genes can either encode actions, attributes or both.
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GeneRecord {
-    name: String,
-    super_trait: TraitFamily,
-    action: TraitAction,
-    /* attributes: Vec<?>,
-     * synergies: Vec<?>,
-     * anti-synergies: Vec<?>, */
-}
+// /// Gene Records hold all necessary information for a single gene.
+// /// Genes can either encode actions, attributes or both.
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct GeneRecord {
+//     name: String,
+//     super_trait: TraitFamily,
+//     action: TraitAction,
+//     /* attributes: Vec<?>,
+//      * synergies: Vec<?>,
+//      * anti-synergies: Vec<?>, */
+// }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Dna {
@@ -205,14 +214,11 @@ impl Dna {
 ///   - anti-synergies
 ///
 /// Actions can be chosen from a pool of predefined methods.
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go.
     /// Traits are encoded in gray code.
-    gray_to_trait: HashMap<u8, Trait>,
-    /// This one should be straight forward. Lets the custom traits make use of trait-family specific
-    /// attributes.
-    pub trait_by_family: HashMap<Trait, TraitFamily>,
+    gray_to_trait: HashMap<u8, GeneticTrait>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
     // trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
@@ -223,92 +229,54 @@ pub struct GeneLibrary {
 
 impl GeneLibrary {
     pub fn new() -> Self {
-        let traits: Vec<Trait> = vec![
-            Trait::TAttribute(TraitAttribute::SensingRange),
-            Trait::TAction(TraitAction::Sense),
-            Trait::TAction(TraitAction::Quick),
-            Trait::TAction(TraitAction::Primary),
-            Trait::TAction(TraitAction::Secondary),
-            Trait::TAction(TraitAction::Move),
-            Trait::TAction(TraitAction::Attack),
-            Trait::TAction(TraitAction::Defend),
-            Trait::TAttribute(TraitAttribute::Hp),
-            Trait::TAction(TraitAction::Rest),
-        ];
+        let traits: Vec<GeneticTrait> = vec![MOVE_TRAIT];
         // TODO: Introduce constant N for total number of traits to assert gray code vector length.
         let gray_code = generate_gray_code(4);
-        let gray_to_trait: HashMap<u8, Trait> = traits
+        let gray_to_trait: HashMap<u8, GeneticTrait> = traits
             .iter()
             .enumerate()
-            .map(|(x, y)| (gray_code[x + 1], *y))
+            .map(|(code, gene_trait)| (gray_code[code + 1], gene_trait.clone()))
             .collect();
-
-        // TODO: This is really unwieldy.
-        // At least extract to it's own function or better yet, try to make it more generic.
-        let mut trait_by_family: HashMap<Trait, TraitFamily> = HashMap::new();
-        trait_by_family.insert(
-            Trait::TAttribute(TraitAttribute::SensingRange),
-            TraitFamily::Sensing,
-        );
-        trait_by_family.insert(Trait::TAction(TraitAction::Sense), TraitFamily::Sensing);
-        trait_by_family.insert(Trait::TAction(TraitAction::Quick), TraitFamily::Processing);
-        trait_by_family.insert(
-            Trait::TAction(TraitAction::Primary),
-            TraitFamily::Processing,
-        );
-        trait_by_family.insert(
-            Trait::TAction(TraitAction::Secondary),
-            TraitFamily::Processing,
-        );
-        trait_by_family.insert(Trait::TAction(TraitAction::Move), TraitFamily::Actuating);
-        trait_by_family.insert(Trait::TAction(TraitAction::Attack), TraitFamily::Actuating);
-        trait_by_family.insert(Trait::TAction(TraitAction::Defend), TraitFamily::Actuating);
-        trait_by_family.insert(
-            Trait::TAttribute(TraitAttribute::Hp),
-            TraitFamily::Actuating,
-        );
-        trait_by_family.insert(Trait::TAction(TraitAction::Rest), TraitFamily::Actuating);
 
         // actual constructor
         GeneLibrary {
             gray_to_trait,
-            trait_by_family,
             gray_code: generate_gray_code(4),
             trait_count: traits.len(),
         }
     }
 
-    fn add_gene(&mut self, gene: GeneRecord) {
-        debug!("[dna] adding new gene to the library: {:?}", gene);
-        // TODO: Redo this. Is this even still necessary?
-        // let trait_code = self.gray_code[self.trait_count];
-        // self.gray_to_trait.insert(trait_code, gene.name);
-        // self.trait_to_super.insert(trait_code, gene.super_trait);
-        // self.trait_to_action.insert(trait_code, gene.action);
-        // self.trait_count += 1;
-    }
+    // fn add_gene(&mut self, gene: GeneRecord) {
+    //     debug!("[dna] adding new gene to the library: {:?}", gene);
+    //     // TODO: Redo this. Is this even still necessary?
+    //     // let trait_code = self.gray_code[self.trait_count];
+    //     // self.gray_to_trait.insert(trait_code, gene.name);
+    //     // self.trait_to_super.insert(trait_code, gene.super_trait);
+    //     // self.trait_to_action.insert(trait_code, gene.action);
+    //     // self.trait_count += 1;
+    // }
+    //
+    // fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
+    //     let mut json_genes = String::new();
+    //     let mut file = File::open("data/genes")?;
+    //     file.read_to_string(&mut json_genes)?;
+    //     let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
+    //     Ok(result)
+    // }
 
-    fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
-        let mut json_genes = String::new();
-        let mut file = File::open("data/genes")?;
-        file.read_to_string(&mut json_genes)?;
-        let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
-        Ok(result)
-    }
-
-    pub fn init_genes(&mut self) {
-        match GeneLibrary::read_genes_from_file() {
-            Ok(genes) => {
-                for gene in genes {
-                    debug!("adding gene {:?} to the library", gene);
-                    self.add_gene(gene);
-                }
-            }
-            Err(..) => {
-                error!("[dna] Unable to read gene file!");
-            }
-        }
-    }
+    // pub fn init_genes(&mut self) {
+    //     match GeneLibrary::read_genes_from_file() {
+    //         Ok(genes) => {
+    //             for gene in genes {
+    //                 debug!("adding gene {:?} to the library", gene);
+    //                 self.add_gene(gene);
+    //             }
+    //         }
+    //         Err(..) => {
+    //             error!("[dna] Unable to read gene file!");
+    //         }
+    //     }
+    // }
 
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
