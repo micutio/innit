@@ -231,6 +231,10 @@ impl Object {
         self.next_action = next_action;
     }
 
+    pub fn has_next_action(&self) -> bool {
+        self.next_action.is_some()
+    }
+
     pub fn get_default_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
         let mut action_clone = self.default_action.clone();

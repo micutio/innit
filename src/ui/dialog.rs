@@ -301,7 +301,7 @@ pub fn show_character_screen(
              Alive:         {} \n\
              Turn:          {}",
             player.energy,
-            player.sensors.sense_range,
+            player.sensors.sensing_range,
             player.actuators.hp,
             player.alive,
             game_state.turn

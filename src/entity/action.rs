@@ -15,7 +15,7 @@ use crate::entity::object::Object;
 use crate::player::PLAYER;
 
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TargetCategory {
     EmptyObject,
     BlockingObject,
@@ -70,6 +70,8 @@ pub trait Action: ActionClone + Debug {
     fn get_target_category(&self) -> TargetCategory;
 
     fn set_target(&mut self, t: Target);
+
+    fn set_level(&mut self, lvl: i32);
 }
 
 trait ActionClone {
@@ -106,7 +108,7 @@ impl Action for PassAction {
         // do nothing
         // duh
         if let Some(player) = &game_objects[PLAYER] {
-            if player.distance_to(&owner) <= player.sensors.sense_range as f32
+            if player.distance_to(&owner) <= player.sensors.sensing_range as f32
                 && owner.tile.is_none()
             {
                 // don't record all tiles passing constantly
@@ -126,19 +128,21 @@ impl Action for PassAction {
     }
 
     fn set_target(&mut self, _: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {}
 }
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AttackAction {
-    base_power: i32,
+    lvl: i32,
     target: Target,
 }
 
 impl AttackAction {
-    pub fn new(base_power: i32) -> Self {
+    pub fn new() -> Self {
         AttackAction {
-            base_power,
+            lvl: 0,
             target: Target::Center,
         }
     }
@@ -185,12 +189,17 @@ impl Action for AttackAction {
     fn set_target(&mut self, target: Target) {
         self.target = target;
     }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
 }
 
 /// Move an object
 // TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MoveAction {
+    lvl: i32,
     direction: Target,
 }
 
@@ -198,6 +207,7 @@ impl MoveAction {
     // TODO: use level
     pub fn new() -> Self {
         MoveAction {
+            lvl: 0,
             direction: Target::Center,
         }
     }
@@ -237,5 +247,9 @@ impl Action for MoveAction {
 
     fn set_target(&mut self, target: Target) {
         self.direction = target;
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
     }
 }

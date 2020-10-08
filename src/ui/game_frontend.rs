@@ -230,7 +230,7 @@ fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
         game_frontend.fov.compute_fov(
             player.x,
             player.y,
-            player.sensors.sense_range,
+            player.sensors.sensing_range,
             FOV_LIGHT_WALLS,
             FOV_ALG,
         );
@@ -258,10 +258,10 @@ fn init_object_visuals(
 fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: (i32, i32) = (0, 0);
-    let mut player_sense_range: f32 = 0.0;
+    let mut player_sensing_range: f32 = 0.0;
     if let Some(ref mut player) = game_objects[PLAYER] {
         player_pos = (player.x, player.y);
-        player_sense_range = player.sensors.sense_range as f32;
+        player_sensing_range = player.sensors.sensing_range as f32;
         player.visual.color = game_frontend.coloring.player;
     }
 
@@ -295,12 +295,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fwft,
                             fwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
                         ),
                         colors::lerp(
                             bwft,
                             bwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
                         ),
                     ),
                     // (true, false) => COLOR_ground_in_fov,
@@ -308,12 +308,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fgft,
                             fgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
                         ),
                         colors::lerp(
                             bgft,
                             bgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sense_range,
+                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
                         ),
                     ),
                 };

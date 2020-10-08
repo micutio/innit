@@ -56,61 +56,21 @@ pub enum TraitAttribute {
     None,
 }
 
-// #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
-// pub enum TraitAction {
-//     Sense,     // sensing
-//     Quick,     // quick action
-//     Primary,   // primary action
-//     Secondary, // secondary action
-//     Move,
-//     Attack,
-//     Defend,
-//     Rest,
-// }
-
-// /// Traits can influence attributes and actions.
-// #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
-// #[serde(untagged)]
-// pub enum Trait {
-//     // #[serde(rename = "sttraitattribute")]
-//     TAttribute(TraitAttribute),
-//     // #[serde(rename = "sttraitaction")]
-//     TAction(TraitAction),
-// }
-
-// Genetic traits are linked to actions and attributes.
-// Actions are supposed to be linked to key inputs.
-// Relationships:
-//      - an attribute can be influenced by multiple traits
-//      - an action can be influenced by multiple traits
-//      - traits need to know how often they appear in the genome
-//      - attributes and actions need to know this too!
-//
-// alternative:
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// Genetic traits are linked to actions and attributes.
+/// Actions are supposed to be linked to key inputs.
+/// Relationships:
+///      - an attribute can be influenced by multiple traits
+///      - an action can be influenced by multiple traits
+///      - traits need to know how often they appear in the genome
+///      - attributes and actions need to know this too!
+///
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute, // Vec<TraitAttribute>
     pub action: Box<dyn Action>,   // TraitAction
 }
-
-const MOVE_TRAIT: GeneticTrait = GeneticTrait {
-    trait_name: "move".into(),
-    trait_family: TraitFamily::Actuating,
-    attribute: TraitAttribute::None,
-    action: Box::new(MoveAction::new()),
-};
-
-// /// Action prototypes consist of a trait action as well as a count of this trait's occurrences in
-// /// the genome.
-// /// TODO: Instead of prototypes, immediately instantiate action and hand over target at action call!
-// #[derive(PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-// pub struct ActionPrototype {
-//     pub trait_id: TraitAction,
-//     pub parameter: i32,
-// }
 
 /// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
 /// Sensors contain:
@@ -121,15 +81,15 @@ const MOVE_TRAIT: GeneticTrait = GeneticTrait {
 ///   - sense environment
 #[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Sensors {
-    pub actions: Vec<(Box<dyn Action>, i32)>,
-    pub sense_range: i32,
+    pub actions: Vec<Box<dyn Action>>,
+    pub sensing_range: i32,
 }
 
 impl Sensors {
     pub fn new() -> Self {
         Sensors {
             actions: Vec::new(),
-            sense_range: 0,
+            sensing_range: 0,
         }
     }
 }
@@ -143,7 +103,7 @@ impl Sensors {
 ///   - ai control [ai]
 #[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Processors {
-    pub actions: Vec<(Box<dyn Action>, i32)>,
+    pub actions: Vec<Box<dyn Action>>,
 }
 
 impl Processors {
@@ -164,7 +124,7 @@ impl Processors {
 ///   - defend
 #[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Actuators {
-    pub actions: Vec<(Box<dyn Action>, i32)>,
+    pub actions: Vec<Box<dyn Action>>,
     pub hp: i32,
 }
 
@@ -214,11 +174,12 @@ impl Dna {
 ///   - anti-synergies
 ///
 /// Actions can be chosen from a pool of predefined methods.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
+    trait_vec: Vec<GeneticTrait>,
     /// Traits are now supposed to be generic, so enums are no longer the way to go.
     /// Traits are encoded in gray code.
-    gray_to_trait: HashMap<u8, GeneticTrait>,
+    gray_to_trait: HashMap<u8, String>,
     /// As mentioned above, re-use TraitIDs to allow mappings to actions.
     // trait_to_action: HashMap<u8, TraitAction>,
     /// Vector of gray code with index corresponding to its binary representation
@@ -229,54 +190,30 @@ pub struct GeneLibrary {
 
 impl GeneLibrary {
     pub fn new() -> Self {
-        let traits: Vec<GeneticTrait> = vec![MOVE_TRAIT];
         // TODO: Introduce constant N for total number of traits to assert gray code vector length.
+
+        let trait_vec: Vec<GeneticTrait> = vec![GeneticTrait {
+            trait_name: "move".into(),
+            trait_family: TraitFamily::Actuating,
+            attribute: TraitAttribute::None,
+            action: Box::new(MoveAction::new()),
+        }];
+        let trait_count = trait_vec.len();
         let gray_code = generate_gray_code(4);
-        let gray_to_trait: HashMap<u8, GeneticTrait> = traits
+        let gray_to_trait: HashMap<u8, String> = trait_vec
             .iter()
             .enumerate()
-            .map(|(code, gene_trait)| (gray_code[code + 1], gene_trait.clone()))
+            .map(|(code, gene_trait)| (gray_code[code + 1], gene_trait.trait_name.clone()))
             .collect();
 
         // actual constructor
         GeneLibrary {
+            trait_vec,
             gray_to_trait,
-            gray_code: generate_gray_code(4),
-            trait_count: traits.len(),
+            gray_code,
+            trait_count,
         }
     }
-
-    // fn add_gene(&mut self, gene: GeneRecord) {
-    //     debug!("[dna] adding new gene to the library: {:?}", gene);
-    //     // TODO: Redo this. Is this even still necessary?
-    //     // let trait_code = self.gray_code[self.trait_count];
-    //     // self.gray_to_trait.insert(trait_code, gene.name);
-    //     // self.trait_to_super.insert(trait_code, gene.super_trait);
-    //     // self.trait_to_action.insert(trait_code, gene.action);
-    //     // self.trait_count += 1;
-    // }
-    //
-    // fn read_genes_from_file() -> Result<Vec<GeneRecord>, Box<dyn Error>> {
-    //     let mut json_genes = String::new();
-    //     let mut file = File::open("data/genes")?;
-    //     file.read_to_string(&mut json_genes)?;
-    //     let result = serde_json::from_str::<Vec<GeneRecord>>(&json_genes)?;
-    //     Ok(result)
-    // }
-
-    // pub fn init_genes(&mut self) {
-    //     match GeneLibrary::read_genes_from_file() {
-    //         Ok(genes) => {
-    //             for gene in genes {
-    //                 debug!("adding gene {:?} to the library", gene);
-    //                 self.add_gene(gene);
-    //             }
-    //         }
-    //         Err(..) => {
-    //             error!("[dna] Unable to read gene file!");
-    //         }
-    //     }
-    // }
 
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
@@ -311,7 +248,7 @@ impl GeneLibrary {
         }
 
         // return sensor, processor and actuator instances
-        trait_builder.finalize()
+        trait_builder.finalize(&self.trait_vec)
     }
 
     /// Combine *new_dna()* and *decode_dna()* into a single function call.
@@ -350,10 +287,19 @@ impl GeneLibrary {
                 return (i, end_ptr);
             }
             // take u8 word and map it to action/attribute
-            match self.gray_to_trait.get(&dna[i]) {
-                Some(Trait::TAttribute(attr)) => trait_builder.add_attribute(*attr),
-                Some(Trait::TAction(actn)) => trait_builder.add_action(*actn),
-                None => {}
+            // match self.gray_to_trait.get(&dna[i]) {
+            //     Some(Trait::TAttribute(attr)) => trait_builder.add_attribute(*attr),
+            //     Some(Trait::TAction(actn)) => trait_builder.add_action(*actn),
+            //     None => {}
+            // }
+            if let Some(trait_name) = self.gray_to_trait.get(&dna[i]) {
+                if let Some(genetic_trait) = self
+                    .trait_vec
+                    .iter()
+                    .find(|gt| gt.trait_name.eq(trait_name))
+                {
+                    trait_builder.add_action(genetic_trait);
+                }
             }
         }
 
@@ -370,9 +316,9 @@ struct TraitBuilder {
     processors: Processors,
     actuators: Actuators,
     // accumulated traits, mapping trait to count
-    sensor_action_acc: HashMap<TraitAction, i32>,
-    processor_action_acc: HashMap<TraitAction, i32>,
-    actuator_action_acc: HashMap<TraitAction, i32>,
+    sensor_action_count: HashMap<String, i32>,
+    processor_action_count: HashMap<String, i32>,
+    actuator_action_count: HashMap<String, i32>,
     dna: Dna,
 }
 
@@ -382,9 +328,9 @@ impl TraitBuilder {
             sensors: Sensors::new(),
             processors: Processors::new(),
             actuators: Actuators::new(),
-            sensor_action_acc: HashMap::new(),
-            processor_action_acc: HashMap::new(),
-            actuator_action_acc: HashMap::new(),
+            sensor_action_count: HashMap::new(),
+            processor_action_count: HashMap::new(),
+            actuator_action_count: HashMap::new(),
             dna: Dna {
                 raw: Vec::new(),
                 simplified: Vec::new(),
@@ -396,65 +342,93 @@ impl TraitBuilder {
         match attr {
             TraitAttribute::SensingRange => {
                 self.dna.simplified.push(TraitFamily::Sensing);
-                self.sensors.sense_range += 1;
+                self.sensors.sensing_range += 1;
             }
             TraitAttribute::Hp => {
                 self.dna.simplified.push(TraitFamily::Actuating);
                 self.actuators.hp += 1;
             }
+            TraitAttribute::None => {}
         }
     }
 
-    pub fn add_action(&mut self, actn: TraitAction) {
-        match actn {
-            TraitAction::Sense => {
+    pub fn add_action(&mut self, genetic_trait: &GeneticTrait) {
+        match genetic_trait.trait_family {
+            TraitFamily::Actuating => {
+                self.dna.simplified.push(TraitFamily::Actuating);
                 // increase the counter for the given action or insert a 0 as default value;
                 // below is the long form...
                 //  let count = self.sensor_action_acc.entry(actn).or_insert(0);
                 //  *count += 1;
                 // ... which shortens to the following:
+                *self
+                    .actuator_action_count
+                    .entry(genetic_trait.trait_name.clone())
+                    .or_insert(0) += 1;
+            }
+            TraitFamily::Sensing => {
                 self.dna.simplified.push(TraitFamily::Sensing);
-                *self.sensor_action_acc.entry(actn).or_insert(0) += 1;
+                *self
+                    .sensor_action_count
+                    .entry(genetic_trait.trait_name.clone())
+                    .or_insert(0) += 1;
             }
-            TraitAction::Primary | TraitAction::Secondary | TraitAction::Quick => {
+            TraitFamily::Processing => {
                 self.dna.simplified.push(TraitFamily::Processing);
-                *self.processor_action_acc.entry(actn).or_insert(0) += 1;
-            }
-            TraitAction::Move | TraitAction::Attack | TraitAction::Defend | TraitAction::Rest => {
-                self.dna.simplified.push(TraitFamily::Actuating);
-                *self.actuator_action_acc.entry(actn).or_insert(0) += 1;
+                *self
+                    .processor_action_count
+                    .entry(genetic_trait.trait_name.clone())
+                    .or_insert(0) += 1;
             }
         }
     }
 
     // Finalize all actions, return the super trait components and consume itself.
     //
-    pub fn finalize(mut self) -> (Sensors, Processors, Actuators, Dna) {
+    pub fn finalize(
+        mut self,
+        trait_vec: &Vec<GeneticTrait>,
+    ) -> (Sensors, Processors, Actuators, Dna) {
         // instantiate an action or prototype with count as additional parameter
         self.sensors.actions = self
-            .sensor_action_acc
+            .sensor_action_count
             .iter()
-            .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id: *trait_id,
-                parameter: *parameter,
+            .map(|(trait_name, parameter)| {
+                let genetic_trait = trait_vec
+                    .iter()
+                    .find(|gt| gt.trait_name.eq(trait_name))
+                    .unwrap();
+                let mut boxed_action = genetic_trait.action.clone();
+                boxed_action.set_level(*parameter);
+                boxed_action
             })
             .collect();
 
         self.processors.actions = self
-            .processor_action_acc
+            .processor_action_count
             .iter()
-            .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id: *trait_id,
-                parameter: *parameter,
+            .map(|(trait_name, parameter)| {
+                let genetic_trait = trait_vec
+                    .iter()
+                    .find(|gt| gt.trait_name.eq(trait_name))
+                    .unwrap();
+                let mut boxed_action = genetic_trait.action.clone();
+                boxed_action.set_level(*parameter);
+                boxed_action
             })
             .collect();
 
         self.actuators.actions = self
-            .actuator_action_acc
+            .actuator_action_count
             .iter()
-            .map(|(trait_id, parameter)| ActionPrototype {
-                trait_id: *trait_id,
-                parameter: *parameter,
+            .map(|(trait_name, parameter)| {
+                let genetic_trait = trait_vec
+                    .iter()
+                    .find(|gt| gt.trait_name.eq(trait_name))
+                    .unwrap();
+                let mut boxed_action = genetic_trait.action.clone();
+                boxed_action.set_level(*parameter);
+                boxed_action
             })
             .collect();
 
