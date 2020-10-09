@@ -17,10 +17,10 @@ use crate::player::PLAYER;
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TargetCategory {
-    EmptyObject,
-    BlockingObject,
-    None,
     Any,
+    BlockingObject,
+    EmptyObject,
+    None,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
@@ -74,7 +74,7 @@ pub trait Action: ActionClone + Debug {
     fn set_level(&mut self, lvl: i32);
 }
 
-trait ActionClone {
+pub trait ActionClone {
     fn clone_action(&self) -> Box<dyn Action>;
 }
 
