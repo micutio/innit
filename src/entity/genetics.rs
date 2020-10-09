@@ -31,13 +31,8 @@
 use rand::Rng;
 use std::cmp;
 use std::collections::HashMap;
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
 
 use crate::entity::action::*;
-use crate::entity::object::Object;
-use crate::ui::game_input::PlayerAction;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 
@@ -65,11 +60,36 @@ pub enum TraitAttribute {
 ///      - attributes and actions need to know this too!
 ///
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GeneticTrait {
+struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute, // Vec<TraitAttribute>
     pub action: Box<dyn Action>,   // TraitAction
+}
+
+impl GeneticTrait {
+    fn new(
+        name: &str,
+        trait_family: TraitFamily,
+        attribute: TraitAttribute,
+        action: Box<dyn Action>,
+    ) -> Self {
+        GeneticTrait {
+            trait_name: name.to_string(),
+            trait_family,
+            attribute,
+            action,
+        }
+    }
+}
+
+fn create_trait_list() -> Vec<GeneticTrait> {
+    use TraitAttribute::*;
+    use TraitFamily::*;
+    vec![
+        GeneticTrait::new("move", Actuating, None, Box::new(MoveAction::new())),
+        GeneticTrait::new("attack", Actuating, None, Box::new(AttackAction::new())),
+    ]
 }
 
 /// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
@@ -192,12 +212,7 @@ impl GeneLibrary {
     pub fn new() -> Self {
         // TODO: Introduce constant N for total number of traits to assert gray code vector length.
 
-        let trait_vec: Vec<GeneticTrait> = vec![GeneticTrait {
-            trait_name: "move".into(),
-            trait_family: TraitFamily::Actuating,
-            attribute: TraitAttribute::None,
-            action: Box::new(MoveAction::new()),
-        }];
+        let trait_vec: Vec<GeneticTrait> = create_trait_list();
         let trait_count = trait_vec.len();
         let gray_code = generate_gray_code(4);
         let gray_to_trait: HashMap<u8, String> = trait_vec
@@ -299,6 +314,7 @@ impl GeneLibrary {
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
                     trait_builder.add_action(genetic_trait);
+                    trait_builder.add_attribute(genetic_trait.attribute);
                 }
             }
         }
@@ -385,10 +401,7 @@ impl TraitBuilder {
 
     // Finalize all actions, return the super trait components and consume itself.
     //
-    pub fn finalize(
-        mut self,
-        trait_vec: &Vec<GeneticTrait>,
-    ) -> (Sensors, Processors, Actuators, Dna) {
+    pub fn finalize(mut self, trait_vec: &[GeneticTrait]) -> (Sensors, Processors, Actuators, Dna) {
         // instantiate an action or prototype with count as additional parameter
         self.sensors.actions = self
             .sensor_action_count
