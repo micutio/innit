@@ -245,6 +245,15 @@ impl Object {
     pub fn get_quick_action(&self) -> Box<dyn Action> {
         self.quick_action.clone()
     }
+
+    pub fn get_all_actions(&self) -> Vec<&Box<dyn Action>> {
+        self.actuators
+            .actions
+            .iter()
+            .chain(self.processors.actions.iter())
+            .chain(self.sensors.actions.iter())
+            .collect()
+    }
 }
 
 impl fmt::Display for Object {

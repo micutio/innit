@@ -42,6 +42,17 @@ impl Target {
             Target::Center => (0, 0),
         }
     }
+
+    pub fn from_xy(x1: i32, y1: i32, x2: i32, y2: i32) -> Target {
+        match (x2 - x1, y2 - y1) {
+            (0, -1) => Target::North,
+            (0, 1) => Target::South,
+            (1, 0) => Target::East,
+            (-1, 0) => Target::West,
+            (0, 0) => Target::Center,
+            _ => panic!("calling from_xy on non-adjacent target"),
+        }
+    }
 }
 
 /// Result of performing an action.

@@ -10,11 +10,14 @@
 // use game_state::{GameState, MessageLog};
 // use ui::game_frontend::FovMap;
 use crate::core::game_objects::GameObjects;
-use crate::entity::action::{Action, PassAction};
+use crate::entity::action::{Action, PassAction, Target, TargetCategory};
 use crate::entity::object::Object;
 use crate::util::game_rng::GameRng;
 
+use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
+use std::iter::{Chain, Filter};
+use std::slice::Iter;
 
 #[typetag::serde(tag = "type")]
 pub trait Ai: Debug {
@@ -83,15 +86,96 @@ impl Ai for RandomAi {
             .filter_map(|o| o.as_ref())
             .collect();
 
+        let mut valid_targets = vec![
+            TargetCategory::None,
+            TargetCategory::Any,
+            TargetCategory::EmptyObject,
+            TargetCategory::BlockingObject,
+        ];
+
+        // options:
+        // a) targets empty => only None a.k.a self
         if adjacent_targets.is_empty() {
-            // try finding an action with no or self target
-            return Box::new(PassAction);
+            valid_targets.retain(|t| *t == TargetCategory::Any);
         }
 
-        // iterate over all available actions and pick one at random with randomised target
-        let mut result: Option<Box<dyn Action>> = None;
-        while result.is_none() {}
-        // dummy return for now
-        Box::new(PassAction)
+        let blocking_targets = adjacent_targets
+            .iter()
+            .filter(|t| t.physics.is_blocking)
+            .count();
+
+        let empty_targets = adjacent_targets
+            .iter()
+            .filter(|t| !t.physics.is_blocking)
+            .count();
+
+        // b) four blocking => remove unblocking from selection
+        // c) no unblocking => remove unblocking from selection
+        if blocking_targets == 4 || empty_targets == 0 {
+            valid_targets.retain(|t| *t != TargetCategory::EmptyObject);
+        }
+
+        // d) no blocking => remove blocking from selection
+        if blocking_targets == 0 {
+            valid_targets.retain(|t| *t != TargetCategory::BlockingObject);
+        }
+
+        // find an action that matches one of the available target categories
+        let possible_actions: Vec<&Box<dyn Action>> = object
+            .actuators
+            .actions
+            .iter()
+            .chain(object.processors.actions.iter())
+            .chain(object.sensors.actions.iter())
+            .filter(|a| valid_targets.contains(&(*a).get_target_category()))
+            .collect();
+
+        if let Some(a) = possible_actions.choose(game_rng) {
+            let mut boxed_action = a.clone_action();
+            match boxed_action.get_target_category() {
+                TargetCategory::None => boxed_action.set_target(Target::Center),
+                TargetCategory::BlockingObject => {
+                    if let Some(target_obj) = adjacent_targets
+                        .iter()
+                        .filter(|at| at.physics.is_blocking)
+                        .choose(game_rng)
+                    {
+                        boxed_action.set_target(Target::from_xy(
+                            object.x,
+                            object.y,
+                            target_obj.x,
+                            target_obj.y,
+                        ))
+                    }
+                }
+                TargetCategory::EmptyObject => {
+                    if let Some(target_obj) = adjacent_targets
+                        .iter()
+                        .filter(|at| !at.physics.is_blocking)
+                        .choose(game_rng)
+                    {
+                        boxed_action.set_target(Target::from_xy(
+                            object.x,
+                            object.y,
+                            target_obj.x,
+                            target_obj.y,
+                        ))
+                    }
+                }
+                TargetCategory::Any => {
+                    if let Some(target_obj) = adjacent_targets.choose(game_rng) {
+                        boxed_action.set_target(Target::from_xy(
+                            object.x,
+                            object.y,
+                            target_obj.x,
+                            target_obj.y,
+                        ))
+                    }
+                }
+            }
+            boxed_action
+        } else {
+            Box::new(PassAction)
+        }
     }
 }
