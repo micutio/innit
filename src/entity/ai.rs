@@ -80,7 +80,12 @@ impl Ai for RandomAi {
             .get_vector()
             .iter()
             .filter(|obj| match obj {
-                Some(o) => ((o.x - object.x) - (o.y - object.y)).abs() == 1,
+                Some(o) => {
+                    (((o.x - object.x) - (o.y - object.y)).abs() == 1) // be adjacent
+                        && (o.physics.is_blocking // be either blocking...
+                            || (!o.physics.is_blocking // ...or non-blocking and empty
+                                && !game_objects.is_blocked_by_object(o.x, o.y)))
+                }
                 None => false,
             })
             .filter_map(|o| o.as_ref())
@@ -96,27 +101,26 @@ impl Ai for RandomAi {
         // options:
         // a) targets empty => only None a.k.a self
         if adjacent_targets.is_empty() {
-            valid_targets.retain(|t| *t == TargetCategory::Any);
+            valid_targets.retain(|t| *t == TargetCategory::None);
         }
 
-        let blocking_targets = adjacent_targets
-            .iter()
-            .filter(|t| t.physics.is_blocking)
-            .count();
-
-        let empty_targets = adjacent_targets
+        // b) no empty targets available
+        if adjacent_targets
             .iter()
             .filter(|t| !t.physics.is_blocking)
-            .count();
-
-        // b) four blocking => remove unblocking from selection
-        // c) no unblocking => remove unblocking from selection
-        if blocking_targets == 4 || empty_targets == 0 {
-            valid_targets.retain(|t| *t != TargetCategory::EmptyObject);
+            .count()
+            == 0
+        {
+            valid_targets.retain(|t| *t != TargetCategory::EmptyObject)
         }
 
-        // d) no blocking => remove blocking from selection
-        if blocking_targets == 0 {
+        // d) no blocking targets available => remove blocking from selection
+        if adjacent_targets
+            .iter()
+            .filter(|t| t.physics.is_blocking)
+            .count()
+            == 0
+        {
             valid_targets.retain(|t| *t != TargetCategory::BlockingObject);
         }
 

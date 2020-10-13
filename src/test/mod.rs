@@ -1,2 +1,3 @@
+mod ai;
 #[cfg(test)]
-pub mod genetics;
+mod genetics;

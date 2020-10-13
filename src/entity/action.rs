@@ -83,6 +83,10 @@ pub trait Action: ActionClone + Debug {
     fn set_target(&mut self, t: Target);
 
     fn set_level(&mut self, lvl: i32);
+
+    fn get_identifier(&self) -> String;
+
+    fn to_text(&self) -> String;
 }
 
 pub trait ActionClone {
@@ -141,6 +145,14 @@ impl Action for PassAction {
     fn set_target(&mut self, _: Target) {}
 
     fn set_level(&mut self, lvl: i32) {}
+
+    fn get_identifier(&self) -> String {
+        "pass".to_string()
+    }
+
+    fn to_text(&self) -> String {
+        "pass".to_string()
+    }
 }
 
 /// Attack another object.
@@ -204,6 +216,14 @@ impl Action for AttackAction {
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;
     }
+
+    fn get_identifier(&self) -> String {
+        "attack".to_string()
+    }
+
+    fn to_text(&self) -> String {
+        format!("attack {:?}", self.target)
+    }
 }
 
 /// Move an object
@@ -262,5 +282,13 @@ impl Action for MoveAction {
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;
+    }
+
+    fn get_identifier(&self) -> String {
+        "move".to_string()
+    }
+
+    fn to_text(&self) -> String {
+        format!("move to {:?}", self.direction)
     }
 }

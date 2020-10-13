@@ -127,6 +127,16 @@ impl GameObjects {
             .any(|object| object.physics.is_blocking && object.pos() == (x, y))
     }
 
+    pub fn is_blocked_by_object(&self, x: i32, y: i32) -> bool {
+        self.get_non_tiles()
+            .iter()
+            .find(|obj| match obj {
+                Some(o) => o.x == x && o.y == y,
+                None => false,
+            })
+            .is_some()
+    }
+
     pub fn get_num_objects(&self) -> usize {
         self.obj_vec.len()
     }
