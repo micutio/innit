@@ -12,17 +12,15 @@ use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::core::world::world_gen_rogue::RogueWorldGenerator;
-use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
-use crate::ui::game_input::{GameInput, PlayerAction, PlayerInput};
+use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
 
 // TODO: Make this changeable via command line flag!
-pub const DEBUG_MODE: bool = true;
+pub const DEBUG_MODE: bool = false;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;

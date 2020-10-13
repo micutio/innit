@@ -16,8 +16,6 @@ use crate::util::game_rng::GameRng;
 
 use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
-use std::iter::{Chain, Filter};
-use std::slice::Iter;
 
 #[typetag::serde(tag = "type")]
 pub trait Ai: Debug {
@@ -42,9 +40,9 @@ impl PassiveAi {
 impl Ai for PassiveAi {
     fn act(
         &self,
-        object: &mut Object,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        _object: &mut Object,
+        _game_objects: &mut GameObjects,
+        _game_rng: &mut GameRng,
     ) -> Box<dyn Action> {
         Box::new(PassAction)
     }

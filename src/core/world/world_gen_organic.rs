@@ -1,11 +1,7 @@
-use tcod::colors;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
-use crate::entity::ai::Ai;
 use crate::entity::genetics::GeneLibrary;
-use crate::entity::object::Object;
 use crate::game::DEBUG_MODE;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
@@ -51,7 +47,7 @@ impl WorldGen for OrganicsWorldGenerator {
                     .get_tile_at(x as usize, y as usize)
                     .replace(Tile::empty(x, y));
                 self.player_start = (x, y);
-                println!("#1 flipped {}, {}", x, y);
+                // println!("#1 flipped {}, {}", x, y);
             }
             visualize_map(game_frontend, game_objects);
         }

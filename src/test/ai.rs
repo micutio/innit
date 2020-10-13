@@ -3,70 +3,17 @@ use crate::core::game_state::GameState;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::MoveAction;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
-use crate::player::PLAYER;
 
 // TODO: test walking in any direction
 // TODO: test walking in only one possible direction
 // TODO: test blocked by monsters => only can pass
 // TODO: extend available actions and tests to include attacking
 
-fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
-    use crate::entity::ai::RandomAi;
-    use crate::entity::object::Object;
-    use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-
-    // create game state holding game-relevant information
-    let level = 1;
-    let mut game_state = GameState::new(level);
-
-    // create blank game world
-    let mut game_objects = GameObjects::new();
-    game_objects.blank_world();
-
-    let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
-
-    // make tiles near the player walkable
-    game_objects
-        .get_tile_at(p_x as usize, p_y as usize)
-        .replace(Tile::empty(p_x, p_y));
-    game_objects
-        .get_tile_at((p_x + 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x + 1, p_y));
-    game_objects
-        .get_tile_at((p_x - 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x - 1, p_y));
-    game_objects
-        .get_tile_at(p_x as usize, (p_y - 1) as usize)
-        .replace(Tile::empty(p_x, p_y - 1));
-    game_objects
-        .get_tile_at(p_x as usize, (p_y + 1) as usize)
-        .replace(Tile::empty(p_x, p_y + 1));
-
-    let player = Object::new()
-        .position(p_x, p_y)
-        .living(true)
-        // .visualize("player", '@', colors::WHITE)
-        .physical(true, false, false)
-        .genome((
-            Sensors::default(),
-            Processors::default(),
-            Actuators {
-                actions: vec![Box::new(MoveAction::new())],
-                hp: 0,
-            },
-            Dna::default(),
-        ))
-        .ai(Box::new(RandomAi::new()));
-
-    game_objects.set_player(player);
-
-    ((p_x, p_y), game_state, game_objects)
-}
-
 #[test]
 fn test_random_ai() {
     use crate::core::world::world_gen::new_monster;
     use crate::core::world::world_gen::Monster;
+    use crate::player::PLAYER;
 
     let ((p_x, p_y), mut game_state, mut game_objects) = create_minimal_world();
 
@@ -149,4 +96,57 @@ fn test_random_ai() {
     } else {
         panic!();
     }
+}
+
+fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
+    use crate::entity::ai::RandomAi;
+    use crate::entity::object::Object;
+    use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+
+    // create game state holding game-relevant information
+    let level = 1;
+    let game_state = GameState::new(level);
+
+    // create blank game world
+    let mut game_objects = GameObjects::new();
+    game_objects.blank_world();
+
+    let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
+
+    // make tiles near the player walkable
+    game_objects
+        .get_tile_at(p_x as usize, p_y as usize)
+        .replace(Tile::empty(p_x, p_y));
+    game_objects
+        .get_tile_at((p_x + 1) as usize, p_y as usize)
+        .replace(Tile::empty(p_x + 1, p_y));
+    game_objects
+        .get_tile_at((p_x - 1) as usize, p_y as usize)
+        .replace(Tile::empty(p_x - 1, p_y));
+    game_objects
+        .get_tile_at(p_x as usize, (p_y - 1) as usize)
+        .replace(Tile::empty(p_x, p_y - 1));
+    game_objects
+        .get_tile_at(p_x as usize, (p_y + 1) as usize)
+        .replace(Tile::empty(p_x, p_y + 1));
+
+    let player = Object::new()
+        .position(p_x, p_y)
+        .living(true)
+        // .visualize("player", '@', colors::WHITE)
+        .physical(true, false, false)
+        .genome((
+            Sensors::default(),
+            Processors::default(),
+            Actuators {
+                actions: vec![Box::new(MoveAction::new())],
+                hp: 0,
+            },
+            Dna::default(),
+        ))
+        .ai(Box::new(RandomAi::new()));
+
+    game_objects.set_player(player);
+
+    ((p_x, p_y), game_state, game_objects)
 }

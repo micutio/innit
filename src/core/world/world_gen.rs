@@ -72,7 +72,7 @@ pub fn new_monster(
     monster: Monster,
     x: i32,
     y: i32,
-    level: u32,
+    _level: u32,
 ) -> Object {
     match monster {
         Monster::Virus => Object::new()

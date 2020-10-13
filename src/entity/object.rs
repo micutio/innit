@@ -152,6 +152,14 @@ impl Object {
         self.processors = processors;
         self.actuators = actuators;
         self.dna = dna;
+        if let Some(def_action) = self
+            .actuators
+            .actions
+            .iter()
+            .find(|a| a.as_ref().get_identifier() == "walk")
+        {
+            self.default_action = def_action.clone_action();
+        }
         self
     }
 

@@ -142,9 +142,9 @@ impl Action for PassAction {
         TargetCategory::None
     }
 
-    fn set_target(&mut self, _: Target) {}
+    fn set_target(&mut self, _target: Target) {}
 
-    fn set_level(&mut self, lvl: i32) {}
+    fn set_level(&mut self, _lvl: i32) {}
 
     fn get_identifier(&self) -> String {
         "pass".to_string()
@@ -195,7 +195,7 @@ impl Action for AttackAction {
             .collect();
 
         assert!(valid_targets.len() <= 1);
-        if let Some(target_obj) = valid_targets.first() {
+        if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {
                 callback: ObjectProcResult::CheckEnterFOV,
@@ -255,14 +255,14 @@ impl Action for MoveAction {
         let (dx, dy) = self.direction.to_xy();
         let (x, y) = owner.pos();
         if !&objects.is_blocked(x + dx, y + dy) {
-            info!(
-                "move {} from ({},{}) to ({},{})",
-                owner.visual.name,
-                x,
-                y,
-                x + dx,
-                y + dy
-            );
+            // info!(
+            //     "move {} from ({},{}) to ({},{})",
+            //     owner.visual.name,
+            //     x,
+            //     y,
+            //     x + dx,
+            //     y + dy
+            // );
             owner.set_pos(x + dx, y + dy);
             ActionResult::Success {
                 callback: ObjectProcResult::CheckEnterFOV,
