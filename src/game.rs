@@ -65,6 +65,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     debug!("player sensors: {:?}", player.sensors);
     debug!("player processors: {:?}", player.processors);
     debug!("player actuators: {:?}", player.actuators);
+    debug!("player dna: {:?}", player.dna);
     game_objects.set_player(player);
 
     // a warm welcoming message
@@ -121,7 +122,7 @@ pub fn game_loop(
                 }
             }
             Some(PlayerInput::PlayInput(in_game_action)) => {
-                debug!("inject ingame action {:#?} to player", in_game_action);
+                trace!("inject in-game action {:#?} to player", in_game_action);
                 if let Some(ref mut player) = game_objects[PLAYER] {
                     use crate::ui::game_input::PlayerAction::*;
                     match in_game_action {
@@ -131,80 +132,7 @@ pub fn game_loop(
                         // _ => Box::new(PassAction),
                         QuickAction() => player.set_next_action(Some(player.get_quick_action())),
                     }
-                    // use self::TraitFamily::*;
-                    // if let Trait::TAction(action_trait) = ingame_action.trait_id {
-                    //     match game_state
-                    //         .gene_library
-                    //         .trait_by_family
-                    //         .get(&ingame_action.trait_id)
-                    //     {
-                    //         Some(Sensing) => {
-                    //             // iterate over all sensing actions and find one that matches the
-                    //             // prototype
-                    //             if let Some(prototype) = player
-                    //                 .sensors
-                    //                 .actions
-                    //                 .iter()
-                    //                 .find(|a| a.trait_id == action_trait)
-                    //             {
-                    //                 let next_action =
-                    //                     Some(build_player_action(player, ingame_action));
-                    //                 debug!("player sensing action object: {:#?}", next_action);
-                    //                 player.set_next_action(next_action);
-                    //             } else {
-                    //                 /// TODO: Handle this in a way that the player easily understands.
-                    //                 println!(
-                    //                     "Your body does not have sensors for {:#?}!",
-                    //                     action_trait
-                    //                 );
-                    //             }
-                    //         }
-                    //         Some(Processing) => {
-                    //             // iterate over all processing actions and find one that matches the
-                    //             // prototype
-                    //             if let Some(prototype) = player
-                    //                 .processors
-                    //                 .actions
-                    //                 .iter()
-                    //                 .find(|a| a.trait_id == action_trait)
-                    //             {
-                    //                 let next_action =
-                    //                     Some(build_player_action(ingame_action, prototype));
-                    //                 debug!("player processing action object: {:#?}", next_action);
-                    //                 player.set_next_action(next_action);
-                    //             } else {
-                    //                 /// TODO: Find a way to handle this in a way that the player easily understands.
-                    //                 println!(
-                    //                     "Your body does not have processors for {:#?}!",
-                    //                     action_trait
-                    //                 );
-                    //             }
-                    //         }
-                    //         Some(Actuating) => {
-                    //             // iterate over all actuating actions and find one that matches the
-                    //             // prototype
-                    //             if let Some(prototype) = player
-                    //                 .actuators
-                    //                 .actions
-                    //                 .iter()
-                    //                 .find(|a| a.trait_id == action_trait)
-                    //             {
-                    //                 let next_action =
-                    //                     Some(build_player_action(ingame_action, prototype));
-                    //                 debug!("player actuating action object: {:#?}", next_action);
-                    //                 player.set_next_action(next_action);
-                    //             } else {
-                    //                 /// TODO: Find a way to handle this in a way that the player easily understands.
-                    //                 println!(
-                    //                     "Your body does not have actuators to {:#?}!",
-                    //                     action_trait
-                    //                 );
-                    //             }
-                    //         }
-                    //         None => {}
-                    //     }
-                    // }
-                };
+                }
             }
             None => {}
         }

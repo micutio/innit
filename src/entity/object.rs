@@ -156,10 +156,11 @@ impl Object {
             .actuators
             .actions
             .iter()
-            .find(|a| a.as_ref().get_identifier() == "walk")
+            .find(|a| a.as_ref().get_identifier() == "move")
         {
             self.default_action = def_action.clone_action();
         }
+        debug!("default action: {:#?}", self.default_action);
         self
     }
 

@@ -227,7 +227,7 @@ fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjec
 
 fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     if let Some(ref player) = game_objects[PLAYER] {
-        println!("recomputing FOV: {}", player.sensors.sensing_range);
+        // println!("recomputing FOV: {}", player.sensors.sensing_range);
         game_frontend.fov.compute_fov(
             player.x,
             player.y,
@@ -285,7 +285,7 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
             if let Some(ref mut tile_object) = game_objects.get_tile_at(x as usize, y as usize) {
                 let wall = tile_object.physics.is_blocking_sight;
 
-                // set tile foregroung and background colors
+                // set tile foreground and background colors
                 let (tile_color_fg, tile_color_bg) = match (visible, wall) {
                     // outside field of view:
                     (false, true) => (fwff, bwff),
@@ -425,13 +425,12 @@ pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjec
         .filter(|o| {
             // FIXME: there must be a better way than using `and_then`.
             game_frontend.fov.is_in_fov(o.x, o.y)
-            // || o.physics.is_always_visible
-            // || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-            // || (o.tile.is_some() && DEBUG_MODE)
+                || o.physics.is_always_visible
+                || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
+                || (o.tile.is_some() && DEBUG_MODE)
         })
         .collect();
 
-    dbg!("to draw {:?}", &to_draw.len());
     // sort, so that non-blocking objects come first
     to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
     // draw the objects in the list

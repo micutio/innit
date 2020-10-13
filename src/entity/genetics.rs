@@ -109,7 +109,7 @@ impl Sensors {
     pub fn new() -> Self {
         Sensors {
             actions: Vec::new(),
-            sensing_range: 0,
+            sensing_range: 1,
         }
     }
 }

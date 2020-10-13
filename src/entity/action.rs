@@ -268,6 +268,7 @@ impl Action for MoveAction {
                 callback: ObjectProcResult::CheckEnterFOV,
             }
         } else {
+            info!("object {} blocked!", owner.visual.name);
             ActionResult::Failure
         }
     }
