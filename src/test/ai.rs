@@ -1,5 +1,6 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
+use crate::core::world::world_gen::Tile;
 use crate::entity::action::MoveAction;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::player::PLAYER;
@@ -23,6 +24,23 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
     game_objects.blank_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
+
+    // make tiles near the player walkable
+    game_objects
+        .get_tile_at(p_x as usize, p_y as usize)
+        .replace(Tile::empty(p_x, p_y));
+    game_objects
+        .get_tile_at((p_x + 1) as usize, p_y as usize)
+        .replace(Tile::empty(p_x + 1, p_y));
+    game_objects
+        .get_tile_at((p_x - 1) as usize, p_y as usize)
+        .replace(Tile::empty(p_x - 1, p_y));
+    game_objects
+        .get_tile_at(p_x as usize, (p_y - 1) as usize)
+        .replace(Tile::empty(p_x, p_y - 1));
+    game_objects
+        .get_tile_at(p_x as usize, (p_y + 1) as usize)
+        .replace(Tile::empty(p_x, p_y + 1));
 
     let player = Object::new()
         .position(p_x, p_y)
@@ -55,6 +73,7 @@ fn test_random_ai() {
     // test walking in any direction
     if let Some(mut player) = game_objects.extract(PLAYER) {
         if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.game_rng) {
+            println!("move test '{}'", &action.to_text());
             assert!(action.get_identifier().contains("move"))
         } else {
             panic!();
@@ -99,7 +118,30 @@ fn test_random_ai() {
     // test walking in only west direction
     if let Some(mut player) = game_objects.extract(PLAYER) {
         if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.game_rng) {
-            assert_eq!(action.get_identifier(), "move west")
+            assert_eq!(action.to_text(), "move to West")
+        } else {
+            panic!();
+        }
+        game_objects.replace(PLAYER, player);
+    } else {
+        panic!();
+    }
+
+    let virus_west = new_monster(
+        &mut game_state.game_rng,
+        &game_state.gene_library,
+        Monster::Virus,
+        p_x - 1,
+        p_y,
+        0,
+    );
+
+    game_objects.push(virus_west);
+
+    // test no walk possible
+    if let Some(mut player) = game_objects.extract(PLAYER) {
+        if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.game_rng) {
+            assert_eq!(action.to_text(), "pass")
         } else {
             panic!();
         }

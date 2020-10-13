@@ -81,15 +81,17 @@ impl Ai for RandomAi {
             .iter()
             .filter(|obj| match obj {
                 Some(o) => {
-                    (((o.x - object.x) - (o.y - object.y)).abs() == 1) // be adjacent
-                        && (o.physics.is_blocking // be either blocking...
-                            || (!o.physics.is_blocking // ...or non-blocking and empty
-                                && !game_objects.is_blocked_by_object(o.x, o.y)))
+                    !((o.x - object.x).abs() > 1
+                        || (o.y - object.y).abs() > 1
+                        || ((o.x - object.x) - (o.y - object.y)).abs() != 1
+                        || !o.physics.is_blocking && game_objects.is_blocked_by_object(o.x, o.y))
                 }
                 None => false,
             })
             .filter_map(|o| o.as_ref())
             .collect();
+
+        // dbg!("adjacent target count: {:?}", &adjacent_targets.len());
 
         let mut valid_targets = vec![
             TargetCategory::None,
@@ -123,6 +125,8 @@ impl Ai for RandomAi {
         {
             valid_targets.retain(|t| *t != TargetCategory::BlockingObject);
         }
+
+        // dbg!("valid targets: {:?}", &valid_targets);
 
         // find an action that matches one of the available target categories
         let possible_actions: Vec<&Box<dyn Action>> = object

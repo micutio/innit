@@ -33,9 +33,6 @@ fn test_dna_encoding() {
     };
 
     let (_s, _p, _a, _) = gene_lib.decode_dna(&dna);
-    println!("{:?}", _s);
-    println!("{:?}", _p);
-    println!("{:?}", _a);
 
     assert_eq!(s.sensing_range, _s.sensing_range);
     assert_eq!(s.actions.len(), _s.actions.len());
