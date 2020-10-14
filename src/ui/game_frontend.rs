@@ -435,8 +435,19 @@ pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjec
     to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
     // draw the objects in the list
     for object in &to_draw {
-        object.draw(&mut game_frontend.con);
+        draw_object(object, &mut game_frontend.con);
     }
+}
+
+/// Set the color and then draw the char that represents this object at its position.
+fn draw_object(object: &Object, con: &mut dyn Console) {
+    con.set_default_foreground(object.visual.color);
+    con.put_char(
+        object.x,
+        object.y,
+        object.visual.character,
+        BackgroundFlag::None,
+    );
 }
 
 pub fn blit_consoles(game_frontend: &mut GameFrontend) {

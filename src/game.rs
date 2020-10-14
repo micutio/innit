@@ -12,6 +12,7 @@ use crate::core::game_state::{GameState, MessageLog};
 use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
+use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
@@ -58,7 +59,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
         .genome(
             game_state
                 .gene_library
-                .new_genetics(&mut game_state.game_rng, 10),
+                .new_genetics(&mut game_state.game_rng, GENE_LEN),
         );
 
     debug!("created player object {}", player);

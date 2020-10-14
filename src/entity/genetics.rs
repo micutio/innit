@@ -12,9 +12,9 @@
 //!
 //! ## Shape of the DNA
 //!
-//! +------+-----------+---------------+-------------+
-//! | 0x00 | gene name | genome length | trait genes |
-//! +------+-----------+---------------+-------------+
+//! +------+---------------+------------+
+//! | 0x00 | genome length | trait name |
+//! +------+---------------+------------+
 //!
 //!
 //! A DNA Genome is implemented as a string of hexadecimal numbers. The start of a gene is marked
@@ -35,6 +35,8 @@ use std::collections::HashMap;
 use crate::entity::action::*;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
+
+pub const GENE_LEN: usize = 10;
 
 /// All traits belong to one of three major categories, called trait families.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
@@ -63,8 +65,8 @@ pub enum TraitAttribute {
 struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
-    pub attribute: TraitAttribute, // Vec<TraitAttribute>
-    pub action: Box<dyn Action>,   // TraitAction
+    pub attribute: TraitAttribute,       // Vec<TraitAttribute>
+    pub action: Option<Box<dyn Action>>, // TraitAction
 }
 
 impl GeneticTrait {
@@ -72,7 +74,7 @@ impl GeneticTrait {
         name: &str,
         trait_family: TraitFamily,
         attribute: TraitAttribute,
-        action: Box<dyn Action>,
+        action: Option<Box<dyn Action>>,
     ) -> Self {
         GeneticTrait {
             trait_name: name.to_string(),
@@ -84,11 +86,28 @@ impl GeneticTrait {
 }
 
 fn create_trait_list() -> Vec<GeneticTrait> {
-    use TraitAttribute::*;
+    // use TraitAttribute::*;
     use TraitFamily::*;
     vec![
-        GeneticTrait::new("move", Actuating, None, Box::new(MoveAction::new())),
-        GeneticTrait::new("attack", Actuating, None, Box::new(AttackAction::new())),
+        GeneticTrait::new(
+            "move",
+            Actuating,
+            TraitAttribute::None,
+            Some(Box::new(MoveAction::new())),
+        ),
+        GeneticTrait::new(
+            "attack",
+            Actuating,
+            TraitAttribute::None,
+            Some(Box::new(AttackAction::new())),
+        ),
+        GeneticTrait::new("thick cell wall", Actuating, TraitAttribute::Hp, None),
+        GeneticTrait::new(
+            "optical sensor",
+            Sensing,
+            TraitAttribute::SensingRange,
+            None,
+        ),
     ]
 }
 
@@ -215,12 +234,13 @@ impl GeneLibrary {
         let trait_vec: Vec<GeneticTrait> = create_trait_list();
         let trait_count = trait_vec.len();
         let gray_code = generate_gray_code(4);
+        debug!("gray code: {:#?}", gray_code);
         let gray_to_trait: HashMap<u8, String> = trait_vec
             .iter()
             .enumerate()
             .map(|(code, gene_trait)| (gray_code[code + 1], gene_trait.trait_name.clone()))
             .collect();
-
+        debug!("gray to trait map: {:#?}", gray_to_trait);
         // actual constructor
         GeneLibrary {
             trait_vec,
@@ -233,19 +253,24 @@ impl GeneLibrary {
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
     pub fn new_dna(&self, game_rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
-        let mut dna = Vec::new();
+        let mut dna: Vec<u8> = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
         for _ in 0..avg_genome_len {
             // push 0x00 first as the genome start symbol
             dna.push(0 as u8);
-            // pick random trait number from list
-            let trait_num = game_rng.gen_range(0, self.trait_count);
-            // add trait id
-            dna.push(self.gray_code[trait_num]);
             // add length
-            dna.push(1);
-            // add random attribute value
-            dna.push(game_rng.gen_range(0, 16) as u8);
+            dna.push(1 as u8);
+            // pick random trait number from list and add trait id
+            let trait_num = game_rng.gen_range(1, self.trait_count + 1);
+            trace!(
+                "sampled genetic trait {} ({})",
+                trait_num,
+                self.gray_code[trait_num]
+            );
+            dna.push(self.gray_code[trait_num] as u8);
+            //
+            // // add random attribute value
+            // dna.push(game_rng.gen_range(0, 16) as u8);
         }
         // debug!("new dna generated: {:?}", dna);
         dna
@@ -308,11 +333,13 @@ impl GeneLibrary {
             //     None => {}
             // }
             if let Some(trait_name) = self.gray_to_trait.get(&dna[i]) {
+                // println!("gtt[{} (dna[{}])] -> {}", &dna[i], i, trait_name);
                 if let Some(genetic_trait) = self
                     .trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
+                    trace!("found genetic trait {}", genetic_trait.trait_name);
                     trait_builder.add_action(genetic_trait);
                     trait_builder.add_attribute(genetic_trait.attribute);
                 }
@@ -411,10 +438,15 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                let mut boxed_action = genetic_trait.action.clone();
-                boxed_action.set_level(*parameter);
-                boxed_action
+                if let Some(a) = &genetic_trait.action {
+                    let mut boxed_action = a.clone_action();
+                    boxed_action.set_level(*parameter);
+                    Some(boxed_action)
+                } else {
+                    None
+                }
             })
+            .filter_map(|o| o)
             .collect();
 
         self.processors.actions = self
@@ -425,10 +457,15 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                let mut boxed_action = genetic_trait.action.clone();
-                boxed_action.set_level(*parameter);
-                boxed_action
+                if let Some(a) = &genetic_trait.action {
+                    let mut boxed_action = a.clone_action();
+                    boxed_action.set_level(*parameter);
+                    Some(boxed_action)
+                } else {
+                    None
+                }
             })
+            .filter_map(|o| o)
             .collect();
 
         self.actuators.actions = self
@@ -439,10 +476,15 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                let mut boxed_action = genetic_trait.action.clone();
-                boxed_action.set_level(*parameter);
-                boxed_action
+                if let Some(a) = &genetic_trait.action {
+                    let mut boxed_action = a.clone_action();
+                    boxed_action.set_level(*parameter);
+                    Some(boxed_action)
+                } else {
+                    None
+                }
             })
+            .filter_map(|o| o)
             .collect();
 
         (self.sensors, self.processors, self.actuators, self.dna)

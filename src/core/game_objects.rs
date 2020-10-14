@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use crate::core::world::world_gen::Tile;
-use crate::entity::genetics::GeneLibrary;
+use crate::entity::genetics::{GeneLibrary, GENE_LEN};
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
@@ -60,7 +60,7 @@ impl GameObjects {
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(game_rng, 10);
+                        gene_library.new_genetics(game_rng, GENE_LEN);
                     tile.change_genome(sensors, processors, actuators, dna);
                 }
             }

@@ -1,7 +1,6 @@
 use std::fmt;
 
 use tcod::colors::Color;
-use tcod::console::*;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::world::world_gen::Tile;
@@ -160,7 +159,7 @@ impl Object {
         {
             self.default_action = def_action.clone_action();
         }
-        debug!("default action: {:#?}", self.default_action);
+        // debug!("default action: {:#?}", self.default_action);
         self
     }
 
@@ -199,12 +198,6 @@ impl Object {
         self.processors = processors;
         self.actuators = actuators;
         self.dna = dna;
-    }
-
-    /// Set the color and then draw the char that represents this object at its position.
-    pub fn draw(&self, con: &mut dyn Console) {
-        con.set_default_foreground(self.visual.color);
-        con.put_char(self.x, self.y, self.visual.character, BackgroundFlag::None);
     }
 
     /// Calculate the distance of this object to another object.
