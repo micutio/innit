@@ -88,9 +88,9 @@ pub fn game_loop(
     game_input: &mut GameInput,
     game_objects: &mut GameObjects,
 ) {
-    use cpuprofiler::PROFILER;
+    // use cpuprofiler::PROFILER;
 
-    PROFILER.lock().unwrap().start("./my-prof.profile");
+    // PROFILER.lock().unwrap().start("./profile.out");
     while !game_frontend.root.window_closed() {
         // ensure that the player action from previous turns is consumed
         assert!(game_input.is_action_consumed());
@@ -141,7 +141,7 @@ pub fn game_loop(
             None => {}
         }
     }
-    PROFILER.lock().unwrap().stop();
+    // PROFILER.lock().unwrap().stop();
 }
 
 /// Load an existing savegame and instantiates GameState & Objects

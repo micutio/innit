@@ -11,6 +11,7 @@ use crate::core::game_state::GameState;
 use crate::entity::action::*;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
+use std::time::Duration;
 
 /// The game input contains fields for
 /// - current mouse position
@@ -177,7 +178,7 @@ struct MousePosition {
 
 /// Concurrent input contains
 /// - the action queue that is shared between game and concurrent input listener thread
-/// - the cannel that allows the ui to communicate with the running thread
+/// - the channel that allows the ui to communicate with the running thread
 /// - the handle of the input thread itself
 struct ConcurrentInput {
     game_input_ref: Arc<Mutex<InputContainer>>,
@@ -351,6 +352,7 @@ fn start_input_proc_thread(
 
         loop {
             if !is_paused {
+                thread::sleep(Duration::from_millis(16));
                 let _mouse: Mouse = Default::default(); // this is not really used right now
                 let mut _key: Key = Default::default();
                 match input::check_for_event(input::MOUSE | input::KEY_PRESS) {
