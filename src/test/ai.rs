@@ -4,9 +4,6 @@ use crate::core::world::world_gen::Tile;
 use crate::entity::action::MoveAction;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
-// TODO: test walking in any direction
-// TODO: test walking in only one possible direction
-// TODO: test blocked by monsters => only can pass
 // TODO: extend available actions and tests to include attacking
 
 #[test]

@@ -3,8 +3,6 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
-// TODO: Create actions for setting and using quick/primary/secondary actions.
-
 use std::fmt::Debug;
 
 use tcod::colors;
@@ -68,7 +66,6 @@ pub enum ActionResult {
 
 /// Prototype for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
-/// TODO: Add target here and remove action prototypes!
 #[typetag::serde(tag = "type")]
 pub trait Action: ActionClone + Debug {
     fn perform(
@@ -227,7 +224,6 @@ impl Action for AttackAction {
 }
 
 /// Move an object
-// TODO: Maybe create enum target {self, other{object_id}} to use for any kind of targetable action.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MoveAction {
     lvl: i32,

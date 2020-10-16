@@ -39,7 +39,6 @@ pub struct Object {
     next_action: Option<Box<dyn Action>>,
     default_action: Box<dyn Action>,
     quick_action: Box<dyn Action>,
-    // TODO: add default action to walk mapping!
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

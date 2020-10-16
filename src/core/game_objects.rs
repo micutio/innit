@@ -32,7 +32,6 @@ impl GameObjects {
         }
     }
 
-    // TODO: Add function that returns iterator over all tiles.
     pub fn get_tile_at(&mut self, x: usize, y: usize) -> &mut Option<Object> {
         // offset by one because player is the first object
         &mut self.obj_vec[(y * (WORLD_WIDTH as usize) + x) + 1]
