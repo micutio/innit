@@ -4,11 +4,13 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::thread::{self};
+use std::time::{Duration, Instant};
 
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
@@ -19,6 +21,8 @@ use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, Gam
 use crate::ui::game_input::{GameInput, PlayerInput};
 
 const SAVEGAME: &str = "data/savegame";
+
+pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
 
 // TODO: Make this changeable via command line flag!
 pub const DEBUG_MODE: bool = false;
@@ -89,20 +93,36 @@ pub fn game_loop(
     game_objects: &mut GameObjects,
 ) {
     // use cpuprofiler::PROFILER;
-
     // PROFILER.lock().unwrap().start("./profile.out");
+
+    let mut start_time = Instant::now();
     while !game_frontend.root.window_closed() {
         // ensure that the player action from previous turns is consumed
         assert!(game_input.is_action_consumed());
 
         // let the game engine process an object
-        let process_result = game_state.process_object(game_objects, &game_frontend.fov);
+        let action_result = game_state.process_object(game_objects, &game_frontend.fov);
+
+        // limit frames
+        if game_state.is_players_turn() {
+            if let ObjectProcResult::NoAction = action_result {
+                let elapsed = start_time.elapsed();
+                println!("time since last inactive: {:#?}", elapsed);
+                if let Some(slow_down) = MS_PER_FRAME.checked_sub(elapsed) {
+                    println!("sleep for {:#?}", slow_down);
+                    thread::sleep(slow_down);
+                }
+                start_time = Instant::now();
+            }
+        }
+
+        // render action vfx
         process_visual_feedback(
             game_state,
             game_frontend,
             game_input,
             game_objects,
-            process_result,
+            action_result,
         );
 
         // once processing is done, check whether we have a new user input
@@ -140,6 +160,12 @@ pub fn game_loop(
             }
             None => {}
         }
+
+        // sync game loop to 60 fps to avoid eating the CPU alive
+        // if let Some(time_to_next_step) = MS_PER_FRAME.checked_sub(start_time.elapsed()) {
+        //     println!("sleep for {:#?}", time_to_next_step);
+        //     thread::sleep(time_to_next_step);
+        // }
     }
     // PROFILER.lock().unwrap().stop();
 }

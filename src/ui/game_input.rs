@@ -3,15 +3,16 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use tcod::input::{self, Event, Key, Mouse};
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
+use crate::game::MS_PER_FRAME;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
-use std::time::Duration;
 
 /// The game input contains fields for
 /// - current mouse position
@@ -347,10 +348,11 @@ fn start_input_proc_thread(
     thread::spawn(move || {
         let mut mouse_x: i32 = 0;
         let mut mouse_y: i32 = 0;
-
         let mut is_paused = false;
 
         loop {
+            // let start_time = Instant::now();
+
             if !is_paused {
                 thread::sleep(Duration::from_millis(16));
                 let _mouse: Mouse = Default::default(); // this is not really used right now
@@ -402,6 +404,9 @@ fn start_input_proc_thread(
                 }
                 _ => {}
             }
+
+            // // sync game loop to 60 fps to avoid eating the CPU alive
+            // thread::sleep(MS_PER_FRAME - start_time.elapsed());
         }
     })
 }

@@ -27,12 +27,12 @@ impl MessageLog for Vec<(String, Color)> {
 /// Results from porcessing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
 pub enum ObjectProcResult {
-    NoAction,
-    NoFeedback,
-    CheckEnterFOV,
-    Animate { anim_type: AnimationType },
-    UpdateFOV,
-    ReRender,
+    NoAction,                             // object did not act and is still pondering its turn
+    NoFeedback,                           // action completed, but requires no visual feedback
+    CheckEnterFOV,                        // check whether the object has entered the player's FOV
+    Animate { anim_type: AnimationType }, // play given animation to visualise action
+    UpdateFOV,                            // action completed, requires updating FOV
+    ReRender,                             // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
@@ -59,6 +59,10 @@ impl GameState {
             gene_library: GeneLibrary::new(),
             current_obj_index: 0,
         }
+    }
+
+    pub fn is_players_turn(&self) -> bool {
+        self.current_obj_index == PLAYER
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
