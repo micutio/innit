@@ -75,13 +75,15 @@ pub trait Action: ActionClone + Debug {
         owner: &mut Object,
     ) -> ActionResult;
 
-    fn get_target_category(&self) -> TargetCategory;
-
     fn set_target(&mut self, t: Target);
 
     fn set_level(&mut self, lvl: i32);
 
+    fn get_target_category(&self) -> TargetCategory;
+
     fn get_identifier(&self) -> String;
+
+    fn get_energy_cost(&self) -> i32;
 
     fn to_text(&self) -> String;
 }
@@ -135,16 +137,20 @@ impl Action for PassAction {
         }
     }
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
-    }
-
     fn set_target(&mut self, _target: Target) {}
 
     fn set_level(&mut self, _lvl: i32) {}
 
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
     fn get_identifier(&self) -> String {
         "pass".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0
     }
 
     fn to_text(&self) -> String {
@@ -202,10 +208,6 @@ impl Action for AttackAction {
         }
     }
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::BlockingObject
-    }
-
     fn set_target(&mut self, target: Target) {
         self.target = target;
     }
@@ -214,8 +216,16 @@ impl Action for AttackAction {
         self.lvl = lvl;
     }
 
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::BlockingObject
+    }
+
     fn get_identifier(&self) -> String {
         "attack".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
     }
 
     fn to_text(&self) -> String {
@@ -269,10 +279,6 @@ impl Action for MoveAction {
         }
     }
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::EmptyObject
-    }
-
     fn set_target(&mut self, target: Target) {
         self.direction = target;
     }
@@ -281,8 +287,16 @@ impl Action for MoveAction {
         self.lvl = lvl;
     }
 
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::EmptyObject
+    }
+
     fn get_identifier(&self) -> String {
         "move".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
     }
 
     fn to_text(&self) -> String {

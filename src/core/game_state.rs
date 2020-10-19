@@ -75,13 +75,39 @@ impl GameState {
         let mut process_result = ObjectProcResult::NoAction;
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
-            if let Some(next_action) = active_object.get_next_action(objects, &mut self.game_rng) {
+            trace!(
+                "{} | {}'s turn now @energy {}/{}",
+                self.current_obj_index,
+                active_object.visual.name,
+                active_object.energy,
+                active_object.energy_limit
+            );
+            // TURN ACTION PHASE
+            // only act if enough energy is available
+            if active_object.energy < active_object.energy_limit {
+                process_result = ObjectProcResult::NoFeedback;
+                active_object.metabolize();
+            } else if let Some(next_action) =
+                active_object.get_next_action(objects, &mut self.game_rng)
+            {
+                let energy_cost = next_action.get_energy_cost();
+
                 // perform action
                 process_result =
                     self.process_action(fov_map, objects, &mut active_object, next_action);
+
+                // AFTER ACTION PHASE
+                if process_result != ObjectProcResult::NoAction {
+                    active_object.energy -= energy_cost;
+                }
             }
+
+            // FINISH TURN PHASE
+            if process_result != ObjectProcResult::NoAction {}
             // return object back to objects vector
             objects[self.current_obj_index].replace(active_object);
+        } else {
+            trace!("no object at index {}", self.current_obj_index);
         }
 
         // only increase counter if the object has made a move

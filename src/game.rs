@@ -71,6 +71,10 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     debug!("player processors: {:?}", player.processors);
     debug!("player actuators: {:?}", player.actuators);
     debug!("player dna: {:?}", player.dna);
+    debug!(
+        "player default action: {:?}",
+        player.default_action.to_text()
+    );
     game_objects.set_player(player);
 
     // a warm welcoming message
@@ -107,9 +111,9 @@ pub fn game_loop(
         if game_state.is_players_turn() {
             if let ObjectProcResult::NoAction = action_result {
                 let elapsed = start_time.elapsed();
-                println!("time since last inactive: {:#?}", elapsed);
+                // println!("time since last inactive: {:#?}", elapsed);
                 if let Some(slow_down) = MS_PER_FRAME.checked_sub(elapsed) {
-                    println!("sleep for {:#?}", slow_down);
+                    // println!("sleep for {:#?}", slow_down);
                     thread::sleep(slow_down);
                 }
                 start_time = Instant::now();
@@ -158,7 +162,9 @@ pub fn game_loop(
                     }
                 }
             }
-            None => {}
+            None => {
+                trace!("no player input detected");
+            }
         }
 
         // sync game loop to 60 fps to avoid eating the CPU alive

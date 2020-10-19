@@ -1,5 +1,3 @@
-use std::fmt;
-
 use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
@@ -8,6 +6,9 @@ use crate::entity::action::*;
 use crate::entity::ai::Ai;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::util::game_rng::GameRng;
+
+use std::cmp::min;
+use std::fmt;
 
 /// An Object represents the base structure for all entities in the game.
 /// Most of the object components are organized in their own
@@ -28,6 +29,7 @@ pub struct Object {
     pub y: i32,
     pub alive: bool,
     pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
+    pub energy_limit: i32,
     pub dna: Dna,
     pub visual: Visual,
     pub physics: Physics,
@@ -37,7 +39,7 @@ pub struct Object {
     pub tile: Option<Tile>,
     pub ai: Option<Box<dyn Ai>>,
     next_action: Option<Box<dyn Action>>,
-    default_action: Box<dyn Action>,
+    pub default_action: Box<dyn Action>,
     quick_action: Box<dyn Action>,
 }
 
@@ -87,6 +89,7 @@ impl Object {
             y: 0,
             alive: false,
             energy: 0,
+            energy_limit: 10,
             dna: Dna::new(),
             visual: Visual::new(),
             physics: Physics::new(),
@@ -150,6 +153,7 @@ impl Object {
         self.processors = processors;
         self.actuators = actuators;
         self.dna = dna;
+        // update default action
         if let Some(def_action) = self
             .actuators
             .actions
@@ -158,6 +162,9 @@ impl Object {
         {
             self.default_action = def_action.clone_action();
         }
+        // update energy variables
+        self.energy_limit = self.processors.energy_storage;
+
         // debug!("default action: {:#?}", self.default_action);
         self
     }
@@ -172,6 +179,10 @@ impl Object {
     pub fn ai(mut self, ai: Box<dyn Ai>) -> Object {
         self.ai = Some(ai);
         self
+    }
+
+    pub fn metabolize(&mut self) {
+        self.energy = min(self.energy + self.processors.metabolism, self.energy_limit)
     }
 
     /// Retrieve the current position of the object.

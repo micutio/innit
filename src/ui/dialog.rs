@@ -295,12 +295,15 @@ pub fn show_character_screen(
     if let Some(ref player) = game_objects[PLAYER] {
         let header: String = "Character Information".to_string();
         let msg: String = format!(
-            "Energy:        {} \n\
+            "Energy:        {}/{} \n\
+             Metabolism:    {} \n\
              Sense Range:   {} \n\
-             Membrane (HP): {} \n\
+             HP:            {} \n\
              Alive:         {} \n\
              Turn:          {}",
             player.energy,
+            player.energy_limit,
+            player.processors.metabolism,
             player.sensors.sensing_range,
             player.actuators.hp,
             player.alive,

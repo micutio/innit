@@ -50,6 +50,8 @@ pub enum TraitFamily {
 pub enum TraitAttribute {
     SensingRange,
     Hp,
+    Metabolism,
+    Storage,
     None,
 }
 
@@ -101,13 +103,17 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             TraitAttribute::None,
             Some(Box::new(AttackAction::new())),
         ),
-        GeneticTrait::new("thick cell wall", Actuating, TraitAttribute::Hp, None),
+        GeneticTrait::new("cell membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new(
             "optical sensor",
             Sensing,
             TraitAttribute::SensingRange,
             None,
         ),
+        // enzymes are stand-ins for metabolism for now
+        // TODO: separate into catabolism and anabolism
+        GeneticTrait::new("enzyme", Sensing, TraitAttribute::Metabolism, None),
+        GeneticTrait::new("energy-store", Sensing, TraitAttribute::Storage, None),
     ]
 }
 
@@ -143,12 +149,16 @@ impl Sensors {
 #[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Processors {
     pub actions: Vec<Box<dyn Action>>,
+    pub metabolism: i32,     // energy production per turn
+    pub energy_storage: i32, // maximum energy store
 }
 
 impl Processors {
     pub fn new() -> Self {
         Processors {
             actions: Vec::new(),
+            metabolism: 1,
+            energy_storage: 10,
         }
     }
 }
@@ -390,6 +400,14 @@ impl TraitBuilder {
             TraitAttribute::Hp => {
                 self.dna.simplified.push(TraitFamily::Actuating);
                 self.actuators.hp += 1;
+            }
+            TraitAttribute::Metabolism => {
+                self.dna.simplified.push(TraitFamily::Processing);
+                self.processors.metabolism += 1;
+            }
+            TraitAttribute::Storage => {
+                self.dna.simplified.push(TraitFamily::Processing);
+                self.processors.energy_storage += 1;
             }
             TraitAttribute::None => {}
         }
