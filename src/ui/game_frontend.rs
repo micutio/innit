@@ -634,7 +634,6 @@ pub fn handle_meta_actions(
 }
 
 /// Render a generic progress or status bar in the UI.
-#[allow(clippy::too_many_arguments)]
 fn render_dna_short(
     panel: &mut Offscreen,
     coloring: &ColorPalette,
@@ -707,7 +706,6 @@ fn render_dna_short(
 }
 
 /// Render a generic progress or status bar in the UI.
-#[allow(clippy::too_many_arguments)]
 fn render_dna_long(
     panel: &mut Offscreen,
     coloring: &ColorPalette,

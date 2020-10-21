@@ -3,13 +3,14 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use tcod::input::{self, Event, Key, Mouse};
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
+use crate::game::MS_PER_FRAME;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
@@ -348,6 +349,8 @@ fn start_input_proc_thread(
         let mut mouse_x: i32 = 0;
         let mut mouse_y: i32 = 0;
         let mut is_paused = false;
+        let mut start_time = Instant::now();
+        let check_interval = MS_PER_FRAME / 2;
 
         loop {
             // let start_time = Instant::now();
@@ -405,7 +408,10 @@ fn start_input_proc_thread(
             }
 
             // // sync game loop to 60 fps to avoid eating the CPU alive
-            // thread::sleep(MS_PER_FRAME - start_time.elapsed());
+            if let Some(duration) = check_interval.checked_sub(start_time.elapsed()) {
+                thread::sleep(duration);
+                start_time = Instant::now();
+            }
         }
     })
 }
