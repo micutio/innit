@@ -80,14 +80,14 @@ pub fn new_monster(
             .living(true)
             .visualize("virus", 'v', colors::DESATURATED_GREEN)
             .physical(true, false, false)
-            .genome(gene_lib.new_genetics(game_rng, GENE_LEN))
+            .genome(0.75, gene_lib.new_genetics(game_rng, GENE_LEN))
             .ai(Box::new(RandomAi::new())),
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
             .visualize("bacteria", 'b', colors::DARKER_GREEN)
             .physical(true, false, false)
-            .genome(gene_lib.new_genetics(game_rng, GENE_LEN))
+            .genome(0.9, gene_lib.new_genetics(game_rng, GENE_LEN))
             .ai(Box::new(RandomAi::new())),
     }
 }

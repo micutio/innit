@@ -30,6 +30,7 @@ pub struct Object {
     pub alive: bool,
     pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
     pub energy_limit: i32,
+    pub gene_stability: f64,
     pub dna: Dna,
     pub visual: Visual,
     pub physics: Physics,
@@ -90,6 +91,7 @@ impl Object {
             alive: false,
             energy: 0,
             energy_limit: 10,
+            gene_stability: 1.0,
             dna: Dna::new(),
             visual: Visual::new(),
             physics: Physics::new(),
@@ -147,23 +149,11 @@ impl Object {
     /// Set the object's dna and super traits. Part of the builder pattern.
     pub fn genome(
         mut self,
+        stability: f64,
         (sensors, processors, actuators, dna): (Sensors, Processors, Actuators, Dna),
     ) -> Object {
-        self.sensors = sensors;
-        self.processors = processors;
-        self.actuators = actuators;
-        self.dna = dna;
-        // update default action
-        if let Some(def_action) = self
-            .actuators
-            .actions
-            .iter()
-            .find(|a| a.as_ref().get_identifier() == "move")
-        {
-            self.default_action = def_action.clone_action();
-        }
-        // update energy variables
-        self.energy_limit = self.processors.energy_storage;
+        self.gene_stability = stability;
+        self.change_genome(sensors, processors, actuators, dna);
 
         // debug!("default action: {:#?}", self.default_action);
         self
@@ -208,6 +198,22 @@ impl Object {
         self.processors = processors;
         self.actuators = actuators;
         self.dna = dna;
+
+        // update default action
+        if let Some(def_action) = self
+            .actuators
+            .actions
+            .iter()
+            .find(|a| a.as_ref().get_identifier() == "move")
+        {
+            self.default_action = def_action.clone_action();
+            debug!(
+                "{} new default action: {:#?}",
+                self.visual.name, self.default_action
+            );
+        }
+        // update energy variables
+        self.energy_limit = self.processors.energy_storage;
     }
 
     /// Calculate the distance of this object to another object.

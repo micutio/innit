@@ -132,15 +132,18 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
         .living(true)
         // .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
-        .genome((
-            Sensors::default(),
-            Processors::default(),
-            Actuators {
-                actions: vec![Box::new(MoveAction::new())],
-                hp: 0,
-            },
-            Dna::default(),
-        ))
+        .genome(
+            1.0,
+            (
+                Sensors::default(),
+                Processors::default(),
+                Actuators {
+                    actions: vec![Box::new(MoveAction::new())],
+                    hp: 0,
+                },
+                Dna::default(),
+            ),
+        )
         .ai(Box::new(RandomAi::new()));
 
     game_objects.set_player(player);

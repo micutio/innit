@@ -1,3 +1,4 @@
+use rand::seq::{IteratorRandom, SliceRandom};
 use rand::{Rng, RngCore, SeedableRng};
 use rand_core::{impls, Error};
 // use rand_core::{RngCore, impls};
@@ -103,6 +104,8 @@ pub trait RngExtended {
     fn coinflip(&mut self) -> bool;
 
     fn flip_with_prob(&mut self, probability: f64) -> bool;
+
+    fn random_bit(&mut self) -> u8;
 }
 
 impl<T: Rng> RngExtended for SerializableRng<T> {
@@ -112,5 +115,9 @@ impl<T: Rng> RngExtended for SerializableRng<T> {
 
     fn flip_with_prob(&mut self, probability: f64) -> bool {
         self.gen_bool(probability)
+    }
+
+    fn random_bit(&mut self) -> u8 {
+        *vec![1, 2, 4, 8, 16, 32, 64, 128].choose(self).unwrap()
     }
 }

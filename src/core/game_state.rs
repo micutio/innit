@@ -1,4 +1,4 @@
-use rand::RngCore;
+use rand::{Rng, RngCore};
 
 use tcod::colors::Color;
 
@@ -8,7 +8,8 @@ use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
-use crate::util::game_rng::GameRng;
+use crate::util::game_rng::{GameRng, RngExtended};
+use std::borrow::Borrow;
 
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;
@@ -99,6 +100,29 @@ impl GameState {
                 // AFTER ACTION PHASE
                 if process_result != ObjectProcResult::NoAction {
                     active_object.energy -= energy_cost;
+
+                    if !active_object.dna.raw.is_empty()
+                        && self
+                            .game_rng
+                            .flip_with_prob(1.0 - active_object.gene_stability)
+                    {
+                        // mutate the object's genome by randomly flipping a bit
+                        let random_gene = self.game_rng.gen_range(0, active_object.dna.raw.len());
+                        debug!(
+                            "{} flipping gene: 0b{:08b}",
+                            active_object.visual.name, active_object.dna.raw[random_gene]
+                        );
+                        active_object.dna.raw[random_gene] ^= self.game_rng.random_bit();
+                        debug!(
+                            "{}            to: 0b{:08b}",
+                            active_object.visual.name, active_object.dna.raw[random_gene]
+                        );
+                        // apply new genome to object
+                        let (sensors, processors, actuators, dna) = self
+                            .gene_library
+                            .decode_dna(active_object.dna.raw.as_slice());
+                        active_object.change_genome(sensors, processors, actuators, dna)
+                    }
                 }
             }
 
