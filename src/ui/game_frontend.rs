@@ -106,6 +106,17 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
     while !game_frontend.root.window_closed() {
         // show the background image, at twice the regular console resolution
         tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut game_frontend.root, (0, 0));
+        // let mut x: u8 = 0;
+        // for i in 0..16 {
+        //     for j in 0..16 {
+        //         game_frontend
+        //             .root
+        //             .put_char_ex(i, j, x as u8 as char, colors::WHITE, colors::BLUE);
+        //         if x < 255 {
+        //             x += 1;
+        //         }
+        //     }
+        // }
 
         game_frontend
             .root
@@ -183,18 +194,6 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
             }
             _ => {}
         }
-
-        // let mut x: u8 = 0;
-        // for i in 0..16 {
-        //     for j in 0..16 {
-        //         game_frontend
-        //             .root
-        //             .put_char_ex(i, j, x as u8 as char, colors::WHITE, colors::BLUE);
-        //         if x < 255 {
-        //             x += 1;
-        //         }
-        //     }
-        // }
     }
 }
 
@@ -526,7 +525,8 @@ fn render_ui(
 
     // render corners
     game_frontend.panel.set_char(0, 0, '\u{d5}');
-    game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b8}');
+    // game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b8}');
+    game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b5}');
     game_frontend.panel.set_char(0, PANEL_HEIGHT - 1, chars::SW);
     game_frontend
         .panel
@@ -569,6 +569,7 @@ fn render_ui(
             BAR_WIDTH,
             &player.dna,
         );
+        render_dna_vert(&mut game_frontend.con, &game_frontend.coloring, &player.dna);
 
         // show names of objects under the mouse
         game_frontend
@@ -737,6 +738,36 @@ fn render_dna_long(
         TextAlignment::Center,
         "DNA".to_string(),
     );
+}
+
+fn render_dna_vert(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
+    let x: i32 = SCREEN_WIDTH - 1;
+    let y: i32 = 1;
+
+    panel.set_char_foreground(SCREEN_WIDTH - 1, 0, coloring.fg_dialog_border);
+    panel.set_char(SCREEN_WIDTH - 1, 0, '\u{c1}');
+    panel.set_char_foreground(
+        SCREEN_WIDTH - 1,
+        SCREEN_HEIGHT - PANEL_HEIGHT - 1,
+        coloring.fg_dialog_border,
+    );
+    panel.set_char(SCREEN_WIDTH - 1, SCREEN_HEIGHT - PANEL_HEIGHT - 1, '\u{c2}');
+
+    for (vert_offset, super_trait) in dna.simplified.iter().enumerate() {
+        match super_trait {
+            TraitFamily::Sensing => {
+                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.cyan)
+            }
+            TraitFamily::Processing => {
+                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.magenta)
+            }
+            TraitFamily::Actuating => {
+                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.yellow)
+            }
+        }
+        panel.set_char(x, y + (vert_offset as i32), '\u{db}');
+        // vert_offset += 1;
+    }
 }
 
 /// Render a generic progress or status bar in the UI.
