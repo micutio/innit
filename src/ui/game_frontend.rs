@@ -29,6 +29,7 @@ pub const BAR_WIDTH: i32 = 20;
 pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
+use crate::util::modulus;
 /// Field of view mapping.
 pub use tcod::map::Map as FovMap;
 
@@ -737,6 +738,7 @@ fn render_dna_long(
             TraitFamily::Sensing => panel.set_default_background(coloring.cyan),
             TraitFamily::Processing => panel.set_default_background(coloring.magenta),
             TraitFamily::Actuating => panel.set_default_background(coloring.yellow),
+            TraitFamily::Junk => panel.set_default_background(colors::GREY),
         }
         panel.rect(x + offset, y, bar_width, 1, false, BackgroundFlag::Screen);
         offset += bar_width;
@@ -775,18 +777,20 @@ fn render_dna_panel(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
     );
 
     for (vert_offset, super_trait) in dna.simplified.iter().enumerate() {
-        match super_trait {
-            TraitFamily::Sensing => {
-                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.cyan)
-            }
-            TraitFamily::Processing => {
-                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.magenta)
-            }
-            TraitFamily::Actuating => {
-                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.yellow)
-            }
-        }
-        panel.set_char(0, (vert_offset as i32) + top_offset, '\u{ba}');
+        let col: Color = match super_trait {
+            TraitFamily::Sensing => coloring.cyan,
+            TraitFamily::Processing => coloring.magenta,
+            TraitFamily::Actuating => coloring.yellow,
+            TraitFamily::Junk => colors::GREY,
+        };
+        panel.set_char_foreground(0, (vert_offset as i32) + top_offset, col);
+        // panel.set_char(0, (vert_offset as i32) + top_offset, '\u{ba}');
+        let c: char = if modulus(vert_offset, 2) == 0 {
+            '\u{1f}'
+        } else {
+            '\u{1e}'
+        };
+        panel.set_char(0, (vert_offset as i32) + top_offset, c);
     }
 }
 

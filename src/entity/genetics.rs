@@ -39,11 +39,12 @@ use crate::util::generate_gray_code;
 pub const GENE_LEN: usize = 10;
 
 /// All traits belong to one of three major categories, called trait families.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum TraitFamily {
     Sensing,
     Processing,
     Actuating,
+    Junk,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
@@ -112,8 +113,8 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         ),
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
-        GeneticTrait::new("enzyme", Sensing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("energy-store", Sensing, TraitAttribute::Storage, None),
+        GeneticTrait::new("enzyme", Processing, TraitAttribute::Metabolism, None),
+        GeneticTrait::new("energy-store", Processing, TraitAttribute::Storage, None),
     ]
 }
 
@@ -350,9 +351,14 @@ impl GeneLibrary {
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
                     trace!("found genetic trait {}", genetic_trait.trait_name);
+                    trait_builder.record_trait_family(genetic_trait.trait_family);
                     trait_builder.add_action(genetic_trait);
                     trait_builder.add_attribute(genetic_trait.attribute);
+                } else {
+                    error!("no trait for id {}", trait_name);
                 }
+            } else {
+                trait_builder.record_trait_family(TraitFamily::Junk);
             }
         }
 
@@ -394,19 +400,15 @@ impl TraitBuilder {
     pub fn add_attribute(&mut self, attr: TraitAttribute) {
         match attr {
             TraitAttribute::SensingRange => {
-                self.dna.simplified.push(TraitFamily::Sensing);
                 self.sensors.sensing_range += 1;
             }
             TraitAttribute::Hp => {
-                self.dna.simplified.push(TraitFamily::Actuating);
                 self.actuators.hp += 1;
             }
             TraitAttribute::Metabolism => {
-                self.dna.simplified.push(TraitFamily::Processing);
                 self.processors.metabolism += 1;
             }
             TraitAttribute::Storage => {
-                self.dna.simplified.push(TraitFamily::Processing);
                 self.processors.energy_storage += 1;
             }
             TraitAttribute::None => {}
@@ -416,7 +418,6 @@ impl TraitBuilder {
     pub fn add_action(&mut self, genetic_trait: &GeneticTrait) {
         match genetic_trait.trait_family {
             TraitFamily::Actuating => {
-                self.dna.simplified.push(TraitFamily::Actuating);
                 // increase the counter for the given action or insert a 0 as default value;
                 // below is the long form...
                 //  let count = self.sensor_action_acc.entry(actn).or_insert(0);
@@ -428,20 +429,23 @@ impl TraitBuilder {
                     .or_insert(0) += 1;
             }
             TraitFamily::Sensing => {
-                self.dna.simplified.push(TraitFamily::Sensing);
                 *self
                     .sensor_action_count
                     .entry(genetic_trait.trait_name.clone())
                     .or_insert(0) += 1;
             }
             TraitFamily::Processing => {
-                self.dna.simplified.push(TraitFamily::Processing);
                 *self
                     .processor_action_count
                     .entry(genetic_trait.trait_name.clone())
                     .or_insert(0) += 1;
             }
+            TraitFamily::Junk => {}
         }
+    }
+
+    pub fn record_trait_family(&mut self, trait_fam: TraitFamily) {
+        self.dna.simplified.push(trait_fam);
     }
 
     // Finalize all actions, return the super trait components and consume itself.
