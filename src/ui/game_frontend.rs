@@ -509,11 +509,11 @@ fn render_ui(
             1,
             BAR_WIDTH,
             "HP",
+            player.actuators.hp,
             player.actuators.max_hp,
-            10,
-            colors::DARKER_TURQUOISE,
-            colors::DARK_RED,
-            game_frontend.coloring.bg_dialog,
+            game_frontend.coloring.fg_dialog,
+            colors::DARKER_RED,
+            colors::DARKEST_RED,
         );
         render_bar(
             &mut game_frontend.btm_panel,
@@ -523,9 +523,9 @@ fn render_ui(
             "ENERGY",
             player.processors.energy,
             player.processors.energy_storage,
-            colors::DARKER_TURQUOISE,
-            colors::YELLOW,
-            game_frontend.coloring.bg_dialog,
+            game_frontend.coloring.fg_dialog,
+            game_frontend.coloring.yellow,
+            colors::DARKER_YELLOW,
         );
         render_dna_panel(
             &mut game_frontend.dna_panel,
@@ -813,12 +813,12 @@ fn render_bar(
 
     // render background first
     panel.set_default_background(back_color);
-    panel.rect(x, y, total_width, 1, false, BackgroundFlag::Screen);
+    panel.rect(x, y, total_width, 1, false, BackgroundFlag::Set);
 
     // now render bar on top
     panel.set_default_background(bar_color);
     if bar_width > 0 {
-        panel.rect(x, y, bar_width, 1, false, BackgroundFlag::Screen);
+        panel.rect(x, y, bar_width, 1, false, BackgroundFlag::Set);
     }
 
     // finally some centered text with the values

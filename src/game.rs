@@ -81,7 +81,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     // a warm welcoming message
     game_state.log.add(
         "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-        colors::RED,
+        game_frontend.coloring.fg_dialog_border,
     );
 
     (game_state, game_objects)

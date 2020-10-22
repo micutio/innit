@@ -185,17 +185,17 @@ impl ColorPalette {
             },
             cyan: Color {
                 r: 0,
-                g: 120,
-                b: 120,
+                g: 150,
+                b: 150,
             },
             magenta: Color {
-                r: 120,
+                r: 180,
                 g: 0,
-                b: 120,
+                b: 220,
             },
             yellow: Color {
-                r: 120,
-                g: 120,
+                r: 150,
+                g: 150,
                 b: 0,
             },
             player: Color {
