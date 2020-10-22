@@ -185,8 +185,8 @@ impl Actuators {
     pub fn new() -> Self {
         Actuators {
             actions: Vec::new(),
-            max_hp: 0,
-            hp: 0,
+            max_hp: 1,
+            hp: 1,
         }
     }
 }
