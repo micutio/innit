@@ -502,22 +502,22 @@ fn render_ui(
 
     // show player's stats
     if let Some(ref player) = game_objects[PLAYER] {
-        render_dna_short(
-            &mut game_frontend.btm_panel,
-            &game_frontend.coloring,
-            1,
-            1,
-            BAR_WIDTH,
-            &player.dna,
-        );
-        render_dna_long(
-            &mut game_frontend.btm_panel,
-            &game_frontend.coloring,
-            1,
-            2,
-            BAR_WIDTH,
-            &player.dna,
-        );
+        // render_dna_short(
+        //     &mut game_frontend.btm_panel,
+        //     &game_frontend.coloring,
+        //     1,
+        //     1,
+        //     BAR_WIDTH,
+        //     &player.dna,
+        // );
+        // render_dna_long(
+        //     &mut game_frontend.btm_panel,
+        //     &game_frontend.coloring,
+        //     1,
+        //     2,
+        //     BAR_WIDTH,
+        //     &player.dna,
+        // );
         render_dna_panel(
             &mut game_frontend.dna_panel,
             &game_frontend.coloring,
@@ -525,16 +525,30 @@ fn render_ui(
         );
 
         // show names of objects under the mouse
-        game_frontend
-            .btm_panel
-            .set_default_foreground(colors::LIGHT_GREY);
-        game_frontend.btm_panel.print_ex(
-            1,
-            0,
-            BackgroundFlag::None,
-            TextAlignment::Left,
-            names_under_mouse,
-        );
+        if !names_under_mouse.is_empty() {
+            game_frontend
+                .btm_panel
+                .set_default_foreground(colors::LIGHT_GREY);
+            game_frontend.btm_panel.print_ex(
+                2,
+                0,
+                BackgroundFlag::None,
+                TextAlignment::Left,
+                names_under_mouse,
+            );
+            game_frontend
+                .btm_panel
+                .set_default_foreground(game_frontend.coloring.fg_dialog_border);
+            game_frontend
+                .btm_panel
+                .put_char(1, 0, '\u{b9}', BackgroundFlag::Set);
+            game_frontend.btm_panel.put_char(
+                (names_under_mouse.len() + 2) as i32,
+                0,
+                '\u{cc}',
+                BackgroundFlag::Set,
+            );
+        }
 
         // print game messages, one line at a time
         let mut y = MSG_HEIGHT as i32;
@@ -764,7 +778,7 @@ fn render_dna_panel(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
                 panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.yellow)
             }
         }
-        panel.set_char(0, (vert_offset as i32) + top_offset, '\u{db}');
+        panel.set_char(0, (vert_offset as i32) + top_offset, '\u{ba}');
     }
 }
 
