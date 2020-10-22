@@ -1,6 +1,6 @@
 use rand::{Rng, RngCore};
 
-use tcod::colors::Color;
+use tcod::colors::{self, Color};
 
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::*;
@@ -101,6 +101,9 @@ impl GameState {
                 if process_result != ObjectProcResult::NoAction {
                     active_object.energy -= energy_cost;
 
+                    if (active_object.dna.raw.is_empty()) {
+                        println!("{} dna is empty!", active_object.visual.name);
+                    }
                     if !active_object.dna.raw.is_empty()
                         && self
                             .game_rng
@@ -108,6 +111,7 @@ impl GameState {
                     {
                         // mutate the object's genome by randomly flipping a bit
                         let random_gene = self.game_rng.gen_range(0, active_object.dna.raw.len());
+                        let old_gene = active_object.dna.raw[random_gene];
                         debug!(
                             "{} flipping gene: 0b{:08b}",
                             active_object.visual.name, active_object.dna.raw[random_gene]
@@ -117,11 +121,35 @@ impl GameState {
                             "{}            to: 0b{:08b}",
                             active_object.visual.name, active_object.dna.raw[random_gene]
                         );
+
                         // apply new genome to object
                         let (sensors, processors, actuators, dna) = self
                             .gene_library
                             .decode_dna(active_object.dna.raw.as_slice());
-                        active_object.change_genome(sensors, processors, actuators, dna)
+                        active_object.change_genome(sensors, processors, actuators, dna);
+
+                        // TODO: Show mutation effect as diff between old and new genome!
+                        if self.current_obj_index == PLAYER {
+                            self.log.add(
+                                format!("A mutation occurred in your genome {}", old_gene),
+                                colors::YELLOW,
+                            );
+                        } else if let Some(player) = &objects[PLAYER] {
+                            debug!(
+                                "sensing range: {}, dist: {}",
+                                player.sensors.sensing_range as f32,
+                                player.distance_to(&active_object)
+                            );
+                            if player.distance_to(&active_object)
+                                <= player.sensors.sensing_range as f32
+                            {
+                                // don't record all tiles passing constantly
+                                self.log.add(
+                                    format!("{} mutated!", active_object.visual.name),
+                                    colors::WHITE,
+                                );
+                            }
+                        }
                     }
                 }
             }

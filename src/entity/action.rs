@@ -115,23 +115,12 @@ pub struct PassAction;
 impl Action for PassAction {
     fn perform(
         &self,
-        game_state: &mut GameState,
-        game_objects: &mut GameObjects,
-        owner: &mut Object,
+        _game_state: &mut GameState,
+        _game_objects: &mut GameObjects,
+        _owner: &mut Object,
     ) -> ActionResult {
         // do nothing
         // duh
-        if let Some(player) = &game_objects[PLAYER] {
-            if player.distance_to(&owner) <= player.sensors.sensing_range as f32
-                && owner.tile.is_none()
-            {
-                // don't record all tiles passing constantly
-                game_state.log.add(
-                    format!("{} passes their turn", owner.visual.name),
-                    colors::WHITE,
-                );
-            }
-        }
         ActionResult::Success {
             callback: ObjectProcResult::NoFeedback,
         }
@@ -261,14 +250,6 @@ impl Action for MoveAction {
         let (dx, dy) = self.direction.to_xy();
         let (x, y) = owner.pos();
         if !&objects.is_blocked(x + dx, y + dy) {
-            // info!(
-            //     "move {} from ({},{}) to ({},{})",
-            //     owner.visual.name,
-            //     x,
-            //     y,
-            //     x + dx,
-            //     y + dy
-            // );
             owner.set_pos(x + dx, y + dy);
             ActionResult::Success {
                 callback: ObjectProcResult::CheckEnterFOV,

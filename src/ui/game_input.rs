@@ -118,7 +118,7 @@ impl GameInput {
                     if !player.has_next_action() {
                         if let Some(new_action) = data.next_player_actions.pop_front() {
                             self.next_action = Some(new_action);
-                            debug!("popped next action from queue {:?}", self.next_action);
+                            trace!("popped next action from queue {:?}", self.next_action);
                         }
                     }
                 }
