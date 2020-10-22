@@ -28,7 +28,7 @@ A long-term goal, would be to create an educational experience as well. Many of 
 
 ## Current Version
 
-### Alpha 0.0.1
+### Alpha 0.0.3
 
 Innit is still at the outset of development. The basic game engine is, apart from a bit of polish here and there, functional.
 
