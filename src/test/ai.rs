@@ -139,6 +139,7 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Processors::default(),
                 Actuators {
                     actions: vec![Box::new(MoveAction::new())],
+                    max_hp: 0,
                     hp: 0,
                 },
                 Dna::default(),

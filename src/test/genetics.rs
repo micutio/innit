@@ -25,10 +25,16 @@ fn test_dna_encoding() {
         sensing_range: 0,
     };
 
-    let p = Processors { actions: vec![] };
+    let p = Processors {
+        actions: vec![],
+        metabolism: 10,
+        energy_storage: 10,
+        energy: 10,
+    };
 
     let a = Actuators {
         actions: vec![Box::new(MoveAction::new())],
+        max_hp: 0,
         hp: 0,
     };
 
@@ -53,7 +59,7 @@ fn test_dna_encoding() {
     //     .count();
     // assert_eq!(p_match_errors, 0);
     assert_eq!(p.actions.len(), _p.actions.len());
-    assert_eq!(a.hp, _a.hp);
+    assert_eq!(a.max_hp, _a.max_hp);
     // let a_match_errors = a
     //     .actions
     //     .iter()

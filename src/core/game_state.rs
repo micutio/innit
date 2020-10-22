@@ -80,12 +80,12 @@ impl GameState {
                 "{} | {}'s turn now @energy {}/{}",
                 self.current_obj_index,
                 active_object.visual.name,
-                active_object.energy,
-                active_object.energy_limit
+                active_object.processors.energy,
+                active_object.processors.energy_storage
             );
             // TURN ACTION PHASE
             // only act if enough energy is available
-            if active_object.energy < active_object.energy_limit {
+            if active_object.processors.energy < active_object.processors.energy_storage {
                 process_result = ObjectProcResult::NoFeedback;
                 active_object.metabolize();
             } else if let Some(next_action) =
@@ -99,9 +99,9 @@ impl GameState {
 
                 // AFTER ACTION PHASE
                 if process_result != ObjectProcResult::NoAction {
-                    active_object.energy -= energy_cost;
+                    active_object.processors.energy -= energy_cost;
 
-                    if (active_object.dna.raw.is_empty()) {
+                    if active_object.dna.raw.is_empty() {
                         println!("{} dna is empty!", active_object.visual.name);
                     }
                     if !active_object.dna.raw.is_empty()

@@ -301,11 +301,11 @@ pub fn show_character_screen(
              HP:            {} \n\
              Alive:         {} \n\
              Turn:          {}",
-            player.energy,
-            player.energy_limit,
+            player.processors.energy,
+            player.processors.energy_storage,
             player.processors.metabolism,
             player.sensors.sensing_range,
-            player.actuators.hp,
+            player.actuators.max_hp,
             player.alive,
             game_state.turn
         );

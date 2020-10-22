@@ -152,6 +152,7 @@ pub struct Processors {
     pub actions: Vec<Box<dyn Action>>,
     pub metabolism: i32,     // energy production per turn
     pub energy_storage: i32, // maximum energy store
+    pub energy: i32,
 }
 
 impl Processors {
@@ -160,6 +161,7 @@ impl Processors {
             actions: Vec::new(),
             metabolism: 1,
             energy_storage: 10,
+            energy: 0,
         }
     }
 }
@@ -175,6 +177,7 @@ impl Processors {
 #[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<Box<dyn Action>>,
+    pub max_hp: i32,
     pub hp: i32,
 }
 
@@ -182,6 +185,7 @@ impl Actuators {
     pub fn new() -> Self {
         Actuators {
             actions: Vec::new(),
+            max_hp: 0,
             hp: 0,
         }
     }
@@ -403,6 +407,7 @@ impl TraitBuilder {
                 self.sensors.sensing_range += 1;
             }
             TraitAttribute::Hp => {
+                self.actuators.max_hp += 1;
                 self.actuators.hp += 1;
             }
             TraitAttribute::Metabolism => {

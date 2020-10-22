@@ -28,8 +28,6 @@ pub struct Object {
     pub x: i32,
     pub y: i32,
     pub alive: bool,
-    pub energy: i32, // could be changed into some pseudo-progress like allowed DNA length
-    pub energy_limit: i32,
     pub gene_stability: f64,
     pub dna: Dna,
     pub visual: Visual,
@@ -89,8 +87,6 @@ impl Object {
             x: 0,
             y: 0,
             alive: false,
-            energy: 0,
-            energy_limit: 10,
             gene_stability: 1.0,
             dna: Dna::new(),
             visual: Visual::new(),
@@ -116,12 +112,6 @@ impl Object {
     /// Set whether this object is alive (true) or dead (false). Part of the builder pattern.
     pub fn living(mut self, alive: bool) -> Object {
         self.alive = alive;
-        self
-    }
-
-    /// Set the current energy of the object. Part of the builder pattern.
-    pub fn energize(mut self, energy: i32) -> Object {
-        self.energy = energy;
         self
     }
 
@@ -172,7 +162,10 @@ impl Object {
     }
 
     pub fn metabolize(&mut self) {
-        self.energy = min(self.energy + self.processors.metabolism, self.energy_limit)
+        self.processors.energy = min(
+            self.processors.energy + self.processors.metabolism,
+            self.processors.energy_storage,
+        )
     }
 
     /// Retrieve the current position of the object.
@@ -212,8 +205,6 @@ impl Object {
                 self.visual.name, self.default_action
             );
         }
-        // update energy variables
-        self.energy_limit = self.processors.energy_storage;
     }
 
     /// Calculate the distance of this object to another object.
@@ -279,7 +270,12 @@ impl fmt::Display for Object {
         write!(
             f,
             "{} [{}] at ({},{}), alive: {}, energy: {}",
-            self.visual.name, self.visual.character, self.x, self.y, self.alive, self.energy
+            self.visual.name,
+            self.visual.character,
+            self.x,
+            self.y,
+            self.alive,
+            self.processors.energy
         )
     }
 }
