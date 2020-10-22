@@ -502,22 +502,30 @@ fn render_ui(
 
     // show player's stats
     if let Some(ref player) = game_objects[PLAYER] {
-        // render_dna_short(
-        //     &mut game_frontend.btm_panel,
-        //     &game_frontend.coloring,
-        //     1,
-        //     1,
-        //     BAR_WIDTH,
-        //     &player.dna,
-        // );
-        // render_dna_long(
-        //     &mut game_frontend.btm_panel,
-        //     &game_frontend.coloring,
-        //     1,
-        //     2,
-        //     BAR_WIDTH,
-        //     &player.dna,
-        // );
+        render_bar(
+            &mut game_frontend.btm_panel,
+            1,
+            1,
+            BAR_WIDTH,
+            "HP",
+            player.actuators.hp,
+            10,
+            colors::DARKER_TURQUOISE,
+            colors::DARK_RED,
+            game_frontend.coloring.bg_dialog,
+        );
+        render_bar(
+            &mut game_frontend.btm_panel,
+            1,
+            2,
+            BAR_WIDTH,
+            "ENERGY",
+            player.energy,
+            player.energy_limit,
+            colors::DARKER_TURQUOISE,
+            colors::YELLOW,
+            game_frontend.coloring.bg_dialog,
+        );
         render_dna_panel(
             &mut game_frontend.dna_panel,
             &game_frontend.coloring,
