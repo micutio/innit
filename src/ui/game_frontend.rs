@@ -16,7 +16,7 @@ use crate::ui::dialog::*;
 use crate::ui::game_input::{GameInput, UiAction};
 
 // game window properties
-pub const SCREEN_WIDTH: i32 = 80;
+pub const SCREEN_WIDTH: i32 = 81;
 pub const SCREEN_HEIGHT: i32 = 50;
 const LIMIT_FPS: i32 = 60; // target fps
 
@@ -36,7 +36,8 @@ pub use tcod::map::Map as FovMap;
 pub struct GameFrontend {
     pub root: Root,
     pub con: Offscreen,
-    pub panel: Offscreen,
+    pub btm_panel: Offscreen,
+    pub dna_panel: Offscreen,
     pub fov: FovMap,
     pub input: Option<GameInput>,
     pub coloring: ColorPalette,
@@ -63,7 +64,8 @@ impl GameFrontend {
         GameFrontend {
             root,
             con: Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT),
-            panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+            btm_panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
+            dna_panel: Offscreen::new(1, SCREEN_HEIGHT - PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             input: None,
             // TODO: Save light and dark setting to config
@@ -450,9 +452,20 @@ fn draw_object(object: &Object, con: &mut dyn Console) {
 }
 
 pub fn blit_consoles(game_frontend: &mut GameFrontend) {
-    // blit contents of `game_frontend.panel` to the root console
+    // blit contents of offscreen console to root console and present it
     blit(
-        &game_frontend.panel,
+        &game_frontend.con,
+        (0, 0),
+        (WORLD_WIDTH, WORLD_HEIGHT),
+        &mut game_frontend.root,
+        (0, 0),
+        1.0,
+        1.0,
+    );
+
+    // blit contents of `game_frontend.btm_panel` to the root console
+    blit(
+        &game_frontend.btm_panel,
         (0, 0),
         (SCREEN_WIDTH, SCREEN_HEIGHT),
         &mut game_frontend.root,
@@ -461,13 +474,13 @@ pub fn blit_consoles(game_frontend: &mut GameFrontend) {
         1.0,
     );
 
-    // blit contents of offscreen console to root console and present it
+    // blit contents of `game_frontend.btm_panel` to the root console
     blit(
-        &game_frontend.con,
+        &game_frontend.dna_panel,
         (0, 0),
-        (WORLD_WIDTH, WORLD_HEIGHT),
+        (SCREEN_WIDTH, SCREEN_HEIGHT - PANEL_HEIGHT),
         &mut game_frontend.root,
-        (0, 0),
+        (SCREEN_WIDTH - 1, 0),
         1.0,
         1.0,
     );
@@ -485,76 +498,12 @@ fn render_ui(
     game_objects: &GameObjects,
     names_under_mouse: &str,
 ) {
-    // prepare to render the GUI panel
-    game_frontend
-        .panel
-        .set_default_background(game_frontend.coloring.bg_dialog);
-    game_frontend.panel.clear();
-
-    // set panel borders
-    // set background and foreground colors
-    for x in 0..SCREEN_WIDTH {
-        for y in 0..PANEL_HEIGHT {
-            game_frontend.panel.set_char_background(
-                x,
-                y,
-                game_frontend.coloring.bg_dialog,
-                BackgroundFlag::Set,
-            );
-            game_frontend
-                .panel
-                .set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
-            game_frontend.panel.set_char(x, y, ' ');
-        }
-    }
-
-    // render horizontal borders
-    for x in 0..SCREEN_WIDTH - 1 {
-        game_frontend.panel.set_char(x, 0, chars::DHLINE);
-        game_frontend
-            .panel
-            .set_char(x, PANEL_HEIGHT - 1, chars::HLINE);
-    }
-    // render vertical borders
-    for y in 0..PANEL_HEIGHT - 1 {
-        game_frontend.panel.set_char(0, y, chars::VLINE);
-        game_frontend
-            .panel
-            .set_char(SCREEN_WIDTH - 1, y, chars::VLINE);
-    }
-
-    // render corners
-    game_frontend.panel.set_char(0, 0, '\u{d5}');
-    // game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b8}');
-    game_frontend.panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b5}');
-    game_frontend.panel.set_char(0, PANEL_HEIGHT - 1, chars::SW);
-    game_frontend
-        .panel
-        .set_char(SCREEN_WIDTH - 1, PANEL_HEIGHT - 1, chars::SE);
-
-    game_frontend
-        .panel
-        .set_default_foreground(game_frontend.coloring.fg_dialog);
+    render_btm_panel(&game_frontend.coloring, &mut game_frontend.btm_panel);
 
     // show player's stats
     if let Some(ref player) = game_objects[PLAYER] {
-        // TODO: Create new stats display.
-        // let hp = player.fighter.map_or(0, |f| f.hp);
-        // let max_hp = player.fighter.map_or(0, |f| f.base_max_hp);
-        // render_bar(
-        //     &mut game_frontend.panel,
-        //     1,
-        //     1,
-        //     BAR_WIDTH,
-        //     "HP",
-        //     hp,
-        //     max_hp,
-        //     game_frontend.coloring.fg_dialog,
-        //     colors::DARK_RED,
-        //     colors::DARKEST_RED,
-        // );
         render_dna_short(
-            &mut game_frontend.panel,
+            &mut game_frontend.btm_panel,
             &game_frontend.coloring,
             1,
             1,
@@ -562,20 +511,24 @@ fn render_ui(
             &player.dna,
         );
         render_dna_long(
-            &mut game_frontend.panel,
+            &mut game_frontend.btm_panel,
             &game_frontend.coloring,
             1,
             2,
             BAR_WIDTH,
             &player.dna,
         );
-        render_dna_vert(&mut game_frontend.con, &game_frontend.coloring, &player.dna);
+        render_dna_panel(
+            &mut game_frontend.dna_panel,
+            &game_frontend.coloring,
+            &player.dna,
+        );
 
         // show names of objects under the mouse
         game_frontend
-            .panel
+            .btm_panel
             .set_default_foreground(colors::LIGHT_GREY);
-        game_frontend.panel.print_ex(
+        game_frontend.btm_panel.print_ex(
             1,
             0,
             BackgroundFlag::None,
@@ -587,16 +540,54 @@ fn render_ui(
         let mut y = MSG_HEIGHT as i32;
         for &(ref msg, color) in &mut game_state.log.iter().rev() {
             let msg_height = game_frontend
-                .panel
+                .btm_panel
                 .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
             y -= msg_height;
             if y < 1 {
                 break;
             }
-            game_frontend.panel.set_default_foreground(color);
-            game_frontend.panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+            game_frontend.btm_panel.set_default_foreground(color);
+            game_frontend
+                .btm_panel
+                .print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         }
     }
+}
+
+fn render_btm_panel(coloring: &ColorPalette, panel: &mut Offscreen) {
+    // prepare to render the GUI panel
+    panel.set_default_background(coloring.bg_dialog);
+    panel.clear();
+
+    // set panel borders
+    // set background and foreground colors
+    for x in 0..SCREEN_WIDTH {
+        for y in 0..PANEL_HEIGHT {
+            panel.set_char_background(x, y, coloring.bg_dialog, BackgroundFlag::Set);
+            panel.set_char_foreground(x, y, coloring.fg_dialog_border);
+            panel.set_char(x, y, ' ');
+        }
+    }
+
+    // render horizontal borders
+    for x in 0..SCREEN_WIDTH - 1 {
+        panel.set_char(x, 0, chars::DHLINE);
+        panel.set_char(x, PANEL_HEIGHT - 1, chars::HLINE);
+    }
+    // render vertical borders
+    for y in 0..PANEL_HEIGHT - 1 {
+        panel.set_char(0, y, chars::VLINE);
+        panel.set_char(SCREEN_WIDTH - 1, y, chars::VLINE);
+    }
+
+    // render corners
+    panel.set_char(0, 0, '\u{d5}');
+    // panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b8}');
+    panel.set_char(SCREEN_WIDTH - 1, 0, '\u{b5}');
+    panel.set_char(0, PANEL_HEIGHT - 1, chars::SW);
+    panel.set_char(SCREEN_WIDTH - 1, PANEL_HEIGHT - 1, chars::SE);
+
+    panel.set_default_foreground(coloring.fg_dialog);
 }
 
 pub fn handle_meta_actions(
@@ -740,33 +731,40 @@ fn render_dna_long(
     );
 }
 
-fn render_dna_vert(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
-    let x: i32 = SCREEN_WIDTH - 1;
-    let y: i32 = 1;
+fn render_dna_panel(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
+    panel.set_default_background(coloring.bg_dialog);
+    panel.set_default_foreground(coloring.fg_dialog_border);
+    let top_offset = 4;
 
-    panel.set_char_foreground(SCREEN_WIDTH - 1, 0, coloring.fg_dialog_border);
-    panel.set_char(SCREEN_WIDTH - 1, 0, '\u{c1}');
-    panel.set_char_foreground(
-        SCREEN_WIDTH - 1,
+    for y in 0..SCREEN_HEIGHT - PANEL_HEIGHT {
+        panel.put_char(0, y, ' ', BackgroundFlag::Set);
+    }
+
+    panel.put_char(0, 0, 'D', BackgroundFlag::Set);
+    panel.put_char(0, 1, 'N', BackgroundFlag::Set);
+    panel.put_char(0, 2, 'A', BackgroundFlag::Set);
+    panel.put_char(0, 3, '\u{c1}', BackgroundFlag::Set);
+
+    panel.put_char(
+        0,
         SCREEN_HEIGHT - PANEL_HEIGHT - 1,
-        coloring.fg_dialog_border,
+        '\u{c2}',
+        BackgroundFlag::Set,
     );
-    panel.set_char(SCREEN_WIDTH - 1, SCREEN_HEIGHT - PANEL_HEIGHT - 1, '\u{c2}');
 
     for (vert_offset, super_trait) in dna.simplified.iter().enumerate() {
         match super_trait {
             TraitFamily::Sensing => {
-                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.cyan)
+                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.cyan)
             }
             TraitFamily::Processing => {
-                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.magenta)
+                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.magenta)
             }
             TraitFamily::Actuating => {
-                panel.set_char_foreground(x, y + (vert_offset as i32), coloring.yellow)
+                panel.set_char_foreground(0, (vert_offset as i32) + top_offset, coloring.yellow)
             }
         }
-        panel.set_char(x, y + (vert_offset as i32), '\u{db}');
-        // vert_offset += 1;
+        panel.set_char(0, (vert_offset as i32) + top_offset, '\u{db}');
     }
 }
 
