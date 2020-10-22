@@ -61,7 +61,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
         .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
         .genome(
-            0.5,
+            0.99,
             game_state
                 .gene_library
                 .new_genetics(&mut game_state.game_rng, GENE_LEN),

@@ -286,13 +286,13 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn decode_dna(&self, dna: &[u8]) -> (Sensors, Processors, Actuators, Dna) {
+    pub fn decode_dna(&self, raw_dna: &[u8]) -> (Sensors, Processors, Actuators, Dna) {
         let mut start_ptr: usize = 0;
-        let mut end_ptr: usize = dna.len();
-        let mut trait_builder: TraitBuilder = TraitBuilder::new();
+        let mut end_ptr: usize = raw_dna.len();
+        let mut trait_builder: TraitBuilder = TraitBuilder::new(raw_dna);
 
-        while start_ptr < dna.len() - 2 {
-            let (s_ptr, e_ptr) = self.decode_gene(dna, start_ptr, end_ptr, &mut trait_builder);
+        while start_ptr < raw_dna.len() - 2 {
+            let (s_ptr, e_ptr) = self.decode_gene(raw_dna, start_ptr, end_ptr, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
         }
@@ -376,7 +376,7 @@ struct TraitBuilder {
 }
 
 impl TraitBuilder {
-    pub fn new() -> Self {
+    pub fn new(raw_dna: &[u8]) -> Self {
         TraitBuilder {
             sensors: Sensors::new(),
             processors: Processors::new(),
@@ -385,7 +385,7 @@ impl TraitBuilder {
             processor_action_count: HashMap::new(),
             actuator_action_count: HashMap::new(),
             dna: Dna {
-                raw: Vec::new(),
+                raw: raw_dna.to_vec(),
                 simplified: Vec::new(),
             },
         }
