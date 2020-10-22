@@ -275,7 +275,7 @@ impl Action for MoveAction {
             }
         } else {
             info!("object {} blocked!", owner.visual.name);
-            ActionResult::Failure
+            ActionResult::Failure // this might cause infinite loops of failure
         }
     }
 
