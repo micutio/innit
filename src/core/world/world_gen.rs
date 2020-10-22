@@ -39,7 +39,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", chars::UMLAUT, colors::WHITE)
+            .visualize("empty tile", '\u{fa}', colors::WHITE)
             .physical(false, false, DEBUG_MODE)
             .tile_explored(DEBUG_MODE)
             .ai(Box::new(PassiveAi::new()))

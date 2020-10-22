@@ -132,16 +132,20 @@ impl ColorPalette {
                 b: 96,
             },
             bg_wall_fov_false: Color {
-                r: 20,
-                g: 20,
-                b: 20,
+                r: 30,
+                g: 30,
+                b: 30,
             },
             bg_ground_fov_true: Color {
                 r: 124,
                 g: 8,
                 b: 59,
             },
-            bg_ground_fov_false: Color { r: 0, g: 0, b: 0 },
+            bg_ground_fov_false: Color {
+                r: 20,
+                g: 20,
+                b: 20,
+            },
 
             fg_dialog: Color {
                 r: 220,
@@ -165,9 +169,9 @@ impl ColorPalette {
                 b: 135,
             },
             fg_wall_fov_false: Color {
-                r: 20,
-                g: 20,
-                b: 20,
+                r: 30,
+                g: 30,
+                b: 30,
             },
             fg_ground_fov_true: Color {
                 r: 144,
@@ -175,9 +179,9 @@ impl ColorPalette {
                 b: 90,
             },
             fg_ground_fov_false: Color {
-                r: 40,
-                g: 40,
-                b: 40,
+                r: 20,
+                g: 20,
+                b: 20,
             },
             cyan: Color {
                 r: 0,
