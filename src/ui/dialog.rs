@@ -31,7 +31,7 @@ pub fn menu<T: AsRef<str>>(
 ) -> Option<usize> {
     assert!(
         options.len() <= 26,
-        "Cannot have a mnu with more than 26 options."
+        "Cannot have a menu with more than 26 options."
     );
 
     // keep track of which option is currently selected
@@ -181,7 +181,7 @@ pub fn menu<T: AsRef<str>>(
 }
 
 /// Display a generic textbox with optional header and text.
-pub fn msgbox(
+pub fn msg_box(
     game_frontend: &mut GameFrontend,
     game_input: &mut Option<&mut GameInput>,
     header: &str,
@@ -309,7 +309,7 @@ pub fn show_character_screen(
             player.alive,
             game_state.turn
         );
-        msgbox(
+        msg_box(
             game_frontend,
             game_input,
             &header,

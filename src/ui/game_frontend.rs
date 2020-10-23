@@ -57,7 +57,7 @@ impl GameFrontend {
             .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
             .font_type(FontType::Greyscale)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
-            .title("Innit alpha v0.0.1")
+            .title("Innit alpha v0.0.2")
             .init();
 
         tcod::system::set_fps(LIMIT_FPS);
@@ -180,7 +180,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
                         );
                     }
                     Err(_e) => {
-                        msgbox(
+                        msg_box(
                             game_frontend,
                             &mut None,
                             "",
@@ -527,6 +527,17 @@ fn render_ui(
             game_frontend.coloring.yellow,
             colors::DARKER_YELLOW,
         );
+        render_textfield(
+            &mut game_frontend.btm_panel,
+            &game_frontend.coloring,
+            colors::DARK_GREY,
+            1,
+            3,
+            BAR_WIDTH,
+            'P',
+            &player.default_action.get_identifier(),
+        );
+
         render_dna_panel(
             &mut game_frontend.dna_panel,
             &game_frontend.coloring,
@@ -829,5 +840,29 @@ fn render_bar(
         BackgroundFlag::None,
         TextAlignment::Center,
         &format!("{}: {}/{}", name, value, maximum),
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_textfield(
+    panel: &mut Offscreen,
+    coloring: &ColorPalette,
+    back_color: Color,
+    x: i32,
+    y: i32,
+    width: i32,
+    id: char,
+    text: &str,
+) {
+    panel.set_default_background(coloring.bg_dialog);
+    panel.put_char(x, y, id, BackgroundFlag::Set);
+    panel.set_default_background(back_color);
+    panel.rect(x + 2, y, width - 2, 1, false, BackgroundFlag::Set);
+    panel.print_ex(
+        x + 2 + ((width - 2) / 2),
+        y,
+        BackgroundFlag::None,
+        TextAlignment::Center,
+        text,
     );
 }
