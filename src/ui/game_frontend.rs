@@ -538,6 +538,26 @@ fn render_ui(
             'P',
             &player.primary_action.get_identifier(),
         );
+        render_textfield(
+            &mut game_frontend.btm_panel,
+            &game_frontend.coloring,
+            colors::DARK_GREY,
+            1,
+            4,
+            BAR_WIDTH,
+            'S',
+            &player.secondary_action.get_identifier(),
+        );
+        render_textfield(
+            &mut game_frontend.btm_panel,
+            &game_frontend.coloring,
+            colors::DARK_GREY,
+            1,
+            5,
+            BAR_WIDTH,
+            '1',
+            &player.quick1_action.get_identifier(),
+        );
 
         render_dna_panel(
             &mut game_frontend.dna_panel,
