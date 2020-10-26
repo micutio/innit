@@ -5,12 +5,9 @@
 
 use std::fmt::Debug;
 
-use tcod::colors;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::entity::object::Object;
-use crate::player::PLAYER;
 
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 #[derive(Clone, Debug, PartialEq)]

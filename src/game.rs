@@ -75,7 +75,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     debug!("player dna: {:?}", player.dna);
     debug!(
         "player default action: {:?}",
-        player.default_action.to_text()
+        player.primary_action.to_text()
     );
     game_objects.set_player(player);
 
@@ -156,9 +156,10 @@ pub fn game_loop(
                 if let Some(ref mut player) = game_objects[PLAYER] {
                     use crate::ui::game_input::PlayerAction::*;
                     let a = match in_game_action {
-                        DefaultAction(dir) => player.get_default_action(dir),
-                        // _ => Box::new(PassAction),
-                        QuickAction() => player.get_quick_action(),
+                        PrimaryAction(dir) => player.get_primary_action(dir),
+                        SecondaryAction(dir) => player.get_secondary_action(dir),
+                        Quick1Action() => player.get_quick1_action(),
+                        Quick2Action() => player.get_quick2_action(),
                         PassTurn => Box::new(PassAction),
                     };
                     player.set_next_action(Some(a))

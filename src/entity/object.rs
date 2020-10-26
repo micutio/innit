@@ -38,8 +38,10 @@ pub struct Object {
     pub tile: Option<Tile>,
     pub ai: Option<Box<dyn Ai>>,
     next_action: Option<Box<dyn Action>>,
-    pub default_action: Box<dyn Action>,
-    quick_action: Box<dyn Action>,
+    pub primary_action: Box<dyn Action>,
+    pub secondary_action: Box<dyn Action>,
+    pub quick1_action: Box<dyn Action>,
+    pub quick2_action: Box<dyn Action>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -97,8 +99,10 @@ impl Object {
             tile: None,
             ai: None,
             next_action: None,
-            default_action: Box::new(PassAction),
-            quick_action: Box::new(PassAction),
+            primary_action: Box::new(PassAction),
+            secondary_action: Box::new(PassAction),
+            quick1_action: Box::new(PassAction),
+            quick2_action: Box::new(PassAction),
         }
     }
 
@@ -199,10 +203,10 @@ impl Object {
             .iter()
             .find(|a| a.as_ref().get_identifier() == "move")
         {
-            self.default_action = def_action.clone_action();
+            self.primary_action = def_action.clone_action();
             debug!(
                 "{} new default action: {:#?}",
-                self.visual.name, self.default_action
+                self.visual.name, self.primary_action
             );
         }
     }
@@ -240,19 +244,46 @@ impl Object {
         self.next_action = next_action;
     }
 
+    pub fn set_primary_action(&mut self, new_primary_action: Box<dyn Action>) {
+        self.primary_action = new_primary_action;
+    }
+
+    pub fn set_secondary_action(&mut self, new_secondary_action: Box<dyn Action>) {
+        self.secondary_action = new_secondary_action;
+    }
+
+    pub fn set_quick1_action(&mut self, new_quick1_action: Box<dyn Action>) {
+        self.quick1_action = new_quick1_action;
+    }
+
+    pub fn set_quick2_action(&mut self, new_quick2_action: Box<dyn Action>) {
+        self.quick2_action = new_quick2_action;
+    }
+
     pub fn has_next_action(&self) -> bool {
         self.next_action.is_some()
     }
 
-    pub fn get_default_action(&self, target: Target) -> Box<dyn Action> {
+    pub fn get_primary_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
-        let mut action_clone = self.default_action.clone();
+        let mut action_clone = self.primary_action.clone();
         action_clone.set_target(target);
         action_clone
     }
 
-    pub fn get_quick_action(&self) -> Box<dyn Action> {
-        self.quick_action.clone()
+    pub fn get_secondary_action(&self, target: Target) -> Box<dyn Action> {
+        // Some(def_action.clone())
+        let mut action_clone = self.secondary_action.clone();
+        action_clone.set_target(target);
+        action_clone
+    }
+
+    pub fn get_quick1_action(&self) -> Box<dyn Action> {
+        self.quick1_action.clone()
+    }
+
+    pub fn get_quick2_action(&self) -> Box<dyn Action> {
+        self.quick2_action.clone()
     }
 
     pub fn get_all_actions(&self) -> Vec<&Box<dyn Action>> {

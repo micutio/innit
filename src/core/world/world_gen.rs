@@ -2,7 +2,7 @@
 //! be exchangably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
 
-use tcod::{chars, colors};
+use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
 use crate::entity::ai::{PassiveAi, RandomAi};

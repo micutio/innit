@@ -9,7 +9,6 @@ use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::util::game_rng::{GameRng, RngExtended};
-use std::borrow::Borrow;
 
 /// Messages are expressed as colored text.
 pub type Messages = Vec<(String, Color)>;

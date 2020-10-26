@@ -29,6 +29,7 @@ pub const BAR_WIDTH: i32 = 20;
 pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
+use crate::entity::action::{Action, TargetCategory};
 use crate::util::modulus;
 /// Field of view mapping.
 pub use tcod::map::Map as FovMap;
@@ -535,7 +536,7 @@ fn render_ui(
             3,
             BAR_WIDTH,
             'P',
-            &player.default_action.get_identifier(),
+            &player.primary_action.get_identifier(),
         );
 
         render_dna_panel(
@@ -654,9 +655,107 @@ pub fn handle_meta_actions(
             game_frontend.root.set_fullscreen(!fullscreen);
             initialize_fov(game_frontend, game_objects);
         }
+        UiAction::ChoosePrimaryAction => {
+            if let Some(ref mut player) = game_objects[PLAYER] {
+                if let Some(a) = get_available_action(
+                    game_frontend,
+                    player,
+                    "primary",
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                ) {
+                    player.set_primary_action(a);
+                }
+            }
+        }
+        UiAction::ChooseSecondaryAction => {
+            if let Some(ref mut player) = game_objects[PLAYER] {
+                if let Some(a) = get_available_action(
+                    game_frontend,
+                    player,
+                    "secondary",
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                ) {
+                    player.set_secondary_action(a);
+                }
+            }
+        }
+        UiAction::ChooseQuick1Action => {
+            if let Some(ref mut player) = game_objects[PLAYER] {
+                if let Some(a) = get_available_action(
+                    game_frontend,
+                    player,
+                    "secondary",
+                    &[TargetCategory::None],
+                ) {
+                    player.set_quick1_action(a);
+                }
+            }
+        }
+        UiAction::ChooseQuick2Action => {
+            if let Some(ref mut player) = game_objects[PLAYER] {
+                if let Some(a) = get_available_action(
+                    game_frontend,
+                    player,
+                    "secondary",
+                    &[TargetCategory::None],
+                ) {
+                    player.set_quick1_action(a);
+                }
+            }
+        }
     }
     re_render(game_state, game_frontend, game_objects, "");
     false
+}
+
+fn get_available_action(
+    game_frontend: &mut GameFrontend,
+    obj: &mut Object,
+    action_id: &str,
+    targets: &[TargetCategory],
+) -> Option<Box<dyn Action>> {
+    let choices: Vec<String> = obj
+        .actuators
+        .actions
+        .iter()
+        .chain(obj.processors.actions.iter())
+        .chain(obj.sensors.actions.iter())
+        .filter(|a| targets.contains(&a.get_target_category()))
+        .map(|a| a.get_identifier())
+        .collect();
+
+    if choices.is_empty() {
+        debug!("No choices available!");
+        return None;
+    }
+    // show options and wait for the obj's choice
+    let choice = menu(
+        game_frontend,
+        &mut None,
+        format!("choose {}", action_id).as_str(),
+        choices.as_slice(),
+        24,
+    );
+
+    if let Some(c) = choice {
+        obj.actuators
+            .actions
+            .iter()
+            .chain(obj.processors.actions.iter())
+            .chain(obj.sensors.actions.iter())
+            .find(|a| a.get_identifier().eq(&choices[c]))
+            .cloned()
+    } else {
+        None
+    }
 }
 
 /// Render a generic progress or status bar in the UI.

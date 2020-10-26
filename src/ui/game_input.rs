@@ -13,7 +13,6 @@ use crate::entity::action::*;
 use crate::game::MS_PER_FRAME;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
-use tcod::input::KeyCode::Spacebar;
 
 /// The game input contains fields for
 /// - current mouse position
@@ -204,11 +203,12 @@ impl ConcurrentInput {
 /// as keys in a hash table. So to still be able to hash keys, we define our own.
 #[derive(PartialEq, Eq, Hash)]
 pub enum MyKeyCode {
-    // A,
+    A,
     // B,
     C,
-    // D,
+    D,
     E,
+    CtrlE,
     // F,
     // G,
     // H,
@@ -220,13 +220,16 @@ pub enum MyKeyCode {
     // N,
     // O,
     // P,
+    CtrlP,
     Q,
+    CtrlQ,
     // R,
-    // S,
+    S,
+    CtrlS,
     // T,
     // U,
     // V,
-    // W,
+    W,
     // X,
     // Y,
     // Z,
@@ -257,8 +260,15 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
         Key {
             code: Char,
             printable: 'e',
+            left_ctrl: false,
             ..
         } => self::MyKeyCode::E,
+        Key {
+            code: Char,
+            printable: 'e',
+            left_ctrl: true,
+            ..
+        } => self::MyKeyCode::CtrlE,
         Key {
             code: Char,
             printable: 'l',
@@ -267,8 +277,48 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
         Key {
             code: Char,
             printable: 'q',
+            left_ctrl: false,
             ..
         } => self::MyKeyCode::Q,
+        Key {
+            code: Char,
+            printable: 'q',
+            left_ctrl: true,
+            ..
+        } => self::MyKeyCode::CtrlQ,
+        Key {
+            code: Char,
+            printable: 'w',
+            ..
+        } => self::MyKeyCode::W,
+        Key {
+            code: Char,
+            printable: 'a',
+            ..
+        } => self::MyKeyCode::A,
+        Key {
+            code: Char,
+            printable: 'p',
+            left_ctrl: true,
+            ..
+        } => self::MyKeyCode::CtrlP,
+        Key {
+            code: Char,
+            printable: 's',
+            left_ctrl: false,
+            ..
+        } => self::MyKeyCode::S,
+        Key {
+            code: Char,
+            printable: 's',
+            left_ctrl: true,
+            ..
+        } => self::MyKeyCode::CtrlS,
+        Key {
+            code: Char,
+            printable: 'd',
+            ..
+        } => self::MyKeyCode::D,
         // in-game actions
         Key { code: Up, .. } => self::MyKeyCode::Up,
         Key { code: Down, .. } => self::MyKeyCode::Down,
@@ -295,12 +345,18 @@ pub enum UiAction {
     Fullscreen,
     CharacterScreen,
     ToggleDarkLightMode,
+    ChoosePrimaryAction,
+    ChooseSecondaryAction,
+    ChooseQuick1Action,
+    ChooseQuick2Action,
 }
 
 #[derive(Clone, Debug)]
 pub enum PlayerAction {
-    DefaultAction(Target), // using the arrow keys or 'W','A','S','D'
-    QuickAction(),         // using 'Q', un-targeted quick action
+    PrimaryAction(Target),   // using the arrow keys
+    SecondaryAction(Target), // using 'W','A','S','D' keys
+    Quick1Action(),          // using 'Q', un-targeted quick action
+    Quick2Action(),          // using 'E', un-targeted second quick action
     PassTurn,
 }
 
@@ -432,17 +488,26 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
 
     // TODO: Fill mapping from json file.
     // set up all in-game actions
-    key_map.insert(Up, PlayInput(DefaultAction(North)));
-    key_map.insert(Down, PlayInput(DefaultAction(South)));
-    key_map.insert(Left, PlayInput(DefaultAction(West)));
-    key_map.insert(Right, PlayInput(DefaultAction(East)));
-    key_map.insert(Q, PlayInput(QuickAction()));
+    key_map.insert(Up, PlayInput(PrimaryAction(North)));
+    key_map.insert(Down, PlayInput(PrimaryAction(South)));
+    key_map.insert(Left, PlayInput(PrimaryAction(West)));
+    key_map.insert(Right, PlayInput(PrimaryAction(East)));
+    key_map.insert(W, PlayInput(SecondaryAction(North)));
+    key_map.insert(A, PlayInput(SecondaryAction(South)));
+    key_map.insert(S, PlayInput(SecondaryAction(West)));
+    key_map.insert(D, PlayInput(SecondaryAction(East)));
+    key_map.insert(Q, PlayInput(Quick1Action()));
+    key_map.insert(E, PlayInput(Quick2Action()));
     key_map.insert(SpaceBar, PlayInput(PassTurn));
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));
     key_map.insert(C, MetaInput(CharacterScreen));
     key_map.insert(L, MetaInput(ToggleDarkLightMode));
+    key_map.insert(CtrlP, MetaInput(ChoosePrimaryAction));
+    key_map.insert(CtrlS, MetaInput(ChooseSecondaryAction));
+    key_map.insert(CtrlQ, MetaInput(ChooseQuick1Action));
+    key_map.insert(CtrlE, MetaInput(ChooseQuick2Action));
 
     key_map
 }

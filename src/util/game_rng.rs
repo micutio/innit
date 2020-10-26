@@ -1,7 +1,6 @@
-use rand::seq::{IteratorRandom, SliceRandom};
+use rand::seq::SliceRandom;
 use rand::{Rng, RngCore, SeedableRng};
 use rand_core::{impls, Error};
-// use rand_core::{RngCore, impls};
 use rand_isaac::isaac64::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::mem;
