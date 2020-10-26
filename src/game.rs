@@ -14,6 +14,7 @@ use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
+use crate::entity::action::PassAction;
 use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
 use crate::player::PLAYER;
@@ -154,13 +155,13 @@ pub fn game_loop(
                 trace!("inject in-game action {:#?} to player", in_game_action);
                 if let Some(ref mut player) = game_objects[PLAYER] {
                     use crate::ui::game_input::PlayerAction::*;
-                    match in_game_action {
-                        DefaultAction(dir) => {
-                            player.set_next_action(Some(player.get_default_action(dir)))
-                        }
+                    let a = match in_game_action {
+                        DefaultAction(dir) => player.get_default_action(dir),
                         // _ => Box::new(PassAction),
-                        QuickAction() => player.set_next_action(Some(player.get_quick_action())),
-                    }
+                        QuickAction() => player.get_quick_action(),
+                        PassTurn => Box::new(PassAction),
+                    };
+                    player.set_next_action(Some(a))
                 }
             }
             None => {

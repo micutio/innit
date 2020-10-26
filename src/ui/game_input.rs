@@ -13,6 +13,7 @@ use crate::entity::action::*;
 use crate::game::MS_PER_FRAME;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
+use tcod::input::KeyCode::Spacebar;
 
 /// The game input contains fields for
 /// - current mouse position
@@ -235,6 +236,7 @@ pub enum MyKeyCode {
     Left,
     Right,
     Esc,
+    SpaceBar,
     // F1,
     // F2,
     // F3,
@@ -272,6 +274,7 @@ fn tcod_to_my_key_code(tcod_key: tcod::input::Key) -> self::MyKeyCode {
         Key { code: Down, .. } => self::MyKeyCode::Down,
         Key { code: Right, .. } => self::MyKeyCode::Right,
         Key { code: Left, .. } => self::MyKeyCode::Left,
+        Key { code: Spacebar, .. } => self::MyKeyCode::SpaceBar,
         // non-in-game actions
         Key { code: Escape, .. } => self::MyKeyCode::Esc,
         Key { code: F4, .. } => self::MyKeyCode::F4,
@@ -298,6 +301,7 @@ pub enum UiAction {
 pub enum PlayerAction {
     DefaultAction(Target), // using the arrow keys or 'W','A','S','D'
     QuickAction(),         // using 'Q', un-targeted quick action
+    PassTurn,
 }
 
 /// The input processor maps user input to player actions.
@@ -433,6 +437,7 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     key_map.insert(Left, PlayInput(DefaultAction(West)));
     key_map.insert(Right, PlayInput(DefaultAction(East)));
     key_map.insert(Q, PlayInput(QuickAction()));
+    key_map.insert(SpaceBar, PlayInput(PassTurn));
     // set up all non-in-game actions.
     key_map.insert(Esc, MetaInput(ExitGameLoop));
     key_map.insert(F4, MetaInput(Fullscreen));
