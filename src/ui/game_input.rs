@@ -493,8 +493,8 @@ fn create_key_bindings() -> HashMap<MyKeyCode, PlayerInput> {
     key_map.insert(Left, PlayInput(PrimaryAction(West)));
     key_map.insert(Right, PlayInput(PrimaryAction(East)));
     key_map.insert(W, PlayInput(SecondaryAction(North)));
-    key_map.insert(A, PlayInput(SecondaryAction(South)));
-    key_map.insert(S, PlayInput(SecondaryAction(West)));
+    key_map.insert(A, PlayInput(SecondaryAction(West)));
+    key_map.insert(S, PlayInput(SecondaryAction(South)));
     key_map.insert(D, PlayInput(SecondaryAction(East)));
     key_map.insert(Q, PlayInput(Quick1Action()));
     key_map.insert(E, PlayInput(Quick2Action()));
