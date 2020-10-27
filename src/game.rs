@@ -2,11 +2,12 @@
 //! the game loop is executed.
 
 use std::error::Error;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 
+use dirs::data_local_dir;
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
@@ -21,7 +22,7 @@ use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
 
-const SAVEGAME: &str = "data/savegame";
+const SAVEGAME: &str = "savegame";
 
 pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
 
@@ -182,17 +183,36 @@ pub fn game_loop(
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
 pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
-    let mut json_save_state = String::new();
-    let mut file = File::open(SAVEGAME)?;
-    file.read_to_string(&mut json_save_state)?;
-    let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
-    Ok(result)
+    // TODO: Add proper UI error output if any of this fails!
+    if let Some(mut save_file) = dirs::data_local_dir() {
+        save_file.push("innit");
+        save_file.push("savegame");
+        let mut file = File::open(save_file)?;
+        let mut json_save_state = String::new();
+        file.read_to_string(&mut json_save_state)?;
+        let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
+        Ok(result)
+    } else {
+        error!("CANNOT ACCESS SYSTEM DATA DIR");
+        panic!("CANNOT ACCESS SYSTEM DATA DIR");
+    }
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
 pub fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
-    let save_data = serde_json::to_string(&(game_state, objects))?;
-    let mut file = File::create(SAVEGAME)?;
-    file.write_all(save_data.as_bytes())?;
-    Ok(())
+    if let Some(mut env_data) = dirs::data_local_dir() {
+        env_data.push("innit");
+        fs::create_dir_all(&env_data)?;
+        env_data.push("savegame");
+
+        let mut save_file = File::create(env_data)?;
+        let save_data = serde_json::to_string(&(game_state, objects))?;
+        save_file.write_all(save_data.as_bytes())?;
+        debug!("SAVED GAME TO FILE");
+        Ok(())
+    } else {
+        // TODO: Create dialog with error message!
+        error!("CANNOT CREATE SAVE FILE!");
+        Ok(())
+    }
 }
