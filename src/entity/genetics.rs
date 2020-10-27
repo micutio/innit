@@ -160,7 +160,7 @@ impl Processors {
         Processors {
             actions: Vec::new(),
             metabolism: 1,
-            energy_storage: 10,
+            energy_storage: 1,
             energy: 0,
         }
     }
