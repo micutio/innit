@@ -114,7 +114,13 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
         GeneticTrait::new("enzyme", Processing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("energy-store", Processing, TraitAttribute::Storage, None),
+        GeneticTrait::new("energy-store", Processing, TraitAttribute::None, None),
+        GeneticTrait::new(
+            "metabolize",
+            Processing,
+            TraitAttribute::Storage,
+            Some(Box::new(MetaboliseAction::new())),
+        ),
     ]
 }
 

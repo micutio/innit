@@ -281,3 +281,51 @@ impl Action for MoveAction {
         format!("move to {:?}", self.direction)
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MetaboliseAction {
+    lvl: i32,
+}
+
+impl MetaboliseAction {
+    pub fn new() -> Self {
+        MetaboliseAction { lvl: 0 }
+    }
+}
+
+#[typetag::serde]
+impl Action for MetaboliseAction {
+    fn perform(
+        &self,
+        _game_state: &mut GameState,
+        _objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        owner.processors.energy += self.lvl;
+        ActionResult::Success {
+            callback: ObjectProcResult::NoFeedback,
+        }
+    }
+
+    fn set_target(&mut self, _t: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "metabolize".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0
+    }
+
+    fn to_text(&self) -> String {
+        format!("increase metabolism momentarily")
+    }
+}
