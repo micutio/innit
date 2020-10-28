@@ -6,6 +6,7 @@ license = "MIT License"
 edition = "2018"
 
 [dependencies]
+dirs = "3.0.1"
 cpuprofiler = "0.0.4"
 log = "0.4"
 num = "0.3.0"
