@@ -72,21 +72,17 @@ impl Ai for RandomAi {
         {
             return Box::new(PassAction);
         }
+
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
         // that can be used with these targets.
         let adjacent_targets: Vec<&Object> = game_objects
             .get_vector()
             .iter()
-            .filter(|obj| match obj {
-                Some(o) => {
-                    !((o.x - object.x).abs() > 1
-                        || (o.y - object.y).abs() > 1
-                        || ((o.x - object.x) - (o.y - object.y)).abs() != 1
-                        || !o.physics.is_blocking && game_objects.is_blocked_by_object(o.x, o.y))
-                }
-                None => false,
+            .flatten()
+            .filter(|obj| {
+                object.pos.is_adjacent(&obj.pos) && game_objects.is_pos_occupied(&obj.pos)
             })
-            .filter_map(|o| o.as_ref())
+            // .filter_map(|o| o.as_ref())
             .collect();
 
         // dbg!("adjacent target count: {:?}", &adjacent_targets.len());
@@ -146,12 +142,7 @@ impl Ai for RandomAi {
                         .filter(|at| at.physics.is_blocking)
                         .choose(game_rng)
                     {
-                        boxed_action.set_target(Target::from_xy(
-                            object.x,
-                            object.y,
-                            target_obj.x,
-                            target_obj.y,
-                        ))
+                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
                 }
                 TargetCategory::EmptyObject => {
@@ -160,22 +151,12 @@ impl Ai for RandomAi {
                         .filter(|at| !at.physics.is_blocking)
                         .choose(game_rng)
                     {
-                        boxed_action.set_target(Target::from_xy(
-                            object.x,
-                            object.y,
-                            target_obj.x,
-                            target_obj.y,
-                        ))
+                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
                 }
                 TargetCategory::Any => {
                     if let Some(target_obj) = adjacent_targets.choose(game_rng) {
-                        boxed_action.set_target(Target::from_xy(
-                            object.x,
-                            object.y,
-                            target_obj.x,
-                            target_obj.y,
-                        ))
+                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
                 }
             }

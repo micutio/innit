@@ -7,7 +7,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
-use crate::entity::object::Object;
+use crate::entity::object::{Object, Position};
 use crate::game::{game_loop, load_game, new_game, save_game};
 use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
@@ -56,7 +56,10 @@ impl GameFrontend {
     pub fn new() -> Self {
         let root = Root::initializer()
             // .font("assets/tilesets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
-            .font("assets/tilesets/rogue_yun_16x16.png", FontLayout::AsciiInRow)
+            .font(
+                "assets/tilesets/rogue_yun_16x16.png",
+                FontLayout::AsciiInRow,
+            )
             // .font("assets/tilesets/zilk_16x16.png", FontLayout::AsciiInRow)
             .font_type(FontType::Greyscale)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -234,8 +237,8 @@ fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     if let Some(ref player) = game_objects[PLAYER] {
         // println!("recomputing FOV: {}", player.sensors.sensing_range);
         game_frontend.fov.compute_fov(
-            player.x,
-            player.y,
+            player.pos.x,
+            player.pos.y,
             player.sensors.sensing_range,
             FOV_LIGHT_WALLS,
             FOV_ALG,
@@ -263,10 +266,10 @@ fn init_object_visuals(
 /// Update the player's field of view and updated which tiles are visible/explored.
 fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
     // go through all tiles and set their background color
-    let mut player_pos: (i32, i32) = (0, 0);
+    let mut player_pos: Position = Position::new(0, 0);
     let mut player_sensing_range: f32 = 0.0;
     if let Some(ref mut player) = game_objects[PLAYER] {
-        player_pos = (player.x, player.y);
+        player_pos.set(player.pos.x, player.pos.y);
         player_sensing_range = player.sensors.sensing_range as f32;
         player.visual.color = game_frontend.coloring.player;
     }
@@ -301,12 +304,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fwft,
                             fwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
+                            tile_object.pos.distance(&player_pos) / player_sensing_range,
                         ),
                         colors::lerp(
                             bwft,
                             bwff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
+                            tile_object.pos.distance(&player_pos) / player_sensing_range,
                         ),
                     ),
                     // (true, false) => COLOR_ground_in_fov,
@@ -314,12 +317,12 @@ fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameOb
                         colors::lerp(
                             fgft,
                             fgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
+                            tile_object.pos.distance(&player_pos) / player_sensing_range,
                         ),
                         colors::lerp(
                             bgft,
                             bgff,
-                            tile_object.distance(player_pos.0, player_pos.1) / player_sensing_range,
+                            tile_object.pos.distance(&player_pos) / player_sensing_range,
                         ),
                     ),
                 };
@@ -429,7 +432,7 @@ pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjec
         .flatten()
         .filter(|o| {
             // FIXME: there must be a better way than using `and_then`.
-            game_frontend.fov.is_in_fov(o.x, o.y)
+            game_frontend.fov.is_in_fov(o.pos.x, o.pos.y)
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
                 || (o.tile.is_some() && DEBUG_MODE)
@@ -448,8 +451,8 @@ pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjec
 fn draw_object(object: &Object, con: &mut dyn Console) {
     con.set_default_foreground(object.visual.color);
     con.put_char(
-        object.x,
-        object.y,
+        object.pos.x,
+        object.pos.y,
         object.visual.character,
         BackgroundFlag::None,
     );

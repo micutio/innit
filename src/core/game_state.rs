@@ -137,9 +137,9 @@ impl GameState {
                             debug!(
                                 "sensing range: {}, dist: {}",
                                 player.sensors.sensing_range as f32,
-                                player.distance_to(&active_object)
+                                player.pos.distance(&active_object.pos)
                             );
-                            if player.distance_to(&active_object)
+                            if player.pos.distance(&active_object.pos)
                                 <= player.sensors.sensing_range as f32
                             {
                                 // don't record all tiles passing constantly
@@ -188,7 +188,7 @@ impl GameState {
                         if self.current_obj_index == PLAYER {
                             // if we have the player, then it will surely be in it's own fov
                             ObjectProcResult::UpdateFOV
-                        } else if fov_map.is_in_fov(actor.x, actor.y) {
+                        } else if fov_map.is_in_fov(actor.pos.x, actor.pos.y) {
                             // if the acting object is inside the FOV now, trigger a re-render
                             ObjectProcResult::ReRender
                         } else {
@@ -197,7 +197,7 @@ impl GameState {
                     }
                     // only play animations if the object is visible to our hero
                     ObjectProcResult::Animate { anim_type } => {
-                        if fov_map.is_in_fov(actor.x, actor.y) {
+                        if fov_map.is_in_fov(actor.pos.x, actor.pos.y) {
                             ObjectProcResult::Animate { anim_type }
                         } else {
                             ObjectProcResult::NoFeedback

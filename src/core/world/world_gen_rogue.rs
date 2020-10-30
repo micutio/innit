@@ -7,8 +7,8 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
+use crate::entity::object::Position;
 use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
-// use crate::player::PLAYER;
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::GameRng;
 
@@ -189,7 +189,7 @@ fn place_objects(
         let x = game_rng.gen_range(room.x1 + 1, room.x2);
         let y = game_rng.gen_range(room.y1 + 1, room.y2);
 
-        if !objects.is_blocked(x, y) {
+        if !objects.is_pos_occupied(&Position::new(x, y)) {
             let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
                 "virus" => new_monster(game_rng, &gene_library, Monster::Virus, x, y, level),
                 "bacteria" => new_monster(game_rng, &gene_library, Monster::Bacteria, x, y, level),

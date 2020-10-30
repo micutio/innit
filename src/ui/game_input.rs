@@ -388,7 +388,7 @@ fn get_names_under_mouse(
         .get_vector()
         .iter()
         .flatten()
-        .filter(|o| o.pos() == (mouse_x, mouse_y) && fov_map.is_in_fov(o.x, o.y))
+        .filter(|o| o.pos.is_eq(mouse_x, mouse_y) && fov_map.is_in_fov(o.pos.x, o.pos.y))
         .map(|o| o.visual.name.clone())
         .collect::<Vec<_>>()
         .join(", ")

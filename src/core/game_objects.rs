@@ -2,7 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use crate::core::world::world_gen::Tile;
 use crate::entity::genetics::{GeneLibrary, GENE_LEN};
-use crate::entity::object::Object;
+use crate::entity::object::{Object, Position};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::player::PLAYER;
 use crate::util::game_rng::GameRng;
@@ -118,22 +118,21 @@ impl GameObjects {
         }
     }
 
-    /// Check whether there is an objects blocking access to the given world coordinate
-    pub fn is_blocked(&self, x: i32, y: i32) -> bool {
+    /// Check whether there is an object, tile or not, blocking access to the given world coordinate
+    pub fn is_pos_blocked(&self, p: &Position) -> bool {
         self.obj_vec
             .iter()
             .flatten()
-            .any(|object| object.physics.is_blocking && object.pos() == (x, y))
+            .any(|object| object.physics.is_blocking && object.pos.is_equal(p))
     }
 
-    pub fn is_blocked_by_object(&self, x: i32, y: i32) -> bool {
+    /// Check whether there is any object located at the given position.
+    /// The position may or may not be blocked.
+    pub fn is_pos_occupied(&self, p: &Position) -> bool {
         self.get_non_tiles()
             .iter()
-            .find(|obj| match obj {
-                Some(o) => o.x == x && o.y == y,
-                None => false,
-            })
-            .is_some()
+            .flatten()
+            .any(|object| object.pos.is_equal(p))
     }
 
     pub fn get_num_objects(&self) -> usize {

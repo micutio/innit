@@ -7,7 +7,6 @@ use std::io::{Read, Write};
 use std::thread::{self};
 use std::time::{Duration, Instant};
 
-use dirs::data_local_dir;
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
@@ -21,8 +20,6 @@ use crate::entity::object::Object;
 use crate::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
-
-const SAVEGAME: &str = "savegame";
 
 pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
 

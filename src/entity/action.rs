@@ -7,7 +7,7 @@ use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
-use crate::entity::object::Object;
+use crate::entity::object::{Object, Position};
 
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 #[derive(Clone, Debug, PartialEq)]
@@ -28,18 +28,18 @@ pub enum Target {
 }
 
 impl Target {
-    fn to_xy(&self) -> (i32, i32) {
+    fn to_pos(&self) -> Position {
         match self {
-            Target::North => (0, -1),
-            Target::South => (0, 1),
-            Target::East => (1, 0),
-            Target::West => (-1, 0),
-            Target::Center => (0, 0),
+            Target::North => Position::new(0, -1),
+            Target::South => Position::new(0, 1),
+            Target::East => Position::new(1, 0),
+            Target::West => Position::new(-1, 0),
+            Target::Center => Position::new(0, 0),
         }
     }
 
-    pub fn from_xy(x1: i32, y1: i32, x2: i32, y2: i32) -> Target {
-        match (x2 - x1, y2 - y1) {
+    pub fn from_pos(p1: &Position, p2: &Position) -> Target {
+        match p1.offset(p2) {
             (0, -1) => Target::North,
             (0, 1) => Target::South,
             (1, 0) => Target::East,
@@ -172,15 +172,12 @@ impl Action for AttackAction {
         // find any objects that are at that position and blocking
         // assert that there is only one available
         // return
-        let target_pos: (i32, i32) = (
-            owner.x + self.target.to_xy().0,
-            owner.y + self.target.to_xy().1,
-        );
+        let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         let valid_targets: Vec<&Object> = objects
             .get_vector()
             .iter()
             .flatten()
-            .filter(|o| o.physics.is_blocking && o.pos().eq(&target_pos))
+            .filter(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos))
             .collect();
 
         assert!(valid_targets.len() <= 1);
@@ -244,10 +241,9 @@ impl Action for MoveAction {
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
-        let (dx, dy) = self.direction.to_xy();
-        let (x, y) = owner.pos();
-        if !&objects.is_blocked(x + dx, y + dy) {
-            owner.set_pos(x + dx, y + dy);
+        let target_pos = owner.pos.get_translated(&self.direction.to_pos());
+        if !&objects.is_pos_blocked(&target_pos) {
+            owner.pos.set(target_pos.x, target_pos.y);
             ActionResult::Success {
                 callback: ObjectProcResult::CheckEnterFOV,
             }

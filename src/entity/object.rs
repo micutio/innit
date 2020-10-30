@@ -25,23 +25,72 @@ use std::fmt;
 /// influenced or amplified by certain attributes.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Object {
-    pub x: i32,
-    pub y: i32,
+    // TODO: Add plasmids, antigen-markers
     pub alive: bool,
     pub gene_stability: f64,
-    pub dna: Dna,
+    pub pos: Position,
     pub visual: Visual,
     pub physics: Physics,
+    pub tile: Option<Tile>,
+    pub ai: Option<Box<dyn Ai>>,
+    pub dna: Dna,
     pub sensors: Sensors,
     pub processors: Processors,
     pub actuators: Actuators,
-    pub tile: Option<Tile>,
-    pub ai: Option<Box<dyn Ai>>,
     next_action: Option<Box<dyn Action>>,
     pub primary_action: Box<dyn Action>,
     pub secondary_action: Box<dyn Action>,
     pub quick1_action: Box<dyn Action>,
     pub quick2_action: Box<dyn Action>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Position {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Position {
+    pub fn new(x: i32, y: i32) -> Self {
+        Position { x, y }
+    }
+
+    pub fn is_equal(&self, other: &Position) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+
+    pub fn is_eq(&self, x: i32, y: i32) -> bool {
+        self.x == x && self.y == y
+    }
+
+    pub fn set(&mut self, a: i32, b: i32) {
+        self.x = a;
+        self.y = b;
+    }
+
+    pub fn is_adjacent(&self, other: &Position) -> bool {
+        (other.x - self.x).abs() > 1
+            || (other.y - self.y).abs() > 1
+            || ((other.x - self.x) - (other.y - self.y)).abs() != 1
+    }
+
+    pub fn offset(&self, other: &Position) -> (i32, i32) {
+        (other.x - self.x, other.y - self.y)
+    }
+
+    pub fn translate(&mut self, offset: &Position) {
+        self.x += offset.x;
+        self.y += offset.y;
+    }
+
+    pub fn get_translated(&self, offset: &Position) -> Position {
+        Position::new(self.x + offset.x, self.y + offset.y)
+    }
+
+    /// Return distance of this object to a given coordinate.
+    pub fn distance(&self, other: &Position) -> f32 {
+        (((other.x - self.x).pow(2) + (other.y - self.y).pow(2)) as f32).sqrt()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -86,18 +135,17 @@ impl Object {
     /// The Object constructor uses the builder pattern.
     pub fn new() -> Self {
         Object {
-            x: 0,
-            y: 0,
+            pos: Position::new(0, 0),
             alive: false,
             gene_stability: 1.0,
+            tile: None,
+            ai: None,
             dna: Dna::new(),
             visual: Visual::new(),
             physics: Physics::new(),
             sensors: Sensors::new(),
             processors: Processors::new(),
             actuators: Actuators::new(),
-            tile: None,
-            ai: None,
             next_action: None,
             primary_action: Box::new(PassAction),
             secondary_action: Box::new(PassAction),
@@ -108,8 +156,7 @@ impl Object {
 
     /// Set the object's position in the world. Part of the builder pattern.
     pub fn position(mut self, x: i32, y: i32) -> Object {
-        self.x = x;
-        self.y = y;
+        self.pos = Position::new(x, y);
         self
     }
 
@@ -172,16 +219,16 @@ impl Object {
         )
     }
 
-    /// Retrieve the current position of the object.
-    pub fn pos(&self) -> (i32, i32) {
-        (self.x, self.y)
-    }
+    // /// Retrieve the current position of the object.
+    // pub fn pos(&self) -> (i32, i32) {
+    //     (self.x, self.y)
+    // }
 
-    /// Set the current position of the object.
-    pub fn set_pos(&mut self, x: i32, y: i32) {
-        self.x = x;
-        self.y = y;
-    }
+    // /// Set the current position of the object.
+    // pub fn set_pos(&mut self, x: i32, y: i32) {
+    //     self.x = x;
+    //     self.y = y;
+    // }
 
     /// Set the object's current dna and resulting super traits.
     pub fn change_genome(
@@ -209,18 +256,6 @@ impl Object {
                 self.visual.name, self.primary_action
             );
         }
-    }
-
-    /// Calculate the distance of this object to another object.
-    pub fn distance_to(&self, other: &Object) -> f32 {
-        let dx = other.x - self.x;
-        let dy = other.y - self.y;
-        ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
-    }
-
-    /// Return distance of this object to a given coordinate.
-    pub fn distance(&self, x: i32, y: i32) -> f32 {
-        (((x - self.x).pow(2) + (y - self.y).pow(2)) as f32).sqrt()
     }
 
     /// Determine and return the next action the object will take.
@@ -303,8 +338,8 @@ impl fmt::Display for Object {
             "{} [{}] at ({},{}), alive: {}, energy: {}",
             self.visual.name,
             self.visual.character,
-            self.x,
-            self.y,
+            self.pos.x,
+            self.pos.y,
             self.alive,
             self.processors.energy
         )
