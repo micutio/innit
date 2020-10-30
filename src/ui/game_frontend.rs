@@ -55,7 +55,9 @@ impl GameFrontend {
     ///     - init permanent ui components
     pub fn new() -> Self {
         let root = Root::initializer()
-            .font("assets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
+            // .font("assets/tilesets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
+            .font("assets/tilesets/rogue_yun_16x16.png", FontLayout::AsciiInRow)
+            // .font("assets/tilesets/zilk_16x16.png", FontLayout::AsciiInRow)
             .font_type(FontType::Greyscale)
             .size(SCREEN_WIDTH, SCREEN_HEIGHT)
             .title("Innit alpha v0.0.2")
