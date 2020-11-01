@@ -11,31 +11,31 @@ fn test_dna_encoding() {
     let dna = vec![
         0x00,
         0x01,
-        gray_code[1], // sensing range
+        gray_code[4], // sensing range
         0x00,
         0x01,
-        gray_code[3], // quick action
+        gray_code[5], // enzyme
         0x00,
         0x01,
-        gray_code[6], // move action
+        gray_code[1], // move action
     ];
     // create artifical sensor component for comparison
     let s = Sensors {
-        actions: Vec::new(),
-        sensing_range: 0,
+        actions: vec![],
+        sensing_range: 2,
     };
 
     let p = Processors {
         actions: vec![],
-        metabolism: 10,
-        energy_storage: 10,
-        energy: 10,
+        metabolism: 1,
+        energy_storage: 1,
+        energy: 0,
     };
 
     let a = Actuators {
         actions: vec![Box::new(MoveAction::new())],
-        max_hp: 0,
-        hp: 0,
+        max_hp: 1,
+        hp: 1,
     };
 
     let (_s, _p, _a, _) = gene_lib.decode_dna(&dna);
@@ -58,6 +58,7 @@ fn test_dna_encoding() {
     //     .filter(|(&a, &b)| a.get_target_category() != b.get_target_category())
     //     .count();
     // assert_eq!(p_match_errors, 0);
+    println!("{:#?}", _p.actions);
     assert_eq!(p.actions.len(), _p.actions.len());
     assert_eq!(a.max_hp, _a.max_hp);
     // let a_match_errors = a

@@ -126,7 +126,7 @@ impl GameObjects {
             .any(|object| object.physics.is_blocking && object.pos.is_equal(p))
     }
 
-    /// Check whether there is any object located at the given position.
+    /// Check whether there is any non-tile object located at the given position.
     /// The position may or may not be blocked.
     pub fn is_pos_occupied(&self, p: &Position) -> bool {
         self.get_non_tiles()

@@ -180,7 +180,7 @@ impl Action for AttackAction {
             .filter(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos))
             .collect();
 
-        assert!(valid_targets.len() <= 1);
+        assert!(valid_targets.len() >= 1);
         if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {

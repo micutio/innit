@@ -80,12 +80,13 @@ impl Ai for RandomAi {
             .iter()
             .flatten()
             .filter(|obj| {
-                object.pos.is_adjacent(&obj.pos) && game_objects.is_pos_occupied(&obj.pos)
+                object.pos.is_adjacent(&obj.pos)
+                    && (obj.physics.is_blocking || !game_objects.is_pos_occupied(&obj.pos))
             })
             // .filter_map(|o| o.as_ref())
             .collect();
 
-        // dbg!("adjacent target count: {:?}", &adjacent_targets.len());
+        println!("adjacent target count: {:?}", &adjacent_targets.len());
 
         let mut valid_targets = vec![
             TargetCategory::None,
