@@ -9,48 +9,46 @@ use std::time::{Duration, Instant};
 
 use tcod::colors;
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
-
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::PassAction;
 use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
-use crate::player::PLAYER;
+use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
 
 pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
-
-// TODO: Make this changeable via command line flag!
-pub const DEBUG_MODE: bool = false;
 
 // world constraints
 pub const WORLD_WIDTH: i32 = 80;
 pub const WORLD_HEIGHT: i32 = 43;
 
 /// Create a new game by instantiating the game engine, game state and object vector.
-pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
+pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     // create game state holding game-relevant information
     let level = 1;
-    let mut game_state = GameState::new(level);
+    let mut game_state = GameState::new(env, level);
 
     // create blank game world
     let mut game_objects = GameObjects::new();
-    game_objects.blank_world();
+    game_objects.blank_world(&env);
 
     // generate world terrain
     // let mut world_generator = RogueWorldGenerator::new();
     let mut world_generator = OrganicsWorldGenerator::new();
     world_generator.make_world(
+        &env,
         game_frontend,
         &mut game_objects,
-        &mut game_state.game_rng,
+        &mut game_state.rng,
         &mut game_state.gene_library,
         level,
     );
-    game_objects.set_tiles_dna(&mut game_state.game_rng, &game_state.gene_library);
+    game_objects.set_tiles_dna(&mut game_state.rng, &game_state.gene_library);
 
     // create object representing the player
     let (new_x, new_y) = world_generator.get_player_start_pos();
@@ -63,7 +61,7 @@ pub fn new_game(game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
             0.99,
             game_state
                 .gene_library
-                .new_genetics(&mut game_state.game_rng, GENE_LEN),
+                .new_genetics(&mut game_state.rng, GENE_LEN),
         );
 
     debug!("created player object {}", player);

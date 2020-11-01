@@ -3,14 +3,15 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::entity::object::{Object, Position};
+use crate::entity::player::PLAYER;
 use crate::game::{game_loop, load_game, new_game, save_game};
-use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
-use crate::player::PLAYER;
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
 use crate::ui::game_input::{GameInput, UiAction};
@@ -108,7 +109,7 @@ pub enum AnimationType {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-pub fn main_menu(game_frontend: &mut GameFrontend) {
+pub fn main_menu(env: GameEnv, game_frontend: &mut GameFrontend) {
     let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
         .expect("Background image not found");
 
@@ -148,7 +149,7 @@ pub fn main_menu(game_frontend: &mut GameFrontend) {
         match choice {
             Some(0) => {
                 // start new game
-                let (mut game_state, mut game_objects) = new_game(game_frontend);
+                let (mut game_state, mut game_objects) = new_game(env, game_frontend);
                 // initialize_fov(game_frontend, &mut objects);
                 let mut game_input = GameInput::new();
                 init_object_visuals(
@@ -415,17 +416,17 @@ pub fn re_render(
 /// Is there a way to auto-update explored and visible tiles/objects when the player moves?
 /// But visibility can also be influenced by other things.
 fn render_all(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    game_objects: &GameObjects,
+    frontend: &mut GameFrontend,
+    state: &mut GameState,
+    objects: &GameObjects,
     names_under_mouse: &str,
 ) {
-    render_objects(game_frontend, game_objects);
-    render_ui(game_frontend, game_state, game_objects, names_under_mouse);
-    blit_consoles(game_frontend);
+    render_objects(&state.env, frontend, objects);
+    render_ui(frontend, state, objects, names_under_mouse);
+    blit_consoles(frontend);
 }
 
-pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
+pub fn render_objects(env: &GameEnv, game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
     let mut to_draw: Vec<&Object> = game_objects
         .get_vector()
         .iter()
@@ -435,7 +436,7 @@ pub fn render_objects(game_frontend: &mut GameFrontend, game_objects: &GameObjec
             game_frontend.fov.is_in_fov(o.pos.x, o.pos.y)
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-                || (o.tile.is_some() && DEBUG_MODE)
+                || (o.tile.is_some() && env.debug_mode)
         })
         .collect();
 

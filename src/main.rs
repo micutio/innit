@@ -13,15 +13,17 @@ extern crate tcod;
 mod core;
 mod entity;
 mod game;
-mod player;
 mod test;
 mod ui;
 mod util;
 
+use std::env;
+
+use crate::core::game_env::GameEnv;
 use crate::ui::game_frontend::{main_menu, GameFrontend};
 
-pub fn launch_game() {
-    main_menu(&mut GameFrontend::new());
+pub fn launch_game(env: GameEnv) {
+    main_menu(env, &mut GameFrontend::new());
 }
 
 /// For game testing run with
@@ -29,5 +31,18 @@ pub fn launch_game() {
 /// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 pub fn main() {
     pretty_env_logger::init();
-    launch_game();
+    let mut game_env: GameEnv = GameEnv::new();
+
+    let args: Vec<String> = env::args().collect();
+    println!("args: {:?}", args);
+
+    for arg in args {
+        if arg.eq("-d") || arg.eq("--debug") {
+            game_env.set_debug_mode(true);
+        }
+    }
+
+    // TODO: Create game environment from presets and command line flags!
+
+    launch_game(game_env);
 }

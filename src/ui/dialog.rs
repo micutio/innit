@@ -6,7 +6,7 @@ use tcod::{chars, console::*, input::Key};
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
-use crate::player::PLAYER;
+use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{
     GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH,
 };

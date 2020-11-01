@@ -4,11 +4,11 @@
 
 use tcod::colors;
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::entity::ai::{PassiveAi, RandomAi};
 use crate::entity::genetics::{GeneLibrary, GENE_LEN};
 use crate::entity::object::Object;
-use crate::game::DEBUG_MODE;
 use crate::ui::game_frontend::GameFrontend;
 use crate::util::game_rng::GameRng;
 
@@ -17,6 +17,7 @@ use crate::util::game_rng::GameRng;
 pub trait WorldGen {
     fn make_world(
         &mut self,
+        env: &GameEnv,
         game_frontend: &mut GameFrontend,
         game_objects: &mut GameObjects,
         game_rng: &mut GameRng,
@@ -35,23 +36,23 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn empty(x: i32, y: i32) -> Object {
+    pub fn empty(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position(x, y)
             .living(true)
             .visualize("empty tile", '\u{fa}', colors::WHITE)
-            .physical(false, false, DEBUG_MODE)
-            .tile_explored(DEBUG_MODE)
+            .physical(false, false, is_visible)
+            .tile_explored(is_visible)
             .ai(Box::new(PassiveAi::new()))
     }
 
-    pub fn wall(x: i32, y: i32) -> Object {
+    pub fn wall(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position(x, y)
             .living(true)
             .visualize("wall tile", '\t', colors::WHITE)
-            .physical(true, true, DEBUG_MODE)
-            .tile_explored(DEBUG_MODE)
+            .physical(true, true, is_visible)
+            .tile_explored(is_visible)
             .ai(Box::new(PassiveAi::new()))
     }
 }

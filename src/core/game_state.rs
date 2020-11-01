@@ -2,11 +2,12 @@ use rand::{Rng, RngCore};
 
 use tcod::colors::{self, Color};
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
-use crate::player::PLAYER;
+use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::util::game_rng::{GameRng, RngExtended};
 
@@ -39,23 +40,25 @@ pub enum ObjectProcResult {
 /// game, EXCEPT the object vector.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
+    pub env: GameEnv,
+    pub rng: GameRng,
     pub log: Messages,
     pub turn: u128,
     pub dungeon_level: u32,
-    pub game_rng: GameRng,
     pub gene_library: GeneLibrary,
     current_obj_index: usize,
 }
 
 impl GameState {
-    pub fn new(level: u32) -> Self {
+    pub fn new(env: GameEnv, level: u32) -> Self {
         GameState {
             // create the list of game messages and their colours, starts empty
+            env,
+            rng: GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
             log: vec![],
             turn: 0,
             dungeon_level: level,
             // game_rng:          GameRng::from_seed(RNG_SEED),
-            game_rng: GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
             gene_library: GeneLibrary::new(),
             current_obj_index: 0,
         }
@@ -87,8 +90,7 @@ impl GameState {
             if active_object.processors.energy < active_object.processors.energy_storage {
                 process_result = ObjectProcResult::NoFeedback;
                 active_object.metabolize();
-            } else if let Some(next_action) =
-                active_object.get_next_action(objects, &mut self.game_rng)
+            } else if let Some(next_action) = active_object.get_next_action(objects, &mut self.rng)
             {
                 let energy_cost = next_action.get_energy_cost();
 
@@ -104,18 +106,16 @@ impl GameState {
                         println!("{} dna is empty!", active_object.visual.name);
                     }
                     if !active_object.dna.raw.is_empty()
-                        && self
-                            .game_rng
-                            .flip_with_prob(1.0 - active_object.gene_stability)
+                        && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
                     {
                         // mutate the object's genome by randomly flipping a bit
-                        let random_gene = self.game_rng.gen_range(0, active_object.dna.raw.len());
+                        let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
                         let old_gene = active_object.dna.raw[random_gene];
                         debug!(
                             "{} flipping gene: 0b{:08b}",
                             active_object.visual.name, active_object.dna.raw[random_gene]
                         );
-                        active_object.dna.raw[random_gene] ^= self.game_rng.random_bit();
+                        active_object.dna.raw[random_gene] ^= self.rng.random_bit();
                         debug!(
                             "{}            to: 0b{:08b}",
                             active_object.visual.name, active_object.dna.raw[random_gene]

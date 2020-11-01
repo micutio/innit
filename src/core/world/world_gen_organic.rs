@@ -3,13 +3,13 @@ use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Position;
-use crate::game::DEBUG_MODE;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::{GameRng, RngExtended};
 
 use std::collections::HashSet;
 
+use crate::core::game_env::GameEnv;
 use tcod::console::*;
 
 const CA_CYCLES: i32 = 45;
@@ -33,9 +33,10 @@ impl WorldGen for OrganicsWorldGenerator {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
-        game_frontend: &mut GameFrontend,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        env: &GameEnv,
+        frontend: &mut GameFrontend,
+        objects: &mut GameObjects,
+        rng: &mut GameRng,
         gene_library: &mut GeneLibrary,
         level: u32,
     ) {
@@ -44,13 +45,13 @@ impl WorldGen for OrganicsWorldGenerator {
         let mid_y = WORLD_HEIGHT / 2;
         for y in mid_y - 2..mid_y + 2 {
             for x in mid_x - 2..mid_x + 2 {
-                game_objects
+                objects
                     .get_tile_at(x as usize, y as usize)
-                    .replace(Tile::empty(x, y));
+                    .replace(Tile::empty(x, y, env.debug_mode));
                 self.player_start = (x, y);
                 // println!("#1 flipped {}, {}", x, y);
             }
-            visualize_map(game_frontend, game_objects);
+            visualize_map(env, frontend, objects);
         }
 
         let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
@@ -59,25 +60,25 @@ impl WorldGen for OrganicsWorldGenerator {
             for y in 2..WORLD_HEIGHT - 2 {
                 for x in 2..WORLD_WIDTH - 2 {
                     // note whether a cell has changed
-                    if update_from_neighbours(game_objects, game_rng, x, y) {
+                    if update_from_neighbours(objects, rng, x, y) {
                         changed_tiles.insert((x, y));
                     }
                 }
             }
             // perform actual update
             for (j, k) in &changed_tiles {
-                game_objects
+                objects
                     .get_tile_at(*j as usize, *k as usize)
-                    .replace(Tile::empty(*j, *k));
+                    .replace(Tile::empty(*j, *k, env.debug_mode));
             }
             changed_tiles.clear();
-            visualize_map(game_frontend, game_objects);
+            visualize_map(env, frontend, objects);
         }
 
         // world gen done, now insert objects
         place_objects(
-            game_objects,
-            game_rng,
+            objects,
+            rng,
             gene_library,
             level,
             Transition {
@@ -92,13 +93,13 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
-fn visualize_map(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
-    if DEBUG_MODE {
+fn visualize_map(env: &GameEnv, game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
+    if env.debug_mode {
         // let ten_millis = time::Duration::from_millis(100);
         // thread::sleep(ten_millis);
 
         game_frontend.con.clear();
-        render_objects(game_frontend, game_objects);
+        render_objects(env, game_frontend, game_objects);
         blit_consoles(game_frontend);
         game_frontend.root.flush();
     }

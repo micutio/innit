@@ -3,12 +3,13 @@ use std::{cmp, thread, time};
 
 use tcod::console::*;
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Position;
-use crate::game::{DEBUG_MODE, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::GameRng;
 
@@ -37,9 +38,10 @@ impl RogueWorldGenerator {
 impl WorldGen for RogueWorldGenerator {
     fn make_world(
         &mut self,
-        game_frontend: &mut GameFrontend,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        env: &GameEnv,
+        frontend: &mut GameFrontend,
+        objects: &mut GameObjects,
+        rng: &mut GameRng,
         gene_library: &mut GeneLibrary,
         level: u32,
     ) {
@@ -48,12 +50,12 @@ impl WorldGen for RogueWorldGenerator {
 
         for _ in 0..MAX_ROOMS {
             // random width and height
-            let w = game_rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
-            let h = game_rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let w = rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let h = rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
 
             // random position without exceeding the boundaries of the map
-            let x = game_rng.gen_range(0, WORLD_WIDTH - w);
-            let y = game_rng.gen_range(0, WORLD_HEIGHT - h);
+            let x = rng.gen_range(0, WORLD_WIDTH - w);
+            let y = rng.gen_range(0, WORLD_HEIGHT - h);
 
             // create room and store in vector
             let new_room = Rect::new(x, y, w, h);
@@ -64,10 +66,10 @@ impl WorldGen for RogueWorldGenerator {
 
             if !failed {
                 // no intersections, we have a valid room.
-                create_room(game_objects, new_room);
+                create_room(env, objects, new_room);
 
                 // add some content to the room
-                place_objects(game_objects, game_rng, gene_library, new_room, level);
+                place_objects(objects, rng, gene_library, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -85,26 +87,26 @@ impl WorldGen for RogueWorldGenerator {
                     // connect both rooms with a horizontal and a vertical tunnel - in random order
                     if rand::random() {
                         // move horizontally, then vertically
-                        create_h_tunnel(game_objects, prev_x, new_x, prev_y);
-                        create_v_tunnel(game_objects, prev_y, new_y, new_x);
+                        create_h_tunnel(env, objects, prev_x, new_x, prev_y);
+                        create_v_tunnel(env, objects, prev_y, new_y, new_x);
                     } else {
                         // move vertically, then horizontally
-                        create_v_tunnel(game_objects, prev_y, new_y, prev_x);
-                        create_h_tunnel(game_objects, prev_x, new_x, new_y);
+                        create_v_tunnel(env, objects, prev_y, new_y, prev_x);
+                        create_h_tunnel(env, objects, prev_x, new_x, new_y);
                     }
                 }
                 // finally, append new room to list
                 self.rooms.push(new_room);
             }
 
-            if DEBUG_MODE {
+            if env.debug_mode {
                 let ten_millis = time::Duration::from_millis(100);
                 thread::sleep(ten_millis);
 
-                game_frontend.con.clear();
-                render_objects(game_frontend, game_objects);
-                blit_consoles(game_frontend);
-                game_frontend.root.flush();
+                frontend.con.clear();
+                render_objects(env, frontend, objects);
+                blit_consoles(frontend);
+                frontend.root.flush();
             }
         }
     }
@@ -114,29 +116,29 @@ impl WorldGen for RogueWorldGenerator {
     }
 }
 
-fn create_room(objects: &mut GameObjects, room: Rect) {
+fn create_room(env: &GameEnv, objects: &mut GameObjects, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
                 .get_tile_at(x as usize, y as usize)
-                .replace(Tile::empty(x, y));
+                .replace(Tile::empty(x, y, env.debug_mode));
         }
     }
 }
 
-fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
+fn create_h_tunnel(env: &GameEnv, objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y));
+            .replace(Tile::empty(x, y, env.debug_mode));
     }
 }
 
-fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
+fn create_v_tunnel(env: &GameEnv, objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y));
+            .replace(Tile::empty(x, y, env.debug_mode));
     }
 }
 

@@ -1,10 +1,11 @@
 use std::ops::{Index, IndexMut};
 
+use crate::core::game_env::GameEnv;
 use crate::core::world::world_gen::Tile;
 use crate::entity::genetics::{GeneLibrary, GENE_LEN};
 use crate::entity::object::{Object, Position};
+use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::player::PLAYER;
 use crate::util::game_rng::GameRng;
 
 /// The game object struct contains all game objects, including
@@ -38,7 +39,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn blank_world(&mut self) {
+    pub fn blank_world(&mut self, env: &GameEnv) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
@@ -46,7 +47,7 @@ impl GameObjects {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y));
+                    .replace(Tile::wall(x, y, env.debug_mode));
             }
         }
     }
