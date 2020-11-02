@@ -1,6 +1,6 @@
 #[test]
 fn test_adjacent() {
-    use crate::entity::object::Position;
+    use crate::core::position::Position;
 
     let pos_1 = Position::new(10, 10);
     let pos_2 = Position::new(10, 10);

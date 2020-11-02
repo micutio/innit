@@ -1,9 +1,10 @@
 use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
+use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
-use crate::entity::ai::Ai;
+use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::util::game_rng::GameRng;
 
@@ -32,65 +33,11 @@ pub struct Object {
     pub visual: Visual,
     pub physics: Physics,
     pub tile: Option<Tile>,
-    pub ai: Option<Box<dyn Ai>>,
+    pub control: Option<Controller>,
     pub dna: Dna,
     pub sensors: Sensors,
     pub processors: Processors,
     pub actuators: Actuators,
-    next_action: Option<Box<dyn Action>>,
-    pub primary_action: Box<dyn Action>,
-    pub secondary_action: Box<dyn Action>,
-    pub quick1_action: Box<dyn Action>,
-    pub quick2_action: Box<dyn Action>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Position {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl Position {
-    pub fn new(x: i32, y: i32) -> Self {
-        Position { x, y }
-    }
-
-    pub fn is_equal(&self, other: &Position) -> bool {
-        self.x == other.x && self.y == other.y
-    }
-
-    pub fn is_eq(&self, x: i32, y: i32) -> bool {
-        self.x == x && self.y == y
-    }
-
-    pub fn set(&mut self, a: i32, b: i32) {
-        self.x = a;
-        self.y = b;
-    }
-
-    pub fn is_adjacent(&self, other: &Position) -> bool {
-        (other.x - self.x).abs() <= 1
-            && (other.y - self.y).abs() <= 1
-            && ((other.x - self.x) - (other.y - self.y)).abs() == 1
-    }
-
-    pub fn offset(&self, other: &Position) -> (i32, i32) {
-        (other.x - self.x, other.y - self.y)
-    }
-
-    pub fn translate(&mut self, offset: &Position) {
-        self.x += offset.x;
-        self.y += offset.y;
-    }
-
-    pub fn get_translated(&self, offset: &Position) -> Position {
-        Position::new(self.x + offset.x, self.y + offset.y)
-    }
-
-    /// Return distance of this object to a given coordinate.
-    pub fn distance(&self, other: &Position) -> f32 {
-        (((other.x - self.x).pow(2) + (other.y - self.y).pow(2)) as f32).sqrt()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -139,18 +86,13 @@ impl Object {
             alive: false,
             gene_stability: 1.0,
             tile: None,
-            ai: None,
+            control: None,
             dna: Dna::new(),
             visual: Visual::new(),
             physics: Physics::new(),
             sensors: Sensors::new(),
             processors: Processors::new(),
             actuators: Actuators::new(),
-            next_action: None,
-            primary_action: Box::new(PassAction),
-            secondary_action: Box::new(PassAction),
-            quick1_action: Box::new(PassAction),
-            quick2_action: Box::new(PassAction),
         }
     }
 
@@ -208,7 +150,12 @@ impl Object {
 
     /// Transform the object into an NPC. Part of the builder pattern.
     pub fn ai(mut self, ai: Box<dyn Ai>) -> Object {
-        self.ai = Some(ai);
+        self.control = Some(Controller::Npc(ai));
+        self
+    }
+
+    pub fn player_ctrl(mut self, controller: PlayerCtrl) -> Object {
+        self.control = Some(Controller::Player(controller));
         self
     }
 
@@ -244,17 +191,19 @@ impl Object {
         self.dna = dna;
 
         // update default action
-        if let Some(def_action) = self
-            .actuators
-            .actions
-            .iter()
-            .find(|a| a.as_ref().get_identifier() == "move")
-        {
-            self.primary_action = def_action.clone_action();
-            debug!(
-                "{} new default action: {:#?}",
-                self.visual.name, self.primary_action
-            );
+        if let Some(Controller::Player(ref mut ctrl)) = &mut self.control {
+            if let Some(def_action) = self
+                .actuators
+                .actions
+                .iter()
+                .find(|a| a.as_ref().get_identifier() == "move")
+            {
+                ctrl.primary_action = def_action.clone_action();
+                debug!(
+                    "{} new default action: {:#?}",
+                    self.visual.name, ctrl.primary_action
+                );
+            }
         }
     }
 
@@ -265,62 +214,109 @@ impl Object {
         game_rng: &mut GameRng,
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
-        if let Some(ai) = self.ai.take() {
-            let next_ai_action = ai.act(self, game_objects, game_rng);
-            self.ai = Some(ai);
-            Some(next_ai_action)
-        } else {
-            self.next_action.take()
+        let mut controller = self.control.take();
+        let next_action;
+        match controller {
+            Some(Controller::Npc(ref mut boxed_ai)) => {
+                next_action = Some(boxed_ai.act(self, game_objects, game_rng));
+            }
+            Some(Controller::Player(ref mut player_ctrl)) => {
+                next_action = player_ctrl.next_action.take();
+            }
+            None => next_action = None,
         }
+        self.control = controller;
+        next_action
     }
 
     /// Inject the next action this object will take into the object.
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
-        self.next_action = next_action;
+        let mut controller = self.control.take();
+        if let Some(Controller::Player(ref mut ctrl)) = controller {
+            ctrl.next_action = next_action;
+        }
+        self.control = controller;
     }
 
     pub fn set_primary_action(&mut self, new_primary_action: Box<dyn Action>) {
-        self.primary_action = new_primary_action;
+        let mut controller = self.control.take();
+        if let Some(Controller::Player(ref mut ctrl)) = controller {
+            ctrl.primary_action = new_primary_action;
+        }
+        self.control = controller;
     }
 
     pub fn set_secondary_action(&mut self, new_secondary_action: Box<dyn Action>) {
-        self.secondary_action = new_secondary_action;
+        let mut controller = self.control.take();
+        if let Some(Controller::Player(ref mut ctrl)) = controller {
+            ctrl.secondary_action = new_secondary_action;
+        }
+        self.control = controller;
     }
 
     pub fn set_quick1_action(&mut self, new_quick1_action: Box<dyn Action>) {
-        self.quick1_action = new_quick1_action;
+        let mut controller = self.control.take();
+        if let Some(Controller::Player(ref mut ctrl)) = controller {
+            ctrl.quick1_action = new_quick1_action;
+        }
+        self.control = controller;
     }
 
     pub fn set_quick2_action(&mut self, new_quick2_action: Box<dyn Action>) {
-        self.quick2_action = new_quick2_action;
+        let mut controller = self.control.take();
+        if let Some(Controller::Player(ref mut ctrl)) = controller {
+            ctrl.quick2_action = new_quick2_action;
+        }
+        self.control = controller;
     }
 
     pub fn has_next_action(&self) -> bool {
-        self.next_action.is_some()
+        if let Some(Controller::Player(ctrl)) = &self.control {
+            ctrl.next_action.is_some()
+        } else {
+            false
+        }
     }
 
     pub fn get_primary_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
-        let mut action_clone = self.primary_action.clone();
-        action_clone.set_target(target);
-        action_clone
+        if let Some(Controller::Player(ctrl)) = &self.control {
+            let mut action_clone = ctrl.primary_action.clone();
+            action_clone.set_target(target);
+            action_clone
+        } else {
+            Box::new(PassAction)
+        }
     }
 
     pub fn get_secondary_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
-        let mut action_clone = self.secondary_action.clone();
-        action_clone.set_target(target);
-        action_clone
+        if let Some(Controller::Player(ctrl)) = &self.control {
+            let mut action_clone = ctrl.secondary_action.clone();
+            action_clone.set_target(target);
+            action_clone
+        } else {
+            Box::new(PassAction)
+        }
     }
 
     pub fn get_quick1_action(&self) -> Box<dyn Action> {
-        self.quick1_action.clone()
+        if let Some(Controller::Player(ctrl)) = &self.control {
+            ctrl.quick1_action.clone()
+        } else {
+            Box::new(PassAction)
+        }
     }
 
     pub fn get_quick2_action(&self) -> Box<dyn Action> {
-        self.quick2_action.clone()
+        if let Some(Controller::Player(ctrl)) = &self.control {
+            ctrl.quick2_action.clone()
+        } else {
+            Box::new(PassAction)
+        }
     }
 
+    // TODO: Take plasmids into account!
     pub fn get_all_actions(&self) -> Vec<&Box<dyn Action>> {
         self.actuators
             .actions

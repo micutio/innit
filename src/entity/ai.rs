@@ -1,31 +1,17 @@
 //! Module Ai
 //!
 //! Structures and methods for constructing the game ai.
-// external imports
-// use rand::Rng;
-// use tcod::colors;
 
 // internal imports
-// use entity::object::ObjectVec;
-// use game_state::{GameState, MessageLog};
-// use ui::game_frontend::FovMap;
+
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::{Action, PassAction, Target, TargetCategory};
 use crate::entity::object::Object;
 use crate::util::game_rng::GameRng;
 
+use crate::entity::control::Ai;
 use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
-
-#[typetag::serde(tag = "type")]
-pub trait Ai: Debug {
-    fn act(
-        &self,
-        object: &mut Object,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
-    ) -> Box<dyn Action>;
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassiveAi;

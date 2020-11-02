@@ -14,7 +14,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::PassAction;
+use crate::entity::action::{PassAction, Target};
 use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
@@ -71,7 +71,7 @@ pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, G
     debug!("player dna: {:?}", player.dna);
     debug!(
         "player default action: {:?}",
-        player.primary_action.to_text()
+        player.get_primary_action(Target::Center).to_text()
     );
     game_objects.set_player(player);
 

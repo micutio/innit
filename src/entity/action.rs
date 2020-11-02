@@ -7,7 +7,8 @@ use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
-use crate::entity::object::{Object, Position};
+use crate::core::position::Position;
+use crate::entity::object::Object;
 
 /// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 #[derive(Clone, Debug, PartialEq)]

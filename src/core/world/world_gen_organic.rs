@@ -1,8 +1,8 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, Transition};
+use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::entity::genetics::GeneLibrary;
-use crate::entity::object::Position;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::{GameRng, RngExtended};

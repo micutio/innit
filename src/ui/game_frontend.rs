@@ -6,9 +6,10 @@ use tcod::map::FovAlgorithm;
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectProcResult};
+use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
-use crate::entity::object::{Object, Position};
+use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::game::{game_loop, load_game, new_game, save_game};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
@@ -30,7 +31,7 @@ pub const BAR_WIDTH: i32 = 20;
 pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
-use crate::entity::action::{Action, TargetCategory};
+use crate::entity::action::{Action, Target, TargetCategory};
 use crate::util::modulus;
 /// Field of view mapping.
 pub use tcod::map::Map as FovMap;
@@ -542,7 +543,7 @@ fn render_ui(
             3,
             BAR_WIDTH,
             'P',
-            &player.primary_action.get_identifier(),
+            &player.get_primary_action(Target::Center).get_identifier(),
         );
         render_textfield(
             &mut game_frontend.btm_panel,
@@ -552,7 +553,7 @@ fn render_ui(
             4,
             BAR_WIDTH,
             'S',
-            &player.secondary_action.get_identifier(),
+            &player.get_secondary_action(Target::Center).get_identifier(),
         );
         render_textfield(
             &mut game_frontend.btm_panel,
@@ -562,7 +563,7 @@ fn render_ui(
             5,
             BAR_WIDTH,
             '1',
-            &player.quick1_action.get_identifier(),
+            &player.get_quick1_action().get_identifier(),
         );
 
         render_dna_panel(
