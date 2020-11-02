@@ -15,10 +15,10 @@ use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{PassAction, Target};
-use crate::entity::control::{Controller, PlayerCtrl};
+use crate::entity::control::Controller;
 use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
-use crate::entity::player::PLAYER;
+use crate::entity::player::PlayerCtrl;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
 use crate::ui::game_input::{GameInput, PlayerInput};
 
@@ -151,7 +151,7 @@ pub fn game_loop(
             }
             Some(PlayerInput::PlayInput(in_game_action)) => {
                 trace!("inject in-game action {:#?} to player", in_game_action);
-                if let Some(ref mut player) = game_objects[PLAYER] {
+                if let Some(ref mut player) = game_objects[game_state.current_player_index] {
                     use crate::ui::game_input::PlayerAction::*;
                     let a = match in_game_action {
                         PrimaryAction(dir) => player.get_primary_action(dir),

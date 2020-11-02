@@ -10,7 +10,6 @@ use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::entity::object::Object;
-use crate::entity::player::PLAYER;
 use crate::game::{game_loop, load_game, new_game, save_game};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::*;
@@ -235,8 +234,12 @@ fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjec
         .set_default_background(game_frontend.coloring.bg_world);
 }
 
-fn recompute_fov(game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
-    if let Some(ref player) = game_objects[PLAYER] {
+fn recompute_fov(
+    game_state: &GameState,
+    game_frontend: &mut GameFrontend,
+    game_objects: &GameObjects,
+) {
+    if let Some(ref player) = game_objects[game_state.current_player_index] {
         // println!("recomputing FOV: {}", player.sensors.sensing_range);
         game_frontend.fov.compute_fov(
             player.pos.x,
@@ -256,7 +259,7 @@ fn init_object_visuals(
     game_objects: &mut GameObjects,
 ) {
     initialize_fov(game_frontend, game_objects);
-    recompute_fov(game_frontend, game_objects);
+    recompute_fov(game_state, game_frontend, game_objects);
     re_render(
         game_state,
         game_frontend,
@@ -266,11 +269,15 @@ fn init_object_visuals(
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
-fn update_visibility(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
+fn update_visibility(
+    game_state: &GameState,
+    game_frontend: &mut GameFrontend,
+    game_objects: &mut GameObjects,
+) {
     // go through all tiles and set their background color
     let mut player_pos: Position = Position::new(0, 0);
     let mut player_sensing_range: f32 = 0.0;
-    if let Some(ref mut player) = game_objects[PLAYER] {
+    if let Some(ref mut player) = game_objects[game_state.current_player_index] {
         player_pos.set(player.pos.x, player.pos.y);
         player_sensing_range = player.sensors.sensing_range as f32;
         player.visual.color = game_frontend.coloring.player;
@@ -365,7 +372,7 @@ pub fn process_visual_feedback(
 
         // the player's FOV has been updated, thus we also need to re-render
         ObjectProcResult::UpdateFOV => {
-            recompute_fov(game_frontend, game_objects);
+            recompute_fov(game_state, game_frontend, game_objects);
             re_render(
                 game_state,
                 game_frontend,
@@ -404,7 +411,7 @@ pub fn re_render(
     game_frontend.con.clear();
     // render objects and map
     // step 1/2: update visibility of objects and world tiles
-    update_visibility(game_frontend, game_objects);
+    update_visibility(game_state, game_frontend, game_objects);
     // step 2/2: render everything
     render_all(game_frontend, game_state, game_objects, names_under_mouse);
 
@@ -510,7 +517,7 @@ fn render_ui(
     render_btm_panel(&game_frontend.coloring, &mut game_frontend.btm_panel);
 
     // show player's stats
-    if let Some(ref player) = game_objects[PLAYER] {
+    if let Some(ref player) = game_objects[game_state.current_player_index] {
         render_bar(
             &mut game_frontend.btm_panel,
             1,
@@ -669,7 +676,7 @@ pub fn handle_meta_actions(
         }
         UiAction::ToggleDarkLightMode => {
             game_frontend.toggle_dark_light_mode();
-            recompute_fov(game_frontend, game_objects);
+            recompute_fov(game_state, game_frontend, game_objects);
             initialize_fov(game_frontend, game_objects);
             re_render(game_state, game_frontend, game_objects, "");
         }
@@ -683,7 +690,7 @@ pub fn handle_meta_actions(
             initialize_fov(game_frontend, game_objects);
         }
         UiAction::ChoosePrimaryAction => {
-            if let Some(ref mut player) = game_objects[PLAYER] {
+            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
                 if let Some(a) = get_available_action(
                     game_frontend,
                     player,
@@ -699,7 +706,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseSecondaryAction => {
-            if let Some(ref mut player) = game_objects[PLAYER] {
+            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
                 if let Some(a) = get_available_action(
                     game_frontend,
                     player,
@@ -715,7 +722,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseQuick1Action => {
-            if let Some(ref mut player) = game_objects[PLAYER] {
+            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
                 if let Some(a) = get_available_action(
                     game_frontend,
                     player,
@@ -727,7 +734,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseQuick2Action => {
-            if let Some(ref mut player) = game_objects[PLAYER] {
+            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
                 if let Some(a) = get_available_action(
                     game_frontend,
                     player,

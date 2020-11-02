@@ -10,7 +10,6 @@ use tcod::input::{self, Event, Key, Mouse};
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
-use crate::entity::player::PLAYER;
 use crate::game::MS_PER_FRAME;
 use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
@@ -113,7 +112,7 @@ impl GameInput {
                     self.names_under_mouse = Default::default();
                 }
 
-                if let Some(ref player) = objects[PLAYER] {
+                if let Some(ref player) = objects[game_state.current_player_index] {
                     // ... but only if the previous user action is used up
                     if !player.has_next_action() {
                         if let Some(new_action) = data.next_player_actions.pop_front() {

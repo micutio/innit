@@ -5,6 +5,7 @@ use tcod::colors::{self, Color};
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::*;
+use crate::entity::control::Controller;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
@@ -46,7 +47,8 @@ pub struct GameState {
     pub turn: u128,
     pub dungeon_level: u32,
     pub gene_library: GeneLibrary,
-    current_obj_index: usize,
+    pub current_obj_index: usize,
+    pub current_player_index: usize,
 }
 
 impl GameState {
@@ -58,14 +60,14 @@ impl GameState {
             log: vec![],
             turn: 0,
             dungeon_level: level,
-            // game_rng:          GameRng::from_seed(RNG_SEED),
             gene_library: GeneLibrary::new(),
             current_obj_index: 0,
+            current_player_index: PLAYER,
         }
     }
 
     pub fn is_players_turn(&self) -> bool {
-        self.current_obj_index == PLAYER
+        self.current_obj_index == self.current_player_index
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
@@ -78,6 +80,9 @@ impl GameState {
         let mut process_result = ObjectProcResult::NoAction;
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+            if let Some(Controller::Player(_)) = active_object.control {
+                self.current_player_index = self.current_obj_index;
+            }
             trace!(
                 "{} | {}'s turn now @energy {}/{}",
                 self.current_obj_index,
@@ -128,12 +133,12 @@ impl GameState {
                         active_object.change_genome(sensors, processors, actuators, dna);
 
                         // TODO: Show mutation effect as diff between old and new genome!
-                        if self.current_obj_index == PLAYER {
+                        if self.current_obj_index == self.current_player_index {
                             self.log.add(
                                 format!("A mutation occurred in your genome {}", old_gene),
                                 colors::YELLOW,
                             );
-                        } else if let Some(player) = &objects[PLAYER] {
+                        } else if let Some(player) = &objects[self.current_player_index] {
                             debug!(
                                 "sensing range: {}, dist: {}",
                                 player.sensors.sensing_range as f32,
@@ -165,7 +170,7 @@ impl GameState {
         if process_result != ObjectProcResult::NoAction {
             self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
             // also increase turn count if we're back at the player
-            if self.current_obj_index == PLAYER {
+            if self.current_obj_index == self.current_player_index {
                 self.turn += 1;
             }
         }
@@ -185,7 +190,7 @@ impl GameState {
             ActionResult::Success { callback } => {
                 match callback {
                     ObjectProcResult::CheckEnterFOV => {
-                        if self.current_obj_index == PLAYER {
+                        if self.current_obj_index == self.current_player_index {
                             // if we have the player, then it will surely be in it's own fov
                             ObjectProcResult::UpdateFOV
                         } else if fov_map.is_in_fov(actor.pos.x, actor.pos.y) {

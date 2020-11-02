@@ -6,7 +6,6 @@ use tcod::{chars, console::*, input::Key};
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
-use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{
     GameFrontend, BAR_WIDTH, PANEL_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH,
 };
@@ -292,7 +291,7 @@ pub fn show_character_screen(
     game_input: &mut Option<&mut GameInput>,
     game_objects: &mut GameObjects,
 ) {
-    if let Some(ref player) = game_objects[PLAYER] {
+    if let Some(ref player) = game_objects[game_state.current_player_index] {
         let header: String = "Character Information".to_string();
         let msg: String = format!(
             "Energy:        {}/{} \n\

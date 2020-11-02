@@ -24,7 +24,7 @@ use std::fmt;
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Object {
     // TODO: Add plasmids, antigen-markers
     pub alive: bool,
@@ -161,17 +161,6 @@ impl Object {
         )
     }
 
-    // /// Retrieve the current position of the object.
-    // pub fn pos(&self) -> (i32, i32) {
-    //     (self.x, self.y)
-    // }
-
-    // /// Set the current position of the object.
-    // pub fn set_pos(&mut self, x: i32, y: i32) {
-    //     self.x = x;
-    //     self.y = y;
-    // }
-
     /// Set the object's current dna and resulting super traits.
     pub fn change_genome(
         &mut self,
@@ -272,6 +261,8 @@ impl Object {
             false
         }
     }
+
+    // TODO: Consider moving the player-action-related methods into PlayerCtrl.
 
     pub fn get_primary_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
