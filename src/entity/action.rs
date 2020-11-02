@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
+use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::position::Position;
 use crate::entity::object::Object;
 
@@ -68,7 +68,7 @@ pub enum ActionResult {
 pub trait Action: ActionClone + Debug {
     fn perform(
         &self,
-        game_state: &mut GameState,
+        state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult;
@@ -113,8 +113,8 @@ pub struct PassAction;
 impl Action for PassAction {
     fn perform(
         &self,
-        _game_state: &mut GameState,
-        _game_objects: &mut GameObjects,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
         _owner: &mut Object,
     ) -> ActionResult {
         // do nothing
@@ -165,7 +165,7 @@ impl AttackAction {
 impl Action for AttackAction {
     fn perform(
         &self,
-        _game_state: &mut GameState,
+        _state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
@@ -238,7 +238,7 @@ impl MoveAction {
 impl Action for MoveAction {
     fn perform(
         &self,
-        _game_state: &mut GameState,
+        _state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
@@ -294,7 +294,7 @@ impl MetaboliseAction {
 impl Action for MetaboliseAction {
     fn perform(
         &self,
-        _game_state: &mut GameState,
+        _state: &mut GameState,
         _objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
@@ -323,6 +323,6 @@ impl Action for MetaboliseAction {
     }
 
     fn to_text(&self) -> String {
-        format!("increase metabolism momentarily")
+        "increase metabolism momentarily".to_string()
     }
 }

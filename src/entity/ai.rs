@@ -27,8 +27,8 @@ impl Ai for PassiveAi {
     fn act(
         &self,
         _object: &mut Object,
-        _game_objects: &mut GameObjects,
-        _game_rng: &mut GameRng,
+        _objects: &mut GameObjects,
+        _rng: &mut GameRng,
     ) -> Box<dyn Action> {
         Box::new(PassAction)
     }
@@ -48,8 +48,8 @@ impl Ai for RandomAi {
     fn act(
         &self,
         object: &mut Object,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        objects: &mut GameObjects,
+        rng: &mut GameRng,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.
         if object.actuators.actions.is_empty()
@@ -61,13 +61,13 @@ impl Ai for RandomAi {
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
         // that can be used with these targets.
-        let adjacent_targets: Vec<&Object> = game_objects
+        let adjacent_targets: Vec<&Object> = objects
             .get_vector()
             .iter()
             .flatten()
             .filter(|obj| {
                 object.pos.is_adjacent(&obj.pos)
-                    && (obj.physics.is_blocking || !game_objects.is_pos_occupied(&obj.pos))
+                    && (obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
             })
             // .filter_map(|o| o.as_ref())
             .collect();
@@ -119,7 +119,7 @@ impl Ai for RandomAi {
             .filter(|a| valid_targets.contains(&(*a).get_target_category()))
             .collect();
 
-        if let Some(a) = possible_actions.choose(game_rng) {
+        if let Some(a) = possible_actions.choose(rng) {
             let mut boxed_action = a.clone_action();
             match boxed_action.get_target_category() {
                 TargetCategory::None => boxed_action.set_target(Target::Center),
@@ -127,7 +127,7 @@ impl Ai for RandomAi {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| at.physics.is_blocking)
-                        .choose(game_rng)
+                        .choose(rng)
                     {
                         boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
@@ -136,13 +136,13 @@ impl Ai for RandomAi {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| !at.physics.is_blocking)
-                        .choose(game_rng)
+                        .choose(rng)
                     {
                         boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
                 }
                 TargetCategory::Any => {
-                    if let Some(target_obj) = adjacent_targets.choose(game_rng) {
+                    if let Some(target_obj) = adjacent_targets.choose(rng) {
                         boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
                     }
                 }

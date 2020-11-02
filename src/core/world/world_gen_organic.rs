@@ -1,8 +1,7 @@
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{from_dungeon_level, Transition};
+use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
-use crate::entity::genetics::GeneLibrary;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::{GameRng, RngExtended};
@@ -33,11 +32,9 @@ impl WorldGen for OrganicsWorldGenerator {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
-        env: &GameEnv,
+        state: &mut GameState,
         frontend: &mut GameFrontend,
         objects: &mut GameObjects,
-        rng: &mut GameRng,
-        gene_library: &mut GeneLibrary,
         level: u32,
     ) {
         // step 1: generate foundation pattern
@@ -47,11 +44,11 @@ impl WorldGen for OrganicsWorldGenerator {
             for x in mid_x - 2..mid_x + 2 {
                 objects
                     .get_tile_at(x as usize, y as usize)
-                    .replace(Tile::empty(x, y, env.debug_mode));
+                    .replace(Tile::empty(x, y, state.env.debug_mode));
                 self.player_start = (x, y);
                 // println!("#1 flipped {}, {}", x, y);
             }
-            visualize_map(env, frontend, objects);
+            visualize_map(&state.env, frontend, objects);
         }
 
         let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
@@ -60,7 +57,7 @@ impl WorldGen for OrganicsWorldGenerator {
             for y in 2..WORLD_HEIGHT - 2 {
                 for x in 2..WORLD_WIDTH - 2 {
                     // note whether a cell has changed
-                    if update_from_neighbours(objects, rng, x, y) {
+                    if update_from_neighbours(objects, &mut state.rng, x, y) {
                         changed_tiles.insert((x, y));
                     }
                 }
@@ -69,17 +66,16 @@ impl WorldGen for OrganicsWorldGenerator {
             for (j, k) in &changed_tiles {
                 objects
                     .get_tile_at(*j as usize, *k as usize)
-                    .replace(Tile::empty(*j, *k, env.debug_mode));
+                    .replace(Tile::empty(*j, *k, state.env.debug_mode));
             }
             changed_tiles.clear();
-            visualize_map(env, frontend, objects);
+            visualize_map(&state.env, frontend, objects);
         }
 
         // world gen done, now insert objects
         place_objects(
+            state,
             objects,
-            rng,
-            gene_library,
             level,
             Transition {
                 level: 6,
@@ -93,25 +89,20 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
-fn visualize_map(env: &GameEnv, game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
+fn visualize_map(env: &GameEnv, frontend: &mut GameFrontend, objects: &mut GameObjects) {
     if env.debug_mode {
         // let ten_millis = time::Duration::from_millis(100);
         // thread::sleep(ten_millis);
 
-        game_frontend.con.clear();
-        render_objects(env, game_frontend, game_objects);
-        blit_consoles(game_frontend);
-        game_frontend.root.flush();
+        frontend.con.clear();
+        render_objects(env, frontend, objects);
+        blit_consoles(frontend);
+        frontend.root.flush();
     }
 }
 
 // TODO: If return true, flip to walkable, if false flip back to wall!
-fn update_from_neighbours(
-    game_objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    x: i32,
-    y: i32,
-) -> bool {
+fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, y: i32) -> bool {
     let directions = [
         // (-1, -1),
         (-1, 0, 4.0),
@@ -128,7 +119,7 @@ fn update_from_neighbours(
         let nx = x + i;
         let ny = y + j;
         if nx >= 2 && nx <= (WORLD_WIDTH - 2) && ny >= 2 && ny <= (WORLD_HEIGHT - 2) {
-            if let Some(neighbour_tile) = &mut game_objects.get_tile_at(nx as usize, ny as usize) {
+            if let Some(neighbour_tile) = &mut objects.get_tile_at(nx as usize, ny as usize) {
                 if !neighbour_tile.physics.is_blocking {
                     access_count += weight;
                 }
@@ -136,13 +127,12 @@ fn update_from_neighbours(
         }
     }
 
-    game_rng.flip_with_prob(access_count / 16.0)
+    rng.flip_with_prob(access_count / 16.0)
 }
 
 fn place_objects(
+    state: &mut GameState,
     objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    gene_library: &mut GeneLibrary,
     level: u32,
     transition: Transition,
 ) {
@@ -188,16 +178,16 @@ fn place_objects(
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = game_rng.gen_range(0, max_monsters + 1);
+    let num_monsters = state.rng.gen_range(0, max_monsters + 1);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = game_rng.gen_range(0 + 1, WORLD_WIDTH);
-        let y = game_rng.gen_range(0 + 1, WORLD_HEIGHT);
+        let x = state.rng.gen_range(0 + 1, WORLD_WIDTH);
+        let y = state.rng.gen_range(0 + 1, WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
-                "virus" => new_monster(game_rng, &gene_library, Monster::Virus, x, y, level),
-                "bacteria" => new_monster(game_rng, &gene_library, Monster::Bacteria, x, y, level),
+            let mut monster = match monster_chances[monster_dist.sample(&mut state.rng)].0 {
+                "virus" => new_monster(state, Monster::Virus, x, y, level),
+                "bacteria" => new_monster(state, Monster::Bacteria, x, y, level),
                 _ => unreachable!(),
             };
 

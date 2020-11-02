@@ -109,13 +109,13 @@ pub enum AnimationType {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-pub fn main_menu(env: GameEnv, game_frontend: &mut GameFrontend) {
+pub fn main_menu(env: GameEnv, frontend: &mut GameFrontend) {
     let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
         .expect("Background image not found");
 
-    while !game_frontend.root.window_closed() {
+    while !frontend.root.window_closed() {
         // show the background image, at twice the regular console resolution
-        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut game_frontend.root, (0, 0));
+        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut frontend.root, (0, 0));
         // let mut x: u8 = 0;
         // for i in 0..16 {
         //     for j in 0..16 {
@@ -128,13 +128,13 @@ pub fn main_menu(env: GameEnv, game_frontend: &mut GameFrontend) {
         //     }
         // }
 
-        game_frontend
+        frontend
             .root
-            .set_default_foreground(game_frontend.coloring.bg_dialog);
-        game_frontend
+            .set_default_foreground(frontend.coloring.bg_dialog);
+        frontend
             .root
-            .set_default_background(game_frontend.coloring.bg_dialog);
-        game_frontend.root.print_ex(
+            .set_default_background(frontend.coloring.bg_dialog);
+        frontend.root.print_ex(
             SCREEN_WIDTH / 2,
             SCREEN_HEIGHT - 2,
             BackgroundFlag::None,
@@ -144,56 +144,30 @@ pub fn main_menu(env: GameEnv, game_frontend: &mut GameFrontend) {
 
         // show options and wait for the player's choice
         let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu(game_frontend, &mut None, "main menu", choices, 24);
+        let choice = menu(frontend, &mut None, "main menu", choices, 24);
 
         match choice {
             Some(0) => {
                 // start new game
-                let (mut game_state, mut game_objects) = new_game(env, game_frontend);
+                let (mut state, mut objects) = new_game(env, frontend);
                 // initialize_fov(game_frontend, &mut objects);
-                let mut game_input = GameInput::new();
-                init_object_visuals(
-                    &mut game_state,
-                    game_frontend,
-                    &game_input,
-                    &mut game_objects,
-                );
-                game_input.start_concurrent_input();
-                game_loop(
-                    &mut game_state,
-                    game_frontend,
-                    &mut game_input,
-                    &mut game_objects,
-                );
+                let mut input = GameInput::new();
+                init_object_visuals(&mut state, frontend, &input, &mut objects);
+                input.start_concurrent_input();
+                game_loop(&mut state, frontend, &mut input, &mut objects);
             }
             Some(1) => {
                 // load game from file
                 match load_game() {
-                    Ok((mut game_state, mut game_objects)) => {
+                    Ok((mut state, mut objects)) => {
                         // initialize_fov(game_frontend, &mut objects);
-                        let mut game_input = GameInput::new();
-                        init_object_visuals(
-                            &mut game_state,
-                            game_frontend,
-                            &game_input,
-                            &mut game_objects,
-                        );
-                        game_input.start_concurrent_input();
-                        game_loop(
-                            &mut game_state,
-                            game_frontend,
-                            &mut game_input,
-                            &mut game_objects,
-                        );
+                        let mut input = GameInput::new();
+                        init_object_visuals(&mut state, frontend, &input, &mut objects);
+                        input.start_concurrent_input();
+                        game_loop(&mut state, frontend, &mut input, &mut objects);
                     }
                     Err(_e) => {
-                        msg_box(
-                            game_frontend,
-                            &mut None,
-                            "",
-                            "\nNo saved game to load\n",
-                            24,
-                        );
+                        msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
                         continue;
                     }
                 }
@@ -208,13 +182,13 @@ pub fn main_menu(env: GameEnv, game_frontend: &mut GameFrontend) {
 }
 
 /// Initialize the field of view map with the world tiles contained in game_objects.
-fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjects) {
+fn initialize_fov(frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // init fov map
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
-            match game_objects.get_tile_at(x as usize, y as usize) {
+            match objects.get_tile_at(x as usize, y as usize) {
                 Some(object) => {
-                    game_frontend.fov.set(
+                    frontend.fov.set(
                         x as i32,
                         y as i32,
                         !object.physics.is_blocking_sight,
@@ -228,20 +202,16 @@ fn initialize_fov(game_frontend: &mut GameFrontend, game_objects: &mut GameObjec
         }
     }
     // unexplored areas start black (which is the default background color)
-    game_frontend.con.clear();
-    game_frontend
+    frontend.con.clear();
+    frontend
         .con
-        .set_default_background(game_frontend.coloring.bg_world);
+        .set_default_background(frontend.coloring.bg_world);
 }
 
-fn recompute_fov(
-    game_state: &GameState,
-    game_frontend: &mut GameFrontend,
-    game_objects: &GameObjects,
-) {
-    if let Some(ref player) = game_objects[game_state.current_player_index] {
+fn recompute_fov(state: &GameState, frontend: &mut GameFrontend, objects: &GameObjects) {
+    if let Some(ref player) = objects[state.current_player_index] {
         // println!("recomputing FOV: {}", player.sensors.sensing_range);
-        game_frontend.fov.compute_fov(
+        frontend.fov.compute_fov(
             player.pos.x,
             player.pos.y,
             player.sensors.sensing_range,
@@ -253,53 +223,44 @@ fn recompute_fov(
 
 /// Initialize the player's field of view and render objects + ui for the start of the game.
 fn init_object_visuals(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_input: &GameInput,
-    game_objects: &mut GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    input: &GameInput,
+    objects: &mut GameObjects,
 ) {
-    initialize_fov(game_frontend, game_objects);
-    recompute_fov(game_state, game_frontend, game_objects);
-    re_render(
-        game_state,
-        game_frontend,
-        game_objects,
-        &game_input.names_under_mouse,
-    );
+    initialize_fov(frontend, objects);
+    recompute_fov(state, frontend, objects);
+    re_render(state, frontend, objects, &input.names_under_mouse);
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
-fn update_visibility(
-    game_state: &GameState,
-    game_frontend: &mut GameFrontend,
-    game_objects: &mut GameObjects,
-) {
+fn update_visibility(state: &GameState, frontend: &mut GameFrontend, objects: &mut GameObjects) {
     // go through all tiles and set their background color
     let mut player_pos: Position = Position::new(0, 0);
     let mut player_sensing_range: f32 = 0.0;
-    if let Some(ref mut player) = game_objects[game_state.current_player_index] {
+    if let Some(ref mut player) = objects[state.current_player_index] {
         player_pos.set(player.pos.x, player.pos.y);
         player_sensing_range = player.sensors.sensing_range as f32;
-        player.visual.color = game_frontend.coloring.player;
+        player.visual.color = frontend.coloring.player;
     }
 
     // let col_wall_out_fov = game_frontend.coloring.get_col_wall_out_fov();
     // let col_wall_in_fov = game_frontend.coloring.get_col_wall_in_fov();
     // let col_ground_out_fov = game_frontend.coloring.get_col_ground_out_fov();
     // let col_ground_in_fov = game_frontend.coloring.get_col_ground_in_fov();
-    let bwft = game_frontend.coloring.bg_wall_fov_true;
-    let bwff = game_frontend.coloring.bg_wall_fov_false;
-    let bgft = game_frontend.coloring.bg_ground_fov_true;
-    let bgff = game_frontend.coloring.bg_ground_fov_false;
-    let fwft = game_frontend.coloring.fg_wall_fov_true;
-    let fwff = game_frontend.coloring.fg_wall_fov_false;
-    let fgft = game_frontend.coloring.fg_ground_fov_true;
-    let fgff = game_frontend.coloring.fg_ground_fov_false;
+    let bwft = frontend.coloring.bg_wall_fov_true;
+    let bwff = frontend.coloring.bg_wall_fov_false;
+    let bgft = frontend.coloring.bg_ground_fov_true;
+    let bgff = frontend.coloring.bg_ground_fov_false;
+    let fwft = frontend.coloring.fg_wall_fov_true;
+    let fwff = frontend.coloring.fg_wall_fov_false;
+    let fgft = frontend.coloring.fg_ground_fov_true;
+    let fgff = frontend.coloring.fg_ground_fov_false;
 
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
-            let visible = game_frontend.fov.is_in_fov(x, y);
-            if let Some(ref mut tile_object) = game_objects.get_tile_at(x as usize, y as usize) {
+            let visible = frontend.fov.is_in_fov(x, y);
+            if let Some(ref mut tile_object) = objects.get_tile_at(x as usize, y as usize) {
                 let wall = tile_object.physics.is_blocking_sight;
 
                 // set tile foreground and background colors
@@ -343,12 +304,9 @@ fn update_visibility(
                     if tile.is_explored {
                         // show explored tiles only (any visible tile is explored already)
                         tile_object.visual.color = tile_color_fg;
-                        game_frontend.con.set_char_background(
-                            x,
-                            y,
-                            tile_color_bg,
-                            BackgroundFlag::Set,
-                        );
+                        frontend
+                            .con
+                            .set_char_background(x, y, tile_color_bg, BackgroundFlag::Set);
                     }
                 }
             }
@@ -357,10 +315,10 @@ fn update_visibility(
 }
 
 pub fn process_visual_feedback(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_input: &GameInput,
-    game_objects: &mut GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    input: &GameInput,
+    objects: &mut GameObjects,
     proc_result: ObjectProcResult,
 ) {
     match proc_result {
@@ -372,23 +330,13 @@ pub fn process_visual_feedback(
 
         // the player's FOV has been updated, thus we also need to re-render
         ObjectProcResult::UpdateFOV => {
-            recompute_fov(game_state, game_frontend, game_objects);
-            re_render(
-                game_state,
-                game_frontend,
-                game_objects,
-                &game_input.names_under_mouse,
-            );
+            recompute_fov(state, frontend, objects);
+            re_render(state, frontend, objects, &input.names_under_mouse);
         }
 
         // the player hasn't moved but something happened within fov
         ObjectProcResult::ReRender => {
-            re_render(
-                game_state,
-                game_frontend,
-                game_objects,
-                &game_input.names_under_mouse,
-            );
+            re_render(state, frontend, objects, &input.names_under_mouse);
         }
 
         ObjectProcResult::Animate { anim_type: _ } => {
@@ -402,21 +350,21 @@ pub fn process_visual_feedback(
 
 /// Render all objects, the menu
 pub fn re_render(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_objects: &mut GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    objects: &mut GameObjects,
     names_under_mouse: &str,
 ) {
     // clear the screen of the previous frame
-    game_frontend.con.clear();
+    frontend.con.clear();
     // render objects and map
     // step 1/2: update visibility of objects and world tiles
-    update_visibility(game_state, game_frontend, game_objects);
+    update_visibility(state, frontend, objects);
     // step 2/2: render everything
-    render_all(game_frontend, game_state, game_objects, names_under_mouse);
+    render_all(frontend, state, objects, names_under_mouse);
 
     // draw everything on the window at once
-    game_frontend.root.flush();
+    frontend.root.flush();
 }
 
 /// Render all objects.
@@ -430,18 +378,18 @@ fn render_all(
     names_under_mouse: &str,
 ) {
     render_objects(&state.env, frontend, objects);
-    render_ui(frontend, state, objects, names_under_mouse);
+    render_ui(state, frontend, objects, names_under_mouse);
     blit_consoles(frontend);
 }
 
-pub fn render_objects(env: &GameEnv, game_frontend: &mut GameFrontend, game_objects: &GameObjects) {
-    let mut to_draw: Vec<&Object> = game_objects
+pub fn render_objects(env: &GameEnv, frontend: &mut GameFrontend, objects: &GameObjects) {
+    let mut to_draw: Vec<&Object> = objects
         .get_vector()
         .iter()
         .flatten()
         .filter(|o| {
             // FIXME: there must be a better way than using `and_then`.
-            game_frontend.fov.is_in_fov(o.pos.x, o.pos.y)
+            frontend.fov.is_in_fov(o.pos.x, o.pos.y)
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
                 || (o.tile.is_some() && env.debug_mode)
@@ -452,7 +400,7 @@ pub fn render_objects(env: &GameEnv, game_frontend: &mut GameFrontend, game_obje
     to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
     // draw the objects in the list
     for object in &to_draw {
-        draw_object(object, &mut game_frontend.con);
+        draw_object(object, &mut frontend.con);
     }
 }
 
@@ -467,13 +415,13 @@ fn draw_object(object: &Object, con: &mut dyn Console) {
     );
 }
 
-pub fn blit_consoles(game_frontend: &mut GameFrontend) {
+pub fn blit_consoles(frontend: &mut GameFrontend) {
     // blit contents of offscreen console to root console and present it
     blit(
-        &game_frontend.con,
+        &frontend.con,
         (0, 0),
         (WORLD_WIDTH, WORLD_HEIGHT),
-        &mut game_frontend.root,
+        &mut frontend.root,
         (0, 0),
         1.0,
         1.0,
@@ -481,10 +429,10 @@ pub fn blit_consoles(game_frontend: &mut GameFrontend) {
 
     // blit contents of `game_frontend.btm_panel` to the root console
     blit(
-        &game_frontend.btm_panel,
+        &frontend.btm_panel,
         (0, 0),
         (SCREEN_WIDTH, SCREEN_HEIGHT),
-        &mut game_frontend.root,
+        &mut frontend.root,
         (0, PANEL_Y),
         1.0,
         1.0,
@@ -492,10 +440,10 @@ pub fn blit_consoles(game_frontend: &mut GameFrontend) {
 
     // blit contents of `game_frontend.btm_panel` to the root console
     blit(
-        &game_frontend.dna_panel,
+        &frontend.dna_panel,
         (0, 0),
         (SCREEN_WIDTH, SCREEN_HEIGHT - PANEL_HEIGHT),
-        &mut game_frontend.root,
+        &mut frontend.root,
         (SCREEN_WIDTH - 1, 0),
         1.0,
         1.0,
@@ -509,42 +457,42 @@ pub fn blit_consoles(game_frontend: &mut GameFrontend) {
 ///     - objects names under mouse cursor
 /// Add all ui elements to the panel component of the frontend.
 fn render_ui(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    game_objects: &GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    objects: &GameObjects,
     names_under_mouse: &str,
 ) {
-    render_btm_panel(&game_frontend.coloring, &mut game_frontend.btm_panel);
+    render_btm_panel(&frontend.coloring, &mut frontend.btm_panel);
 
     // show player's stats
-    if let Some(ref player) = game_objects[game_state.current_player_index] {
+    if let Some(ref player) = objects[state.current_player_index] {
         render_bar(
-            &mut game_frontend.btm_panel,
+            &mut frontend.btm_panel,
             1,
             1,
             BAR_WIDTH,
             "HP",
             player.actuators.hp,
             player.actuators.max_hp,
-            game_frontend.coloring.fg_dialog,
+            frontend.coloring.fg_dialog,
             colors::DARKER_RED,
             colors::DARKEST_RED,
         );
         render_bar(
-            &mut game_frontend.btm_panel,
+            &mut frontend.btm_panel,
             1,
             2,
             BAR_WIDTH,
             "ENERGY",
             player.processors.energy,
             player.processors.energy_storage,
-            game_frontend.coloring.fg_dialog,
-            game_frontend.coloring.yellow,
+            frontend.coloring.fg_dialog,
+            frontend.coloring.yellow,
             colors::DARKER_YELLOW,
         );
         render_textfield(
-            &mut game_frontend.btm_panel,
-            &game_frontend.coloring,
+            &mut frontend.btm_panel,
+            &frontend.coloring,
             colors::DARK_GREY,
             1,
             3,
@@ -553,8 +501,8 @@ fn render_ui(
             &player.get_primary_action(Target::Center).get_identifier(),
         );
         render_textfield(
-            &mut game_frontend.btm_panel,
-            &game_frontend.coloring,
+            &mut frontend.btm_panel,
+            &frontend.coloring,
             colors::DARK_GREY,
             1,
             4,
@@ -563,8 +511,8 @@ fn render_ui(
             &player.get_secondary_action(Target::Center).get_identifier(),
         );
         render_textfield(
-            &mut game_frontend.btm_panel,
-            &game_frontend.coloring,
+            &mut frontend.btm_panel,
+            &frontend.coloring,
             colors::DARK_GREY,
             1,
             5,
@@ -573,31 +521,27 @@ fn render_ui(
             &player.get_quick1_action().get_identifier(),
         );
 
-        render_dna_panel(
-            &mut game_frontend.dna_panel,
-            &game_frontend.coloring,
-            &player.dna,
-        );
+        render_dna_panel(&mut frontend.dna_panel, &frontend.coloring, &player.dna);
 
         // show names of objects under the mouse
         if !names_under_mouse.is_empty() {
-            game_frontend
+            frontend
                 .btm_panel
                 .set_default_foreground(colors::LIGHT_GREY);
-            game_frontend.btm_panel.print_ex(
+            frontend.btm_panel.print_ex(
                 2,
                 0,
                 BackgroundFlag::None,
                 TextAlignment::Left,
                 names_under_mouse,
             );
-            game_frontend
+            frontend
                 .btm_panel
-                .set_default_foreground(game_frontend.coloring.fg_dialog_border);
-            game_frontend
+                .set_default_foreground(frontend.coloring.fg_dialog_border);
+            frontend
                 .btm_panel
                 .put_char(1, 0, '\u{b9}', BackgroundFlag::Set);
-            game_frontend.btm_panel.put_char(
+            frontend.btm_panel.put_char(
                 (names_under_mouse.len() + 2) as i32,
                 0,
                 '\u{cc}',
@@ -607,18 +551,16 @@ fn render_ui(
 
         // print game messages, one line at a time
         let mut y = MSG_HEIGHT as i32;
-        for &(ref msg, color) in &mut game_state.log.iter().rev() {
-            let msg_height = game_frontend
+        for &(ref msg, color) in &mut state.log.iter().rev() {
+            let msg_height = frontend
                 .btm_panel
                 .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
             y -= msg_height;
             if y < 1 {
                 break;
             }
-            game_frontend.btm_panel.set_default_foreground(color);
-            game_frontend
-                .btm_panel
-                .print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
+            frontend.btm_panel.set_default_foreground(color);
+            frontend.btm_panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         }
     }
 }
@@ -660,39 +602,39 @@ fn render_btm_panel(coloring: &ColorPalette, panel: &mut Offscreen) {
 }
 
 pub fn handle_meta_actions(
-    game_frontend: &mut GameFrontend,
-    game_state: &mut GameState,
-    game_objects: &mut GameObjects,
-    game_input: &mut Option<&mut GameInput>,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    objects: &mut GameObjects,
+    input: &mut Option<&mut GameInput>,
     action: UiAction,
 ) -> bool {
     // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
-            let result = save_game(game_state, game_objects);
+            let result = save_game(state, objects);
             result.unwrap();
             return true;
         }
         UiAction::ToggleDarkLightMode => {
-            game_frontend.toggle_dark_light_mode();
-            recompute_fov(game_state, game_frontend, game_objects);
-            initialize_fov(game_frontend, game_objects);
-            re_render(game_state, game_frontend, game_objects, "");
+            frontend.toggle_dark_light_mode();
+            recompute_fov(state, frontend, objects);
+            initialize_fov(frontend, objects);
+            re_render(state, frontend, objects, "");
         }
         UiAction::CharacterScreen => {
-            show_character_screen(game_state, game_frontend, game_input, game_objects);
+            show_character_screen(state, frontend, input, objects);
         }
 
         UiAction::Fullscreen => {
-            let fullscreen = game_frontend.root.is_fullscreen();
-            game_frontend.root.set_fullscreen(!fullscreen);
-            initialize_fov(game_frontend, game_objects);
+            let fullscreen = frontend.root.is_fullscreen();
+            frontend.root.set_fullscreen(!fullscreen);
+            initialize_fov(frontend, objects);
         }
         UiAction::ChoosePrimaryAction => {
-            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 if let Some(a) = get_available_action(
-                    game_frontend,
+                    frontend,
                     player,
                     "primary",
                     &[
@@ -706,9 +648,9 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseSecondaryAction => {
-            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 if let Some(a) = get_available_action(
-                    game_frontend,
+                    frontend,
                     player,
                     "secondary",
                     &[
@@ -722,36 +664,30 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseQuick1Action => {
-            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
-                if let Some(a) = get_available_action(
-                    game_frontend,
-                    player,
-                    "secondary",
-                    &[TargetCategory::None],
-                ) {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) =
+                    get_available_action(frontend, player, "secondary", &[TargetCategory::None])
+                {
                     player.set_quick1_action(a);
                 }
             }
         }
         UiAction::ChooseQuick2Action => {
-            if let Some(ref mut player) = game_objects[game_state.current_player_index] {
-                if let Some(a) = get_available_action(
-                    game_frontend,
-                    player,
-                    "secondary",
-                    &[TargetCategory::None],
-                ) {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) =
+                    get_available_action(frontend, player, "secondary", &[TargetCategory::None])
+                {
                     player.set_quick1_action(a);
                 }
             }
         }
     }
-    re_render(game_state, game_frontend, game_objects, "");
+    re_render(state, frontend, objects, "");
     false
 }
 
 fn get_available_action(
-    game_frontend: &mut GameFrontend,
+    frontend: &mut GameFrontend,
     obj: &mut Object,
     action_id: &str,
     targets: &[TargetCategory],
@@ -772,7 +708,7 @@ fn get_available_action(
     }
     // show options and wait for the obj's choice
     let choice = menu(
-        game_frontend,
+        frontend,
         &mut None,
         format!("choose {}", action_id).as_str(),
         choices.as_slice(),

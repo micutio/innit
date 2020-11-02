@@ -41,8 +41,8 @@ impl GameInput {
     /// Start a new instance of the input listener thread.
     pub fn start_concurrent_input(&mut self) {
         let (tx, rx) = mpsc::channel();
-        let game_input = Arc::new(Mutex::new(InputContainer::new()));
-        let mut game_input_ref = Arc::clone(&game_input);
+        let input = Arc::new(Mutex::new(InputContainer::new()));
+        let mut game_input_ref = Arc::clone(&input);
         let input_thread = start_input_proc_thread(&mut game_input_ref, rx);
 
         self.concurrent_input = Some(ConcurrentInput {
@@ -91,8 +91,8 @@ impl GameInput {
     ///   consumed
     pub fn check_for_player_actions(
         &mut self,
-        game_state: &mut GameState,
-        game_frontend: &mut GameFrontend,
+        state: &mut GameState,
+        frontend: &mut GameFrontend,
         objects: &mut GameObjects,
     ) {
         // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
@@ -104,15 +104,15 @@ impl GameInput {
                 if self.check_set_mouse_position(data.mouse_x, data.mouse_y) {
                     self.names_under_mouse = get_names_under_mouse(
                         objects,
-                        &game_frontend.fov,
+                        &frontend.fov,
                         self.current_mouse_pos.x,
                         self.current_mouse_pos.y,
                     );
-                    re_render(game_state, game_frontend, objects, &self.names_under_mouse);
+                    re_render(state, frontend, objects, &self.names_under_mouse);
                     self.names_under_mouse = Default::default();
                 }
 
-                if let Some(ref player) = objects[game_state.current_player_index] {
+                if let Some(ref player) = objects[state.current_player_index] {
                     // ... but only if the previous user action is used up
                     if !player.has_next_action() {
                         if let Some(new_action) = data.next_player_actions.pop_front() {

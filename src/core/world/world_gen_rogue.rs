@@ -3,15 +3,12 @@ use std::{cmp, thread, time};
 
 use tcod::console::*;
 
-use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{from_dungeon_level, Transition};
+use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
-use crate::entity::genetics::GeneLibrary;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::game_frontend::{blit_consoles, render_objects, GameFrontend};
-use crate::util::game_rng::GameRng;
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;
@@ -38,11 +35,9 @@ impl RogueWorldGenerator {
 impl WorldGen for RogueWorldGenerator {
     fn make_world(
         &mut self,
-        env: &GameEnv,
+        state: &mut GameState,
         frontend: &mut GameFrontend,
         objects: &mut GameObjects,
-        rng: &mut GameRng,
-        gene_library: &mut GeneLibrary,
         level: u32,
     ) {
         // fill the world with `unblocked` tiles
@@ -50,12 +45,12 @@ impl WorldGen for RogueWorldGenerator {
 
         for _ in 0..MAX_ROOMS {
             // random width and height
-            let w = rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
-            let h = rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let w = state.rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
+            let h = state.rng.gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
 
             // random position without exceeding the boundaries of the map
-            let x = rng.gen_range(0, WORLD_WIDTH - w);
-            let y = rng.gen_range(0, WORLD_HEIGHT - h);
+            let x = state.rng.gen_range(0, WORLD_WIDTH - w);
+            let y = state.rng.gen_range(0, WORLD_HEIGHT - h);
 
             // create room and store in vector
             let new_room = Rect::new(x, y, w, h);
@@ -66,10 +61,10 @@ impl WorldGen for RogueWorldGenerator {
 
             if !failed {
                 // no intersections, we have a valid room.
-                create_room(env, objects, new_room);
+                create_room(state, objects, new_room);
 
                 // add some content to the room
-                place_objects(objects, rng, gene_library, new_room, level);
+                place_objects(state, objects, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -87,24 +82,24 @@ impl WorldGen for RogueWorldGenerator {
                     // connect both rooms with a horizontal and a vertical tunnel - in random order
                     if rand::random() {
                         // move horizontally, then vertically
-                        create_h_tunnel(env, objects, prev_x, new_x, prev_y);
-                        create_v_tunnel(env, objects, prev_y, new_y, new_x);
+                        create_h_tunnel(state, objects, prev_x, new_x, prev_y);
+                        create_v_tunnel(state, objects, prev_y, new_y, new_x);
                     } else {
                         // move vertically, then horizontally
-                        create_v_tunnel(env, objects, prev_y, new_y, prev_x);
-                        create_h_tunnel(env, objects, prev_x, new_x, new_y);
+                        create_v_tunnel(state, objects, prev_y, new_y, prev_x);
+                        create_h_tunnel(state, objects, prev_x, new_x, new_y);
                     }
                 }
                 // finally, append new room to list
                 self.rooms.push(new_room);
             }
 
-            if env.debug_mode {
+            if state.env.debug_mode {
                 let ten_millis = time::Duration::from_millis(100);
                 thread::sleep(ten_millis);
 
                 frontend.con.clear();
-                render_objects(env, frontend, objects);
+                render_objects(&state.env, frontend, objects);
                 blit_consoles(frontend);
                 frontend.root.flush();
             }
@@ -116,39 +111,33 @@ impl WorldGen for RogueWorldGenerator {
     }
 }
 
-fn create_room(env: &GameEnv, objects: &mut GameObjects, room: Rect) {
+fn create_room(state: &mut GameState, objects: &mut GameObjects, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
                 .get_tile_at(x as usize, y as usize)
-                .replace(Tile::empty(x, y, env.debug_mode));
+                .replace(Tile::empty(x, y, state.env.debug_mode));
         }
     }
 }
 
-fn create_h_tunnel(env: &GameEnv, objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
+fn create_h_tunnel(state: &mut GameState, objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y, env.debug_mode));
+            .replace(Tile::empty(x, y, state.env.debug_mode));
     }
 }
 
-fn create_v_tunnel(env: &GameEnv, objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
+fn create_v_tunnel(state: &mut GameState, objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
             .get_tile_at(x as usize, y as usize)
-            .replace(Tile::empty(x, y, env.debug_mode));
+            .replace(Tile::empty(x, y, state.env.debug_mode));
     }
 }
 
-fn place_objects(
-    objects: &mut GameObjects,
-    game_rng: &mut GameRng,
-    gene_library: &mut GeneLibrary,
-    room: Rect,
-    level: u32,
-) {
+fn place_objects(state: &mut GameState, objects: &mut GameObjects, room: Rect, level: u32) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
@@ -185,16 +174,16 @@ fn place_objects(
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = game_rng.gen_range(0, max_monsters + 1);
+    let num_monsters = state.rng.gen_range(0, max_monsters + 1);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = game_rng.gen_range(room.x1 + 1, room.x2);
-        let y = game_rng.gen_range(room.y1 + 1, room.y2);
+        let x = state.rng.gen_range(room.x1 + 1, room.x2);
+        let y = state.rng.gen_range(room.y1 + 1, room.y2);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let mut monster = match monster_chances[monster_dist.sample(game_rng)].0 {
-                "virus" => new_monster(game_rng, &gene_library, Monster::Virus, x, y, level),
-                "bacteria" => new_monster(game_rng, &gene_library, Monster::Bacteria, x, y, level),
+            let mut monster = match monster_chances[monster_dist.sample(&mut state.rng)].0 {
+                "virus" => new_monster(state, Monster::Virus, x, y, level),
+                "bacteria" => new_monster(state, Monster::Bacteria, x, y, level),
                 _ => unreachable!(),
             };
 

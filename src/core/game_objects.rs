@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::core::game_env::GameEnv;
+use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::genetics::{GeneLibrary, GENE_LEN};
@@ -40,7 +40,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn blank_world(&mut self, env: &GameEnv) {
+    pub fn blank_world(&mut self, state: &mut GameState) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
@@ -48,12 +48,12 @@ impl GameObjects {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y, env.debug_mode));
+                    .replace(Tile::wall(x, y, state.env.debug_mode));
             }
         }
     }
 
-    pub fn set_tiles_dna(&mut self, game_rng: &mut GameRng, gene_library: &GeneLibrary) {
+    pub fn set_tiles_dna(&mut self, rng: &mut GameRng, gene_library: &GeneLibrary) {
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 // debug!("setting tile dna at ({}, {})", x, y);
@@ -61,7 +61,7 @@ impl GameObjects {
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(game_rng, GENE_LEN);
+                        gene_library.new_genetics(rng, GENE_LEN);
                     tile.change_genome(sensors, processors, actuators, dna);
                 }
             }

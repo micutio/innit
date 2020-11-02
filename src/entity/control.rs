@@ -1,5 +1,5 @@
 use crate::core::game_objects::GameObjects;
-use crate::entity::action::{Action, PassAction};
+use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::util::game_rng::GameRng;
@@ -16,7 +16,7 @@ pub trait Ai: Debug {
     fn act(
         &self,
         object: &mut Object,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        objects: &mut GameObjects,
+        rng: &mut GameRng,
     ) -> Box<dyn Action>;
 }

@@ -1,28 +1,25 @@
 //! The world generation module contains the trait that all world generators have to implement to
-//! be exchangably used to create the game environments.
+//! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
 
 use tcod::colors;
 
-use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, Messages};
 use crate::entity::ai::{PassiveAi, RandomAi};
 use crate::entity::control::Controller;
-use crate::entity::genetics::{GeneLibrary, GENE_LEN};
+use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
 use crate::ui::game_frontend::GameFrontend;
-use crate::util::game_rng::GameRng;
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
     fn make_world(
         &mut self,
-        env: &GameEnv,
-        game_frontend: &mut GameFrontend,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
-        gene_library: &mut GeneLibrary,
+        state: &mut GameState,
+        frontend: &mut GameFrontend,
+        objects: &mut GameObjects,
         level: u32,
     );
 
@@ -68,28 +65,27 @@ pub enum Monster {
     Virus,
 }
 
-pub fn new_monster(
-    game_rng: &mut GameRng,
-    gene_lib: &GeneLibrary,
-    monster: Monster,
-    x: i32,
-    y: i32,
-    _level: u32,
-) -> Object {
+pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _level: u32) -> Object {
     match monster {
         Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
             .visualize("virus", 'v', colors::DESATURATED_GREEN)
             .physical(true, false, false)
-            .genome(0.75, gene_lib.new_genetics(game_rng, GENE_LEN))
+            .genome(
+                0.75,
+                state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
+            )
             .control(Controller::Npc(Box::new(RandomAi::new()))),
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
             .visualize("bacteria", 'b', colors::DARKER_GREEN)
             .physical(true, false, false)
-            .genome(0.9, gene_lib.new_genetics(game_rng, GENE_LEN))
+            .genome(
+                0.9,
+                state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
+            )
             .control(Controller::Npc(Box::new(RandomAi::new()))),
     }
 }

@@ -22,8 +22,8 @@ pub const CHARACTER_SCREEN_WIDTH: i32 = 30;
 // Display a generic menu with multiple options to choose from.
 /// Return the number of the menu item that has been chosen.
 pub fn menu<T: AsRef<str>>(
-    game_frontend: &mut GameFrontend,
-    game_input: &mut Option<&mut GameInput>,
+    frontend: &mut GameFrontend,
+    input: &mut Option<&mut GameInput>,
     header: &str,
     options: &[T],
     width: i32,
@@ -37,7 +37,7 @@ pub fn menu<T: AsRef<str>>(
     let mut current_option: i32 = 0;
 
     // calculate total height for the header (after auto-wrap) and one line per option
-    let header_height = game_frontend
+    let header_height = frontend
         .root
         .get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
 
@@ -45,7 +45,7 @@ pub fn menu<T: AsRef<str>>(
 
     // check if we have a running instance of GameInput;
     // if yes, suspend it so we can read from the input directly
-    if let Some(instance) = game_input {
+    if let Some(instance) = input {
         instance.pause_concurrent_input();
     }
 
@@ -57,8 +57,8 @@ pub fn menu<T: AsRef<str>>(
 
         // initialize coloring for each cell in the text box
         // choose different color for currently selected option
-        let color_normal = game_frontend.coloring.bg_dialog;
-        let color_option_highlight = game_frontend.coloring.fg_dialog_highlight;
+        let color_normal = frontend.coloring.bg_dialog;
+        let color_option_highlight = frontend.coloring.fg_dialog_highlight;
         for x in 0..width {
             for y in 0..height {
                 // offset by 2 because the first to lines are header and separator
@@ -68,7 +68,7 @@ pub fn menu<T: AsRef<str>>(
                     color_normal
                 };
                 window.set_char_background(x, y, bg_color, BackgroundFlag::Set);
-                window.set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
+                window.set_char_foreground(x, y, frontend.coloring.fg_dialog_border);
                 window.set_char(x, y, ' ');
             }
         }
@@ -95,7 +95,7 @@ pub fn menu<T: AsRef<str>>(
         // window.set_char(width, height - 1, chars::SW);
         // window.set_char(width, 1, chars::SE);
 
-        window.set_default_foreground(game_frontend.coloring.fg_dialog);
+        window.set_default_foreground(frontend.coloring.fg_dialog);
 
         window.print_rect_ex(
             width / 2 as i32,
@@ -127,17 +127,17 @@ pub fn menu<T: AsRef<str>>(
             &window,
             (0, 0),
             (width, height),
-            &mut game_frontend.root,
+            &mut frontend.root,
             (x, y),
             1.0,
             1.0,
         );
 
         // present the root console to the player and wait for a key-press
-        game_frontend.root.flush();
+        frontend.root.flush();
 
         // listen for keypress
-        let key = game_frontend.root.wait_for_keypress(true);
+        let key = frontend.root.wait_for_keypress(true);
         use tcod::input::KeyCode::*;
         match key {
             // for arrow up/down increase/decrease the current option index
@@ -158,7 +158,7 @@ pub fn menu<T: AsRef<str>>(
                     let index = key.printable.to_ascii_lowercase() as usize - 'a' as usize;
                     if index < options.len() {
                         // before returning, re-start concurrent user input again
-                        if let Some(instance) = game_input {
+                        if let Some(instance) = input {
                             instance.resume_concurrent_input();
                         }
                         return Some(index);
@@ -168,7 +168,7 @@ pub fn menu<T: AsRef<str>>(
             Key { code: Enter, .. } => {
                 // return current option index
                 // but before returning, re-start concurrent user input again
-                if let Some(instance) = game_input {
+                if let Some(instance) = input {
                     instance.start_concurrent_input();
                 }
 
@@ -181,17 +181,17 @@ pub fn menu<T: AsRef<str>>(
 
 /// Display a generic textbox with optional header and text.
 pub fn msg_box(
-    game_frontend: &mut GameFrontend,
-    game_input: &mut Option<&mut GameInput>,
+    frontend: &mut GameFrontend,
+    input: &mut Option<&mut GameInput>,
     header: &str,
     text: &str,
     width: i32,
 ) {
     // calculate total height for the header and text (after auto-wrap)
-    let header_height = game_frontend
+    let header_height = frontend
         .root
         .get_height_rect(0, 0, width, SCREEN_HEIGHT, header);
-    let text_height = game_frontend
+    let text_height = frontend
         .root
         .get_height_rect(0, 0, width, SCREEN_HEIGHT, text);
 
@@ -203,8 +203,8 @@ pub fn msg_box(
     // set background and foreground colors
     for x in 0..width {
         for y in 0..height {
-            window.set_char_background(x, y, game_frontend.coloring.bg_dialog, BackgroundFlag::Set);
-            window.set_char_foreground(x, y, game_frontend.coloring.fg_dialog_border);
+            window.set_char_background(x, y, frontend.coloring.bg_dialog, BackgroundFlag::Set);
+            window.set_char_foreground(x, y, frontend.coloring.fg_dialog_border);
             window.set_char(x, y, ' ');
         }
     }
@@ -231,7 +231,7 @@ pub fn msg_box(
     // window.set_char(width, height - 1, chars::SW);
     // window.set_char(width, 1, chars::SE);
 
-    window.set_default_foreground(game_frontend.coloring.fg_dialog);
+    window.set_default_foreground(frontend.coloring.fg_dialog);
     // print header with multi-line wrap
     window.print_rect_ex(
         width / 2 as i32,
@@ -261,37 +261,37 @@ pub fn msg_box(
         &window,
         (0, 0),
         (width, height),
-        &mut game_frontend.root,
+        &mut frontend.root,
         (x, y),
         1.0,
         1.0,
     );
 
     // present the root console to the player and wait for a key-press
-    game_frontend.root.flush();
+    frontend.root.flush();
 
     // if we have an instance of GameInput, pause the input listener thread first
     // so that we can receive input events directly
-    match game_input {
+    match input {
         Some(ref mut handle) => {
             handle.pause_concurrent_input();
-            game_frontend.root.wait_for_keypress(true);
+            frontend.root.wait_for_keypress(true);
             // after we got he key, restart input listener thread
             handle.resume_concurrent_input();
         }
         None => {
-            game_frontend.root.wait_for_keypress(true);
+            frontend.root.wait_for_keypress(true);
         }
     }
 }
 
 pub fn show_character_screen(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_input: &mut Option<&mut GameInput>,
-    game_objects: &mut GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    input: &mut Option<&mut GameInput>,
+    objects: &mut GameObjects,
 ) {
-    if let Some(ref player) = game_objects[game_state.current_player_index] {
+    if let Some(ref player) = objects[state.current_player_index] {
         let header: String = "Character Information".to_string();
         let msg: String = format!(
             "Energy:        {}/{} \n\
@@ -306,14 +306,8 @@ pub fn show_character_screen(
             player.sensors.sensing_range,
             player.actuators.max_hp,
             player.alive,
-            game_state.turn
+            state.turn
         );
-        msg_box(
-            game_frontend,
-            game_input,
-            &header,
-            &msg,
-            CHARACTER_SCREEN_WIDTH,
-        );
+        msg_box(frontend, input, &header, &msg, CHARACTER_SCREEN_WIDTH);
     };
 }

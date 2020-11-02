@@ -29,27 +29,20 @@ pub const WORLD_WIDTH: i32 = 80;
 pub const WORLD_HEIGHT: i32 = 43;
 
 /// Create a new game by instantiating the game engine, game state and object vector.
-pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, GameObjects) {
+pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameObjects) {
     // create game state holding game-relevant information
     let level = 1;
-    let mut game_state = GameState::new(env, level);
+    let mut state = GameState::new(env, level);
 
     // create blank game world
-    let mut game_objects = GameObjects::new();
-    game_objects.blank_world(&env);
+    let mut objects = GameObjects::new();
+    objects.blank_world(&mut state);
 
     // generate world terrain
     // let mut world_generator = RogueWorldGenerator::new();
     let mut world_generator = OrganicsWorldGenerator::new();
-    world_generator.make_world(
-        &env,
-        game_frontend,
-        &mut game_objects,
-        &mut game_state.rng,
-        &mut game_state.gene_library,
-        level,
-    );
-    game_objects.set_tiles_dna(&mut game_state.rng, &game_state.gene_library);
+    world_generator.make_world(&mut state, frontend, &mut objects, level);
+    objects.set_tiles_dna(&mut state.rng, &state.gene_library);
 
     // create object representing the player
     let (new_x, new_y) = world_generator.get_player_start_pos();
@@ -61,9 +54,7 @@ pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, G
         .control(Controller::Player(PlayerCtrl::new()))
         .genome(
             0.99,
-            game_state
-                .gene_library
-                .new_genetics(&mut game_state.rng, GENE_LEN),
+            state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
         );
 
     debug!("created player object {}", player);
@@ -75,15 +66,15 @@ pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, G
         "player default action: {:?}",
         player.get_primary_action(Target::Center).to_text()
     );
-    game_objects.set_player(player);
+    objects.set_player(player);
 
     // a warm welcoming message
-    game_state.log.add(
+    state.log.add(
         "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-        game_frontend.coloring.fg_dialog_border,
+        frontend.coloring.fg_dialog_border,
     );
 
-    (game_state, game_objects)
+    (state, objects)
 }
 
 /// Central function of the game.
@@ -91,24 +82,24 @@ pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, G
 /// - render game world
 /// - let NPCs take their turn
 pub fn game_loop(
-    game_state: &mut GameState,
-    game_frontend: &mut GameFrontend,
-    game_input: &mut GameInput,
-    game_objects: &mut GameObjects,
+    state: &mut GameState,
+    frontend: &mut GameFrontend,
+    input: &mut GameInput,
+    objects: &mut GameObjects,
 ) {
     // use cpuprofiler::PROFILER;
     // PROFILER.lock().unwrap().start("./profile.out");
 
     let mut start_time = Instant::now();
-    while !game_frontend.root.window_closed() {
+    while !frontend.root.window_closed() {
         // ensure that the player action from previous turns is consumed
-        assert!(game_input.is_action_consumed());
+        assert!(input.is_action_consumed());
 
         // let the game engine process an object
-        let action_result = game_state.process_object(game_objects, &game_frontend.fov);
+        let action_result = state.process_object(objects, &frontend.fov);
 
         // limit frames
-        if game_state.is_players_turn() {
+        if state.is_players_turn() {
             if let ObjectProcResult::NoAction = action_result {
                 let elapsed = start_time.elapsed();
                 // println!("time since last inactive: {:#?}", elapsed);
@@ -121,37 +112,26 @@ pub fn game_loop(
         }
 
         // render action vfx
-        process_visual_feedback(
-            game_state,
-            game_frontend,
-            game_input,
-            game_objects,
-            action_result,
-        );
+        process_visual_feedback(state, frontend, input, objects, action_result);
 
         // once processing is done, check whether we have a new user input
-        game_input.check_for_player_actions(game_state, game_frontend, game_objects);
+        input.check_for_player_actions(state, frontend, objects);
 
         // distinguish between in-game action and ui (=meta) actions
         // TODO: Enable multi-key/mouse actions e.g., select target & attack.
-        match game_input.get_next_action() {
+        match input.get_next_action() {
             Some(PlayerInput::MetaInput(meta_action)) => {
                 debug!("process meta action: {:#?}", meta_action);
-                let is_exit_game = handle_meta_actions(
-                    game_frontend,
-                    game_state,
-                    game_objects,
-                    &mut Some(game_input),
-                    meta_action,
-                );
+                let is_exit_game =
+                    handle_meta_actions(state, frontend, objects, &mut Some(input), meta_action);
                 if is_exit_game {
-                    game_input.stop_concurrent_input();
+                    input.stop_concurrent_input();
                     break;
                 }
             }
             Some(PlayerInput::PlayInput(in_game_action)) => {
                 trace!("inject in-game action {:#?} to player", in_game_action);
-                if let Some(ref mut player) = game_objects[game_state.current_player_index] {
+                if let Some(ref mut player) = objects[state.current_player_index] {
                     use crate::ui::game_input::PlayerAction::*;
                     let a = match in_game_action {
                         PrimaryAction(dir) => player.get_primary_action(dir),
@@ -196,14 +176,14 @@ pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(game_state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
+pub fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
     if let Some(mut env_data) = dirs::data_local_dir() {
         env_data.push("innit");
         fs::create_dir_all(&env_data)?;
         env_data.push("savegame");
 
         let mut save_file = File::create(env_data)?;
-        let save_data = serde_json::to_string(&(game_state, objects))?;
+        let save_data = serde_json::to_string(&(state, objects))?;
         save_file.write_all(save_data.as_bytes())?;
         debug!("SAVED GAME TO FILE");
         Ok(())

@@ -14,84 +14,56 @@ fn test_random_ai() {
     use crate::core::world::world_gen::Monster;
     use crate::entity::player::PLAYER;
 
-    let ((p_x, p_y), mut game_state, mut game_objects) = create_minimal_world();
+    let ((p_x, p_y), mut state, mut objects) = create_minimal_world();
 
     // test walking in any direction
-    if let Some(mut player) = game_objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.rng) {
+    if let Some(mut player) = objects.extract(PLAYER) {
+        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
             println!("move test '{}'", &action.to_text());
             assert!(action.get_identifier().contains("move"))
         } else {
             panic!();
         }
-        game_objects.replace(PLAYER, player);
+        objects.replace(PLAYER, player);
     } else {
         panic!();
     }
 
     // // TODO: Set up monsters
-    let virus_north = new_monster(
-        &mut game_state.rng,
-        &game_state.gene_library,
-        Monster::Virus,
-        p_x,
-        p_y - 1,
-        0,
-    );
+    let virus_north = new_monster(&mut state, Monster::Virus, p_x, p_y - 1, 0);
 
-    let virus_east = new_monster(
-        &mut game_state.rng,
-        &game_state.gene_library,
-        Monster::Virus,
-        p_x + 1,
-        p_y,
-        0,
-    );
+    let virus_east = new_monster(&mut state, Monster::Virus, p_x + 1, p_y, 0);
 
-    let virus_south = new_monster(
-        &mut game_state.rng,
-        &game_state.gene_library,
-        Monster::Virus,
-        p_x,
-        p_y + 1,
-        0,
-    );
+    let virus_south = new_monster(&mut state, Monster::Virus, p_x, p_y + 1, 0);
 
-    game_objects.push(virus_north);
-    game_objects.push(virus_east);
-    game_objects.push(virus_south);
+    objects.push(virus_north);
+    objects.push(virus_east);
+    objects.push(virus_south);
 
     // test walking in only west direction
-    if let Some(mut player) = game_objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.rng) {
+    if let Some(mut player) = objects.extract(PLAYER) {
+        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
             assert_eq!(action.to_text(), "move to West")
         } else {
             panic!();
         }
-        game_objects.replace(PLAYER, player);
+        objects.replace(PLAYER, player);
     } else {
         panic!();
     }
 
-    let virus_west = new_monster(
-        &mut game_state.rng,
-        &game_state.gene_library,
-        Monster::Virus,
-        p_x - 1,
-        p_y,
-        0,
-    );
+    let virus_west = new_monster(&mut state, Monster::Virus, p_x - 1, p_y, 0);
 
-    game_objects.push(virus_west);
+    objects.push(virus_west);
 
     // test no walk possible
-    if let Some(mut player) = game_objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut game_objects, &mut game_state.rng) {
+    if let Some(mut player) = objects.extract(PLAYER) {
+        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
             assert_eq!(action.to_text(), "pass")
         } else {
             panic!();
         }
-        game_objects.replace(PLAYER, player);
+        objects.replace(PLAYER, player);
     } else {
         panic!();
     }
@@ -104,30 +76,30 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
 
     // create game state holding game-relevant information
     let level = 1;
-    let game_state = GameState::new(GameEnv::new(), level);
+    let mut state = GameState::new(GameEnv::new(), level);
 
     // create blank game world
-    let mut game_objects = GameObjects::new();
-    game_objects.blank_world(&game_state.env);
+    let mut objects = GameObjects::new();
+    objects.blank_world(&mut state);
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 
     // make tiles near the player walkable
-    game_objects
+    objects
         .get_tile_at(p_x as usize, p_y as usize)
-        .replace(Tile::empty(p_x, p_y, game_state.env.debug_mode));
-    game_objects
+        .replace(Tile::empty(p_x, p_y, state.env.debug_mode));
+    objects
         .get_tile_at((p_x + 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x + 1, p_y, game_state.env.debug_mode));
-    game_objects
+        .replace(Tile::empty(p_x + 1, p_y, state.env.debug_mode));
+    objects
         .get_tile_at((p_x - 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x - 1, p_y, game_state.env.debug_mode));
-    game_objects
+        .replace(Tile::empty(p_x - 1, p_y, state.env.debug_mode));
+    objects
         .get_tile_at(p_x as usize, (p_y - 1) as usize)
-        .replace(Tile::empty(p_x, p_y - 1, game_state.env.debug_mode));
-    game_objects
+        .replace(Tile::empty(p_x, p_y - 1, state.env.debug_mode));
+    objects
         .get_tile_at(p_x as usize, (p_y + 1) as usize)
-        .replace(Tile::empty(p_x, p_y + 1, game_state.env.debug_mode));
+        .replace(Tile::empty(p_x, p_y + 1, state.env.debug_mode));
 
     let player = Object::new()
         .position(p_x, p_y)
@@ -149,7 +121,7 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
         )
         .control(Controller::Npc(Box::new(RandomAi::new())));
 
-    game_objects.set_player(player);
+    objects.set_player(player);
 
-    ((p_x, p_y), game_state, game_objects)
+    ((p_x, p_y), state, objects)
 }

@@ -273,7 +273,7 @@ impl GeneLibrary {
 
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
-    pub fn new_dna(&self, game_rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
+    pub fn new_dna(&self, rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
         for _ in 0..avg_genome_len {
@@ -282,7 +282,7 @@ impl GeneLibrary {
             // add length
             dna.push(1 as u8);
             // pick random trait number from list and add trait id
-            let trait_num = game_rng.gen_range(1, self.trait_count + 1);
+            let trait_num = rng.gen_range(1, self.trait_count + 1);
             trace!(
                 "sampled genetic trait {} ({})",
                 trait_num,
@@ -315,10 +315,10 @@ impl GeneLibrary {
     /// Combine *new_dna()* and *decode_dna()* into a single function call.
     pub fn new_genetics(
         &self,
-        game_rng: &mut GameRng,
+        rng: &mut GameRng,
         avg_genome_len: usize,
     ) -> (Sensors, Processors, Actuators, Dna) {
-        let dna = self.new_dna(game_rng, avg_genome_len);
+        let dna = self.new_dna(rng, avg_genome_len);
         let (s, p, a, mut d) = self.decode_dna(&dna);
         d.raw = dna;
         (s, p, a, d)

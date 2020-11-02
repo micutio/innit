@@ -1,6 +1,7 @@
-use tcod::colors::Color;
+use tcod::colors::{self, Color};
 
 use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{MessageLog, Messages};
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
@@ -148,10 +149,33 @@ impl Object {
         self
     }
 
-    /// Transform the object into an NPC. Part of the builder pattern.
+    /// Transform the object into an NPC or player. Part of the builder pattern.
     pub fn control(mut self, controller: Controller) -> Object {
         self.control = Some(controller);
         self
+    }
+
+    /// Transform the object into an NPC or player. Part of the builder pattern.
+    pub fn set_control(mut self, controller: Controller, log: &mut Messages) {
+        match controller {
+            Controller::Npc(_) => {
+                if let Some(Controller::Player(_)) = self.control {
+                    log.add(
+                        format!("You lost control over {}", &self.visual.name),
+                        colors::LIGHT_RED,
+                    );
+                }
+            }
+            Controller::Player(_) => {
+                if let Some(Controller::Npc(_)) = self.control {
+                    log.add(
+                        format!("You gained control over {}", &self.visual.name),
+                        colors::LIGHT_RED,
+                    );
+                }
+            }
+        }
+        self.control = Some(controller);
     }
 
     pub fn metabolize(&mut self) {
@@ -194,15 +218,15 @@ impl Object {
     /// Determine and return the next action the object will take.
     pub fn get_next_action(
         &mut self,
-        game_objects: &mut GameObjects,
-        game_rng: &mut GameRng,
+        objects: &mut GameObjects,
+        rng: &mut GameRng,
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
         let mut controller = self.control.take();
         let next_action;
         match controller {
             Some(Controller::Npc(ref mut boxed_ai)) => {
-                next_action = Some(boxed_ai.act(self, game_objects, game_rng));
+                next_action = Some(boxed_ai.act(self, objects, rng));
             }
             Some(Controller::Player(ref mut player_ctrl)) => {
                 next_action = player_ctrl.next_action.take();

@@ -31,18 +31,18 @@ pub fn launch_game(env: GameEnv) {
 /// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 pub fn main() {
     pretty_env_logger::init();
-    let mut game_env: GameEnv = GameEnv::new();
+    let mut env: GameEnv = GameEnv::new();
 
     let args: Vec<String> = env::args().collect();
     println!("args: {:?}", args);
 
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
-            game_env.set_debug_mode(true);
+            env.set_debug_mode(true);
         }
     }
 
     // TODO: Create game environment from presets and command line flags!
 
-    launch_game(game_env);
+    launch_game(env);
 }
