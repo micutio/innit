@@ -149,13 +149,8 @@ impl Object {
     }
 
     /// Transform the object into an NPC. Part of the builder pattern.
-    pub fn ai(mut self, ai: Box<dyn Ai>) -> Object {
-        self.control = Some(Controller::Npc(ai));
-        self
-    }
-
-    pub fn player_ctrl(mut self, controller: PlayerCtrl) -> Object {
-        self.control = Some(Controller::Player(controller));
+    pub fn control(mut self, controller: Controller) -> Object {
+        self.control = Some(controller);
         self
     }
 

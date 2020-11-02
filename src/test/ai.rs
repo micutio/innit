@@ -3,6 +3,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::MoveAction;
+use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
 // TODO: extend available actions and tests to include attacking
@@ -146,7 +147,7 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Dna::default(),
             ),
         )
-        .ai(Box::new(RandomAi::new()));
+        .control(Controller::Npc(Box::new(RandomAi::new())));
 
     game_objects.set_player(player);
 

@@ -30,7 +30,7 @@ pub struct PlayerCtrl {
 }
 
 impl PlayerCtrl {
-    fn new() -> Self {
+    pub fn new() -> Self {
         PlayerCtrl {
             primary_action: Box::new(PassAction),
             secondary_action: Box::new(PassAction),

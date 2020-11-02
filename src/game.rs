@@ -15,6 +15,7 @@ use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{PassAction, Target};
+use crate::entity::control::{Controller, PlayerCtrl};
 use crate::entity::genetics::GENE_LEN;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
@@ -57,6 +58,7 @@ pub fn new_game(env: GameEnv, game_frontend: &mut GameFrontend) -> (GameState, G
         .living(true)
         .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
+        .control(Controller::Player(PlayerCtrl::new()))
         .genome(
             0.99,
             game_state
