@@ -1,12 +1,13 @@
 use tcod::colors::{self, Color};
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{MessageLog, Messages};
+use crate::core::game_state::{GameState, MessageLog, Messages};
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::control::*;
-use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
+use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
+use crate::entity::inventory::Inventory;
 use crate::util::game_rng::GameRng;
 
 use std::cmp::min;
@@ -39,6 +40,7 @@ pub struct Object {
     pub sensors: Sensors,
     pub processors: Processors,
     pub actuators: Actuators,
+    pub inventory: Inventory,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -94,6 +96,7 @@ impl Object {
             sensors: Sensors::new(),
             processors: Processors::new(),
             actuators: Actuators::new(),
+            inventory: Inventory::new(),
         }
     }
 
@@ -334,6 +337,40 @@ impl Object {
             .chain(self.processors.actions.iter())
             .chain(self.sensors.actions.iter())
             .collect()
+    }
+
+    pub fn add_to_inventory(&mut self, state: &mut GameState, o: Object) {
+        let reread_dna = o.dna.dna_type == DnaType::Plasmid;
+        self.inventory.items.push(o);
+        if reread_dna {
+            self.reread_dna(state);
+        }
+    }
+
+    pub fn remove_from_inventory(&mut self, state: &mut GameState, index: usize) {
+        let o = self.inventory.items.remove(index);
+        if o.dna.dna_type == DnaType::Plasmid {
+            self.reread_dna(state);
+        }
+    }
+
+    /// Resets the sensor, processor and actuator properties and action from the combined dna of
+    /// this object and all the plasmid-dna it contains in the inventory
+    fn reread_dna(&mut self, state: &mut GameState) {
+        let mut combined: Vec<u8> = self
+            .inventory
+            .items
+            .iter()
+            .filter(|o| o.dna.dna_type == DnaType::Plasmid)
+            .map(|o| o.dna.raw.clone())
+            .flatten()
+            .collect();
+        let mut complete_dna = self.dna.raw.clone();
+        complete_dna.append(&mut combined);
+        let (s, p, a, d) = state
+            .gene_library
+            .decode_dna(self.dna.dna_type, &complete_dna);
+        self.change_genome(s, p, a, d);
     }
 }
 

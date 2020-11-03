@@ -8,7 +8,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, Messages};
 use crate::entity::ai::{PassiveAi, RandomAi};
 use crate::entity::control::Controller;
-use crate::entity::genetics::GENE_LEN;
+use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::GameFrontend;
 
@@ -74,7 +74,9 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
             .physical(true, false, false)
             .genome(
                 0.75,
-                state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
+                state
+                    .gene_library
+                    .new_genetics(&mut state.rng, DnaType::Nucleoid, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(RandomAi::new()))),
         Monster::Bacteria => Object::new()
@@ -84,7 +86,9 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
             .physical(true, false, false)
             .genome(
                 0.9,
-                state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
+                state
+                    .gene_library
+                    .new_genetics(&mut state.rng, DnaType::Nucleoid, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(RandomAi::new()))),
     }

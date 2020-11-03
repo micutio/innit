@@ -33,6 +33,7 @@ use std::cmp;
 use std::collections::HashMap;
 
 use crate::entity::action::*;
+use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 
@@ -209,8 +210,26 @@ impl Actuators {
 //      * anti-synergies: Vec<?>, */
 // }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+pub enum DnaType {
+    Nucleus,
+    Nucleoid,
+    Plasmid,
+}
+
+impl Default for DnaType {
+    fn default() -> Self {
+        DnaType::Nucleoid
+    }
+}
+
+/// DNA encodes all properties and actions available to an object.
+/// For now objects hold DNA either contained in an organelle (Nucleus), free floating in the cell
+/// (Nucleoid) or in form of a ring structure that can be exchanged or picked up by certain other
+/// objects (Plasmid). This is indicated by the `dna_type`.
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Dna {
+    pub dna_type: DnaType,
     pub raw: Vec<u8>,
     pub simplified: Vec<TraitFamily>,
 }
@@ -218,6 +237,7 @@ pub struct Dna {
 impl Dna {
     pub fn new() -> Dna {
         Dna {
+            dna_type: Nucleoid,
             raw: Vec::new(),
             simplified: Vec::new(),
         }
@@ -297,10 +317,14 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn decode_dna(&self, raw_dna: &[u8]) -> (Sensors, Processors, Actuators, Dna) {
+    pub fn decode_dna(
+        &self,
+        dna_type: DnaType,
+        raw_dna: &[u8],
+    ) -> (Sensors, Processors, Actuators, Dna) {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = raw_dna.len();
-        let mut trait_builder: TraitBuilder = TraitBuilder::new(raw_dna);
+        let mut trait_builder: TraitBuilder = TraitBuilder::new(dna_type, raw_dna);
 
         while start_ptr < raw_dna.len() - 2 {
             let (s_ptr, e_ptr) = self.decode_gene(raw_dna, start_ptr, end_ptr, &mut trait_builder);
@@ -316,10 +340,11 @@ impl GeneLibrary {
     pub fn new_genetics(
         &self,
         rng: &mut GameRng,
+        dna_type: DnaType,
         avg_genome_len: usize,
     ) -> (Sensors, Processors, Actuators, Dna) {
         let dna = self.new_dna(rng, avg_genome_len);
-        let (s, p, a, mut d) = self.decode_dna(&dna);
+        let (s, p, a, mut d) = self.decode_dna(dna_type, &dna);
         d.raw = dna;
         (s, p, a, d)
     }
@@ -392,7 +417,7 @@ struct TraitBuilder {
 }
 
 impl TraitBuilder {
-    pub fn new(raw_dna: &[u8]) -> Self {
+    pub fn new(dna_type: DnaType, raw_dna: &[u8]) -> Self {
         TraitBuilder {
             sensors: Sensors::new(),
             processors: Processors::new(),
@@ -401,6 +426,7 @@ impl TraitBuilder {
             processor_action_count: HashMap::new(),
             actuator_action_count: HashMap::new(),
             dna: Dna {
+                dna_type,
                 raw: raw_dna.to_vec(),
                 simplified: Vec::new(),
             },

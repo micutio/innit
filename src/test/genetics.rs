@@ -1,3 +1,5 @@
+use crate::entity::genetics::DnaType;
+
 #[test]
 fn test_dna_encoding() {
     use crate::entity::action::MoveAction;
@@ -38,7 +40,7 @@ fn test_dna_encoding() {
         hp: 1,
     };
 
-    let (_s, _p, _a, _) = gene_lib.decode_dna(&dna);
+    let (_s, _p, _a, _) = gene_lib.decode_dna(DnaType::Nucleus, &dna);
 
     assert_eq!(s.sensing_range, _s.sensing_range);
     assert_eq!(s.actions.len(), _s.actions.len());

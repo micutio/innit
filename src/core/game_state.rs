@@ -127,9 +127,10 @@ impl GameState {
                         );
 
                         // apply new genome to object
-                        let (sensors, processors, actuators, dna) = self
-                            .gene_library
-                            .decode_dna(active_object.dna.raw.as_slice());
+                        let (sensors, processors, actuators, dna) = self.gene_library.decode_dna(
+                            active_object.dna.dna_type,
+                            active_object.dna.raw.as_slice(),
+                        );
                         active_object.change_genome(sensors, processors, actuators, dna);
 
                         // TODO: Show mutation effect as diff between old and new genome!

@@ -16,7 +16,7 @@ use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{PassAction, Target};
 use crate::entity::control::Controller;
-use crate::entity::genetics::GENE_LEN;
+use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback, GameFrontend};
@@ -54,7 +54,9 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
         .control(Controller::Player(PlayerCtrl::new()))
         .genome(
             0.99,
-            state.gene_library.new_genetics(&mut state.rng, GENE_LEN),
+            state
+                .gene_library
+                .new_genetics(&mut state.rng, DnaType::Nucleus, GENE_LEN),
         );
 
     debug!("created player object {}", player);

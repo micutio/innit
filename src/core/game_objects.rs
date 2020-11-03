@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
-use crate::entity::genetics::{GeneLibrary, GENE_LEN};
+use crate::entity::genetics::{DnaType, GeneLibrary, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
@@ -61,7 +61,7 @@ impl GameObjects {
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(rng, GENE_LEN);
+                        gene_library.new_genetics(rng, DnaType::Nucleus, GENE_LEN);
                     tile.change_genome(sensors, processors, actuators, dna);
                 }
             }
