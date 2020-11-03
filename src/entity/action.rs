@@ -10,7 +10,8 @@ use crate::core::game_state::{GameState, ObjectProcResult};
 use crate::core::position::Position;
 use crate::entity::object::Object;
 
-/// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
+/// Possible target groups are: objects, empty space, anything or self (None).
+/// Non-targeted actions will always be applied to the performing object itself.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TargetCategory {
     Any,
@@ -19,6 +20,7 @@ pub enum TargetCategory {
     None,
 }
 
+/// Targets can only be adjacent to the object: north, south, east, west or the objects itself.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 pub enum Target {
     North,
@@ -62,7 +64,7 @@ pub enum ActionResult {
     Consequence { action: Option<Box<dyn Action>> },
 }
 
-/// Prototype for all actions.
+/// Interface for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
 #[typetag::serde(tag = "type")]
 pub trait Action: ActionClone + Debug {
@@ -145,6 +147,117 @@ impl Action for PassAction {
     }
 }
 
+/// Move an object
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MoveAction {
+    lvl: i32,
+    direction: Target,
+}
+
+impl MoveAction {
+    // TODO: use level
+    pub fn new() -> Self {
+        MoveAction {
+            lvl: 0,
+            direction: Target::Center,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Action for MoveAction {
+    fn perform(
+        &self,
+        _state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        let target_pos = owner.pos.get_translated(&self.direction.to_pos());
+        if !&objects.is_pos_blocked(&target_pos) {
+            owner.pos.set(target_pos.x, target_pos.y);
+            ActionResult::Success {
+                callback: ObjectProcResult::CheckEnterFOV,
+            }
+        } else {
+            info!("object {} blocked!", owner.visual.name);
+            ActionResult::Failure // this might cause infinite loops of failure
+        }
+    }
+
+    fn set_target(&mut self, target: Target) {
+        self.direction = target;
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::EmptyObject
+    }
+
+    fn get_identifier(&self) -> String {
+        "move".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        format!("move to {:?}", self.direction)
+    }
+}
+
+/// Focus on increased energy production for this turn.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MetaboliseAction {
+    lvl: i32,
+}
+
+impl MetaboliseAction {
+    pub fn new() -> Self {
+        MetaboliseAction { lvl: 0 }
+    }
+}
+
+#[typetag::serde]
+impl Action for MetaboliseAction {
+    fn perform(
+        &self,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        owner.processors.energy += self.lvl;
+        ActionResult::Success {
+            callback: ObjectProcResult::NoFeedback,
+        }
+    }
+
+    fn set_target(&mut self, _t: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "metabolize".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0
+    }
+
+    fn to_text(&self) -> String {
+        "increase metabolism momentarily".to_string()
+    }
+}
+
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AttackAction {
@@ -217,112 +330,8 @@ impl Action for AttackAction {
     }
 }
 
-/// Move an object
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MoveAction {
-    lvl: i32,
-    direction: Target,
-}
-
-impl MoveAction {
-    // TODO: use level
-    pub fn new() -> Self {
-        MoveAction {
-            lvl: 0,
-            direction: Target::Center,
-        }
-    }
-}
-
-#[typetag::serde]
-impl Action for MoveAction {
-    fn perform(
-        &self,
-        _state: &mut GameState,
-        objects: &mut GameObjects,
-        owner: &mut Object,
-    ) -> ActionResult {
-        let target_pos = owner.pos.get_translated(&self.direction.to_pos());
-        if !&objects.is_pos_blocked(&target_pos) {
-            owner.pos.set(target_pos.x, target_pos.y);
-            ActionResult::Success {
-                callback: ObjectProcResult::CheckEnterFOV,
-            }
-        } else {
-            info!("object {} blocked!", owner.visual.name);
-            ActionResult::Failure // this might cause infinite loops of failure
-        }
-    }
-
-    fn set_target(&mut self, target: Target) {
-        self.direction = target;
-    }
-
-    fn set_level(&mut self, lvl: i32) {
-        self.lvl = lvl;
-    }
-
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::EmptyObject
-    }
-
-    fn get_identifier(&self) -> String {
-        "move".to_string()
-    }
-
-    fn get_energy_cost(&self) -> i32 {
-        self.lvl
-    }
-
-    fn to_text(&self) -> String {
-        format!("move to {:?}", self.direction)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MetaboliseAction {
-    lvl: i32,
-}
-
-impl MetaboliseAction {
-    pub fn new() -> Self {
-        MetaboliseAction { lvl: 0 }
-    }
-}
-
-#[typetag::serde]
-impl Action for MetaboliseAction {
-    fn perform(
-        &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
-        owner: &mut Object,
-    ) -> ActionResult {
-        owner.processors.energy += self.lvl;
-        ActionResult::Success {
-            callback: ObjectProcResult::NoFeedback,
-        }
-    }
-
-    fn set_target(&mut self, _t: Target) {}
-
-    fn set_level(&mut self, lvl: i32) {
-        self.lvl = lvl;
-    }
-
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
-    }
-
-    fn get_identifier(&self) -> String {
-        "metabolize".to_string()
-    }
-
-    fn get_energy_cost(&self) -> i32 {
-        0
-    }
-
-    fn to_text(&self) -> String {
-        "increase metabolism momentarily".to_string()
-    }
-}
+// TODO: Add actions for
+// - attaching to another cell
+// - inserting genome into another cell
+// - immobilising and manipulating another cell
+// - producing stuff
