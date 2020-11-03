@@ -88,21 +88,17 @@ impl Ai for RandomAi {
         }
 
         // b) no empty targets available
-        if adjacent_targets
+        if !adjacent_targets
             .iter()
-            .filter(|t| !t.physics.is_blocking)
-            .count()
-            == 0
+            .any(|t| !t.physics.is_blocking)
         {
             valid_targets.retain(|t| *t != TargetCategory::EmptyObject)
         }
 
         // d) no blocking targets available => remove blocking from selection
-        if adjacent_targets
+        if !adjacent_targets
             .iter()
-            .filter(|t| t.physics.is_blocking)
-            .count()
-            == 0
+            .any(|t| t.physics.is_blocking)
         {
             valid_targets.retain(|t| *t != TargetCategory::BlockingObject);
         }
