@@ -335,3 +335,52 @@ impl Action for AttackAction {
 // - inserting genome into another cell
 // - immobilising and manipulating another cell
 // - producing stuff
+
+/// A virus' sole purpose is to go forth and multiply.
+/// This action corresponds to the virus trait which is located at the beginning of virus DNA.
+/// #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VirusAction {
+    lvl: i32,
+}
+
+impl VirusAction {
+    pub fn new() -> Self {
+        VirusAction { lvl: 0 }
+    }
+}
+
+impl Action for VirusAction {
+    // TODO: Find a way to get the position of this gene within the dna, to parse the complete
+    // virus dna
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        unimplemented!()
+    }
+
+    /// NOP, because this action can only be self-targeted.
+    fn set_target(&mut self, t: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "produce virus".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        "produce virus".to_string()
+    }
+}
