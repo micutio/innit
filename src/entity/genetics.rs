@@ -65,8 +65,8 @@ pub enum TraitAttribute {
 ///      - traits need to know how often they appear in the genome
 ///      - attributes and actions need to know this too!
 ///
-#[derive(Serialize, Deserialize, Debug)]
-struct GeneticTrait {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
@@ -85,6 +85,15 @@ impl GeneticTrait {
             trait_family,
             attribute,
             action,
+        }
+    }
+
+    fn junk() -> Self {
+        GeneticTrait {
+            trait_name: "junk".to_string(),
+            trait_family: TraitFamily::Junk,
+            attribute: TraitAttribute::None,
+            action: None,
         }
     }
 }
@@ -231,7 +240,7 @@ impl Default for DnaType {
 pub struct Dna {
     pub dna_type: DnaType,
     pub raw: Vec<u8>,
-    pub simplified: Vec<TraitFamily>,
+    pub simplified: Vec<GeneticTrait>,
 }
 
 impl Dna {
@@ -386,14 +395,14 @@ impl GeneLibrary {
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
                     trace!("found genetic trait {}", genetic_trait.trait_name);
-                    trait_builder.record_trait_family(genetic_trait.trait_family);
+                    trait_builder.record_trait(genetic_trait.clone());
                     trait_builder.add_action(genetic_trait);
                     trait_builder.add_attribute(genetic_trait.attribute);
                 } else {
                     error!("no trait for id {}", trait_name);
                 }
             } else {
-                trait_builder.record_trait_family(TraitFamily::Junk);
+                trait_builder.record_trait(GeneticTrait::junk());
             }
         }
 
@@ -481,8 +490,8 @@ impl TraitBuilder {
         }
     }
 
-    pub fn record_trait_family(&mut self, trait_fam: TraitFamily) {
-        self.dna.simplified.push(trait_fam);
+    pub fn record_trait(&mut self, g_trait: GeneticTrait) {
+        self.dna.simplified.push(g_trait);
     }
 
     // Finalize all actions, return the super trait components and consume itself.

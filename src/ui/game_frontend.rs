@@ -741,17 +741,17 @@ fn render_dna_short(
     let sensor_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == TraitFamily::Sensing)
+        .filter(|x| x.trait_family == TraitFamily::Sensing)
         .count();
     let processor_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == TraitFamily::Processing)
+        .filter(|x| x.trait_family == TraitFamily::Processing)
         .count();
     let actuator_count = dna
         .simplified
         .iter()
-        .filter(|x| **x == TraitFamily::Actuating)
+        .filter(|x| x.trait_family == TraitFamily::Actuating)
         .count();
     let maximum = dna.simplified.len();
     // render a bar (HP, EXP, etc)
@@ -813,8 +813,8 @@ fn render_dna_long(
     let bar_width = (total_width as f32 / traits_len as f32) as i32;
     let mut offset = 0;
     // println!("number of traits {}, bar width {}", traits_len, bar_width);
-    for super_trait in dna.simplified.iter() {
-        match super_trait {
+    for g_trait in dna.simplified.iter() {
+        match g_trait.trait_family {
             TraitFamily::Sensing => panel.set_default_background(coloring.cyan),
             TraitFamily::Processing => panel.set_default_background(coloring.magenta),
             TraitFamily::Actuating => panel.set_default_background(coloring.yellow),
@@ -856,8 +856,8 @@ fn render_dna_panel(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
         BackgroundFlag::Set,
     );
 
-    for (vert_offset, super_trait) in dna.simplified.iter().enumerate() {
-        let col: Color = match super_trait {
+    for (vert_offset, g_trait) in dna.simplified.iter().enumerate() {
+        let col: Color = match g_trait.trait_family {
             TraitFamily::Sensing => coloring.cyan,
             TraitFamily::Processing => coloring.magenta,
             TraitFamily::Actuating => coloring.yellow,

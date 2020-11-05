@@ -339,6 +339,7 @@ impl Action for AttackAction {
 /// A virus' sole purpose is to go forth and multiply.
 /// This action corresponds to the virus trait which is located at the beginning of virus DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VirusAction {
     lvl: i32,
 }
@@ -349,6 +350,7 @@ impl VirusAction {
     }
 }
 
+#[typetag::serde]
 impl Action for VirusAction {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     // virus dna
