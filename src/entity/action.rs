@@ -3,11 +3,14 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
+use tcod::colors;
+
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectProcResult};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::position::Position;
+use crate::entity::genetics::Receptor;
 use crate::entity::object::Object;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
@@ -338,20 +341,22 @@ impl Action for AttackAction {
 
 /// A virus' sole purpose is to go forth and multiply.
 /// This action corresponds to the virus trait which is located at the beginning of virus DNA.
+/// RNA viruses inject their RNA into a host cell and force them to replicate the virus WITHOUT
+/// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct VirusAction {
+pub struct InjectVirusAction {
     lvl: i32,
 }
 
-impl VirusAction {
+impl InjectVirusAction {
     pub fn new() -> Self {
-        VirusAction { lvl: 0 }
+        InjectVirusAction { lvl: 0 }
     }
 }
 
 #[typetag::serde]
-impl Action for VirusAction {
+impl Action for InjectVirusAction {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     // virus dna
     fn perform(
@@ -364,7 +369,7 @@ impl Action for VirusAction {
     }
 
     /// NOP, because this action can only be self-targeted.
-    fn set_target(&mut self, t: Target) {}
+    fn set_target(&mut self, _t: Target) {}
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;
@@ -375,7 +380,7 @@ impl Action for VirusAction {
     }
 
     fn get_identifier(&self) -> String {
-        "produce virus".to_string()
+        "inject RNA virus".to_string()
     }
 
     fn get_energy_cost(&self) -> i32 {
@@ -383,6 +388,97 @@ impl Action for VirusAction {
     }
 
     fn to_text(&self) -> String {
-        "produce virus".to_string()
+        "inject RNA virus".to_string()
+    }
+}
+
+/// A virus' sole purpose is to go forth and multiply.
+/// This action corresponds to the virus trait which is located at the beginning of virus DNA.
+/// Retro viruses convert their RNA into DNA and inject it into the cell for reproduction as well
+/// as into the cell's DNA where it can permanently reside and switch between dormant and active.
+/// #[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InjectRetrovirusAction {
+    lvl: i32,
+    target: Target,
+}
+
+impl InjectRetrovirusAction {
+    pub fn new() -> Self {
+        InjectRetrovirusAction {
+            lvl: 0,
+            target: Target::Center,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Action for InjectRetrovirusAction {
+    // TODO: Find a way to get the position of this gene within the dna, to parse the complete
+    //       virus dna.
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+        if let Some((i, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+            // check whether the virus can attach to the cell
+            if target
+                .processors
+                .receptors
+                .contains(&Receptor::GenericReceptor)
+            {
+                let mut new_dna = target.dna.raw.clone();
+                new_dna.append(&mut owner.dna.raw.clone());
+                let (s, p, a, d) = state
+                    .gene_library
+                    .decode_dna(target.dna.dna_type, new_dna.as_ref());
+                target.change_genome(s, p, a, d);
+                state.log.add(
+                    format!("A virus has infected {}!", target.visual.name),
+                    colors::AZURE,
+                );
+            } else {
+                state.log.add(
+                    format!(
+                        "A virus has tried to infect {} but cannot find receptor!",
+                        target.visual.name
+                    ),
+                    colors::AZURE,
+                );
+            }
+            objects.replace(i, target);
+        }
+
+        ActionResult::Success {
+            callback: ObjectProcResult::NoFeedback,
+        }
+    }
+
+    /// NOP, because this action can only be self-targeted.
+    fn set_target(&mut self, t: Target) {
+        self.target = t
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "inject retrovirus".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        "inject retrovirus".to_string()
     }
 }

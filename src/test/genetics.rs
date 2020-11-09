@@ -23,15 +23,16 @@ fn test_dna_encoding() {
     ];
     // create artifical sensor component for comparison
     let s = Sensors {
-        actions: vec![],
+        actions: Vec::new(),
         sensing_range: 2,
     };
 
     let p = Processors {
-        actions: vec![],
+        actions: Vec::new(),
         metabolism: 1,
         energy_storage: 1,
         energy: 0,
+        receptors: Vec::new(),
     };
 
     let a = Actuators {

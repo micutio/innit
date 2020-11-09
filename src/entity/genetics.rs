@@ -54,6 +54,8 @@ pub enum TraitAttribute {
     Hp,
     Metabolism,
     Storage,
+    // TODO: Determine receptor kind by position on DNA
+    Receptor,
     None,
 }
 
@@ -131,6 +133,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             TraitAttribute::Storage,
             Some(Box::new(MetaboliseAction::new())),
         ),
+        GeneticTrait::new("receptor", Processing, TraitAttribute::Receptor, None),
     ]
 }
 
@@ -169,6 +172,7 @@ pub struct Processors {
     pub metabolism: i32,     // energy production per turn
     pub energy_storage: i32, // maximum energy store
     pub energy: i32,
+    pub receptors: Vec<Receptor>,
 }
 
 impl Processors {
@@ -178,8 +182,15 @@ impl Processors {
             metabolism: 1,
             energy_storage: 1,
             energy: 0,
+            receptors: Vec::new(),
         }
     }
+}
+
+// TODO: To be extended in the future.
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Receptor {
+    GenericReceptor,
 }
 
 /// Actuators can actually be concrete body parts e.g., organelles, spikes
@@ -221,9 +232,10 @@ impl Actuators {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum DnaType {
-    Nucleus,
-    Nucleoid,
-    Plasmid,
+    Nucleus,  // eukaryotic cells
+    Nucleoid, // bacteria or very large viruses
+    Rna,      // most viruses
+    Plasmid,  // plasmids (duh...!11)
 }
 
 impl Default for DnaType {
@@ -456,6 +468,9 @@ impl TraitBuilder {
             }
             TraitAttribute::Storage => {
                 self.processors.energy_storage += 1;
+            }
+            TraitAttribute::Receptor => {
+                self.processors.receptors.push(Receptor::GenericReceptor);
             }
             TraitAttribute::None => {}
         }

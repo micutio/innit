@@ -104,6 +104,45 @@ impl GameObjects {
         }
     }
 
+    pub fn extract_any_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+        if let Some(i) = self
+            .obj_vec
+            .iter()
+            .flatten()
+            .position(|o| o.pos.is_equal(pos))
+        {
+            Some((i, self.extract(i)))
+        } else {
+            None
+        }
+    }
+
+    pub fn extract_tile_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+        if let Some(i) = self
+            .obj_vec
+            .iter()
+            .flatten()
+            .position(|o| o.pos.is_equal(pos) && o.tile.is_some())
+        {
+            Some((i, self.extract(i)))
+        } else {
+            None
+        }
+    }
+
+    pub fn extract_entity_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+        if let Some(i) = self
+            .obj_vec
+            .iter()
+            .flatten()
+            .position(|o| o.pos.is_equal(pos) && o.tile.is_none())
+        {
+            Some((i, self.extract(i)))
+        } else {
+            None
+        }
+    }
+
     pub fn replace(&mut self, index: usize, object: Object) {
         let item = self.obj_vec.get_mut(index);
         match item {
