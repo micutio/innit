@@ -143,3 +143,18 @@ impl Ai for RandomAi {
         }
     }
 }
+
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct RnaVirusAi {}
+//
+// impl Ai for RnaVirusAi {
+//     fn act(
+//         &self,
+//         object: &mut Object,
+//         objects: &mut GameObjects,
+//         rng: &mut GameRng,
+//     ) -> Box<dyn Action> {
+//         // if there is an adjacent cell, attempt to infect it
+//         unimplemented!()
+//     }
+// }
