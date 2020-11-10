@@ -13,6 +13,7 @@ use crate::core::position::Position;
 use crate::entity::ai::ForceVirusProduction;
 use crate::entity::control::Controller::Npc;
 use crate::entity::object::Object;
+use crate::entity::genetics::DnaType;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -370,13 +371,15 @@ impl Action for InjectVirus {
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
-            // check whether the virus can attach to the cell
+            // check whether the virus can attach to the object and whether the object is an actual
+            // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
             let has_infected = if target
                 .processors
                 .receptors
                 .iter()
-                .any(|e| owner.processors.receptors.contains(e))
+                .any(|e| owner.processors.receptors.contains(e)) &&
+                (target.dna.dna_type != DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid)
             {
                 let original_ai = target.control.take();
                 target
@@ -385,6 +388,14 @@ impl Action for InjectVirus {
                         original_ai,
                         4,
                     ))));
+
+                // The virus becomes an empty shell after successfully transmitting its dna.
+                owner.dna.raw.clear();
+                // The virus 'dies' symbolically.
+                owner.alive = false;
+                // Funny, because it's still debated as to whether viruses are alive to begin.
+                // TODO: Handle other death effects, such as change of blocking, symbol and color.
+
                 true
             } else {
                 false
@@ -463,6 +474,8 @@ impl InjectRetrovirus {
 impl Action for InjectRetrovirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna.
+    // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
+    //       cyclic activity
     fn perform(
         &self,
         state: &mut GameState,
@@ -472,12 +485,15 @@ impl Action for InjectRetrovirus {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         let feedback =
             if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
-                // check whether the virus can attach to the cell
+                // check whether the virus can attach to the object and whether the object is an actual
+                // cell and not a plasmid or another virus
+                // if yes, replace the control and force the cell to produce viruses
                 let msg_feedback = if target
                     .processors
                     .receptors
                     .iter()
-                    .any(|e| owner.processors.receptors.contains(e))
+                    .any(|e| owner.processors.receptors.contains(e)) &&
+                    (target.dna.dna_type != DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid)
                 {
                     let mut new_dna = target.dna.raw.clone();
                     new_dna.append(&mut owner.dna.raw.clone());
@@ -486,11 +502,19 @@ impl Action for InjectRetrovirus {
                         .decode_dna(target.dna.dna_type, new_dna.as_ref());
                     target.change_genome(s, p, a, d);
 
+                    // The virus becomes an empty shell after successfully transmitting its dna.
+                    owner.dna.raw.clear();
+                    // The virus 'dies' symbolically.
+                    owner.alive = false;
+                    // Funny, because it's still debated as to whether viruses are alive to begin.
+                    // TODO: Handle other death effects, such as change of blocking, symbol and color.
+
                     ObjectProcResult::Message {
                         msg: format!("A virus has infected {}!", target.visual.name),
                         class: MsgClass::Alert,
                         origin: owner.pos.clone(),
                     }
+
                 } else {
                     ObjectProcResult::Message {
                         msg: format!(
