@@ -1,7 +1,5 @@
 use rand::{Rng, RngCore};
 
-use tcod::colors::{self, Color};
-
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::position::Position;

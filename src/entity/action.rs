@@ -3,17 +3,15 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
-use tcod::colors;
-
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectProcResult};
+use crate::core::game_state::{GameState, MsgClass, ObjectProcResult};
 use crate::core::position::Position;
 use crate::entity::ai::ForceVirusProduction;
 use crate::entity::control::Controller::Npc;
-use crate::entity::object::Object;
 use crate::entity::genetics::DnaType;
+use crate::entity::object::Object;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -378,8 +376,9 @@ impl Action for InjectVirus {
                 .processors
                 .receptors
                 .iter()
-                .any(|e| owner.processors.receptors.contains(e)) &&
-                (target.dna.dna_type != DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid)
+                .any(|e| owner.processors.receptors.contains(e))
+                && (target.dna.dna_type != DnaType::Nucleus
+                    || target.dna.dna_type == DnaType::Nucleoid)
             {
                 let original_ai = target.control.take();
                 target
@@ -492,8 +491,9 @@ impl Action for InjectRetrovirus {
                     .processors
                     .receptors
                     .iter()
-                    .any(|e| owner.processors.receptors.contains(e)) &&
-                    (target.dna.dna_type != DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid)
+                    .any(|e| owner.processors.receptors.contains(e))
+                    && (target.dna.dna_type != DnaType::Nucleus
+                        || target.dna.dna_type == DnaType::Nucleoid)
                 {
                     let mut new_dna = target.dna.raw.clone();
                     new_dna.append(&mut owner.dna.raw.clone());
@@ -514,7 +514,6 @@ impl Action for InjectRetrovirus {
                         class: MsgClass::Alert,
                         origin: owner.pos.clone(),
                     }
-
                 } else {
                     ObjectProcResult::Message {
                         msg: format!(

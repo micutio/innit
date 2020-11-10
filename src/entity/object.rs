@@ -1,4 +1,4 @@
-use tcod::colors::{self, Color};
+use tcod::colors::Color;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, Messages, MsgClass};
