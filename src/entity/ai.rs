@@ -4,14 +4,14 @@
 
 // internal imports
 
+use rand::seq::{IteratorRandom, SliceRandom};
+use std::fmt::Debug;
+
 use crate::core::game_objects::GameObjects;
 use crate::entity::action::{Action, InjectVirus, Pass, ProduceVirus, Target, TargetCategory};
 use crate::entity::object::Object;
-
 use crate::core::game_state::GameState;
 use crate::entity::control::{Ai, Controller};
-use rand::seq::{IteratorRandom, SliceRandom};
-use std::fmt::Debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassiveAi;
@@ -185,17 +185,17 @@ pub struct ForceVirusProduction {
 }
 
 impl ForceVirusProduction {
-    fn new_duration(original_ai: Controller, duration_turns: i32) -> Self {
+    pub(crate) fn new_duration(original_ai: Option<Controller>, duration_turns: i32) -> Self {
         ForceVirusProduction {
-            original_ai: Some(original_ai),
+            original_ai,
             turns_active: Some(duration_turns),
             current_turn: 0,
         }
     }
 
-    fn new_forever(original_ai: Controller) -> Self {
+    fn new_forever(original_ai: Option<Controller>) -> Self {
         ForceVirusProduction {
-            original_ai: Some(original_ai),
+            original_ai,
             turns_active: None,
             current_turn: 0,
         }

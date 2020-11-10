@@ -8,9 +8,11 @@ use tcod::colors;
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, MsgClass};
 use crate::core::position::Position;
 use crate::entity::object::Object;
+use crate::entity::ai::ForceVirusProduction;
+use crate::entity::control::Controller::Npc;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -363,10 +365,35 @@ impl Action for InjectVirus {
     fn perform(
         &self,
         _state: &mut GameState,
-        _objects: &mut GameObjects,
-        _owner: &mut Object,
+        objects: &mut GameObjects,
+        owner: &mut Object,
     ) -> ActionResult {
-        unimplemented!()
+        let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+        if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+            // check whether the virus can attach to the cell
+            // if yes, replace the control and force the cell to produce viruses
+            let has_infected = if target
+                .processors
+                .receptors
+                .iter()
+                .any(|e| owner.processors.receptors.contains(e)) {
+                let original_ai = target.control.take();
+                target.control.replace(Npc(Box::new(ForceVirusProduction::new_duration(original_ai, 4))));
+                true
+            } else {
+                false
+            };
+
+            // copy target name before moving target back into object vector
+            let target_name = target.visual.name.clone();
+            objects.replace(index, target);
+            if has_infected {
+                return ActionResult::Success {callback: ObjectProcResult::Message {msg: format!("{} injected a virus into {}", owner.visual.name, target_name), class: MsgClass::Alert, origin: owner.pos.clone()}};
+            }
+            ActionResult::Success {callback: ObjectProcResult::NoFeedback}
+
+        } else {
+            ActionResult::Success {callback: ObjectProcResult::NoFeedback}        }
     }
 
     /// NOP, because this action can only be self-targeted.
@@ -424,9 +451,9 @@ impl Action for InjectRetrovirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+        let feedback= if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
             // check whether the virus can attach to the cell
-            if target
+            let msg_feedback = if target
                 .processors
                 .receptors
                 .iter()
@@ -438,24 +465,30 @@ impl Action for InjectRetrovirus {
                     .gene_library
                     .decode_dna(target.dna.dna_type, new_dna.as_ref());
                 target.change_genome(s, p, a, d);
-                state.log.add(
-                    format!("A virus has infected {}!", target.visual.name),
-                    colors::AZURE,
-                );
+
+                ObjectProcResult::Message {
+                    msg: format!("A virus has infected {}!", target.visual.name),
+                    class: MsgClass::Alert,
+                    origin: owner.pos.clone(),
+                }
             } else {
-                state.log.add(
-                    format!(
+                ObjectProcResult::Message {
+                    msg: format!(
                         "A virus has tried to infect {} but cannot find matching receptor!",
                         target.visual.name
                     ),
-                    colors::AZURE,
-                );
-            }
+                    class: MsgClass::Info,
+                    origin: owner.pos.clone(),
+                }
+            };
             objects.replace(index, target);
-        }
+            msg_feedback
+        } else {
+            ObjectProcResult::NoFeedback
+        };
 
         ActionResult::Success {
-            callback: ObjectProcResult::NoFeedback,
+            callback: feedback,
         }
     }
 
