@@ -5,7 +5,7 @@ use tcod::map::FovAlgorithm;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectProcResult, MsgClass, MessageLog};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectProcResult};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
@@ -344,14 +344,12 @@ pub fn process_visual_feedback(
             info!("animation");
         }
 
-        ObjectProcResult::Message {msg, class, origin} => {
+        ObjectProcResult::Message { msg, class, origin } => {
             if frontend.fov.is_in_fov(origin.x, origin.y) {
                 state.log.add(msg, class);
             }
         }
-        ObjectProcResult::CheckEnterFOV => {
-
-        }
+        ObjectProcResult::CheckEnterFOV => {}
     }
 }
 

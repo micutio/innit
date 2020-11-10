@@ -4,6 +4,7 @@ use tcod::colors::{self, Color};
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
+use crate::core::position::Position;
 use crate::entity::action::*;
 use crate::entity::control::Controller;
 use crate::entity::genetics::GeneLibrary;
@@ -11,14 +12,13 @@ use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::util::game_rng::{GameRng, RngExtended};
-use crate::core::position::Position;
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum MsgClass {
     Info,
     Action,
     Alert,
-    Story
+    Story,
 }
 
 /// Messages are expressed as colored text.
@@ -38,13 +38,19 @@ impl MessageLog for Vec<(String, MsgClass)> {
 /// Results from processing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
 pub enum ObjectProcResult {
-    NoAction,                               // object did not act and is still pondering its turn
-    NoFeedback,                             // action completed, but requires no visual feedback
-    CheckEnterFOV,                          // check whether the object has entered the player FOV
-    Message {msg: String, class: MsgClass, origin: Position}, // display a message, if position of origin is visible to the player
-    Animate { anim_type: AnimationType },   // play given animation to visualise action
-    UpdateFOV,                              // action completed, requires updating FOV
-    ReRender,                               // trigger full re-render of the game world
+    NoAction,      // object did not act and is still pondering its turn
+    NoFeedback,    // action completed, but requires no visual feedback
+    CheckEnterFOV, // check whether the object has entered the player FOV
+    Message {
+        msg: String,
+        class: MsgClass,
+        origin: Position,
+    }, // display a message, if position of origin is visible to the player
+    Animate {
+        anim_type: AnimationType,
+    }, // play given animation to visualise action
+    UpdateFOV,     // action completed, requires updating FOV
+    ReRender,      // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the

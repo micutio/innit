@@ -11,7 +11,7 @@ use tcod::colors;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, MsgClass};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{Pass, Target};

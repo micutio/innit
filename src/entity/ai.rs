@@ -8,10 +8,10 @@ use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::entity::action::{Action, InjectVirus, Pass, ProduceVirus, Target, TargetCategory};
-use crate::entity::object::Object;
 use crate::core::game_state::GameState;
+use crate::entity::action::{Action, InjectVirus, Pass, ProduceVirus, Target, TargetCategory};
 use crate::entity::control::{Ai, Controller};
+use crate::entity::object::Object;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassiveAi;
