@@ -5,7 +5,7 @@
 use tcod::colors;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState};
+use crate::core::game_state::GameState;
 use crate::entity::ai::{PassiveAi, RandomAi};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};

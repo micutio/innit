@@ -1,9 +1,9 @@
 use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
 use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use std::fmt::Debug;
-use crate::core::game_state::GameState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Controller {

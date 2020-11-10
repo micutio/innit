@@ -5,13 +5,13 @@
 // internal imports
 
 use crate::core::game_objects::GameObjects;
-use crate::entity::action::{Action, Pass, Target, TargetCategory, ProduceVirus, InjectVirus};
+use crate::entity::action::{Action, InjectVirus, Pass, ProduceVirus, Target, TargetCategory};
 use crate::entity::object::Object;
 
+use crate::core::game_state::GameState;
 use crate::entity::control::{Ai, Controller};
 use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
-use crate::core::game_state::GameState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassiveAi;
@@ -162,9 +162,15 @@ impl Ai for RnaVirusAi {
             .flatten()
             .filter(|obj| {
                 owner.pos.is_adjacent(&obj.pos)
-                    && (obj.physics.is_blocking) && obj.processors.receptors.iter().any(|e| owner.processors.receptors.contains(e))
+                    && (obj.physics.is_blocking)
+                    && obj
+                        .processors
+                        .receptors
+                        .iter()
+                        .any(|e| owner.processors.receptors.contains(e))
             })
-            .choose(&mut state.rng) {
+            .choose(&mut state.rng)
+        {
             return Box::new(InjectVirus::new(Target::from_pos(&owner.pos, &target.pos)));
         }
         Box::new(Pass)
@@ -172,10 +178,10 @@ impl Ai for RnaVirusAi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ForceVirusProduction{
+pub struct ForceVirusProduction {
     original_ai: Option<Controller>,
     turns_active: Option<i32>,
-    current_turn: i32
+    current_turn: i32,
 }
 
 impl ForceVirusProduction {
@@ -198,7 +204,12 @@ impl ForceVirusProduction {
 
 #[typetag::serde]
 impl Ai for ForceVirusProduction {
-    fn act(&mut self, _state: &mut GameState, _objects: &mut GameObjects, owner: &mut Object) -> Box<dyn Action> {
+    fn act(
+        &mut self,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> Box<dyn Action> {
         if let Some(t) = self.turns_active {
             if self.current_turn == t {
                 owner.control = self.original_ai.take();

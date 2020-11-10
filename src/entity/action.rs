@@ -347,7 +347,7 @@ impl Action for Attack {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InjectVirus {
     lvl: i32,
-    target: Target
+    target: Target,
 }
 
 impl InjectVirus {
@@ -426,7 +426,12 @@ impl Action for InjectRetrovirus {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
             // check whether the virus can attach to the cell
-            if target.processors.receptors.iter().any(|e| owner.processors.receptors.contains(e)) {
+            if target
+                .processors
+                .receptors
+                .iter()
+                .any(|e| owner.processors.receptors.contains(e))
+            {
                 let mut new_dna = target.dna.raw.clone();
                 new_dna.append(&mut owner.dna.raw.clone());
                 let (s, p, a, d) = state
@@ -492,21 +497,22 @@ pub struct ProduceVirus {
 
 impl ProduceVirus {
     pub fn new() -> Self {
-        ProduceVirus {
-            lvl: 0,
-        }
+        ProduceVirus { lvl: 0 }
     }
 }
 
 #[typetag::serde]
 impl Action for ProduceVirus {
-    fn perform(&self, _state: &mut GameState, _objects: &mut GameObjects, _owner: &mut Object) -> ActionResult {
+    fn perform(
+        &self,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
+        _owner: &mut Object,
+    ) -> ActionResult {
         unimplemented!()
     }
 
-    fn set_target(&mut self, _t: Target) {
-
-    }
+    fn set_target(&mut self, _t: Target) {}
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;

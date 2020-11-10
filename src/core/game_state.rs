@@ -95,8 +95,7 @@ impl GameState {
             if active_object.processors.energy < active_object.processors.energy_storage {
                 process_result = ObjectProcResult::NoFeedback;
                 active_object.metabolize();
-            } else if let Some(next_action) = active_object.get_next_action(self, objects)
-            {
+            } else if let Some(next_action) = active_object.get_next_action(self, objects) {
                 let energy_cost = next_action.get_energy_cost();
 
                 // perform action

@@ -42,7 +42,7 @@ fn test_random_ai() {
 
     // test walking in only west direction
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action( &mut state, &mut objects) {
+        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
             assert_eq!(action.to_text(), "move to West")
         } else {
             panic!();
@@ -58,7 +58,7 @@ fn test_random_ai() {
 
     // test no walk possible
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action( &mut state, &mut objects) {
+        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
             assert_eq!(action.to_text(), "pass")
         } else {
             panic!();
