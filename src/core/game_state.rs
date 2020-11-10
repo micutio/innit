@@ -11,30 +11,40 @@ use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::{AnimationType, FovMap};
 use crate::util::game_rng::{GameRng, RngExtended};
+use crate::core::position::Position;
+
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+pub enum MsgClass {
+    Info,
+    Action,
+    Alert,
+    Story
+}
 
 /// Messages are expressed as colored text.
-pub type Messages = Vec<(String, Color)>;
+pub type Messages = Vec<(String, MsgClass)>;
 
 /// The message log can add text from any string collection.
 pub trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color);
+    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass);
 }
 
-impl MessageLog for Vec<(String, Color)> {
-    fn add<T: Into<String>>(&mut self, message: T, color: Color) {
-        self.push((message.into(), color));
+impl MessageLog for Vec<(String, MsgClass)> {
+    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass) {
+        self.push((message.into(), class));
     }
 }
 
-/// Results from porcessing an objects action for that turn, in ascending rank.
+/// Results from processing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
 pub enum ObjectProcResult {
-    NoAction,                             // object did not act and is still pondering its turn
-    NoFeedback,                           // action completed, but requires no visual feedback
-    CheckEnterFOV,                        // check whether the object has entered the player's FOV
-    Animate { anim_type: AnimationType }, // play given animation to visualise action
-    UpdateFOV,                            // action completed, requires updating FOV
-    ReRender,                             // trigger full re-render of the game world
+    NoAction,                               // object did not act and is still pondering its turn
+    NoFeedback,                             // action completed, but requires no visual feedback
+    CheckEnterFOV,                          // check whether the object has entered the player FOV
+    Message {msg: String, class: MsgClass, origin: Position}, // display a message, if position of origin is visible to the player
+    Animate { anim_type: AnimationType },   // play given animation to visualise action
+    UpdateFOV,                              // action completed, requires updating FOV
+    ReRender,                               // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
@@ -136,7 +146,7 @@ impl GameState {
                         if self.current_obj_index == self.current_player_index {
                             self.log.add(
                                 format!("A mutation occurred in your genome {}", old_gene),
-                                colors::YELLOW,
+                                MsgClass::Alert,
                             );
                         } else if let Some(player) = &objects[self.current_player_index] {
                             debug!(
@@ -150,7 +160,7 @@ impl GameState {
                                 // don't record all tiles passing constantly
                                 self.log.add(
                                     format!("{} mutated!", active_object.visual.name),
-                                    colors::WHITE,
+                                    MsgClass::Info,
                                 );
                             }
                         }

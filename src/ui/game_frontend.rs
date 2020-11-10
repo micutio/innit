@@ -5,7 +5,7 @@ use tcod::map::FovAlgorithm;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectProcResult};
+use crate::core::game_state::{GameState, ObjectProcResult, MsgClass, MessageLog};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
@@ -344,7 +344,14 @@ pub fn process_visual_feedback(
             info!("animation");
         }
 
-        _ => {}
+        ObjectProcResult::Message {msg, class, origin} => {
+            if frontend.fov.is_in_fov(origin.x, origin.y) {
+                state.log.add(msg, class);
+            }
+        }
+        ObjectProcResult::CheckEnterFOV => {
+
+        }
     }
 }
 
@@ -551,7 +558,7 @@ fn render_ui(
 
         // print game messages, one line at a time
         let mut y = MSG_HEIGHT as i32;
-        for &(ref msg, color) in &mut state.log.iter().rev() {
+        for (ref msg, class) in &mut state.log.iter().rev() {
             let msg_height = frontend
                 .btm_panel
                 .get_height_rect(MSG_X, y, MSG_WIDTH, 0, msg);
@@ -559,6 +566,15 @@ fn render_ui(
             if y < 1 {
                 break;
             }
+
+            // TODO: Use custom color scheme instead.
+            let color = match class {
+                MsgClass::Alert => colors::DARK_RED,
+                MsgClass::Info => colors::WHITE,
+                MsgClass::Action => colors::AZURE,
+                MsgClass::Story => colors::DESATURATED_CYAN,
+            };
+
             frontend.btm_panel.set_default_foreground(color);
             frontend.btm_panel.print_rect(MSG_X, y, MSG_WIDTH, 0, msg);
         }

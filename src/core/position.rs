@@ -1,4 +1,4 @@
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 pub struct Position {
     pub x: i32,
     pub y: i32,

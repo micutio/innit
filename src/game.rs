@@ -11,7 +11,7 @@ use tcod::colors;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
+use crate::core::game_state::{GameState, MessageLog, ObjectProcResult, MsgClass};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{Pass, Target};
@@ -73,7 +73,7 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
     // a warm welcoming message
     state.log.add(
         "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-        frontend.coloring.fg_dialog_border,
+        MsgClass::Story,
     );
 
     (state, objects)

@@ -1,7 +1,7 @@
 use tcod::colors::{self, Color};
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, Messages};
+use crate::core::game_state::{GameState, MessageLog, Messages, MsgClass};
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
@@ -164,7 +164,7 @@ impl Object {
                 if let Some(Controller::Player(_)) = self.control {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
-                        colors::LIGHT_RED,
+                        MsgClass::Alert,
                     );
                 }
             }
@@ -172,7 +172,7 @@ impl Object {
                 if let Some(Controller::Npc(_)) = self.control {
                     log.add(
                         format!("You gained control over {}", &self.visual.name),
-                        colors::LIGHT_RED,
+                        MsgClass::Alert,
                     );
                 }
             }
