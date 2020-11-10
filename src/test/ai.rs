@@ -2,7 +2,7 @@ use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::core::world::world_gen::Tile;
-use crate::entity::action::MoveAction;
+use crate::entity::action::Move;
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
@@ -18,7 +18,7 @@ fn test_random_ai() {
 
     // test walking in any direction
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
+        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
             println!("move test '{}'", &action.to_text());
             assert!(action.get_identifier().contains("move"))
         } else {
@@ -42,7 +42,7 @@ fn test_random_ai() {
 
     // test walking in only west direction
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
+        if let Some(action) = player.get_next_action( &mut state, &mut objects) {
             assert_eq!(action.to_text(), "move to West")
         } else {
             panic!();
@@ -58,7 +58,7 @@ fn test_random_ai() {
 
     // test no walk possible
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut objects, &mut state.rng) {
+        if let Some(action) = player.get_next_action( &mut state, &mut objects) {
             assert_eq!(action.to_text(), "pass")
         } else {
             panic!();
@@ -112,7 +112,7 @@ fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Sensors::default(),
                 Processors::default(),
                 Actuators {
-                    actions: vec![Box::new(MoveAction::new())],
+                    actions: vec![Box::new(Move::new())],
                     max_hp: 1,
                     hp: 1,
                 },

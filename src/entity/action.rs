@@ -10,7 +10,6 @@ use std::fmt::Debug;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::position::Position;
-use crate::entity::genetics::Receptor;
 use crate::entity::object::Object;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
@@ -44,6 +43,7 @@ impl Target {
         }
     }
 
+    /// Returns the target direction from acting position p1 to targeted position p2.
     pub fn from_pos(p1: &Position, p2: &Position) -> Target {
         match p1.offset(p2) {
             (0, -1) => Target::North,
@@ -112,10 +112,10 @@ impl Clone for Box<dyn Action> {
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PassAction;
+pub struct Pass;
 
 #[typetag::serde]
-impl Action for PassAction {
+impl Action for Pass {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -152,15 +152,15 @@ impl Action for PassAction {
 
 /// Move an object
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MoveAction {
+pub struct Move {
     lvl: i32,
     direction: Target,
 }
 
-impl MoveAction {
+impl Move {
     // TODO: use level
     pub fn new() -> Self {
-        MoveAction {
+        Move {
             lvl: 0,
             direction: Target::Center,
         }
@@ -168,7 +168,7 @@ impl MoveAction {
 }
 
 #[typetag::serde]
-impl Action for MoveAction {
+impl Action for Move {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -214,18 +214,18 @@ impl Action for MoveAction {
 
 /// Focus on increased energy production for this turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MetaboliseAction {
+pub struct Metabolise {
     lvl: i32,
 }
 
-impl MetaboliseAction {
+impl Metabolise {
     pub fn new() -> Self {
-        MetaboliseAction { lvl: 0 }
+        Metabolise { lvl: 0 }
     }
 }
 
 #[typetag::serde]
-impl Action for MetaboliseAction {
+impl Action for Metabolise {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -263,14 +263,14 @@ impl Action for MetaboliseAction {
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AttackAction {
+pub struct Attack {
     lvl: i32,
     target: Target,
 }
 
-impl AttackAction {
+impl Attack {
     pub fn new() -> Self {
-        AttackAction {
+        Attack {
             lvl: 0,
             target: Target::Center,
         }
@@ -278,7 +278,7 @@ impl AttackAction {
 }
 
 #[typetag::serde]
-impl Action for AttackAction {
+impl Action for Attack {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -345,25 +345,26 @@ impl Action for AttackAction {
 /// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct InjectVirusAction {
+pub struct InjectVirus {
     lvl: i32,
+    target: Target
 }
 
-impl InjectVirusAction {
-    pub fn new() -> Self {
-        InjectVirusAction { lvl: 0 }
+impl InjectVirus {
+    pub fn new(target: Target) -> Self {
+        InjectVirus { lvl: 0, target }
     }
 }
 
 #[typetag::serde]
-impl Action for InjectVirusAction {
+impl Action for InjectVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     // virus dna
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
-        owner: &mut Object,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
+        _owner: &mut Object,
     ) -> ActionResult {
         unimplemented!()
     }
@@ -398,14 +399,14 @@ impl Action for InjectVirusAction {
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct InjectRetrovirusAction {
+pub struct InjectRetrovirus {
     lvl: i32,
     target: Target,
 }
 
-impl InjectRetrovirusAction {
+impl InjectRetrovirus {
     pub fn new() -> Self {
-        InjectRetrovirusAction {
+        InjectRetrovirus {
             lvl: 0,
             target: Target::Center,
         }
@@ -413,7 +414,7 @@ impl InjectRetrovirusAction {
 }
 
 #[typetag::serde]
-impl Action for InjectRetrovirusAction {
+impl Action for InjectRetrovirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna.
     fn perform(
@@ -423,13 +424,9 @@ impl Action for InjectRetrovirusAction {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((i, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
             // check whether the virus can attach to the cell
-            if target
-                .processors
-                .receptors
-                .contains(&Receptor::GenericReceptor)
-            {
+            if target.processors.receptors.iter().any(|e| owner.processors.receptors.contains(e)) {
                 let mut new_dna = target.dna.raw.clone();
                 new_dna.append(&mut owner.dna.raw.clone());
                 let (s, p, a, d) = state
@@ -443,13 +440,13 @@ impl Action for InjectRetrovirusAction {
             } else {
                 state.log.add(
                     format!(
-                        "A virus has tried to infect {} but cannot find receptor!",
+                        "A virus has tried to infect {} but cannot find matching receptor!",
                         target.visual.name
                     ),
                     colors::AZURE,
                 );
             }
-            objects.replace(i, target);
+            objects.replace(index, target);
         }
 
         ActionResult::Success {
@@ -480,5 +477,54 @@ impl Action for InjectRetrovirusAction {
 
     fn to_text(&self) -> String {
         "inject retrovirus".to_string()
+    }
+}
+
+/// A virus' sole purpose is to go forth and multiply.
+/// This action corresponds to the virus trait which is located at the beginning of virus DNA.
+/// Retro viruses convert their RNA into DNA and inject it into the cell for reproduction as well
+/// as into the cell's DNA where it can permanently reside and switch between dormant and active.
+/// #[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProduceVirus {
+    lvl: i32,
+}
+
+impl ProduceVirus {
+    pub fn new() -> Self {
+        ProduceVirus {
+            lvl: 0,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Action for ProduceVirus {
+    fn perform(&self, _state: &mut GameState, _objects: &mut GameObjects, _owner: &mut Object) -> ActionResult {
+        unimplemented!()
+    }
+
+    fn set_target(&mut self, _t: Target) {
+
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "produce virus".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        "produces virus".to_string()
     }
 }

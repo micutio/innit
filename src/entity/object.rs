@@ -8,7 +8,6 @@ use crate::entity::action::*;
 use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
-use crate::util::game_rng::GameRng;
 
 use std::cmp::min;
 use std::fmt;
@@ -221,15 +220,15 @@ impl Object {
     /// Determine and return the next action the object will take.
     pub fn get_next_action(
         &mut self,
+        state: &mut GameState,
         objects: &mut GameObjects,
-        rng: &mut GameRng,
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
         let mut controller = self.control.take();
         let next_action;
         match controller {
             Some(Controller::Npc(ref mut boxed_ai)) => {
-                next_action = Some(boxed_ai.act(self, objects, rng));
+                next_action = Some(boxed_ai.act(state, objects, self));
             }
             Some(Controller::Player(ref mut player_ctrl)) => {
                 next_action = player_ctrl.next_action.take();
@@ -298,7 +297,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(PassAction)
+            Box::new(Pass)
         }
     }
 
@@ -309,7 +308,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(PassAction)
+            Box::new(Pass)
         }
     }
 
@@ -317,7 +316,7 @@ impl Object {
         if let Some(Controller::Player(ctrl)) = &self.control {
             ctrl.quick1_action.clone()
         } else {
-            Box::new(PassAction)
+            Box::new(Pass)
         }
     }
 
@@ -325,7 +324,7 @@ impl Object {
         if let Some(Controller::Player(ctrl)) = &self.control {
             ctrl.quick2_action.clone()
         } else {
-            Box::new(PassAction)
+            Box::new(Pass)
         }
     }
 

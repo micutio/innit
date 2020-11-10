@@ -5,13 +5,13 @@
 // internal imports
 
 use crate::core::game_objects::GameObjects;
-use crate::entity::action::{Action, PassAction, Target, TargetCategory};
+use crate::entity::action::{Action, Pass, Target, TargetCategory, ProduceVirus, InjectVirus};
 use crate::entity::object::Object;
-use crate::util::game_rng::GameRng;
 
-use crate::entity::control::Ai;
+use crate::entity::control::{Ai, Controller};
 use rand::seq::{IteratorRandom, SliceRandom};
 use std::fmt::Debug;
+use crate::core::game_state::GameState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PassiveAi;
@@ -25,12 +25,12 @@ impl PassiveAi {
 #[typetag::serde]
 impl Ai for PassiveAi {
     fn act(
-        &self,
-        _object: &mut Object,
+        &mut self,
+        _state: &mut GameState,
         _objects: &mut GameObjects,
-        _rng: &mut GameRng,
+        _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(PassAction)
+        Box::new(Pass)
     }
 }
 
@@ -46,17 +46,17 @@ impl RandomAi {
 #[typetag::serde]
 impl Ai for RandomAi {
     fn act(
-        &self,
-        object: &mut Object,
+        &mut self,
+        state: &mut GameState,
         objects: &mut GameObjects,
-        rng: &mut GameRng,
+        owner: &mut Object,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.
-        if object.actuators.actions.is_empty()
-            && object.processors.actions.is_empty()
-            && object.sensors.actions.is_empty()
+        if owner.actuators.actions.is_empty()
+            && owner.processors.actions.is_empty()
+            && owner.sensors.actions.is_empty()
         {
-            return Box::new(PassAction);
+            return Box::new(Pass);
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -66,7 +66,7 @@ impl Ai for RandomAi {
             .iter()
             .flatten()
             .filter(|obj| {
-                object.pos.is_adjacent(&obj.pos)
+                owner.pos.is_adjacent(&obj.pos)
                     && (obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
             })
             // .filter_map(|o| o.as_ref())
@@ -100,16 +100,16 @@ impl Ai for RandomAi {
         // dbg!("valid targets: {:?}", &valid_targets);
 
         // find an action that matches one of the available target categories
-        let possible_actions: Vec<&Box<dyn Action>> = object
+        let possible_actions: Vec<&Box<dyn Action>> = owner
             .actuators
             .actions
             .iter()
-            .chain(object.processors.actions.iter())
-            .chain(object.sensors.actions.iter())
+            .chain(owner.processors.actions.iter())
+            .chain(owner.sensors.actions.iter())
             .filter(|a| valid_targets.contains(&(*a).get_target_category()))
             .collect();
 
-        if let Some(a) = possible_actions.choose(rng) {
+        if let Some(a) = possible_actions.choose(&mut state.rng) {
             let mut boxed_action = a.clone_action();
             match boxed_action.get_target_category() {
                 TargetCategory::None => boxed_action.set_target(Target::Center),
@@ -117,44 +117,96 @@ impl Ai for RandomAi {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| at.physics.is_blocking)
-                        .choose(rng)
+                        .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
+                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
                 TargetCategory::EmptyObject => {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| !at.physics.is_blocking)
-                        .choose(rng)
+                        .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
+                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
                 TargetCategory::Any => {
-                    if let Some(target_obj) = adjacent_targets.choose(rng) {
-                        boxed_action.set_target(Target::from_pos(&object.pos, &target_obj.pos))
+                    if let Some(target_obj) = adjacent_targets.choose(&mut state.rng) {
+                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
             }
             boxed_action
         } else {
-            Box::new(PassAction)
+            Box::new(Pass)
         }
     }
 }
 
-// #[derive(Debug, Serialize, Deserialize)]
-// pub struct RnaVirusAi {}
-//
-// impl Ai for RnaVirusAi {
-//     fn act(
-//         &self,
-//         object: &mut Object,
-//         objects: &mut GameObjects,
-//         rng: &mut GameRng,
-//     ) -> Box<dyn Action> {
-//         // if there is an adjacent cell, attempt to infect it
-//         unimplemented!()
-//     }
-// }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RnaVirusAi {}
+
+#[typetag::serde]
+impl Ai for RnaVirusAi {
+    fn act(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> Box<dyn Action> {
+        // if there is an adjacent cell, attempt to infect it
+        if let Some(target) = objects
+            .get_vector()
+            .iter()
+            .flatten()
+            .filter(|obj| {
+                owner.pos.is_adjacent(&obj.pos)
+                    && (obj.physics.is_blocking) && obj.processors.receptors.iter().any(|e| owner.processors.receptors.contains(e))
+            })
+            .choose(&mut state.rng) {
+            return Box::new(InjectVirus::new(Target::from_pos(&owner.pos, &target.pos)));
+        }
+        Box::new(Pass)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ForceVirusProduction{
+    original_ai: Option<Controller>,
+    turns_active: Option<i32>,
+    current_turn: i32
+}
+
+impl ForceVirusProduction {
+    fn new_duration(original_ai: Controller, duration_turns: i32) -> Self {
+        ForceVirusProduction {
+            original_ai: Some(original_ai),
+            turns_active: Some(duration_turns),
+            current_turn: 0,
+        }
+    }
+
+    fn new_forever(original_ai: Controller) -> Self {
+        ForceVirusProduction {
+            original_ai: Some(original_ai),
+            turns_active: None,
+            current_turn: 0,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Ai for ForceVirusProduction {
+    fn act(&mut self, _state: &mut GameState, _objects: &mut GameObjects, owner: &mut Object) -> Box<dyn Action> {
+        if let Some(t) = self.turns_active {
+            if self.current_turn == t {
+                owner.control = self.original_ai.take();
+            } else {
+                self.current_turn += 1;
+            }
+        }
+
+        Box::new(ProduceVirus::new())
+    }
+}

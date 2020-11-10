@@ -14,7 +14,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, ObjectProcResult};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::{PassAction, Target};
+use crate::entity::action::{Pass, Target};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -140,7 +140,7 @@ pub fn game_loop(
                         SecondaryAction(dir) => player.get_secondary_action(dir),
                         Quick1Action() => player.get_quick1_action(),
                         Quick2Action() => player.get_quick2_action(),
-                        PassTurn => Box::new(PassAction),
+                        PassTurn => Box::new(Pass),
                     };
                     player.set_next_action(Some(a))
                 }

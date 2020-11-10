@@ -2,8 +2,8 @@ use crate::core::game_objects::GameObjects;
 use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::util::game_rng::GameRng;
 use std::fmt::Debug;
+use crate::core::game_state::GameState;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Controller {
@@ -14,9 +14,9 @@ pub enum Controller {
 #[typetag::serde(tag = "type")]
 pub trait Ai: Debug {
     fn act(
-        &self,
-        object: &mut Object,
+        &mut self,
+        state: &mut GameState,
         objects: &mut GameObjects,
-        rng: &mut GameRng,
+        owner: &mut Object,
     ) -> Box<dyn Action>;
 }

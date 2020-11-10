@@ -108,13 +108,13 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "move",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(MoveAction::new())),
+            Some(Box::new(Move::new())),
         ),
         GeneticTrait::new(
             "attack",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(AttackAction::new())),
+            Some(Box::new(Attack::new())),
         ),
         GeneticTrait::new("cell membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new(
@@ -131,7 +131,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "metabolize",
             Processing,
             TraitAttribute::Storage,
-            Some(Box::new(MetaboliseAction::new())),
+            Some(Box::new(Metabolise::new())),
         ),
         GeneticTrait::new("receptor", Processing, TraitAttribute::Receptor, None),
     ]
