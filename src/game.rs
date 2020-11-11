@@ -42,7 +42,16 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
     // let mut world_generator = RogueWorldGenerator::new();
     let mut world_generator = OrganicsWorldGenerator::new();
     world_generator.make_world(&mut state, frontend, &mut objects, level);
-    objects.set_tiles_dna(&mut state.rng, &state.gene_library);
+    // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
+    objects.set_tile_dna(
+        vec![
+            "cell membrane".to_string(),
+            "cell membrane".to_string(),
+            "cell membrane".to_string(),
+            "receptor".to_string(),
+        ],
+        &state.gene_library,
+    );
 
     // create object representing the player
     let (new_x, new_y) = world_generator.get_player_start_pos();

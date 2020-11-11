@@ -277,12 +277,12 @@ impl Dna {
 /// Actions can be chosen from a pool of predefined methods.
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GeneLibrary {
-    trait_vec: Vec<GeneticTrait>,
     /// Traits are now supposed to be generic, so enums are no longer the way to go.
+    trait_vec: Vec<GeneticTrait>,
     /// Traits are encoded in gray code.
     gray_to_trait: HashMap<u8, String>,
-    /// As mentioned above, re-use TraitIDs to allow mappings to actions.
-    // trait_to_action: HashMap<u8, TraitAction>,
+    /// Reverse mapping for encoding traits into dna
+    trait_to_gray: HashMap<String, u8>,
     /// Vector of gray code with index corresponding to its binary representation
     gray_code: Vec<u8>,
     /// Count the number of traits we have, sort of as a running id.
@@ -303,10 +303,17 @@ impl GeneLibrary {
             .map(|(code, gene_trait)| (gray_code[code + 1], gene_trait.trait_name.clone()))
             .collect();
         debug!("gray to trait map: {:#?}", gray_to_trait);
+        let trait_to_gray: HashMap<String, u8> = trait_vec
+            .iter()
+            .enumerate()
+            .map(|(code, gene_trait)| (gene_trait.trait_name.clone(), gray_code[code + 1]))
+            .collect();
+        debug!("trait to gray map: {:#?}", trait_to_gray);
         // actual constructor
         GeneLibrary {
             trait_vec,
             gray_to_trait,
+            trait_to_gray,
             gray_code,
             trait_count,
         }
@@ -330,6 +337,23 @@ impl GeneLibrary {
                 self.gray_code[trait_num]
             );
             dna.push(self.gray_code[trait_num] as u8);
+            //
+            // // add random attribute value
+            // dna.push(game_rng.gen_range(0, 16) as u8);
+        }
+        // debug!("new dna generated: {:?}", dna);
+        dna
+    }
+
+    pub fn dna_from_traits(&self, traits: &[String]) -> Vec<u8> {
+        let mut dna: Vec<u8> = Vec::new();
+        // randomly grab a trait and add trait id, length and random attribute value
+        for t in traits {
+            // push 0x00 first as the genome start symbol
+            dna.push(0 as u8);
+            // add length
+            dna.push(1 as u8);
+            dna.push(*self.trait_to_gray.get(t).unwrap());
             //
             // // add random attribute value
             // dna.push(game_rng.gen_range(0, 16) as u8);
