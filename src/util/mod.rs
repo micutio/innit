@@ -31,7 +31,7 @@ pub fn generate_gray_code(n: u8) -> Vec<u8> {
 /// A 4-bit variant changes a binary number (abcd)2 to (abcd)2 ^ (00ab)2,
 /// then to (abcd)2 ^ (00ab)2 ^ (0abc)2 ^ (000a)2.
 /// Taken from Wikipedia.
-pub fn gray_to_binary32(mut x: u8) -> u8 {
+pub fn _gray_to_binary32(mut x: u8) -> u8 {
     // x = x ^ (x >> 16);
     // x = x ^ (x >> 8);
     x = x ^ (x >> 4);

@@ -9,7 +9,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MsgClass, ObjectProcResult};
 use crate::core::position::Position;
 use crate::entity::ai::ForceVirusProduction;
-use crate::entity::control::Controller::Npc;
+use crate::entity::control::Controller::{Npc, Player};
 use crate::entity::genetics::DnaType;
 use crate::entity::object::Object;
 
@@ -179,8 +179,16 @@ impl Action for Move {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
         if !&objects.is_pos_blocked(&target_pos) {
             owner.pos.set(target_pos.x, target_pos.y);
-            ActionResult::Success {
-                callback: ObjectProcResult::CheckEnterFOV,
+            if let Some(Player(_)) = owner.control {
+                ActionResult::Success {
+                    callback: ObjectProcResult::UpdatePlayerFOV,
+                }
+            } else {
+                ActionResult::Success {
+                    callback: ObjectProcResult::CheckEnterPlayerFOV {
+                        origin: owner.pos.clone(),
+                    },
+                }
             }
         } else {
             info!("object {} blocked!", owner.visual.name);
@@ -302,7 +310,9 @@ impl Action for Attack {
         if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {
-                callback: ObjectProcResult::CheckEnterFOV,
+                callback: ObjectProcResult::CheckEnterPlayerFOV {
+                    origin: owner.pos.clone(),
+                },
             }
         } else {
             ActionResult::Failure
@@ -461,7 +471,7 @@ pub struct InjectRetrovirus {
 }
 
 impl InjectRetrovirus {
-    pub fn new() -> Self {
+    pub fn _new() -> Self {
         InjectRetrovirus {
             lvl: 0,
             target: Target::Center,

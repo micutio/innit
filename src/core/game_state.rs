@@ -8,7 +8,7 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
-use crate::ui::game_frontend::{AnimationType, FovMap};
+use crate::ui::game_frontend::AnimationType;
 use crate::util::game_rng::{GameRng, RngExtended};
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -36,9 +36,11 @@ impl MessageLog for Vec<(String, MsgClass)> {
 /// Results from processing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
 pub enum ObjectProcResult {
-    NoAction,      // object did not act and is still pondering its turn
-    NoFeedback,    // action completed, but requires no visual feedback
-    CheckEnterFOV, // check whether the object has entered the player FOV
+    NoAction,   // object did not act and is still pondering its turn
+    NoFeedback, // action completed, but requires no visual feedback
+    CheckEnterPlayerFOV {
+        origin: Position,
+    }, // check whether the object has entered the player FOV
     Message {
         msg: String,
         class: MsgClass,
@@ -46,9 +48,10 @@ pub enum ObjectProcResult {
     }, // display a message, if position of origin is visible to the player
     Animate {
         anim_type: AnimationType,
+        origin: Position,
     }, // play given animation to visualise action
-    UpdateFOV,     // action completed, requires updating FOV
-    ReRender,      // trigger full re-render of the game world
+    UpdatePlayerFOV, // action completed, requires updating FOV
+    ReRender,   // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
@@ -85,18 +88,24 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    // TODO: Implement energy costs for actions.
-    pub fn process_object(
-        &mut self,
-        objects: &mut GameObjects,
-        fov_map: &FovMap,
-    ) -> ObjectProcResult {
-        let mut process_result = ObjectProcResult::NoAction;
+    pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectProcResult {
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
             if let Some(Controller::Player(_)) = active_object.control {
+                // update player index just in case we have multiple player controlled objects
                 self.current_player_index = self.current_obj_index;
+                // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
+                if !active_object.has_next_action()
+                    && active_object.processors.energy == active_object.processors.energy_storage
+                {
+                    return ObjectProcResult::NoAction;
+                }
             }
+
+            // Object takes the turn, which has three phases:
+            // 1. turn preparation
+            // 2. turn action
+            // 3. turn conclusion
             trace!(
                 "{} | {}'s turn now @energy {}/{}",
                 self.current_obj_index,
@@ -104,139 +113,114 @@ impl GameState {
                 active_object.processors.energy,
                 active_object.processors.energy_storage
             );
-            // TURN ACTION PHASE
-            // only act if enough energy is available
-            if active_object.processors.energy < active_object.processors.energy_storage {
-                process_result = ObjectProcResult::NoFeedback;
-                active_object.metabolize();
-            } else if let Some(next_action) = active_object.get_next_action(self, objects) {
-                let energy_cost = next_action.get_energy_cost();
 
-                // perform action
-                process_result =
-                    self.process_action(fov_map, objects, &mut active_object, next_action);
+            // TURN PREPARATION ///////////////////////////////////////////////////////////////////
+            // Innit doesn't have any action preparations as of yet.
 
-                // AFTER ACTION PHASE
-                if process_result != ObjectProcResult::NoAction {
-                    active_object.processors.energy -= energy_cost;
+            // TURN ACTION ////////////////////////////////////////////////////////////////////////
+            // If not enough energy available try to metabolise.
+            let process_result =
+                if active_object.processors.energy < active_object.processors.energy_storage {
+                    // replenish energy
+                    active_object.metabolize();
+                    ObjectProcResult::NoFeedback
+                } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
+                    // use up energy before action
+                    active_object.processors.energy -= next_action.get_energy_cost();
+                    self.process_action(objects, &mut active_object, next_action)
+                } else {
+                    panic!("How can an object 'has_next_action' but NOT have an action?");
+                    // ObjectProcResult::NoFeedback
+                };
 
-                    if active_object.dna.raw.is_empty() {
-                        println!("{} dna is empty!", active_object.visual.name);
-                    }
-                    if !active_object.dna.raw.is_empty()
-                        && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
+            // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
+            // Apply recurring effects so that the player can factor this into the next action.
+
+            // TODO: Damage from overloading
+
+            // Random mutation
+            if active_object.dna.raw.is_empty() {
+                println!("{} dna is empty!", active_object.visual.name);
+            }
+            if !active_object.dna.raw.is_empty()
+                && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
+            {
+                // mutate the object's genome by randomly flipping a bit
+                let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
+                let old_gene = active_object.dna.raw[random_gene];
+                debug!(
+                    "{} flipping gene: 0b{:08b}",
+                    active_object.visual.name, active_object.dna.raw[random_gene]
+                );
+                active_object.dna.raw[random_gene] ^= self.rng.random_bit();
+                debug!(
+                    "{}            to: 0b{:08b}",
+                    active_object.visual.name, active_object.dna.raw[random_gene]
+                );
+
+                // apply new genome to object
+                let (sensors, processors, actuators, dna) = self
+                    .gene_library
+                    .decode_dna(active_object.dna.dna_type, active_object.dna.raw.as_slice());
+                active_object.change_genome(sensors, processors, actuators, dna);
+
+                // TODO: Show mutation effect as diff between old and new genome!
+                if self.current_obj_index == self.current_player_index {
+                    self.log.add(
+                        format!("A mutation occurred in your genome {}", old_gene),
+                        MsgClass::Alert,
+                    );
+                } else if let Some(player) = &objects[self.current_player_index] {
+                    debug!(
+                        "sensing range: {}, dist: {}",
+                        player.sensors.sensing_range as f32,
+                        player.pos.distance(&active_object.pos)
+                    );
+                    if player.pos.distance(&active_object.pos)
+                        <= player.sensors.sensing_range as f32
                     {
-                        // mutate the object's genome by randomly flipping a bit
-                        let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
-                        let old_gene = active_object.dna.raw[random_gene];
-                        debug!(
-                            "{} flipping gene: 0b{:08b}",
-                            active_object.visual.name, active_object.dna.raw[random_gene]
+                        // don't record all tiles passing constantly
+                        self.log.add(
+                            format!("{} mutated!", active_object.visual.name),
+                            MsgClass::Info,
                         );
-                        active_object.dna.raw[random_gene] ^= self.rng.random_bit();
-                        debug!(
-                            "{}            to: 0b{:08b}",
-                            active_object.visual.name, active_object.dna.raw[random_gene]
-                        );
-
-                        // apply new genome to object
-                        let (sensors, processors, actuators, dna) = self.gene_library.decode_dna(
-                            active_object.dna.dna_type,
-                            active_object.dna.raw.as_slice(),
-                        );
-                        active_object.change_genome(sensors, processors, actuators, dna);
-
-                        // TODO: Show mutation effect as diff between old and new genome!
-                        if self.current_obj_index == self.current_player_index {
-                            self.log.add(
-                                format!("A mutation occurred in your genome {}", old_gene),
-                                MsgClass::Alert,
-                            );
-                        } else if let Some(player) = &objects[self.current_player_index] {
-                            debug!(
-                                "sensing range: {}, dist: {}",
-                                player.sensors.sensing_range as f32,
-                                player.pos.distance(&active_object.pos)
-                            );
-                            if player.pos.distance(&active_object.pos)
-                                <= player.sensors.sensing_range as f32
-                            {
-                                // don't record all tiles passing constantly
-                                self.log.add(
-                                    format!("{} mutated!", active_object.visual.name),
-                                    MsgClass::Info,
-                                );
-                            }
-                        }
                     }
                 }
             }
 
-            // FINISH TURN PHASE
-            if process_result != ObjectProcResult::NoAction {}
             // return object back to objects vector
             objects[self.current_obj_index].replace(active_object);
-        } else {
-            trace!("no object at index {}", self.current_obj_index);
-        }
 
-        // only increase counter if the object has made a move
-        if process_result != ObjectProcResult::NoAction {
+            // finally increase object index and turn counter
             self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
-            // also increase turn count if we're back at the player
-            if self.current_obj_index == self.current_player_index {
+            if self.current_obj_index == PLAYER {
                 self.turn += 1;
             }
+
+            // return the result of our action
+            process_result
+        } else {
+            panic!("no object at index {}", self.current_obj_index);
         }
-        process_result
     }
 
     /// Process an action of the given object.
     fn process_action(
         &mut self,
-        fov_map: &FovMap,
         objects: &mut GameObjects,
         actor: &mut Object,
         action: Box<dyn Action>,
     ) -> ObjectProcResult {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => {
-                match callback {
-                    ObjectProcResult::CheckEnterFOV => {
-                        if self.current_obj_index == self.current_player_index {
-                            // if we have the player, then it will surely be in it's own fov
-                            ObjectProcResult::UpdateFOV
-                        } else if fov_map.is_in_fov(actor.pos.x, actor.pos.y) {
-                            // if the acting object is inside the FOV now, trigger a re-render
-                            ObjectProcResult::ReRender
-                        } else {
-                            ObjectProcResult::NoFeedback
-                        }
-                    }
-                    // only play animations if the object is visible to our hero
-                    ObjectProcResult::Animate { anim_type } => {
-                        if fov_map.is_in_fov(actor.pos.x, actor.pos.y) {
-                            ObjectProcResult::Animate { anim_type }
-                        } else {
-                            ObjectProcResult::NoFeedback
-                        }
-                    }
-                    _ => callback,
-                }
-            }
-            ActionResult::Failure => {
-                // how to handle fails?
-                ObjectProcResult::NoAction
-            }
+            ActionResult::Success { callback } => callback,
+            ActionResult::Failure => ObjectProcResult::NoAction, // how to handle fails?
             ActionResult::Consequence { action } => {
                 // if we have a side effect, process it first and then the `main` action
-                let _consequence_result =
-                    self.process_action(fov_map, objects, actor, action.unwrap());
+                self.process_action(objects, actor, action.unwrap())
                 // TODO: Think of a way to handle both results of action and consequence.
                 // TODO: Extract into function, recursively bubble up results and return the highest
-                // priority
-                ObjectProcResult::ReRender // use highest priority for now as a dummy
+                //       priority or just a list of all of them
             }
         }
     }

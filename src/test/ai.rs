@@ -14,11 +14,11 @@ fn test_random_ai() {
     use crate::core::world::world_gen::Monster;
     use crate::entity::player::PLAYER;
 
-    let ((p_x, p_y), mut state, mut objects) = create_minimal_world();
+    let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
 
     // test walking in any direction
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
+        if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
             println!("move test '{}'", &action.to_text());
             assert!(action.get_identifier().contains("move"))
         } else {
@@ -42,7 +42,7 @@ fn test_random_ai() {
 
     // test walking in only west direction
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
+        if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
             assert_eq!(action.to_text(), "move to West")
         } else {
             panic!();
@@ -58,7 +58,7 @@ fn test_random_ai() {
 
     // test no walk possible
     if let Some(mut player) = objects.extract(PLAYER) {
-        if let Some(action) = player.get_next_action(&mut state, &mut objects) {
+        if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
             assert_eq!(action.to_text(), "pass")
         } else {
             panic!();
@@ -69,7 +69,7 @@ fn test_random_ai() {
     }
 }
 
-fn create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
+fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
     use crate::entity::ai::RandomAi;
     use crate::entity::object::Object;
     use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};

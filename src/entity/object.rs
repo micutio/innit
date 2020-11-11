@@ -218,7 +218,7 @@ impl Object {
     }
 
     /// Determine and return the next action the object will take.
-    pub fn get_next_action(
+    pub fn extract_next_action(
         &mut self,
         state: &mut GameState,
         objects: &mut GameObjects,

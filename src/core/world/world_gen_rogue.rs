@@ -24,7 +24,7 @@ pub struct RogueWorldGenerator {
 }
 
 impl RogueWorldGenerator {
-    pub fn new() -> Self {
+    pub fn _new() -> Self {
         RogueWorldGenerator {
             rooms: vec![],
             player_start: (0, 0),

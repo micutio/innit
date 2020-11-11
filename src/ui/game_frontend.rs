@@ -330,7 +330,7 @@ pub fn process_visual_feedback(
         ObjectProcResult::NoFeedback => {}
 
         // the player's FOV has been updated, thus we also need to re-render
-        ObjectProcResult::UpdateFOV => {
+        ObjectProcResult::UpdatePlayerFOV => {
             recompute_fov(state, frontend, objects);
             re_render(state, frontend, objects, &input.names_under_mouse);
         }
@@ -340,8 +340,11 @@ pub fn process_visual_feedback(
             re_render(state, frontend, objects, &input.names_under_mouse);
         }
 
-        ObjectProcResult::Animate { anim_type: _ } => {
-            // TODO: Play animation.
+        ObjectProcResult::Animate {
+            anim_type: _,
+            origin: _,
+        } => {
+            // TODO: Play animation, if origin is in player FOV
             info!("animation");
         }
 
@@ -350,7 +353,9 @@ pub fn process_visual_feedback(
                 state.log.add(msg, class);
             }
         }
-        ObjectProcResult::CheckEnterFOV => {}
+        ObjectProcResult::CheckEnterPlayerFOV { origin: _ } => {
+            // if object is moved within player fov, re-render
+        }
     }
 }
 
@@ -744,7 +749,7 @@ fn get_available_action(
 }
 
 /// Render a generic progress or status bar in the UI.
-fn render_dna_short(
+fn _render_dna_short(
     panel: &mut Offscreen,
     coloring: &ColorPalette,
     x: i32,
@@ -816,7 +821,7 @@ fn render_dna_short(
 }
 
 /// Render a generic progress or status bar in the UI.
-fn render_dna_long(
+fn _render_dna_long(
     panel: &mut Offscreen,
     coloring: &ColorPalette,
     x: i32,

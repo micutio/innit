@@ -193,7 +193,7 @@ impl ForceVirusProduction {
         }
     }
 
-    fn new_forever(original_ai: Option<Controller>) -> Self {
+    fn _new_forever(original_ai: Option<Controller>) -> Self {
         ForceVirusProduction {
             original_ai,
             turns_active: None,

@@ -48,6 +48,8 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
             "cell membrane".to_string(),
             "cell membrane".to_string(),
             "cell membrane".to_string(),
+            "energy store".to_string(),
+            "energy store".to_string(),
             "receptor".to_string(),
         ],
         &state.gene_library,
@@ -107,7 +109,7 @@ pub fn game_loop(
         assert!(input.is_action_consumed());
 
         // let the game engine process an object
-        let action_result = state.process_object(objects, &frontend.fov);
+        let action_result = state.process_object(objects);
 
         // limit frames
         if state.is_players_turn() {
