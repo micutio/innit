@@ -58,7 +58,8 @@ impl GameFrontend {
         let root = Root::initializer()
             // .font("assets/tilesets/terminal16x16_gs_ro.png", FontLayout::AsciiInRow)
             .font(
-                "assets/tilesets/rogue_yun_16x16.png",
+                // "assets/tilesets/yayo_12x12.png",
+                "assets/tilesets/rex_paint_14x14.png",
                 FontLayout::AsciiInRow,
             )
             // .font("assets/tilesets/zilk_16x16.png", FontLayout::AsciiInRow)
