@@ -52,6 +52,7 @@ pub enum TraitFamily {
 pub enum TraitAttribute {
     SensingRange,
     Hp,
+    Volume,
     Metabolism,
     Storage,
     // TODO: Determine receptor kind by position on DNA
@@ -117,6 +118,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             Some(Box::new(Attack::new())),
         ),
         GeneticTrait::new("cell membrane", Actuating, TraitAttribute::Hp, None),
+        GeneticTrait::new("cell volume", Actuating, TraitAttribute::Volume, None),
         GeneticTrait::new(
             "optical sensor",
             Sensing,
@@ -206,6 +208,7 @@ pub struct Actuators {
     pub actions: Vec<Box<dyn Action>>,
     pub max_hp: i32,
     pub hp: i32,
+    pub volume: i32,
 }
 
 impl Actuators {
@@ -214,6 +217,7 @@ impl Actuators {
             actions: Vec::new(),
             max_hp: 1,
             hp: 1,
+            volume: 5,
         }
     }
 }
@@ -486,6 +490,9 @@ impl TraitBuilder {
             TraitAttribute::Hp => {
                 self.actuators.max_hp += 1;
                 self.actuators.hp += 1;
+            }
+            TraitAttribute::Volume => {
+                self.actuators.volume += 1;
             }
             TraitAttribute::Metabolism => {
                 self.processors.metabolism += 1;

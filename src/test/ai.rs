@@ -115,6 +115,7 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                     actions: vec![Box::new(Move::new())],
                     max_hp: 1,
                     hp: 1,
+                    volume: 1,
                 },
                 Dna::default(),
             ),

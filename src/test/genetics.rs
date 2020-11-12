@@ -41,6 +41,7 @@ fn test_dna_encoding() {
         actions: vec![Box::new(Move::new())],
         max_hp: 1,
         hp: 1,
+        volume: 1,
     };
 
     let (_s, _p, _a, _) = gene_lib.decode_dna(DnaType::Nucleus, &dna);
