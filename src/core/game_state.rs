@@ -70,10 +70,16 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(env: GameEnv, level: u32) -> Self {
+        let rng_seed = if env.use_fixed_seed {
+            0
+        } else {
+            rand::thread_rng().next_u64()
+        };
+
         GameState {
             // create the list of game messages and their colours, starts empty
             env,
-            rng: GameRng::new_from_u64_seed(rand::thread_rng().next_u64()),
+            rng: GameRng::new_from_u64_seed(rng_seed),
             log: vec![],
             turn: 0,
             dungeon_level: level,

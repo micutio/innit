@@ -8,11 +8,6 @@ use std::mem;
 // Type of RNG to be used in-game.
 pub type GameRng = SerializableRng<Isaac64Rng>;
 
-/// Seed of the RNG - depends on the SerializableRngType.
-pub const RNG_SEED: [u8; 32] = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1,
-];
-
 /// A seedable random number generator that can be serialized for consistent random number
 /// generation. For more info on Rust RNGs, refer to https://rust-random.github.io/book/guide-rngs.html
 /// For an example implementation of serializable RNG, refer to

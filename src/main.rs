@@ -40,6 +40,9 @@ pub fn main() {
         if arg.eq("-d") || arg.eq("--debug") {
             env.set_debug_mode(true);
         }
+        if arg.eq("-s") || arg.eq("--seeding") {
+            env.set_rng_seeding(true);
+        }
     }
 
     // TODO: Create game environment from presets and command line flags!
