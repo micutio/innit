@@ -157,11 +157,33 @@ impl Object {
         self
     }
 
+    /// Perform necessary actions when object dies.
+    pub fn die(&mut self, _state: &mut GameState, objects: &mut GameObjects) {
+        self.alive = false;
+        // empty inventory into this objects' current position
+        for mut o in self.inventory.items.drain(..) {
+            o.pos.translate(&self.pos);
+            objects.push(o);
+        }
+        // take this object out of the world
+        if self.is_player() {
+            self.visual.name = "your remains".to_string();
+        }
+    }
+
+    pub fn is_player(&self) -> bool {
+        if let Some(Controller::Player(_)) = self.control {
+            true
+        } else {
+            false
+        }
+    }
+
     /// Transform the object into an NPC or player. Part of the builder pattern.
     pub fn set_control(mut self, controller: Controller, log: &mut Messages) {
         match controller {
             Controller::Npc(_) => {
-                if let Some(Controller::Player(_)) = self.control {
+                if self.is_player() {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
                         MsgClass::Alert,
