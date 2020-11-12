@@ -11,7 +11,7 @@ use tcod::colors;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectProcResult};
+use crate::core::game_state::{GameState, MessageLog, MsgClass};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{Pass, Target};
@@ -112,16 +112,14 @@ pub fn game_loop(
         let action_result = state.process_object(objects);
 
         // limit frames
-        if state.is_players_turn() {
-            if let ObjectProcResult::NoAction = action_result {
-                let elapsed = start_time.elapsed();
-                // println!("time since last inactive: {:#?}", elapsed);
-                if let Some(slow_down) = MS_PER_FRAME.checked_sub(elapsed) {
-                    // println!("sleep for {:#?}", slow_down);
-                    thread::sleep(slow_down);
-                }
-                start_time = Instant::now();
+        if state.is_players_turn() && action_result.is_empty() {
+            let elapsed = start_time.elapsed();
+            // println!("time since last inactive: {:#?}", elapsed);
+            if let Some(slow_down) = MS_PER_FRAME.checked_sub(elapsed) {
+                // println!("sleep for {:#?}", slow_down);
+                thread::sleep(slow_down);
             }
+            start_time = Instant::now();
         }
 
         // render action vfx

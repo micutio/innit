@@ -5,7 +5,7 @@ use tcod::map::FovAlgorithm;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectProcResult};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
@@ -320,41 +320,43 @@ pub fn process_visual_feedback(
     frontend: &mut GameFrontend,
     input: &GameInput,
     objects: &mut GameObjects,
-    proc_result: ObjectProcResult,
+    feedback: Vec<ObjectFeedback>,
 ) {
-    match proc_result {
-        // no action has been performed, repeat the turn and try again
-        ObjectProcResult::NoAction => {}
+    for f in feedback {
+        match f {
+            // no action has been performed, repeat the turn and try again
+            ObjectFeedback::NoAction => {}
 
-        // action has been completed, but nothing needs to be done about it
-        ObjectProcResult::NoFeedback => {}
+            // action has been completed, but nothing needs to be done about it
+            ObjectFeedback::NoFeedback => {}
 
-        // the player's FOV has been updated, thus we also need to re-render
-        ObjectProcResult::UpdatePlayerFOV => {
-            recompute_fov(state, frontend, objects);
-            re_render(state, frontend, objects, &input.names_under_mouse);
-        }
-
-        // the player hasn't moved but something happened within fov
-        ObjectProcResult::ReRender => {
-            re_render(state, frontend, objects, &input.names_under_mouse);
-        }
-
-        ObjectProcResult::Animate {
-            anim_type: _,
-            origin: _,
-        } => {
-            // TODO: Play animation, if origin is in player FOV
-            info!("animation");
-        }
-
-        ObjectProcResult::Message { msg, class, origin } => {
-            if frontend.fov.is_in_fov(origin.x, origin.y) {
-                state.log.add(msg, class);
+            // the player's FOV has been updated, thus we also need to re-render
+            ObjectFeedback::UpdatePlayerFOV => {
+                recompute_fov(state, frontend, objects);
+                re_render(state, frontend, objects, &input.names_under_mouse);
             }
-        }
-        ObjectProcResult::CheckEnterPlayerFOV { origin: _ } => {
-            // if object is moved within player fov, re-render
+
+            // the player hasn't moved but something happened within fov
+            ObjectFeedback::ReRender => {
+                re_render(state, frontend, objects, &input.names_under_mouse);
+            }
+
+            ObjectFeedback::Animate {
+                anim_type: _,
+                origin: _,
+            } => {
+                // TODO: Play animation, if origin is in player FOV
+                info!("animation");
+            }
+
+            ObjectFeedback::Message { msg, class, origin } => {
+                if frontend.fov.is_in_fov(origin.x, origin.y) {
+                    state.log.add(msg, class);
+                }
+            }
+            ObjectFeedback::CheckEnterPlayerFOV { origin: _ } => {
+                // if object is moved within player fov, re-render
+            }
         }
     }
 }

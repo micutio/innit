@@ -4,7 +4,6 @@ use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::position::Position;
 use crate::entity::action::*;
-use crate::entity::control::Controller;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
@@ -35,7 +34,7 @@ impl MessageLog for Vec<(String, MsgClass)> {
 
 /// Results from processing an objects action for that turn, in ascending rank.
 #[derive(PartialEq, Debug)]
-pub enum ObjectProcResult {
+pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
     CheckEnterPlayerFOV {
@@ -94,17 +93,17 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectProcResult {
+    pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract(self.current_obj_index) {
-            if let Some(Controller::Player(_)) = active_object.control {
+            if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.current_player_index = self.current_obj_index;
                 // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
                 if !active_object.has_next_action()
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
-                    return ObjectProcResult::NoAction;
+                    return vec![];
                 }
             }
 
@@ -124,12 +123,12 @@ impl GameState {
             // Innit doesn't have any action preparations as of yet.
 
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
-            // If not enough energy available try to metabolise.
-            let process_result =
+            let mut process_result =
+                // If not enough energy available try to metabolise.
                 if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy
                     active_object.metabolize();
-                    ObjectProcResult::NoFeedback
+                    vec![ObjectFeedback::NoFeedback]
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
                     active_object.processors.energy -= next_action.get_energy_cost();
@@ -143,6 +142,13 @@ impl GameState {
             // Apply recurring effects so that the player can factor this into the next action.
 
             // TODO: Damage from overloading
+            if active_object.inventory.items.len() as i32 > active_object.actuators.volume {
+                active_object.actuators.hp -= 1;
+                if active_object.is_player() {
+                    self.log
+                        .add("You're overloaded! Taking damage...", MsgClass::Alert);
+                }
+            }
 
             // Random mutation
             if active_object.dna.raw.is_empty() {
@@ -194,8 +200,25 @@ impl GameState {
                 }
             }
 
-            // return object back to objects vector
-            objects[self.current_obj_index].replace(active_object);
+            // check whether object is still alive
+            if active_object.actuators.hp <= 0 {
+                active_object.die(self, objects);
+            }
+
+            // return object back to objects vector, if still alive
+            if !active_object.alive {
+                process_result.push(ObjectFeedback::Message {
+                    msg: format!("{} died!", active_object.visual.name),
+                    class: MsgClass::Alert,
+                    origin: active_object.pos.clone(),
+                });
+
+                if active_object.is_player() {
+                    objects[self.current_obj_index].replace(active_object);
+                }
+            } else {
+                objects[self.current_obj_index].replace(active_object);
+            }
 
             // finally increase object index and turn counter
             self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
@@ -216,17 +239,19 @@ impl GameState {
         objects: &mut GameObjects,
         actor: &mut Object,
         action: Box<dyn Action>,
-    ) -> ObjectProcResult {
+    ) -> Vec<ObjectFeedback> {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => callback,
-            ActionResult::Failure => ObjectProcResult::NoAction, // how to handle fails?
-            ActionResult::Consequence { action } => {
+            ActionResult::Success { callback } => vec![callback],
+            ActionResult::Failure => vec![ObjectFeedback::NoAction], // how to handle fails?
+            ActionResult::Consequence {
+                callback,
+                follow_up,
+            } => {
                 // if we have a side effect, process it first and then the `main` action
-                self.process_action(objects, actor, action.unwrap())
-                // TODO: Think of a way to handle both results of action and consequence.
-                // TODO: Extract into function, recursively bubble up results and return the highest
-                //       priority or just a list of all of them
+                let mut results = vec![callback];
+                results.append(&mut self.process_action(objects, actor, follow_up));
+                results
             }
         }
     }

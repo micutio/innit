@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MsgClass, ObjectProcResult};
+use crate::core::game_state::{GameState, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::entity::ai::ForceVirusProduction;
 use crate::entity::control::Controller::{Npc, Player};
@@ -61,11 +61,14 @@ impl Target {
 /// It can succeed, fail and cause direct consequences.
 pub enum ActionResult {
     /// Successfully finished action
-    Success { callback: ObjectProcResult },
+    Success { callback: ObjectFeedback },
     /// Failed to perform an action, ideally without any side effect.
     Failure,
     /// Another action happens automatically after this one.
-    Consequence { action: Option<Box<dyn Action>> },
+    Consequence {
+        callback: ObjectFeedback,
+        follow_up: Box<dyn Action>,
+    },
 }
 
 /// Interface for all actions.
@@ -126,7 +129,7 @@ impl Action for Pass {
         // do nothing
         // duh
         ActionResult::Success {
-            callback: ObjectProcResult::NoFeedback,
+            callback: ObjectFeedback::NoFeedback,
         }
     }
 
@@ -181,11 +184,11 @@ impl Action for Move {
             owner.pos.set(target_pos.x, target_pos.y);
             if let Some(Player(_)) = owner.control {
                 ActionResult::Success {
-                    callback: ObjectProcResult::UpdatePlayerFOV,
+                    callback: ObjectFeedback::UpdatePlayerFOV,
                 }
             } else {
                 ActionResult::Success {
-                    callback: ObjectProcResult::CheckEnterPlayerFOV {
+                    callback: ObjectFeedback::CheckEnterPlayerFOV {
                         origin: owner.pos.clone(),
                     },
                 }
@@ -243,7 +246,7 @@ impl Action for Metabolise {
     ) -> ActionResult {
         owner.processors.energy += self.lvl;
         ActionResult::Success {
-            callback: ObjectProcResult::NoFeedback,
+            callback: ObjectFeedback::NoFeedback,
         }
     }
 
@@ -310,7 +313,7 @@ impl Action for Attack {
         if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {
-                callback: ObjectProcResult::CheckEnterPlayerFOV {
+                callback: ObjectFeedback::CheckEnterPlayerFOV {
                     origin: owner.pos.clone(),
                 },
             }
@@ -415,7 +418,7 @@ impl Action for InjectVirus {
             objects.replace(index, target);
             if has_infected {
                 return ActionResult::Success {
-                    callback: ObjectProcResult::Message {
+                    callback: ObjectFeedback::Message {
                         msg: format!(
                             "{} injected a virus into {}",
                             owner.visual.name, target_name
@@ -426,11 +429,11 @@ impl Action for InjectVirus {
                 };
             }
             ActionResult::Success {
-                callback: ObjectProcResult::NoFeedback,
+                callback: ObjectFeedback::NoFeedback,
             }
         } else {
             ActionResult::Success {
-                callback: ObjectProcResult::NoFeedback,
+                callback: ObjectFeedback::NoFeedback,
             }
         }
     }
@@ -519,13 +522,13 @@ impl Action for InjectRetrovirus {
                     // Funny, because it's still debated as to whether viruses are alive to begin.
                     // TODO: Handle other death effects, such as change of blocking, symbol and color.
 
-                    ObjectProcResult::Message {
+                    ObjectFeedback::Message {
                         msg: format!("A virus has infected {}!", target.visual.name),
                         class: MsgClass::Alert,
                         origin: owner.pos.clone(),
                     }
                 } else {
-                    ObjectProcResult::Message {
+                    ObjectFeedback::Message {
                         msg: format!(
                             "A virus has tried to infect {} but cannot find matching receptor!",
                             target.visual.name
@@ -537,7 +540,7 @@ impl Action for InjectRetrovirus {
                 objects.replace(index, target);
                 msg_feedback
             } else {
-                ObjectProcResult::NoFeedback
+                ObjectFeedback::NoFeedback
             };
 
         ActionResult::Success { callback: feedback }
