@@ -70,7 +70,7 @@ fn test_random_ai() {
 }
 
 fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
-    use crate::entity::ai::RandomAi;
+    use crate::entity::ai::AiRandom;
     use crate::entity::object::Object;
     use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 
@@ -120,7 +120,7 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Dna::default(),
             ),
         )
-        .control(Controller::Npc(Box::new(RandomAi::new())));
+        .control(Controller::Npc(Box::new(AiRandom::new())));
 
     objects.set_player(player);
 

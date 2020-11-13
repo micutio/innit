@@ -14,16 +14,16 @@ use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PassiveAi;
+pub struct AiPassive;
 
-impl PassiveAi {
+impl AiPassive {
     pub fn new() -> Self {
-        PassiveAi {}
+        AiPassive {}
     }
 }
 
 #[typetag::serde]
-impl Ai for PassiveAi {
+impl Ai for AiPassive {
     fn act(
         &mut self,
         _state: &mut GameState,
@@ -35,16 +35,16 @@ impl Ai for PassiveAi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RandomAi;
+pub struct AiRandom;
 
-impl RandomAi {
+impl AiRandom {
     pub fn new() -> Self {
-        RandomAi {}
+        AiRandom {}
     }
 }
 
 #[typetag::serde]
-impl Ai for RandomAi {
+impl Ai for AiRandom {
     fn act(
         &mut self,
         state: &mut GameState,
@@ -145,10 +145,10 @@ impl Ai for RandomAi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RnaVirusAi {}
+pub struct AiRnaVirus {}
 
 #[typetag::serde]
-impl Ai for RnaVirusAi {
+impl Ai for AiRnaVirus {
     fn act(
         &mut self,
         state: &mut GameState,
@@ -178,15 +178,15 @@ impl Ai for RnaVirusAi {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ForceVirusProduction {
+pub struct AiForceVirusProduction {
     original_ai: Option<Controller>,
     turns_active: Option<i32>,
     current_turn: i32,
 }
 
-impl ForceVirusProduction {
-    pub(crate) fn new_duration(original_ai: Option<Controller>, duration_turns: i32) -> Self {
-        ForceVirusProduction {
+impl AiForceVirusProduction {
+    pub fn new_duration(original_ai: Option<Controller>, duration_turns: i32) -> Self {
+        AiForceVirusProduction {
             original_ai,
             turns_active: Some(duration_turns),
             current_turn: 0,
@@ -194,7 +194,7 @@ impl ForceVirusProduction {
     }
 
     fn _new_forever(original_ai: Option<Controller>) -> Self {
-        ForceVirusProduction {
+        AiForceVirusProduction {
             original_ai,
             turns_active: None,
             current_turn: 0,
@@ -203,7 +203,7 @@ impl ForceVirusProduction {
 }
 
 #[typetag::serde]
-impl Ai for ForceVirusProduction {
+impl Ai for AiForceVirusProduction {
     fn act(
         &mut self,
         _state: &mut GameState,

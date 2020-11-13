@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
-use crate::entity::ai::ForceVirusProduction;
+use crate::entity::ai::AiForceVirusProduction;
 use crate::entity::control::Controller::{Npc, Player};
 use crate::entity::genetics::DnaType;
 use crate::entity::object::Object;
@@ -396,7 +396,7 @@ impl Action for InjectVirus {
                 let original_ai = target.control.take();
                 target
                     .control
-                    .replace(Npc(Box::new(ForceVirusProduction::new_duration(
+                    .replace(Npc(Box::new(AiForceVirusProduction::new_duration(
                         original_ai,
                         4,
                     ))));
