@@ -45,6 +45,7 @@ pub enum TraitFamily {
     Sensing,
     Processing,
     Actuating,
+    Ltr,
     Junk,
 }
 
@@ -137,6 +138,10 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         ),
         GeneticTrait::new("receptor", Processing, TraitAttribute::Receptor, None),
     ]
+}
+
+fn ltr_trait() -> GeneticTrait {
+    GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None)
 }
 
 /// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
@@ -239,7 +244,7 @@ pub enum DnaType {
     Nucleus,  // eukaryotic cells
     Nucleoid, // bacteria or very large viruses
     Rna,      // most viruses
-    Plasmid,  // plasmids (duh...!11)
+    Plasmid,  // plasmids (duh...!)
 }
 
 impl Default for DnaType {
@@ -532,6 +537,7 @@ impl TraitBuilder {
                     .entry(genetic_trait.trait_name.clone())
                     .or_insert(0) += 1;
             }
+            TraitFamily::Ltr => {}
             TraitFamily::Junk => {}
         }
     }
