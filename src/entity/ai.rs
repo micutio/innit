@@ -9,7 +9,9 @@ use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
-use crate::entity::action::{Action, InjectVirus, Pass, ProduceVirus, Target, TargetCategory};
+use crate::entity::action::{
+    ActInjectVirus, ActPass, ActProduceVirus, Action, Target, TargetCategory,
+};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
 
@@ -30,7 +32,7 @@ impl Ai for AiPassive {
         _objects: &mut GameObjects,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(Pass)
+        Box::new(ActPass)
     }
 }
 
@@ -56,7 +58,7 @@ impl Ai for AiRandom {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(Pass);
+            return Box::new(ActPass);
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -139,7 +141,7 @@ impl Ai for AiRandom {
             }
             boxed_action
         } else {
-            Box::new(Pass)
+            Box::new(ActPass)
         }
     }
 }
@@ -171,9 +173,12 @@ impl Ai for AiRnaVirus {
             })
             .choose(&mut state.rng)
         {
-            return Box::new(InjectVirus::new(Target::from_pos(&owner.pos, &target.pos)));
+            return Box::new(ActInjectVirus::new(Target::from_pos(
+                &owner.pos,
+                &target.pos,
+            )));
         }
-        Box::new(Pass)
+        Box::new(ActPass)
     }
 }
 
@@ -218,6 +223,6 @@ impl Ai for AiForceVirusProduction {
             }
         }
 
-        Box::new(ProduceVirus::new())
+        Box::new(ActProduceVirus::new())
     }
 }

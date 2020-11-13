@@ -4,7 +4,7 @@ use crate::entity::genetics::DnaType;
 
 #[test]
 fn test_dna_encoding() {
-    use crate::entity::action::Move;
+    use crate::entity::action::ActMove;
     use crate::entity::genetics::{Actuators, GeneLibrary, Processors, Sensors};
     use crate::util::generate_gray_code;
 
@@ -38,7 +38,7 @@ fn test_dna_encoding() {
     };
 
     let a = Actuators {
-        actions: vec![Box::new(Move::new())],
+        actions: vec![Box::new(ActMove::new())],
         max_hp: 1,
         hp: 1,
         volume: 1,

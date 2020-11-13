@@ -116,10 +116,10 @@ impl Clone for Box<dyn Action> {
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Pass;
+pub struct ActPass;
 
 #[typetag::serde]
-impl Action for Pass {
+impl Action for ActPass {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -156,15 +156,15 @@ impl Action for Pass {
 
 /// Move an object
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Move {
+pub struct ActMove {
     lvl: i32,
     direction: Target,
 }
 
-impl Move {
+impl ActMove {
     // TODO: use level
     pub fn new() -> Self {
-        Move {
+        ActMove {
             lvl: 0,
             direction: Target::Center,
         }
@@ -172,7 +172,7 @@ impl Move {
 }
 
 #[typetag::serde]
-impl Action for Move {
+impl Action for ActMove {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -226,18 +226,18 @@ impl Action for Move {
 
 /// Focus on increased energy production for this turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Metabolise {
+pub struct ActMetabolise {
     lvl: i32,
 }
 
-impl Metabolise {
+impl ActMetabolise {
     pub fn new() -> Self {
-        Metabolise { lvl: 0 }
+        ActMetabolise { lvl: 0 }
     }
 }
 
 #[typetag::serde]
-impl Action for Metabolise {
+impl Action for ActMetabolise {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -275,14 +275,14 @@ impl Action for Metabolise {
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Attack {
+pub struct ActAttack {
     lvl: i32,
     target: Target,
 }
 
-impl Attack {
+impl ActAttack {
     pub fn new() -> Self {
-        Attack {
+        ActAttack {
             lvl: 0,
             target: Target::Center,
         }
@@ -290,7 +290,7 @@ impl Attack {
 }
 
 #[typetag::serde]
-impl Action for Attack {
+impl Action for ActAttack {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -359,19 +359,19 @@ impl Action for Attack {
 /// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct InjectVirus {
+pub struct ActInjectVirus {
     lvl: i32,
     target: Target,
 }
 
-impl InjectVirus {
+impl ActInjectVirus {
     pub fn new(target: Target) -> Self {
-        InjectVirus { lvl: 0, target }
+        ActInjectVirus { lvl: 0, target }
     }
 }
 
 #[typetag::serde]
-impl Action for InjectVirus {
+impl Action for ActInjectVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     // virus dna
     fn perform(
@@ -468,14 +468,14 @@ impl Action for InjectVirus {
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct InjectRetrovirus {
+pub struct ActInjectRetrovirus {
     lvl: i32,
     target: Target,
 }
 
-impl InjectRetrovirus {
+impl ActInjectRetrovirus {
     pub fn _new() -> Self {
-        InjectRetrovirus {
+        ActInjectRetrovirus {
             lvl: 0,
             target: Target::Center,
         }
@@ -483,7 +483,7 @@ impl InjectRetrovirus {
 }
 
 #[typetag::serde]
-impl Action for InjectRetrovirus {
+impl Action for ActInjectRetrovirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna.
     // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
@@ -578,18 +578,18 @@ impl Action for InjectRetrovirus {
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ProduceVirus {
+pub struct ActProduceVirus {
     lvl: i32,
 }
 
-impl ProduceVirus {
+impl ActProduceVirus {
     pub fn new() -> Self {
-        ProduceVirus { lvl: 0 }
+        ActProduceVirus { lvl: 0 }
     }
 }
 
 #[typetag::serde]
-impl Action for ProduceVirus {
+impl Action for ActProduceVirus {
     fn perform(
         &self,
         _state: &mut GameState,

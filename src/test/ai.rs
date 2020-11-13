@@ -2,7 +2,7 @@ use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::core::world::world_gen::Tile;
-use crate::entity::action::Move;
+use crate::entity::action::ActMove;
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
@@ -112,7 +112,7 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Sensors::default(),
                 Processors::default(),
                 Actuators {
-                    actions: vec![Box::new(Move::new())],
+                    actions: vec![Box::new(ActMove::new())],
                     max_hp: 1,
                     hp: 1,
                     volume: 1,
