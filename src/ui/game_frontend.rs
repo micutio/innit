@@ -840,7 +840,8 @@ fn _render_dna_long(
             TraitFamily::Sensing => panel.set_default_background(coloring.cyan),
             TraitFamily::Processing => panel.set_default_background(coloring.magenta),
             TraitFamily::Actuating => panel.set_default_background(coloring.yellow),
-            TraitFamily::Junk => panel.set_default_background(colors::GREY),
+            TraitFamily::Junk => panel.set_default_background(colors::DARK_GREY),
+            TraitFamily::Ltr => panel.set_default_background(colors::WHITE),
         }
         panel.rect(x + offset, y, bar_width, 1, false, BackgroundFlag::Screen);
         offset += bar_width;
@@ -883,7 +884,8 @@ fn render_dna_panel(panel: &mut Offscreen, coloring: &ColorPalette, dna: &Dna) {
             TraitFamily::Sensing => coloring.cyan,
             TraitFamily::Processing => coloring.magenta,
             TraitFamily::Actuating => coloring.yellow,
-            TraitFamily::Junk => colors::GREY,
+            TraitFamily::Junk => colors::DARK_GREY,
+            TraitFamily::Ltr => colors::WHITE,
         };
         panel.set_char_foreground(0, (vert_offset as i32) + top_offset, col);
         // panel.set_char(0, (vert_offset as i32) + top_offset, '\u{ba}');

@@ -8,10 +8,12 @@ use std::fmt::Debug;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
-use crate::entity::ai::AiForceVirusProduction;
+use crate::entity::ai::{AiForceVirusProduction, AiVirus};
+use crate::entity::control::Controller;
 use crate::entity::control::Controller::{Npc, Player};
-use crate::entity::genetics::DnaType;
+use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
+use tcod::colors;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -359,19 +361,24 @@ impl Action for ActAttack {
 /// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActInjectVirus {
+pub struct ActInjectRnaVirus {
     lvl: i32,
     target: Target,
+    rna: Vec<u8>,
 }
 
-impl ActInjectVirus {
-    pub fn new(target: Target) -> Self {
-        ActInjectVirus { lvl: 0, target }
+impl ActInjectRnaVirus {
+    pub fn new(target: Target, dna: Vec<u8>) -> Self {
+        ActInjectRnaVirus {
+            lvl: 0,
+            target,
+            rna: dna,
+        }
     }
 }
 
 #[typetag::serde]
-impl Action for ActInjectVirus {
+impl Action for ActInjectRnaVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     // virus dna
     fn perform(
@@ -393,12 +400,14 @@ impl Action for ActInjectVirus {
                 && (target.dna.dna_type != DnaType::Nucleus
                     || target.dna.dna_type == DnaType::Nucleoid)
             {
+                // TODO: Add forced production for retroviruses
                 let original_ai = target.control.take();
                 target
                     .control
                     .replace(Npc(Box::new(AiForceVirusProduction::new_duration(
                         original_ai,
                         4,
+                        Some(owner.dna.raw.clone()),
                     ))));
 
                 // The virus becomes an empty shell after successfully transmitting its dna.
@@ -574,29 +583,82 @@ impl Action for ActInjectRetrovirus {
 
 /// A virus' sole purpose is to go forth and multiply.
 /// This action corresponds to the virus trait which is located at the beginning of virus DNA.
-/// Retro viruses convert their RNA into DNA and inject it into the cell for reproduction as well
+/// Retroviruses convert their RNA into DNA and inject it into the cell for reproduction as well
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
-/// #[derive(Debug, Serialize, Deserialize, Clone)]
+///
+/// RNA viruses will set the field `virus_rna`, from which viruses will be replicated.
+/// If `virus_rna` is `None`, the object will look for a retrovirus sequence within its own dna to
+/// use to initialise the new virion.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActProduceVirus {
+pub struct ActProduceVirion {
     lvl: i32,
+    virus_rna: Option<Vec<u8>>,
 }
 
-impl ActProduceVirus {
-    pub fn new() -> Self {
-        ActProduceVirus { lvl: 0 }
+impl ActProduceVirion {
+    pub fn new(virus_rna: Option<Vec<u8>>) -> Self {
+        ActProduceVirion { lvl: 0, virus_rna }
     }
 }
 
 #[typetag::serde]
-impl Action for ActProduceVirus {
+impl Action for ActProduceVirion {
     fn perform(
         &self,
-        _state: &mut GameState,
+        state: &mut GameState,
         _objects: &mut GameObjects,
-        _owner: &mut Object,
+        owner: &mut Object,
     ) -> ActionResult {
-        unimplemented!()
+        match &self.virus_rna {
+            Some(dna) => {
+                owner.inventory.items.push(
+                    Object::new()
+                        .position(owner.pos.x, owner.pos.y)
+                        .living(true)
+                        .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                        .physical(true, false, false)
+                        .genome(0.75, state.gene_library.decode_dna(DnaType::Rna, dna))
+                        .control(Controller::Npc(Box::new(AiVirus {}))),
+                );
+            }
+            None => {
+                // look for virus dna flanked by LTR markers in our own dna
+                let p0 = owner
+                    .dna
+                    .simplified
+                    .iter()
+                    .position(|x| x.trait_family == TraitFamily::Ltr);
+                let p1 = owner
+                    .dna
+                    .simplified
+                    .iter()
+                    .rposition(|x| x.trait_family == TraitFamily::Ltr);
+                if let (Some(a), Some(b)) = (p0, p1) {
+                    if a != b {
+                        let dna_sequence: Vec<String> = owner.dna.simplified[a..=b]
+                            .iter()
+                            .map(|x| x.trait_name.clone())
+                            .collect();
+                        let dna_from_seq = state.gene_library.dna_from_traits(&dna_sequence);
+                        owner.inventory.items.push(
+                            Object::new()
+                                .position(owner.pos.x, owner.pos.y)
+                                .living(true)
+                                .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                                .physical(true, false, false)
+                                .genome(
+                                    0.75,
+                                    state.gene_library.decode_dna(DnaType::Rna, &dna_from_seq),
+                                )
+                                .control(Controller::Npc(Box::new(AiVirus {}))), // TODO: Separate Ai for retroviruses?
+                        );
+                    }
+                }
+            }
+        };
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
+        }
     }
 
     fn set_target(&mut self, _t: Target) {}

@@ -10,7 +10,7 @@ use std::fmt::Debug;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::{
-    ActInjectVirus, ActPass, ActProduceVirus, Action, Target, TargetCategory,
+    ActInjectRnaVirus, ActPass, ActProduceVirion, Action, Target, TargetCategory,
 };
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
@@ -147,10 +147,10 @@ impl Ai for AiRandom {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AiRnaVirus {}
+pub struct AiVirus {}
 
 #[typetag::serde]
-impl Ai for AiRnaVirus {
+impl Ai for AiVirus {
     fn act(
         &mut self,
         state: &mut GameState,
@@ -173,10 +173,10 @@ impl Ai for AiRnaVirus {
             })
             .choose(&mut state.rng)
         {
-            return Box::new(ActInjectVirus::new(Target::from_pos(
-                &owner.pos,
-                &target.pos,
-            )));
+            return Box::new(ActInjectRnaVirus::new(
+                Target::from_pos(&owner.pos, &target.pos),
+                owner.dna.raw.clone(),
+            ));
         }
         Box::new(ActPass)
     }
@@ -187,22 +187,29 @@ pub struct AiForceVirusProduction {
     original_ai: Option<Controller>,
     turns_active: Option<i32>,
     current_turn: i32,
+    rna: Option<Vec<u8>>,
 }
 
 impl AiForceVirusProduction {
-    pub fn new_duration(original_ai: Option<Controller>, duration_turns: i32) -> Self {
+    pub fn new_duration(
+        original_ai: Option<Controller>,
+        duration_turns: i32,
+        rna: Option<Vec<u8>>,
+    ) -> Self {
         AiForceVirusProduction {
             original_ai,
             turns_active: Some(duration_turns),
             current_turn: 0,
+            rna,
         }
     }
 
-    fn _new_forever(original_ai: Option<Controller>) -> Self {
+    fn _new_forever(original_ai: Option<Controller>, rna: Option<Vec<u8>>) -> Self {
         AiForceVirusProduction {
             original_ai,
             turns_active: None,
             current_turn: 0,
+            rna,
         }
     }
 }
@@ -223,6 +230,6 @@ impl Ai for AiForceVirusProduction {
             }
         }
 
-        Box::new(ActProduceVirus::new())
+        Box::new(ActProduceVirion::new(self.rna.clone()))
     }
 }

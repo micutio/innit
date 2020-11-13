@@ -137,11 +137,8 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             Some(Box::new(ActMetabolise::new())),
         ),
         GeneticTrait::new("receptor", Processing, TraitAttribute::Receptor, None),
+        GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
     ]
-}
-
-fn ltr_trait() -> GeneticTrait {
-    GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None)
 }
 
 /// This may or may not be body parts. Actuators like organelles can also benefit the attributes.
