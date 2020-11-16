@@ -327,8 +327,17 @@ impl GeneLibrary {
 
     // TODO: Add parameters to control distribution of sense, process and actuate!
     // TODO: Use above parameters for NPC definitions, readable from datafiles!
-    pub fn new_dna(&self, rng: &mut GameRng, avg_genome_len: usize) -> Vec<u8> {
+    pub fn new_dna(&self, rng: &mut GameRng, has_ltr: bool, avg_genome_len: usize) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
+
+        if has_ltr {
+            if let Some(ltr_code) = self.trait_to_gray.get("LTR marker") {
+                dna.push(0 as u8);
+                dna.push(1 as u8);
+                dna.push(*ltr_code);
+            }
+        }
+
         // randomly grab a trait and add trait id, length and random attribute value
         for _ in 0..avg_genome_len {
             // push 0x00 first as the genome start symbol
@@ -347,6 +356,15 @@ impl GeneLibrary {
             // // add random attribute value
             // dna.push(game_rng.gen_range(0, 16) as u8);
         }
+
+        if has_ltr {
+            if let Some(ltr_code) = self.trait_to_gray.get("LTR marker") {
+                dna.push(0 as u8);
+                dna.push(1 as u8);
+                dna.push(*ltr_code);
+            }
+        }
+
         // debug!("new dna generated: {:?}", dna);
         dna
     }
@@ -392,9 +410,10 @@ impl GeneLibrary {
         &self,
         rng: &mut GameRng,
         dna_type: DnaType,
+        has_ltr: bool,
         avg_genome_len: usize,
     ) -> (Sensors, Processors, Actuators, Dna) {
-        let dna = self.new_dna(rng, avg_genome_len);
+        let dna = self.new_dna(rng, has_ltr, avg_genome_len);
         let (s, p, a, mut d) = self.decode_dna(dna_type, &dna);
         d.raw = dna;
         (s, p, a, d)

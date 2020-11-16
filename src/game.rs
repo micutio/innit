@@ -67,7 +67,7 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
             0.99,
             state
                 .gene_library
-                .new_genetics(&mut state.rng, DnaType::Nucleus, GENE_LEN),
+                .new_genetics(&mut state.rng, DnaType::Nucleus, false, GENE_LEN),
         );
 
     debug!("created player object {}", player);

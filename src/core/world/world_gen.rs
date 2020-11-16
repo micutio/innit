@@ -66,6 +66,7 @@ pub enum Monster {
 }
 
 pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _level: u32) -> Object {
+    // append LTR markers
     match monster {
         Monster::Virus => Object::new()
             .position(x, y)
@@ -76,7 +77,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
                 0.75,
                 state
                     .gene_library
-                    .new_genetics(&mut state.rng, DnaType::Nucleoid, GENE_LEN),
+                    .new_genetics(&mut state.rng, DnaType::Nucleoid, true, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(AiRandom::new()))),
         Monster::Bacteria => Object::new()
@@ -88,7 +89,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
                 0.9,
                 state
                     .gene_library
-                    .new_genetics(&mut state.rng, DnaType::Nucleoid, GENE_LEN),
+                    .new_genetics(&mut state.rng, DnaType::Nucleoid, false, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(AiRandom::new()))),
     }
