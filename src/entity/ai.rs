@@ -74,8 +74,6 @@ impl Ai for AiRandom {
             // .filter_map(|o| o.as_ref())
             .collect();
 
-        println!("adjacent target count: {:?}", &adjacent_targets.len());
-
         let mut valid_targets = vec![
             TargetCategory::None,
             TargetCategory::Any,

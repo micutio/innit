@@ -70,12 +70,12 @@ pub fn new_game(env: GameEnv, frontend: &mut GameFrontend) -> (GameState, GameOb
                 .new_genetics(&mut state.rng, DnaType::Nucleus, false, GENE_LEN),
         );
 
-    debug!("created player object {}", player);
-    debug!("player sensors: {:?}", player.sensors);
-    debug!("player processors: {:?}", player.processors);
-    debug!("player actuators: {:?}", player.actuators);
-    debug!("player dna: {:?}", player.dna);
-    debug!(
+    trace!("created player object {}", player);
+    trace!("player sensors: {:?}", player.sensors);
+    trace!("player processors: {:?}", player.processors);
+    trace!("player actuators: {:?}", player.actuators);
+    trace!("player dna: {:?}", player.dna);
+    trace!(
         "player default action: {:?}",
         player.get_primary_action(Target::Center).to_text()
     );

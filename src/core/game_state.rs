@@ -1,4 +1,4 @@
-use rand::{Rng, RngCore};
+use rand::RngCore;
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
@@ -8,7 +8,7 @@ use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::ui::game_frontend::AnimationType;
-use crate::util::game_rng::{GameRng, RngExtended};
+use crate::util::game_rng::GameRng;
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum MsgClass {
@@ -103,6 +103,7 @@ impl GameState {
                 if !active_object.has_next_action()
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
+                    objects.replace(self.current_obj_index, active_object);
                     return vec![];
                 }
             }
@@ -151,54 +152,55 @@ impl GameState {
             }
 
             // Random mutation
-            if active_object.dna.raw.is_empty() {
-                println!("{} dna is empty!", active_object.visual.name);
-            }
-            if !active_object.dna.raw.is_empty()
-                && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
-            {
-                // mutate the object's genome by randomly flipping a bit
-                let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
-                let old_gene = active_object.dna.raw[random_gene];
-                debug!(
-                    "{} flipping gene: 0b{:08b}",
-                    active_object.visual.name, active_object.dna.raw[random_gene]
-                );
-                active_object.dna.raw[random_gene] ^= self.rng.random_bit();
-                debug!(
-                    "{}            to: 0b{:08b}",
-                    active_object.visual.name, active_object.dna.raw[random_gene]
-                );
-
-                // apply new genome to object
-                let (sensors, processors, actuators, dna) = self
-                    .gene_library
-                    .decode_dna(active_object.dna.dna_type, active_object.dna.raw.as_slice());
-                active_object.change_genome(sensors, processors, actuators, dna);
-
-                // TODO: Show mutation effect as diff between old and new genome!
-                if self.current_obj_index == self.current_player_index {
-                    self.log.add(
-                        format!("A mutation occurred in your genome {}", old_gene),
-                        MsgClass::Alert,
-                    );
-                } else if let Some(player) = &objects[self.current_player_index] {
-                    debug!(
-                        "sensing range: {}, dist: {}",
-                        player.sensors.sensing_range as f32,
-                        player.pos.distance(&active_object.pos)
-                    );
-                    if player.pos.distance(&active_object.pos)
-                        <= player.sensors.sensing_range as f32
-                    {
-                        // don't record all tiles passing constantly
-                        self.log.add(
-                            format!("{} mutated!", active_object.visual.name),
-                            MsgClass::Info,
-                        );
-                    }
-                }
-            }
+            // TODO: Perform random mutation when cells are procreating/multiplying, not just by chance every turn.
+            // if active_object.dna.raw.is_empty() {
+            //     println!("{} dna is empty!", active_object.visual.name);
+            // }
+            // if !active_object.dna.raw.is_empty()
+            //     && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
+            // {
+            //     // mutate the object's genome by randomly flipping a bit
+            //     let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
+            //     let old_gene = active_object.dna.raw[random_gene];
+            //     debug!(
+            //         "{} flipping gene: 0b{:08b}",
+            //         active_object.visual.name, active_object.dna.raw[random_gene]
+            //     );
+            //     active_object.dna.raw[random_gene] ^= self.rng.random_bit();
+            //     debug!(
+            //         "{}            to: 0b{:08b}",
+            //         active_object.visual.name, active_object.dna.raw[random_gene]
+            //     );
+            //
+            //     // apply new genome to object
+            //     let (sensors, processors, actuators, dna) = self
+            //         .gene_library
+            //         .decode_dna(active_object.dna.dna_type, active_object.dna.raw.as_slice());
+            //     active_object.change_genome(sensors, processors, actuators, dna);
+            //
+            //     // TODO: Show mutation effect as diff between old and new genome!
+            //     if self.current_obj_index == self.current_player_index {
+            //         self.log.add(
+            //             format!("A mutation occurred in your genome {}", old_gene),
+            //             MsgClass::Alert,
+            //         );
+            //     } else if let Some(player) = &objects[self.current_player_index] {
+            //         debug!(
+            //             "sensing range: {}, dist: {}",
+            //             player.sensors.sensing_range as f32,
+            //             player.pos.distance(&active_object.pos)
+            //         );
+            //         if player.pos.distance(&active_object.pos)
+            //             <= player.sensors.sensing_range as f32
+            //         {
+            //             // don't record all tiles passing constantly
+            //             self.log.add(
+            //                 format!("{} mutated!", active_object.visual.name),
+            //                 MsgClass::Info,
+            //             );
+            //         }
+            //     }
+            // }
 
             // check whether object is still alive
             if active_object.actuators.hp <= 0 {

@@ -302,7 +302,6 @@ impl GeneLibrary {
         let trait_vec: Vec<GeneticTrait> = create_trait_list();
         let trait_count = trait_vec.len();
         let gray_code = generate_gray_code(4);
-        debug!("gray code: {:#?}", gray_code);
         let gray_to_trait: HashMap<u8, String> = trait_vec
             .iter()
             .enumerate()
