@@ -26,11 +26,22 @@ A long-term goal, would be to create an educational experience as well. Many of 
 - [ ] Random mutation and adaptation
 - [ ] A living game world, that responds to the game events with immune reactions, fever and more
 
-## Current Version
+## Current version
 
 ### Alpha 0.0.3
 
 Innit is still at the outset of development. The basic game engine is, apart from a bit of polish here and there, functional.
+
+### Running from source
+
+#### Linux
+Run the following commands in the command line.
+Innit is built upon tcod, which requires libsdl to be installed.
+
+```bash
+sudo apt install libsdl2-dev
+cargo build
+```
 
 ## Known Issues
 
