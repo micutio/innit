@@ -7,8 +7,8 @@ extern crate rand_isaac;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate rltk;
 extern crate serde_json;
-extern crate tcod;
 
 mod core;
 mod entity;
@@ -17,19 +17,23 @@ mod test;
 mod ui;
 mod util;
 
-use std::env;
-
 use crate::core::game_env::GameEnv;
 use crate::ui::game_frontend::{main_menu, GameFrontend};
+use rltk::{GameState, Rltk};
+use std::env;
 
-pub fn launch_game(env: GameEnv) {
-    main_menu(env, &mut GameFrontend::new());
+struct State {}
+impl GameState for State {
+    fn tick(&mut self, ctx: &mut Rltk) {
+        ctx.cls();
+        ctx.print(1, 1, "Hello Rust World");
+    }
 }
 
 /// For game testing run with
 /// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 /// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
-pub fn main() {
+pub fn main() -> rltk::BError {
     pretty_env_logger::init();
     let mut env: GameEnv = GameEnv::new();
 
@@ -47,5 +51,9 @@ pub fn main() {
 
     // TODO: Create game environment from presets and command line flags!
 
-    launch_game(env);
+    let context = rltk::RltkBuilder::simple80x50()
+        .with_title("Innit")
+        .build()?;
+    let gs = State {};
+    rltk::main_loop(context, gs)
 }

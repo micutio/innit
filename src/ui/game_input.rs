@@ -1,17 +1,16 @@
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
+use crate::entity::action::*;
+use crate::game::MS_PER_FRAME;
+use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
+use rltk::Rltk;
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
-
 use tcod::input::{self, Event, Key, Mouse};
-
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::entity::action::*;
-use crate::game::MS_PER_FRAME;
-use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
 
 /// The game input contains fields for
 /// - current mouse position
@@ -92,8 +91,8 @@ impl GameInput {
     pub fn check_for_player_actions(
         &mut self,
         state: &mut GameState,
-        frontend: &mut GameFrontend,
         objects: &mut GameObjects,
+        ctx: &mut Rltk,
     ) {
         // use separate scope to get mutex to unlock again, could also use `Mutex::drop()`
         let concurrent_option = self.concurrent_input.take();

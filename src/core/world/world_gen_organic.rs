@@ -9,6 +9,7 @@ use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
 
 use crate::core::game_env::GameEnv;
+use rltk::Rltk;
 use tcod::console::*;
 
 const CA_CYCLES: i32 = 45;
@@ -33,7 +34,7 @@ impl WorldGen for OrganicsWorldGenerator {
     fn make_world(
         &mut self,
         state: &mut GameState,
-        frontend: &mut GameFrontend,
+        ctx: &mut Rltk,
         objects: &mut GameObjects,
         level: u32,
     ) {

@@ -11,6 +11,7 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::ui::game_frontend::GameFrontend;
+use rltk::Rltk;
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
@@ -18,7 +19,7 @@ pub trait WorldGen {
     fn make_world(
         &mut self,
         state: &mut GameState,
-        frontend: &mut GameFrontend,
+        ctx: &mut Rltk,
         objects: &mut GameObjects,
         level: u32,
     );

@@ -10,7 +10,7 @@ use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::entity::object::Object;
-use crate::game::{game_loop, load_game, new_game, save_game};
+use crate::game::{load_game, save_game, Game, RunState};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
@@ -31,7 +31,9 @@ pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
 use crate::entity::action::{Action, Target, TargetCategory};
+use crate::game::RunState::MainMenu;
 use crate::util::modulus;
+use rltk::Rltk;
 /// Field of view mapping.
 pub use tcod::map::Map as FovMap;
 
@@ -42,7 +44,7 @@ pub struct GameFrontend {
     pub btm_panel: Offscreen,
     pub dna_panel: Offscreen,
     pub fov: FovMap,
-    pub input: Option<GameInput>,
+    // pub input: Option<GameInput>,
     pub coloring: ColorPalette,
     is_light_mode: bool,
 }
@@ -76,7 +78,7 @@ impl GameFrontend {
             btm_panel: Offscreen::new(SCREEN_WIDTH, PANEL_HEIGHT),
             dna_panel: Offscreen::new(1, SCREEN_HEIGHT - PANEL_HEIGHT),
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
-            input: None,
+            // input: None,
             // TODO: Save light and dark setting to config
             coloring: ColorPalette::new_dark(),
             is_light_mode: true,
@@ -110,75 +112,64 @@ pub enum AnimationType {
 ///     - starting a new game
 ///     - loading an existing game
 ///     - quitting the game
-pub fn main_menu(env: GameEnv, frontend: &mut GameFrontend) {
+pub fn main_menu(game: &mut Game, ctx: &mut Rltk) -> RunState {
+    game.input.stop_concurrent_input();
     let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
         .expect("Background image not found");
 
-    while !frontend.root.window_closed() {
-        // show the background image, at twice the regular console resolution
-        tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut frontend.root, (0, 0));
-        // let mut x: u8 = 0;
-        // for i in 0..16 {
-        //     for j in 0..16 {
-        //         game_frontend
-        //             .root
-        //             .put_char_ex(i, j, x as u8 as char, colors::WHITE, colors::BLUE);
-        //         if x < 255 {
-        //             x += 1;
-        //         }
-        //     }
-        // }
+    // show the background image, at twice the regular console resolution
+    tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut frontend.root, (0, 0));
 
-        frontend
-            .root
-            .set_default_foreground(frontend.coloring.bg_dialog);
-        frontend
-            .root
-            .set_default_background(frontend.coloring.bg_dialog);
-        frontend.root.print_ex(
-            SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT - 2,
-            BackgroundFlag::None,
-            TextAlignment::Center,
-            "By Michael Wagner",
-        );
+    frontend
+        .root
+        .set_default_foreground(frontend.coloring.bg_dialog);
+    frontend
+        .root
+        .set_default_background(frontend.coloring.bg_dialog);
+    frontend.root.print_ex(
+        SCREEN_WIDTH / 2,
+        SCREEN_HEIGHT - 2,
+        BackgroundFlag::None,
+        TextAlignment::Center,
+        "By Michael Wagner",
+    );
 
-        // show options and wait for the player's choice
-        let choices = &["Play a new game", "Continue last game", "Quit"];
-        let choice = menu(frontend, &mut None, "main menu", choices, 24);
+    // show options and wait for the player's choice
+    let choices = &["Play a new game", "Continue last game", "Quit"];
+    let choice = menu(frontend, &mut None, "main menu", choices, 24);
 
-        match choice {
-            Some(0) => {
-                // start new game
-                let (mut state, mut objects) = new_game(env, frontend);
-                // initialize_fov(game_frontend, &mut objects);
-                let mut input = GameInput::new();
-                init_object_visuals(&mut state, frontend, &input, &mut objects);
-                input.start_concurrent_input();
-                game_loop(&mut state, frontend, &mut input, &mut objects);
-            }
-            Some(1) => {
-                // load game from file
-                match load_game() {
-                    Ok((mut state, mut objects)) => {
-                        // initialize_fov(game_frontend, &mut objects);
-                        let mut input = GameInput::new();
-                        init_object_visuals(&mut state, frontend, &input, &mut objects);
-                        input.start_concurrent_input();
-                        game_loop(&mut state, frontend, &mut input, &mut objects);
-                    }
-                    Err(_e) => {
-                        msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-                        continue;
-                    }
+    match choice {
+        Some(0) => {
+            // start new game
+            let (mut state, mut objects) = Game::new_game(game.state.env, frontend);
+            // initialize_fov(game_frontend, &mut objects);
+            // let mut input = GameInput::new();
+            init_object_visuals(&mut game.state, frontend, &game.input, &mut objects);
+            game.input.start_concurrent_input();
+            RunState::Ticking
+            // game_loop(&mut state, frontend, &mut input, &mut objects);
+        }
+        Some(1) => {
+            // load game from file
+            match load_game() {
+                Ok((mut state, mut objects)) => {
+                    // initialize_fov(game_frontend, &mut objects);
+                    let mut input = GameInput::new();
+                    init_object_visuals(&mut state, frontend, &input, &mut objects);
+                    input.start_concurrent_input();
+                    RunState::Ticking
+                }
+                Err(_e) => {
+                    msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
+                    RunState::MainMenu
                 }
             }
-            Some(2) => {
-                // quit
-                break;
-            }
-            _ => {}
         }
+        Some(2) => {
+            // quit
+            std::process::exit(0);
+        }
+        _ => RunState::MainMenu,
     }
 }
 
@@ -317,9 +308,9 @@ fn update_visibility(state: &GameState, frontend: &mut GameFrontend, objects: &m
 
 pub fn process_visual_feedback(
     state: &mut GameState,
-    frontend: &mut GameFrontend,
     input: &GameInput,
     objects: &mut GameObjects,
+    ctx: &mut Rltk,
     feedback: Vec<ObjectFeedback>,
 ) {
     for f in feedback {
@@ -625,33 +616,35 @@ fn render_btm_panel(coloring: &ColorPalette, panel: &mut Offscreen) {
 
 pub fn handle_meta_actions(
     state: &mut GameState,
-    frontend: &mut GameFrontend,
     objects: &mut GameObjects,
     input: &mut Option<&mut GameInput>,
+    ctx: &mut Rltk,
     action: UiAction,
-) -> bool {
+) -> RunState {
     // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
             let result = save_game(state, objects);
             result.unwrap();
-            return true;
+            RunState::MainMenu
         }
         UiAction::ToggleDarkLightMode => {
             frontend.toggle_dark_light_mode();
             recompute_fov(state, frontend, objects);
             initialize_fov(frontend, objects);
             re_render(state, frontend, objects, "");
+            RunState::Ticking
         }
         UiAction::CharacterScreen => {
             show_character_screen(state, frontend, input, objects);
+            RunState::Ticking
         }
-
         UiAction::Fullscreen => {
             let fullscreen = frontend.root.is_fullscreen();
             frontend.root.set_fullscreen(!fullscreen);
             initialize_fov(frontend, objects);
+            RunState::Ticking
         }
         UiAction::ChoosePrimaryAction => {
             if let Some(ref mut player) = objects[state.current_player_index] {
@@ -668,6 +661,7 @@ pub fn handle_meta_actions(
                     player.set_primary_action(a);
                 }
             }
+            RunState::Ticking
         }
         UiAction::ChooseSecondaryAction => {
             if let Some(ref mut player) = objects[state.current_player_index] {
@@ -684,6 +678,7 @@ pub fn handle_meta_actions(
                     player.set_secondary_action(a);
                 }
             }
+            RunState::Ticking
         }
         UiAction::ChooseQuick1Action => {
             if let Some(ref mut player) = objects[state.current_player_index] {
@@ -693,6 +688,7 @@ pub fn handle_meta_actions(
                     player.set_quick1_action(a);
                 }
             }
+            RunState::Ticking
         }
         UiAction::ChooseQuick2Action => {
             if let Some(ref mut player) = objects[state.current_player_index] {
@@ -702,10 +698,11 @@ pub fn handle_meta_actions(
                     player.set_quick1_action(a);
                 }
             }
+            RunState::Ticking
         }
     }
-    re_render(state, frontend, objects, "");
-    false
+    // re_render(state, frontend, objects, "");
+    // false
 }
 
 fn get_available_action(
