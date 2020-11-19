@@ -53,6 +53,7 @@ pub fn main() -> rltk::BError {
 
     let context = rltk::RltkBuilder::simple80x50()
         .with_title("Innit")
+        .with_fps_cap(30.0)
         .build()?;
     let gs = State {};
     rltk::main_loop(context, gs)
