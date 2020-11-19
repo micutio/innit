@@ -1,8 +1,3 @@
-use tcod::chars;
-use tcod::colors::{self, Color};
-use tcod::console::*;
-use tcod::map::FovAlgorithm;
-
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
@@ -15,6 +10,10 @@ use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
 use crate::ui::game_input::{GameInput, UiAction};
+use tcod::chars;
+use tcod::colors::{self, Color};
+use tcod::console::*;
+use tcod::map::FovAlgorithm;
 
 // game window properties
 pub const SCREEN_WIDTH: i32 = 81;
@@ -33,7 +32,7 @@ const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 use crate::entity::action::{Action, Target, TargetCategory};
 use crate::game::RunState::MainMenu;
 use crate::util::modulus;
-use rltk::Rltk;
+use rltk::{DrawBatch, Rltk};
 /// Field of view mapping.
 pub use tcod::map::Map as FovMap;
 
@@ -114,8 +113,9 @@ pub enum AnimationType {
 ///     - quitting the game
 pub fn main_menu(game: &mut Game, ctx: &mut Rltk) -> RunState {
     game.input.stop_concurrent_input();
-    let img = tcod::image::Image::from_file("assets/menu_background_pixelized_title.png")
-        .expect("Background image not found");
+    let mut draw_batch = DrawBatch::new();
+    // let assets = gs.ecs.fetch::<RexAssets>();
+    // ctx.render_xp_sprite(&assets.menu, 0, 0);
 
     // show the background image, at twice the regular console resolution
     tcod::image::blit_2x(&img, (0, 0), (-1, -1), &mut frontend.root, (0, 0));
