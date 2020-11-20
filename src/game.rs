@@ -13,6 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::game_frontend::{handle_meta_actions, main_menu, process_visual_feedback};
 use crate::ui::game_input::{GameInput, PlayerInput};
+use crate::ui::menu::MenuInstance;
 use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fs::{self, File};
@@ -27,7 +28,7 @@ pub const WORLD_WIDTH: i32 = 80;
 pub const WORLD_HEIGHT: i32 = 43;
 
 pub(crate) enum RunState {
-    MainMenu,
+    Menu(MenuInstance),
     Ticking,
     CheckInput,
 }
@@ -46,7 +47,7 @@ impl Game {
             state,
             objects,
             input: GameInput::new(),
-            run_state: RunState::MainMenu,
+            run_state: RunState::Menu(MenuInstance::MainMenu(None)),
         }
     }
 

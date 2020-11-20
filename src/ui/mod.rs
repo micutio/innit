@@ -4,3 +4,4 @@ pub mod game_input;
 
 mod color_palette;
 mod interactable;
+pub mod menu;
