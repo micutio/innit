@@ -11,9 +11,10 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::ui::game_frontend::{handle_meta_actions, main_menu, process_visual_feedback};
+use crate::ui::color_palette::ColorPalette;
+use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback};
 use crate::ui::game_input::{GameInput, PlayerInput};
-use crate::ui::menu::MenuInstance;
+use crate::ui::menu::{display_main_menu, MenuInstance};
 use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fs::{self, File};
@@ -38,16 +39,18 @@ pub struct Game {
     objects: GameObjects,
     pub(crate) input: GameInput,
     run_state: RunState,
+    color_palette: ColorPalette,
 }
 
 impl Game {
-    pub fn new(env: GameEnv, ctx: &mut Rltk) -> Self {
+    pub fn new(env: GameEnv, ctx: &mut Rltk, color_palette: ColorPalette) -> Self {
         let (state, objects) = Game::new_game(env, ctx);
         Game {
             state,
             objects,
             input: GameInput::new(),
             run_state: RunState::Menu(MenuInstance::MainMenu(None)),
+            color_palette,
         }
     }
 
@@ -171,8 +174,10 @@ impl Rltk_GameState for Game {
         ctx.set_active_console(0);
         ctx.cls();
 
-        self.run_state = match self.run_state {
-            RunState::MainMenu => main_menu(self, ctx),
+        self.run_state = match &self.run_state {
+            RunState::Menu(MenuInstance::MainMenu(mut instance)) => {
+                display_main_menu(self, ctx, &self.color_palette, instance.take())
+            }
             RunState::Ticking => {
                 // let the game engine process an object
                 let action_feedback = self.state.process_object(&mut self.objects);

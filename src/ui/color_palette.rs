@@ -1,8 +1,6 @@
 // TODO: Read constants from file.
 // TODO: Better readable colors between dark and light scheme
-
 use rltk::RGB;
-
 pub struct ColorPalette {
     // background colors
     pub bg_world: RGB,
@@ -28,7 +26,7 @@ pub struct ColorPalette {
 }
 
 impl ColorPalette {
-    pub fn new_light() -> Self {
+    pub fn light() -> Self {
         ColorPalette {
             bg_world: RGB::from_u8(250, 250, 250),
             bg_dialog: RGB::from_u8(215, 133, 144),
@@ -50,7 +48,7 @@ impl ColorPalette {
         }
     }
 
-    pub fn new_dark() -> Self {
+    pub fn dark() -> Self {
         ColorPalette {
             bg_world: RGB::from_u8(0, 0, 0),
             bg_dialog: RGB::from_u8(144, 48, 90),

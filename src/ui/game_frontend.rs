@@ -79,7 +79,7 @@ impl GameFrontend {
             fov: FovMap::new(WORLD_WIDTH, WORLD_HEIGHT),
             // input: None,
             // TODO: Save light and dark setting to config
-            coloring: ColorPalette::new_dark(),
+            coloring: ColorPalette::dark(),
             is_light_mode: true,
         }
     }
@@ -87,10 +87,10 @@ impl GameFrontend {
     pub fn toggle_dark_light_mode(&mut self) {
         if self.is_light_mode {
             self.is_light_mode = false;
-            self.coloring = ColorPalette::new_dark();
+            self.coloring = ColorPalette::dark();
         } else {
             self.is_light_mode = true;
-            self.coloring = ColorPalette::new_light();
+            self.coloring = ColorPalette::light();
         }
     }
 }
