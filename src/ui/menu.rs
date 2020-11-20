@@ -1,7 +1,8 @@
 use crate::game::{load_game, Game, RunState};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::game_input::GameInput;
-use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
+use crate::util::modulus;
+use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode, RGB};
 
 pub enum MenuInstance {
     MainMenu(Option<MainMenu>),
@@ -27,16 +28,18 @@ pub struct MenuItem<T> {
     item_enum: T,
     text: String,
     layout: Rect,
+    index: usize,
     prev: usize,
     next: usize,
 }
 
 impl<T> MenuItem<T> {
-    fn new(item_enum: T, text: &str, layout: Rect, prev: usize, next: usize) -> Self {
+    fn new(item_enum: T, text: &str, layout: Rect, index: usize, prev: usize, next: usize) -> Self {
         MenuItem {
             item_enum,
             text: text.to_string(),
             layout,
+            index,
             prev,
             next,
         }
@@ -44,6 +47,14 @@ impl<T> MenuItem<T> {
 
     fn top_left_corner(&self) -> Point {
         Point::new(self.layout.x1, self.layout.y1)
+    }
+
+    // TODO: Read up on what static lifetimes are!
+    fn get_active_item(
+        items: &'static Vec<MenuItem<T>>,
+        mouse_pos: Point,
+    ) -> Option<&'static MenuItem<T>> {
+        items.iter().find(|i| i.layout.point_in_rect(mouse_pos))
     }
 }
 
@@ -70,6 +81,7 @@ impl MainMenu {
                     MainMenuOption::NewGame,
                     "New Game",
                     Rect::with_size(10, 20, 10, 1),
+                    0,
                     2,
                     1,
                 ),
@@ -77,15 +89,17 @@ impl MainMenu {
                     MainMenuOption::Resume,
                     "Resume last Game",
                     Rect::with_size(10, 21, 10, 1),
+                    1
+                    0,
                     2,
-                    1,
                 ),
                 MenuItem::new(
                     MainMenuOption::Quit,
                     "Quit",
                     Rect::with_size(10, 22, 10, 1),
-                    2,
+                    2
                     1,
+                    0,
                 ),
             ],
             selection: 0,
@@ -128,7 +142,7 @@ pub fn display_main_menu(
     palette: &ColorPalette,
     instance: Option<MainMenu>,
 ) -> RunState {
-    let main_menu = match instance {
+    let mut main_menu = match instance {
         Some(menu) => menu,
         None => MainMenu::new(),
     };
@@ -138,42 +152,62 @@ pub fn display_main_menu(
 
     // wait for user input
 
-    // if action is taken, go back to main loop
-    // RunState::Ticking
+    // a) keyboard input
+    // if we have a key activity, process and return immediately
+    if let Some(key) = ctx.key {
+        match key {
+            VirtualKeyCode::Up => {
+                main_menu.selection = modulus(main_menu.selection - 1, main_menu.items.len());
+            }
+            VirtualKeyCode::Down => {
+                main_menu.selection = modulus(main_menu.selection + 1, main_menu.items.len());
+            }
+            VirtualKeyCode::Return => {
+                return process_item(game, ctx, &main_menu.items[main_menu.selection].item_enum);
+            }
+            _ => {}
+        }
+    }
 
-    // if still moving around the menu, highlight new selected item and return current menu state
-    // RunState::Menu(MenuInstance::MainMenu(Some(main_menu))
-    unimplemented!();
+    // b) mouse input
+    // if we have a mouse activity, check first for clicks, then for hovers
+    if let Some(item) = MenuItem::get_active_item(&main_menu.items, ctx.mouse_point()) {
+        if ctx.left_click {
+            return process_item(game, ctx, &item.item_enum);
+        } else {
+            // update active index
+            main_menu.selection = item.index;
+        }
+    }
+
+    RunState::Menu(MenuInstance::MainMenu(Some(main_menu)))
 }
 
-// Some(0) => {
-//             // start new game
-//             let (mut state, mut objects) = Game::new_game(game.state.env, frontend);
-//             // initialize_fov(game_frontend, &mut objects);
-//             // let mut input = GameInput::new();
-//             init_object_visuals(&mut game.state, frontend, &game.input, &mut objects);
-//             game.input.start_concurrent_input();
-//             RunState::Ticking
-//             // game_loop(&mut state, frontend, &mut input, &mut objects);
-//         }
-//         Some(1) => {
-//             // load game from file
-//             match load_game() {
-//                 Ok((mut state, mut objects)) => {
-//                     // initialize_fov(game_frontend, &mut objects);
-//                     let mut input = GameInput::new();
-//                     init_object_visuals(&mut state, frontend, &input, &mut objects);
-//                     input.start_concurrent_input();
-//                     RunState::Ticking
-//                 }
-//                 Err(_e) => {
-//                     msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-//                     RunState::MainMenu
-//                 }
-//             }
-//         }
-//         Some(2) => {
-//             // quit
-//             std::process::exit(0);
-//         }
-//         _ => RunState::MainMenu,
+fn process_item(game: &mut Game, ctx: &mut Rltk, item: &MainMenuOption) -> RunState {
+    match item {
+        MainMenuOption::NewGame => {
+            // start new game
+            let (mut state, mut objects) = Game::new_game(game.state.env, ctx);
+            game.reset(state, objects);
+            RunState::Ticking
+            // game_loop(&mut state, frontend, &mut input, &mut objects);
+        }
+        MainMenuOption::Resume => {
+            // load game from file
+            match load_game() {
+                Ok((mut state, mut objects)) => {
+                    game.reset(state, objects);
+                    RunState::Ticking
+                }
+                Err(_e) => {
+                    // TODO: Show alert to user... or not?
+                    // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
+                    RunState::Menu(MenuInstance::MainMenu(None))
+                }
+            }
+        }
+        MainMenuOption::Quit => {
+            std::process::exit(0);
+        }
+    }
+}
