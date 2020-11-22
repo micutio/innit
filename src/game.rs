@@ -36,11 +36,11 @@ pub(crate) enum RunState {
 }
 
 pub struct Game {
-    pub(crate) state: GameState,
-    pub(crate) objects: GameObjects,
-    pub(crate) input: GameInput,
-    pub(crate) run_state: RunState,
-    color_palette: ColorPalette,
+    pub state: GameState,
+    pub objects: GameObjects,
+    pub input: GameInput,
+    pub run_state: RunState,
+    pub color_palette: ColorPalette,
 }
 
 impl Game {

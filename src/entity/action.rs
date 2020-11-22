@@ -388,7 +388,7 @@ impl Action for ActInjectRnaVirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
@@ -505,7 +505,7 @@ impl Action for ActInjectRetrovirus {
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         let feedback =
-            if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+            if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
                 // check whether the virus can attach to the object and whether the object is an actual
                 // cell and not a plasmid or another virus
                 // if yes, replace the control and force the cell to produce viruses

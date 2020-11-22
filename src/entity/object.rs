@@ -65,6 +65,7 @@ pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,
     pub is_always_visible: bool,
+    pub is_visible: bool,
 }
 
 impl Physics {
@@ -73,6 +74,7 @@ impl Physics {
             is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
+            is_visible: false,
         }
     }
 }

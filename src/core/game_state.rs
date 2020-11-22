@@ -95,7 +95,7 @@ impl GameState {
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
         // unpack object to process its next action
-        if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+        if let Some(mut active_object) = objects.extract_by_index(self.current_obj_index) {
             if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.current_player_index = self.current_obj_index;
