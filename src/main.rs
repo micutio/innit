@@ -18,7 +18,6 @@ mod ui;
 mod util;
 
 use crate::core::game_env::GameEnv;
-use crate::ui::game_frontend::{main_menu, GameFrontend};
 use rltk::{GameState, Rltk};
 use std::env;
 

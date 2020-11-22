@@ -9,6 +9,7 @@ use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
 
+use rltk::RGB;
 use std::cmp::min;
 use std::fmt;
 
@@ -45,20 +46,16 @@ pub struct Object {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Visual {
     pub name: String,
-    pub character: char,
-    pub color: Color,
+    pub glyph: char,
+    pub color: RGB,
 }
 
 impl Visual {
     pub fn new() -> Self {
         Visual {
             name: "unknown".into(),
-            character: '_',
-            color: Color {
-                r: 255,
-                g: 255,
-                b: 255,
-            },
+            glyph: '_',
+            color: RGB::from_u8(255, 255, 255),
         }
     }
 }
@@ -112,9 +109,9 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, color: Color) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, color: RGB) -> Object {
         self.visual.name = name.into();
-        self.visual.character = character;
+        self.visual.glyph = character;
         self.visual.color = color;
         self
     }
@@ -401,7 +398,7 @@ impl fmt::Display for Object {
             f,
             "{} [{}] at ({},{}), alive: {}, energy: {}",
             self.visual.name,
-            self.visual.character,
+            self.visual.glyph,
             self.pos.x,
             self.pos.y,
             self.alive,

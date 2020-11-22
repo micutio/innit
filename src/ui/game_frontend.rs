@@ -5,7 +5,7 @@ use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::entity::object::Object;
-use crate::game::{load_game, save_game, Game, RunState};
+use crate::game::{save_game, Game, RunState};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::*;
 use crate::ui::dialog::*;
@@ -30,7 +30,6 @@ pub const PANEL_HEIGHT: i32 = 7;
 const PANEL_Y: i32 = SCREEN_HEIGHT - PANEL_HEIGHT;
 
 use crate::entity::action::{Action, Target, TargetCategory};
-use crate::game::RunState::MainMenu;
 use crate::util::modulus;
 use rltk::{DrawBatch, Rltk};
 /// Field of view mapping.
@@ -347,7 +346,7 @@ fn draw_object(object: &Object, con: &mut dyn Console) {
     con.put_char(
         object.pos.x,
         object.pos.y,
-        object.visual.character,
+        object.visual.glyph,
         BackgroundFlag::None,
     );
 }

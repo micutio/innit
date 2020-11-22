@@ -12,6 +12,7 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::frontend::render;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback};
 use crate::ui::game_input::{GameInput, PlayerInput};
 use crate::ui::menu::{display_main_menu, MenuInstance};
@@ -36,9 +37,9 @@ pub(crate) enum RunState {
 
 pub struct Game {
     pub(crate) state: GameState,
-    objects: GameObjects,
+    pub(crate) objects: GameObjects,
     pub(crate) input: GameInput,
-    run_state: RunState,
+    pub(crate) run_state: RunState,
     color_palette: ColorPalette,
 }
 
@@ -174,6 +175,9 @@ impl Rltk_GameState for Game {
         ctx.set_active_console(0);
         ctx.cls();
 
+        // render everything
+        render(self, ctx);
+
         self.run_state = match &self.run_state {
             RunState::Menu(MenuInstance::MainMenu(mut instance)) => {
                 display_main_menu(self, ctx, &self.color_palette, instance.take())
@@ -181,17 +185,6 @@ impl Rltk_GameState for Game {
             RunState::Ticking => {
                 // let the game engine process an object
                 let action_feedback = self.state.process_object(&mut self.objects);
-
-                // limit frames
-                // if self.state.is_players_turn() && action_result.is_empty() {
-                //     let elapsed = start_time.elapsed();
-                //     // println!("time since last inactive: {:#?}", elapsed);
-                //     if let Some(slow_down) = MS_PER_FRAME.checked_sub(elapsed) {
-                //         // println!("sleep for {:#?}", slow_down);
-                //         thread::sleep(slow_down);
-                //     }
-                //     start_time = Instant::now();
-                // }
 
                 if action_feedback.is_empty() {
                     RunState::Ticking
