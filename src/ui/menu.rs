@@ -1,8 +1,8 @@
 use crate::game::{load_game, Game, RunState};
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::game_input::GameInput;
+use crate::ui::gui::UiItem;
 use crate::util::modulus;
-use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode, RGB};
+use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub enum MenuInstance {
     MainMenu(Option<MainMenu>),
@@ -19,45 +19,6 @@ pub fn display_menu(
     }
 }
 
-/// Menu item properties
-/// - `text` for rendering
-/// - `layout` for checking mouse interaction
-/// - `prev menu item` for cycling through via keys (use vector indices!)
-/// - `next menu item` for cycling through via keys (use vector indices!)
-pub struct MenuItem<T> {
-    item_enum: T,
-    text: String,
-    layout: Rect,
-    index: usize,
-    prev: usize,
-    next: usize,
-}
-
-impl<T> MenuItem<T> {
-    fn new(item_enum: T, text: &str, layout: Rect, index: usize, prev: usize, next: usize) -> Self {
-        MenuItem {
-            item_enum,
-            text: text.to_string(),
-            layout,
-            index,
-            prev,
-            next,
-        }
-    }
-
-    fn top_left_corner(&self) -> Point {
-        Point::new(self.layout.x1, self.layout.y1)
-    }
-
-    // TODO: Read up on what static lifetimes are!
-    fn get_active_item(
-        items: &'static Vec<MenuItem<T>>,
-        mouse_pos: Point,
-    ) -> Option<&'static MenuItem<T>> {
-        items.iter().find(|i| i.layout.point_in_rect(mouse_pos))
-    }
-}
-
 enum MainMenuOption {
     NewGame,
     Resume,
@@ -68,7 +29,7 @@ enum MainMenuOption {
 
 /// Non-click-away-able window menu.
 pub struct MainMenu {
-    items: Vec<MenuItem<MainMenuOption>>,
+    items: Vec<UiItem<MainMenuOption>>,
     selection: usize,
     layout: Rect,
 }
@@ -77,30 +38,17 @@ impl MainMenu {
     fn new() -> Self {
         MainMenu {
             items: vec![
-                MenuItem::new(
+                UiItem::new(
                     MainMenuOption::NewGame,
                     "New Game",
                     Rect::with_size(10, 20, 10, 1),
-                    0,
-                    2,
-                    1,
                 ),
-                MenuItem::new(
+                UiItem::new(
                     MainMenuOption::Resume,
                     "Resume last Game",
                     Rect::with_size(10, 21, 10, 1),
-                    1
-                    0,
-                    2,
                 ),
-                MenuItem::new(
-                    MainMenuOption::Quit,
-                    "Quit",
-                    Rect::with_size(10, 22, 10, 1),
-                    2
-                    1,
-                    0,
-                ),
+                UiItem::new(MainMenuOption::Quit, "Quit", Rect::with_size(10, 22, 10, 1)),
             ],
             selection: 0,
             layout: Rect::with_size(9, 19, 12, 5),
@@ -171,12 +119,14 @@ pub fn display_main_menu(
 
     // b) mouse input
     // if we have a mouse activity, check first for clicks, then for hovers
-    if let Some(item) = MenuItem::get_active_item(&main_menu.items, ctx.mouse_point()) {
+    if let Some(item) = UiItem::get_active_item(&main_menu.items, ctx.mouse_point()) {
         if ctx.left_click {
             return process_item(game, ctx, &item.item_enum);
         } else {
             // update active index
-            main_menu.selection = item.index;
+            if let Some(index) = main_menu.items.iter().position(|m| m.text.eq(&item.text)) {
+                main_menu.selection = index;
+            }
         }
     }
 

@@ -51,7 +51,7 @@ pub fn main() -> rltk::BError {
     // TODO: Create game environment from presets and command line flags!
 
     let context = rltk::RltkBuilder::simple80x50()
-        .with_title("Innit")
+        .with_title("Innit alpha v0.0.2")
         .with_fps_cap(30.0)
         .build()?;
     let gs = State {};

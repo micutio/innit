@@ -16,12 +16,11 @@ use crate::ui::frontend::render;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback};
 use crate::ui::game_input::{GameInput, PlayerInput};
 use crate::ui::menu::{display_main_menu, MenuInstance};
-use rltk::{GameState as Rltk_GameState, Rltk};
+use rltk::{GameState as Rltk_GameState, Rltk, RGB};
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::time::Duration;
-use tcod::colors;
 
 pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
 
@@ -41,6 +40,7 @@ pub struct Game {
     pub input: GameInput,
     pub run_state: RunState,
     pub color_palette: ColorPalette,
+    is_light_mode: bool,
 }
 
 impl Game {
@@ -52,6 +52,7 @@ impl Game {
             input: GameInput::new(),
             run_state: RunState::Menu(MenuInstance::MainMenu(None)),
             color_palette,
+            is_light_mode: false,
         }
     }
 
@@ -92,7 +93,7 @@ impl Game {
         let player = Object::new()
             .position(new_x, new_y)
             .living(true)
-            .visualize("player", '@', colors::WHITE)
+            .visualize("player", '@', RGB::from_u8(255, 255, 255))
             .physical(true, false, false)
             .control(Controller::Player(PlayerCtrl::new()))
             .genome(
@@ -120,6 +121,16 @@ impl Game {
         );
 
         (state, objects)
+    }
+
+    pub fn toggle_dark_light_mode(&mut self) {
+        if self.is_light_mode {
+            self.is_light_mode = false;
+            self.color_palette = ColorPalette::dark();
+        } else {
+            self.is_light_mode = true;
+            self.color_palette = ColorPalette::light();
+        }
     }
 }
 

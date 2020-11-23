@@ -37,20 +37,10 @@ impl MessageLog for Vec<(String, MsgClass)> {
 pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
-    CheckEnterPlayerFOV {
-        origin: Position,
-    }, // check whether the object has entered the player FOV
-    Message {
-        msg: String,
-        class: MsgClass,
-        origin: Position,
-    }, // display a message, if position of origin is visible to the player
     Animate {
         anim_type: AnimationType,
         origin: Position,
     }, // play given animation to visualise action
-    UpdatePlayerFOV, // action completed, requires updating FOV
-    ReRender,   // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the

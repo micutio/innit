@@ -1,8 +1,11 @@
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
 use crate::game::{Game, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::game_input::GameInput;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk};
 
 pub fn render(game: &mut Game, _ctx: &mut Rltk) {
@@ -124,5 +127,31 @@ fn update_visual(
         }
     } else {
         object.visual.color = tile_color_bg;
+    }
+}
+
+pub fn process_visual_feedback(
+    state: &mut GameState,
+    input: &GameInput,
+    objects: &mut GameObjects,
+    _ctx: &mut Rltk,
+    feedback: Vec<ObjectFeedback>,
+) {
+    for f in feedback {
+        match f {
+            // no action has been performed, repeat the turn and try again
+            ObjectFeedback::NoAction => {}
+
+            // action has been completed, but nothing needs to be done about it
+            ObjectFeedback::NoFeedback => {}
+
+            ObjectFeedback::Animate {
+                anim_type: _,
+                origin: _,
+            } => {
+                // TODO: Play animation, if origin is in player FOV
+                info!("animation");
+            }
+        }
     }
 }
