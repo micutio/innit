@@ -15,11 +15,6 @@ use tcod::colors::{self, Color};
 use tcod::console::*;
 use tcod::map::FovAlgorithm;
 
-// game window properties
-pub const SCREEN_WIDTH: i32 = 81;
-pub const SCREEN_HEIGHT: i32 = 50;
-const LIMIT_FPS: i32 = 60; // target fps
-
 // field of view algorithm parameters
 const FOV_ALG: FovAlgorithm = FovAlgorithm::Shadow;
 const FOV_LIGHT_WALLS: bool = true;

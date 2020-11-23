@@ -24,9 +24,17 @@ use std::time::Duration;
 
 pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
 
-// world constraints
-pub const WORLD_WIDTH: i32 = 80;
-pub const WORLD_HEIGHT: i32 = 43;
+// environment constraints
+// game window
+pub const SCREEN_WIDTH: i32 = 160;
+pub const SCREEN_HEIGHT: i32 = 90;
+// world
+pub const WORLD_WIDTH: i32 = 110;
+pub const WORLD_HEIGHT: i32 = 90;
+// sidebar
+pub const SIDE_PANEL_WIDTH: i32 = 50;
+pub const SIDE_PANEL_HEIGHT: i32 = 90;
+pub const LIMIT_FPS: i32 = 60; // target fps
 
 pub(crate) enum RunState {
     Menu(MenuInstance),
