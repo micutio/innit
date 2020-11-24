@@ -13,7 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::frontend::render_world;
-use crate::ui::game_input::{GameInput, PlayerInput};
+use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::render_gui;
 use crate::ui::menu::{display_main_menu, MenuInstance};
 use crate::ui::old_frontend::{handle_meta_actions, process_visual_feedback};
@@ -46,7 +46,6 @@ pub(crate) enum RunState {
 pub struct Game {
     pub state: GameState,
     pub objects: GameObjects,
-    pub input: GameInput,
     pub run_state: RunState,
     pub color_palette: ColorPalette,
     is_light_mode: bool,
@@ -58,7 +57,6 @@ impl Game {
         Game {
             state,
             objects,
-            input: GameInput::new(),
             run_state: RunState::Menu(MenuInstance::MainMenu(None)),
             color_palette,
             is_light_mode: false,
@@ -221,7 +219,7 @@ impl Rltk_GameState for Game {
                     RunState::CheckInput
                 }
             }
-            RunState::CheckInput => match self.input.get_next_action() {
+            RunState::CheckInput => match read_input {
                 Some(PlayerInput::MetaInput(meta_action)) => {
                     debug!("process meta action: {:#?}", meta_action);
                     handle_meta_actions(
@@ -239,8 +237,8 @@ impl Rltk_GameState for Game {
                         let a = match in_game_action {
                             PrimaryAction(dir) => player.get_primary_action(dir),
                             SecondaryAction(dir) => player.get_secondary_action(dir),
-                            Quick1Action() => player.get_quick1_action(),
-                            Quick2Action() => player.get_quick2_action(),
+                            Quick1Action => player.get_quick1_action(),
+                            Quick2Action => player.get_quick2_action(),
                             PassTurn => Box::new(ActPass),
                         };
                         player.set_next_action(Some(a));

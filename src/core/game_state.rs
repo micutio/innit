@@ -198,12 +198,11 @@ impl GameState {
             }
 
             // return object back to objects vector, if still alive
-            if !active_object.alive {
-                process_result.push(ObjectFeedback::Message {
-                    msg: format!("{} died!", active_object.visual.name),
-                    class: MsgClass::Alert,
-                    origin: active_object.pos.clone(),
-                });
+            if !active_object.alive && active_object.physics.is_visible {
+                self.log.add(
+                    format!("{} died!", active_object.visual.name),
+                    MsgClass::Alert,
+                );
 
                 if active_object.is_player() {
                     objects[self.current_obj_index].replace(active_object);

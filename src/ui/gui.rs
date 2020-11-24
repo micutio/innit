@@ -1,5 +1,5 @@
 use crate::game::Game;
-use rltk::{DrawBatch, Point, Rect, Rltk};
+use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
 /// - `text` for rendering
@@ -34,10 +34,54 @@ impl<T> UiItem<T> {
     }
 }
 
+pub enum HudItem {
+    PrimaryAction,
+    SecondaryAction,
+    Quick1Action,
+    QuickAction2,
+}
+
+pub struct Hud {
+    layout: Rect,
+    pub(crate) items: Vec<UiItem<HudItem>>,
+    names_under_mouse: String,
+}
+
+impl Hud {
+    pub fn new(layout: Rect) -> Self {
+        Hud {
+            layout,
+            items: Vec::new(),
+            names_under_mouse: "".to_string(),
+        }
+    }
+
+    pub fn set_names_under_mouse(&mut self, names: String) {
+        self.names_under_mouse = names;
+    }
+}
+
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(game: &mut Game, ctx: &mut Rltk) {
+pub fn render_gui(game: &mut Game, ctx: &mut Rltk, hud: &mut Hud) {
     let mut draw_batch = DrawBatch::new();
+
+    // draw buttons
+    let mut draw_batch = DrawBatch::new();
+    draw_batch.draw_box(
+        hud.layout,
+        ColorPair::new(game.color_palette.fg_dialog, game.color_palette.bg_dialog),
+    );
+    for item in hud.items {
+        draw_batch.print_color(
+            item.top_left_corner(),
+            &item.text,
+            ColorPair::new(game.color_palette.fg_dialog, game.color_palette.bg_dialog),
+        );
+    }
+
+    draw_batch.submit(6000);
+
     // draw ui boxes
     if let Some(player) = game
         .objects
