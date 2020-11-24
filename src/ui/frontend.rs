@@ -6,9 +6,10 @@ use crate::entity::object::Object;
 use crate::game::{Game, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::game_input::GameInput;
+use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk};
 
-pub fn render(game: &mut Game, _ctx: &mut Rltk) {
+pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
 
     update_visibility(game);
@@ -49,11 +50,14 @@ fn update_visibility(game: &mut Game) {
         .map(|o| (o.pos, o.sensors.sensing_range))
         .collect();
 
+    // set all objects invisible by default
     game.objects.get_vector().iter_mut().flatten().map(|o| {
         o.physics.is_visible = false;
-        update_visual(o, &game.color_palette, -1, Position::default());
+        // TODO: Does this need to be enabled?
+        // update_visual(o, &game.color_palette, -1, Position::default());
     });
 
+    let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
     for (pos, range) in player_positions {
         let mut visible_pos = field_of_view(pos.to_point(), range, &game.objects);
         visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
@@ -62,17 +66,21 @@ fn update_visibility(game: &mut Game) {
             .iter_mut()
             .flatten()
             .filter(|o| visible_pos.contains(&pos.to_point()))
-            .map(|o| o.physics.is_visible = true);
+            .map(|o| {
+                o.physics.is_visible = true;
+                update_visual(o, &game.color_palette, range, pos, &mut dist_map);
+            });
     }
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
-// TODO: Where to call this?
+// TODO: This can be moved into a non-frontend module.
 fn update_visual(
     object: &mut Object,
     coloring: &ColorPalette,
     player_sensing_range: i32,
     player_pos: Position,
+    dist_map: &mut Vec<f32>,
 ) {
     // go through all tiles and set their background color
     let bwft = coloring.bg_wall_fov_true;
@@ -86,6 +94,9 @@ fn update_visual(
 
     let wall = object.physics.is_blocking_sight;
 
+    let idx = object.pos.y as usize * (WORLD_WIDTH as usize) + object.pos.x as usize;
+    dist_map[idx] = dist_map[idx].min(object.pos.distance(&player_pos));
+
     // set tile foreground and background colors
     let (tile_color_fg, tile_color_bg) = match (object.physics.is_visible, wall) {
         // outside field of view:
@@ -94,25 +105,13 @@ fn update_visual(
         // inside fov:
         // (true, true) => COLOR_LIGHT_WALL,
         (true, true) => (
-            fwft.lerp(
-                fwff,
-                object.pos.distance(&player_pos) / player_sensing_range as f32,
-            ),
-            bwft.lerp(
-                bwff,
-                object.pos.distance(&player_pos) / player_sensing_range as f32,
-            ),
+            fwft.lerp(fwff, dist_map[idx] / player_sensing_range as f32),
+            bwft.lerp(bwff, dist_map[idx] / player_sensing_range as f32),
         ),
         // (true, false) => COLOR_ground_in_fov,
         (true, false) => (
-            fgft.lerp(
-                fgff,
-                object.pos.distance(&player_pos) / player_sensing_range as f32,
-            ),
-            bgft.lerp(
-                bgff,
-                object.pos.distance(&player_pos) / player_sensing_range as f32,
-            ),
+            fgft.lerp(fgff, dist_map[idx] / player_sensing_range as f32),
+            bgft.lerp(bgff, dist_map[idx] / player_sensing_range as f32),
         ),
     };
 
@@ -127,6 +126,7 @@ fn update_visual(
         }
     } else {
         object.visual.color = tile_color_bg;
+        // TODO: Set foreground and background
     }
 }
 

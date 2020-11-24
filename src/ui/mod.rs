@@ -5,6 +5,6 @@ pub mod game_input;
 mod animation;
 pub mod color_palette;
 pub mod frontend;
-mod gui;
+pub(crate) mod gui;
 mod interactable;
 pub mod menu;

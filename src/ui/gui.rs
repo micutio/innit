@@ -36,7 +36,7 @@ impl<T> UiItem<T> {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn draw_ui(game: &mut Game, ctx: &mut Rltk) {
+pub fn render_gui(game: &mut Game, ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
     // draw ui boxes
     if let Some(player) = game

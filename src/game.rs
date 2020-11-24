@@ -12,9 +12,10 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::frontend::render;
+use crate::ui::frontend::render_world;
 use crate::ui::game_frontend::{handle_meta_actions, process_visual_feedback};
 use crate::ui::game_input::{GameInput, PlayerInput};
+use crate::ui::gui::render_gui;
 use crate::ui::menu::{display_main_menu, MenuInstance};
 use rltk::{GameState as Rltk_GameState, Rltk, RGB};
 use std::error::Error;
@@ -195,7 +196,8 @@ impl Rltk_GameState for Game {
         ctx.cls();
 
         // render everything
-        render(self, ctx);
+        render_world(self, ctx);
+        render_gui(self, ctx);
 
         self.run_state = match &self.run_state {
             RunState::Menu(MenuInstance::MainMenu(mut instance)) => {
