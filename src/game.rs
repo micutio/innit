@@ -221,45 +221,36 @@ impl Rltk_GameState for Game {
                     RunState::CheckInput
                 }
             }
-            RunState::CheckInput => {
-                // once processing is done, check whether we have a new user input
-                self.input
-                    .check_for_player_actions(&mut self.state, &mut self.objects, ctx);
-
-                // distinguish between in-game action and ui (=meta) actions
-                // TODO: Enable multi-key/mouse actions e.g., select target & attack.
-                match self.input.get_next_action() {
-                    Some(PlayerInput::MetaInput(meta_action)) => {
-                        debug!("process meta action: {:#?}", meta_action);
-                        handle_meta_actions(
-                            &mut self.state,
-                            &mut self.objects,
-                            &mut Some(&mut self.input),
-                            ctx,
-                            meta_action,
-                        )
-                    }
-                    Some(PlayerInput::PlayInput(in_game_action)) => {
-                        trace!("inject in-game action {:#?} to player", in_game_action);
-                        if let Some(ref mut player) = self.objects[self.state.current_player_index]
-                        {
-                            use crate::ui::game_input::PlayerAction::*;
-                            let a = match in_game_action {
-                                PrimaryAction(dir) => player.get_primary_action(dir),
-                                SecondaryAction(dir) => player.get_secondary_action(dir),
-                                Quick1Action() => player.get_quick1_action(),
-                                Quick2Action() => player.get_quick2_action(),
-                                PassTurn => Box::new(ActPass),
-                            };
-                            player.set_next_action(Some(a));
-                            RunState::Ticking
-                        } else {
-                            RunState::Ticking
-                        }
-                    }
-                    None => RunState::Ticking,
+            RunState::CheckInput => match self.input.get_next_action() {
+                Some(PlayerInput::MetaInput(meta_action)) => {
+                    debug!("process meta action: {:#?}", meta_action);
+                    handle_meta_actions(
+                        &mut self.state,
+                        &mut self.objects,
+                        &mut Some(&mut self.input),
+                        ctx,
+                        meta_action,
+                    )
                 }
-            }
+                Some(PlayerInput::PlayInput(in_game_action)) => {
+                    trace!("inject in-game action {:#?} to player", in_game_action);
+                    if let Some(ref mut player) = self.objects[self.state.current_player_index] {
+                        use crate::ui::game_input::PlayerAction::*;
+                        let a = match in_game_action {
+                            PrimaryAction(dir) => player.get_primary_action(dir),
+                            SecondaryAction(dir) => player.get_secondary_action(dir),
+                            Quick1Action() => player.get_quick1_action(),
+                            Quick2Action() => player.get_quick2_action(),
+                            PassTurn => Box::new(ActPass),
+                        };
+                        player.set_next_action(Some(a));
+                        RunState::Ticking
+                    } else {
+                        RunState::Ticking
+                    }
+                }
+                None => RunState::Ticking,
+            },
         };
 
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
