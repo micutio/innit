@@ -3,7 +3,7 @@ use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::entity::action::Target::North;
 use crate::entity::action::*;
-use crate::game::MS_PER_FRAME;
+use crate::game::{Game, MS_PER_FRAME};
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::PlayInput;
 use crate::ui::old_frontend::{re_render, FovMap, GameFrontend};
@@ -91,4 +91,20 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
 }
 
 // TODO: Complete
-fn read_input(ctx: &mut Rltk) {}
+fn read_input(game: &mut Game, ctx: &mut Rltk) {
+    // 1) check if key has been pressed
+    if let Some(key) = ctx.key {
+        // TODO: Get next player index!
+        // TODO: Inject action into next player.
+        let next_action = key_to_action(key, ctx.control, ctx.shift);
+    }
+
+    // 2) if mouse is over world
+    // 2a) update hovered objects
+    get_names_under_mouse(&mut game.objects, Position::from_point(ctx.mouse_point()));
+    // 2b) check whether a mouse button has been pressed for player action
+
+    // 3) is mouse is over sidebar
+    // 3a) update hovered button
+    // 3b) check for button press to activate ui buttons
+}
