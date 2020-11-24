@@ -10,7 +10,7 @@ use crate::entity::ai::{AiPassive, AiRandom};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
-use crate::ui::game_frontend::GameFrontend;
+use crate::ui::old_frontend::GameFrontend;
 use rltk::Rltk;
 
 /// The world generation trait only requests to implement a method that

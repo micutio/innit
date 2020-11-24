@@ -2,7 +2,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::*;
 use crate::game::MS_PER_FRAME;
-use crate::ui::game_frontend::{re_render, FovMap, GameFrontend};
+use crate::ui::old_frontend::{re_render, FovMap, GameFrontend};
 use rltk::Rltk;
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;

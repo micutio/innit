@@ -1,6 +1,6 @@
 pub mod dialog;
-pub mod game_frontend;
 pub mod game_input;
+pub mod old_frontend;
 
 mod animation;
 pub mod color_palette;
