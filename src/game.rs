@@ -12,11 +12,11 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::frontend::render_world;
+use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_world};
 use crate::ui::game_input::{read_input, PlayerInput};
-use crate::ui::gui::render_gui;
-use crate::ui::menu::{display_main_menu, MenuInstance};
-use crate::ui::old_frontend::{handle_meta_actions, process_visual_feedback};
+use crate::ui::gui::{render_gui, Hud};
+use crate::ui::menu::MenuInstance;
+use crate::ui::menus::main_menu::{main_menu, MainMenuOption};
 use rltk::{GameState as Rltk_GameState, Rltk, RGB};
 use std::error::Error;
 use std::fs::{self, File};
@@ -36,6 +36,8 @@ pub const WORLD_HEIGHT: i32 = 90;
 pub const SIDE_PANEL_WIDTH: i32 = 50;
 pub const SIDE_PANEL_HEIGHT: i32 = 90;
 pub const LIMIT_FPS: i32 = 60; // target fps
+                               // menus
+pub const MENU_WIDTH: i32 = 30;
 
 pub(crate) enum RunState {
     Menu(MenuInstance),
@@ -47,6 +49,7 @@ pub struct Game {
     pub state: GameState,
     pub objects: GameObjects,
     pub run_state: RunState,
+    pub hud: Hud,
     pub color_palette: ColorPalette,
     is_light_mode: bool,
 }
@@ -57,7 +60,8 @@ impl Game {
         Game {
             state,
             objects,
-            run_state: RunState::Menu(MenuInstance::MainMenu(None)),
+            run_state: RunState::Menu(MenuInstance::MainMenu(main_menu())),
+            hud: Hud::new(),
             color_palette,
             is_light_mode: false,
         }
@@ -186,8 +190,6 @@ impl Rltk_GameState for Game {
     fn tick(&mut self, ctx: &mut Rltk) {
         // let mut start_time = Instant::now();
         // ensure that the player action from previous turns is consumed
-        assert!(self.input.is_action_consumed());
-
         ctx.set_active_console(1);
         ctx.cls();
         ctx.set_active_console(0);
@@ -195,11 +197,14 @@ impl Rltk_GameState for Game {
 
         // render everything
         render_world(self, ctx);
-        render_gui(self, ctx);
+        render_gui(self, ctx, &mut self.hud);
 
         self.run_state = match &self.run_state {
             RunState::Menu(MenuInstance::MainMenu(mut instance)) => {
-                display_main_menu(self, ctx, &self.color_palette, instance.take())
+                match instance.display(ctx, &self.color_palette) {
+                    Some(option) => MainMenuOption::process(self, ctx, instance, &option),
+                    None => RunState::Menu(MenuInstance::MainMenu(instance)),
+                }
             }
             RunState::Ticking => {
                 // let the game engine process an object
@@ -208,10 +213,9 @@ impl Rltk_GameState for Game {
                 if action_feedback.is_empty() {
                     RunState::Ticking
                 } else {
-                    // render action vfx
+                    // render animations and action vfx
                     process_visual_feedback(
                         &mut self.state,
-                        &self.input,
                         &mut self.objects,
                         ctx,
                         action_feedback,
@@ -219,18 +223,12 @@ impl Rltk_GameState for Game {
                     RunState::CheckInput
                 }
             }
-            RunState::CheckInput => match read_input {
-                Some(PlayerInput::MetaInput(meta_action)) => {
+            RunState::CheckInput => match read_input(self, ctx) {
+                PlayerInput::MetaInput(meta_action) => {
                     debug!("process meta action: {:#?}", meta_action);
-                    handle_meta_actions(
-                        &mut self.state,
-                        &mut self.objects,
-                        &mut Some(&mut self.input),
-                        ctx,
-                        meta_action,
-                    )
+                    handle_meta_actions(self, ctx, meta_action)
                 }
-                Some(PlayerInput::PlayInput(in_game_action)) => {
+                PlayerInput::PlayInput(in_game_action) => {
                     trace!("inject in-game action {:#?} to player", in_game_action);
                     if let Some(ref mut player) = self.objects[self.state.current_player_index] {
                         use crate::ui::game_input::PlayerAction::*;
@@ -247,7 +245,8 @@ impl Rltk_GameState for Game {
                         RunState::Ticking
                     }
                 }
-                None => RunState::Ticking,
+                // TODO: how to really handle this?
+                PlayerInput::Undefined => RunState::Ticking,
             },
         };
 

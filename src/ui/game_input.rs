@@ -82,7 +82,7 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
     // names//.join(", ") // return names separated by commas
 }
 
-pub fn read_input(game: &mut Game, ctx: &mut Rltk, hud: &'static mut Hud) -> PlayerInput {
+pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
     // 1) check if key has been pressed
     if let Some(key) = ctx.key {
         return key_to_action(key, ctx.control, ctx.shift);
@@ -93,7 +93,8 @@ pub fn read_input(game: &mut Game, ctx: &mut Rltk, hud: &'static mut Hud) -> Pla
     // 2) if mouse is over world
     if mouse.x < WORLD_WIDTH {
         // 2a) update hovered objects
-        hud.set_names_under_mouse(get_names_under_mouse(&mut game.objects, mouse));
+        game.hud
+            .set_names_under_mouse(get_names_under_mouse(&mut game.objects, mouse));
         // 2b) check whether a mouse button has been pressed for player action
         if clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
@@ -111,15 +112,20 @@ pub fn read_input(game: &mut Game, ctx: &mut Rltk, hud: &'static mut Hud) -> Pla
     } else {
         // 3) is mouse is over sidebar
         // 3a) update hovered button
-        if let Some(item) = UiItem::get_active_item(&hud.items, Point::new(mouse.x, mouse.y)) {
+        if let Some(item) = game
+            .hud
+            .items
+            .iter()
+            .find(|i| i.layout.point_in_rect(Point::new(mouse.x, mouse.y)))
+        {
             // TODO: Change item appearance!
-            return match &item.item_enum {
+            return match item.item_enum {
                 HudItem::PrimaryAction => MetaInput(UiAction::ChoosePrimaryAction),
                 HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
                 HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
                 HudItem::QuickAction2 => MetaInput(UiAction::ChooseQuick2Action),
             };
-        }
+        };
         // 3b) check for button press to activate ui buttons
         PlayerInput::Undefined
     }

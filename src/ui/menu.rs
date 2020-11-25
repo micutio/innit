@@ -1,57 +1,46 @@
-use crate::game::{load_game, Game, RunState};
+use crate::game::{MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
+use crate::ui::menus::main_menu::MainMenuOption;
 use crate::util::modulus;
 use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub enum MenuInstance {
-    MainMenu(Option<MainMenu>),
+    MainMenu(Menu<MainMenuOption>),
 }
 
-pub fn display_menu(
-    game: &mut Game,
-    ctx: &mut Rltk,
-    palette: &ColorPalette,
-    instance: MenuInstance,
-) -> RunState {
-    match instance {
-        MenuInstance::MainMenu(instance) => display_main_menu(game, ctx, palette, instance),
-    }
-}
-
-enum MainMenuOption {
-    NewGame,
-    Resume,
-    // Controls,
-    // Options,
-    Quit,
-}
+pub enum MenuResult {}
 
 /// Non-click-away-able window menu.
-pub struct MainMenu {
-    items: Vec<UiItem<MainMenuOption>>,
+pub struct Menu<T: Copy> {
+    items: Vec<UiItem<T>>,
     selection: usize,
     layout: Rect,
 }
 
-impl MainMenu {
-    fn new() -> Self {
-        MainMenu {
-            items: vec![
+impl<T: Copy> Menu<T> {
+    pub fn new(item_vec: Vec<(T, &str)>) -> Self {
+        let menu_height = item_vec.len() as i32 + 2;
+        let x1 = (SCREEN_WIDTH / 2) - (MENU_WIDTH / 2);
+        let y1 = (SCREEN_HEIGHT / 2) - (menu_height / 2);
+        let x2 = x1 + MENU_WIDTH;
+        let y2 = y1 + menu_height;
+        let items: Vec<UiItem<T>> = item_vec
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, (enum_item, text))| {
                 UiItem::new(
-                    MainMenuOption::NewGame,
-                    "New Game",
-                    Rect::with_size(10, 20, 10, 1),
-                ),
-                UiItem::new(
-                    MainMenuOption::Resume,
-                    "Resume last Game",
-                    Rect::with_size(10, 21, 10, 1),
-                ),
-                UiItem::new(MainMenuOption::Quit, "Quit", Rect::with_size(10, 22, 10, 1)),
-            ],
+                    enum_item,
+                    text,
+                    Rect::with_size(x1 + 1, y1 + 1 + i as i32, MENU_WIDTH - 2, 1),
+                )
+            })
+            .collect();
+        Menu {
+            items,
             selection: 0,
-            layout: Rect::with_size(9, 19, 12, 5),
+            layout: Rect::with_exact(x1, y1, x2, y2),
         }
     }
 
@@ -73,91 +62,50 @@ impl MainMenu {
         draw_batch.submit(6000);
     }
 
-    // TODO: Implement re-usable input processing:
-    //       - cycling through items with keys
-    //       - hovering items with mouse
-    //       - clicking items with mouse
-}
+    /// Main menu of the game.
+    /// Display a background image and three options for the player to choose
+    ///     - starting a new game
+    ///     - loading an existing game
+    ///     - quitting the game
+    pub fn display(&mut self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<T> {
+        // render current menu
+        self.render(palette);
 
-/// Main menu of the game.
-/// Display a background image and three options for the player to choose
-///     - starting a new game
-///     - loading an existing game
-///     - quitting the game
-pub fn display_main_menu(
-    game: &mut Game,
-    ctx: &mut Rltk,
-    palette: &ColorPalette,
-    instance: Option<MainMenu>,
-) -> RunState {
-    let mut main_menu = match instance {
-        Some(menu) => menu,
-        None => MainMenu::new(),
-    };
-
-    // render current menu
-    main_menu.render(palette);
-
-    // wait for user input
-
-    // a) keyboard input
-    // if we have a key activity, process and return immediately
-    if let Some(key) = ctx.key {
-        match key {
-            VirtualKeyCode::Up => {
-                main_menu.selection = modulus(main_menu.selection - 1, main_menu.items.len());
+        // wait for user input
+        // a) keyboard input
+        // if we have a key activity, process and return immediately
+        if let Some(key) = ctx.key {
+            match key {
+                VirtualKeyCode::Up => {
+                    self.selection = modulus(self.selection - 1, self.items.len());
+                }
+                VirtualKeyCode::Down => {
+                    self.selection = modulus(self.selection + 1, self.items.len());
+                }
+                VirtualKeyCode::Return => {
+                    // return process_item(game, ctx, &self.items[self.selection].item_enum);
+                    return Some(self.items[self.selection].item_enum);
+                }
+                _ => {}
             }
-            VirtualKeyCode::Down => {
-                main_menu.selection = modulus(main_menu.selection + 1, main_menu.items.len());
-            }
-            VirtualKeyCode::Return => {
-                return process_item(game, ctx, &main_menu.items[main_menu.selection].item_enum);
-            }
-            _ => {}
         }
-    }
 
-    // b) mouse input
-    // if we have a mouse activity, check first for clicks, then for hovers
-    if let Some(item) = UiItem::get_active_item(&main_menu.items, ctx.mouse_point()) {
-        if ctx.left_click {
-            return process_item(game, ctx, &item.item_enum);
-        } else {
+        // b) mouse input
+        // if we have a mouse activity, check first for clicks, then for hovers
+        if let Some(item) = self
+            .items
+            .iter()
+            .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
+        {
             // update active index
-            if let Some(index) = main_menu.items.iter().position(|m| m.text.eq(&item.text)) {
-                main_menu.selection = index;
+            if let Some(index) = self.items.iter().position(|m| m.text.eq(&item.text)) {
+                self.selection = index;
+            }
+            if ctx.left_click {
+                return Some(self.items[self.selection].item_enum);
             }
         }
-    }
 
-    RunState::Menu(MenuInstance::MainMenu(Some(main_menu)))
-}
-
-fn process_item(game: &mut Game, ctx: &mut Rltk, item: &MainMenuOption) -> RunState {
-    match item {
-        MainMenuOption::NewGame => {
-            // start new game
-            let (mut state, mut objects) = Game::new_game(game.state.env, ctx);
-            game.reset(state, objects);
-            RunState::Ticking
-            // game_loop(&mut state, frontend, &mut input, &mut objects);
-        }
-        MainMenuOption::Resume => {
-            // load game from file
-            match load_game() {
-                Ok((mut state, mut objects)) => {
-                    game.reset(state, objects);
-                    RunState::Ticking
-                }
-                Err(_e) => {
-                    // TODO: Show alert to user... or not?
-                    // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-                    RunState::Menu(MenuInstance::MainMenu(None))
-                }
-            }
-        }
-        MainMenuOption::Quit => {
-            std::process::exit(0);
-        }
+        None
     }
 }

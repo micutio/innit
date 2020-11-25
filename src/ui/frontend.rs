@@ -2,10 +2,11 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
+use crate::entity::action::{Action, TargetCategory};
 use crate::entity::object::Object;
-use crate::game::{Game, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{save_game, Game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::game_input::GameInput;
+use crate::ui::game_input::{GameInput, UiAction};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk};
 
@@ -132,9 +133,8 @@ fn update_visual(
 
 pub fn process_visual_feedback(
     state: &mut GameState,
-    input: &GameInput,
     objects: &mut GameObjects,
-    _ctx: &mut Rltk,
+    ctx: &mut Rltk,
     feedback: Vec<ObjectFeedback>,
 ) {
     for f in feedback {
@@ -153,5 +153,122 @@ pub fn process_visual_feedback(
                 info!("animation");
             }
         }
+    }
+}
+
+pub fn handle_meta_actions(game: &mut Game, ctx: &mut Rltk, action: UiAction) -> RunState {
+    // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
+    debug!("received action {:?}", action);
+    match action {
+        UiAction::ExitGameLoop => {
+            let result = save_game(&game.state, &game.objects);
+            result.unwrap();
+            RunState::Menu(MenuInstance)
+        }
+        UiAction::ToggleDarkLightMode => {
+            // TODO
+            RunState::Ticking
+        }
+        UiAction::CharacterScreen => {
+            // show_character_screen(state, frontend, input, objects);
+            RunState::Ticking
+        }
+        UiAction::ChoosePrimaryAction => {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) = get_available_action(
+                    frontend,
+                    player,
+                    "primary",
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                ) {
+                    player.set_primary_action(a);
+                }
+            }
+            RunState::Ticking
+        }
+        UiAction::ChooseSecondaryAction => {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) = get_available_action(
+                    frontend,
+                    player,
+                    "secondary",
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                ) {
+                    player.set_secondary_action(a);
+                }
+            }
+            RunState::Ticking
+        }
+        UiAction::ChooseQuick1Action => {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) =
+                    get_available_action(frontend, player, "secondary", &[TargetCategory::None])
+                {
+                    player.set_quick1_action(a);
+                }
+            }
+            RunState::Ticking
+        }
+        UiAction::ChooseQuick2Action => {
+            if let Some(ref mut player) = objects[state.current_player_index] {
+                if let Some(a) =
+                    get_available_action(frontend, player, "secondary", &[TargetCategory::None])
+                {
+                    player.set_quick1_action(a);
+                }
+            }
+            RunState::Ticking
+        }
+    }
+    // re_render(state, frontend, objects, "");
+    // false
+}
+
+fn get_available_action(
+    obj: &mut Object,
+    action_id: &str,
+    targets: &[TargetCategory],
+) -> Option<Box<dyn Action>> {
+    let choices: Vec<String> = obj
+        .actuators
+        .actions
+        .iter()
+        .chain(obj.processors.actions.iter())
+        .chain(obj.sensors.actions.iter())
+        .filter(|a| targets.contains(&a.get_target_category()))
+        .map(|a| a.get_identifier())
+        .collect();
+
+    if choices.is_empty() {
+        debug!("No choices available!");
+        return None;
+    }
+    // show options and wait for the obj's choice
+    let choice = menu(
+        frontend,
+        &mut None,
+        format!("choose {}", action_id).as_str(),
+        choices.as_slice(),
+        24,
+    );
+
+    if let Some(c) = choice {
+        obj.actuators
+            .actions
+            .iter()
+            .chain(obj.processors.actions.iter())
+            .chain(obj.sensors.actions.iter())
+            .find(|a| a.get_identifier().eq(&choices[c]))
+            .cloned()
+    } else {
+        None
     }
 }

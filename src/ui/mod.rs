@@ -8,3 +8,4 @@ pub mod frontend;
 pub(crate) mod gui;
 mod interactable;
 pub mod menu;
+pub(crate) mod menus;

@@ -1,4 +1,4 @@
-use crate::game::Game;
+use crate::game::{Game, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH, WORLD_WIDTH};
 use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -9,7 +9,7 @@ use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
-    layout: Rect,
+    pub(crate) layout: Rect,
 }
 
 impl<T> UiItem<T> {
@@ -23,14 +23,6 @@ impl<T> UiItem<T> {
 
     pub fn top_left_corner(&self) -> Point {
         Point::new(self.layout.x1, self.layout.y1)
-    }
-
-    // TODO: Read up on what static lifetimes are!
-    pub fn get_active_item(
-        items: &'static Vec<UiItem<T>>,
-        mouse_pos: Point,
-    ) -> Option<&'static UiItem<T>> {
-        items.iter().find(|i| i.layout.point_in_rect(mouse_pos))
     }
 }
 
@@ -48,9 +40,13 @@ pub struct Hud {
 }
 
 impl Hud {
-    pub fn new(layout: Rect) -> Self {
+    pub fn new() -> Self {
+        let x1 = SCREEN_WIDTH - WORLD_WIDTH;
+        let y1 = 0;
+        let x2 = x1 + SIDE_PANEL_WIDTH;
+        let y2 = SIDE_PANEL_HEIGHT;
         Hud {
-            layout,
+            layout: Rect::with_exact(x1, y1, x2, y2),
             items: Vec::new(),
             names_under_mouse: "".to_string(),
         }
