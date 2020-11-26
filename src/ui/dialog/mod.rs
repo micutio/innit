@@ -69,7 +69,7 @@ impl InfoBox {
             );
         }
 
-        draw_batch.submit(6000);
+        draw_batch.submit(6000).unwrap();
     }
 
     /// Main menu of the game.

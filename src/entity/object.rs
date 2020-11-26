@@ -349,13 +349,14 @@ impl Object {
     }
 
     // TODO: Take plasmids into account!
-    pub fn get_all_actions(&self) -> Vec<&Box<dyn Action>> {
+    pub fn match_action(&self, id: &str) -> Option<Box<dyn Action>> {
         self.actuators
             .actions
             .iter()
             .chain(self.processors.actions.iter())
             .chain(self.sensors.actions.iter())
-            .collect()
+            .find(|a| a.get_identifier().eq(id))
+            .cloned()
     }
 
     pub fn add_to_inventory(&mut self, state: &mut GameState, o: Object) {

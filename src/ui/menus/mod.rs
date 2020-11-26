@@ -60,7 +60,7 @@ impl<T: MenuItem> Menu<T> {
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }
 
-        draw_batch.submit(6000);
+        draw_batch.submit(6000).unwrap();
     }
 
     /// Main menu of the game.

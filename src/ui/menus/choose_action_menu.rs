@@ -24,11 +24,7 @@ impl ActionItem {
 impl MenuItem for ActionItem {
     fn process(game: &mut Game, _menu: &mut Menu<ActionItem>, item: &ActionItem) -> RunState {
         if let Some(ref mut object) = game.objects[game.state.current_player_index] {
-            let action_opt = object
-                .get_all_actions()
-                .iter()
-                .find(|a| a.get_identifier().eq(&item.id))
-                .cloned();
+            let action_opt = object.match_action(&item.id);
 
             if let Some(action) = action_opt {
                 match item.category {
@@ -38,19 +34,6 @@ impl MenuItem for ActionItem {
                     ActionCategory::Quick2 => object.set_quick2_action(action.clone_action()),
                 }
             }
-
-            // if let Some(a) = object
-            //     .get_all_actions()
-            //     .iter()
-            //     .find(|a| a.get_identifier().eq(&item.id))
-            // {
-            //     match item.category {
-            //         ActionCategory::Primary => object.set_primary_action(a.clone_action()),
-            //         ActionCategory::Secondary => object.set_secondary_action(a.clone_action()),
-            //         ActionCategory::Quick1 => object.set_quick1_action(a.clone_action()),
-            //         ActionCategory::Quick2 => object.set_quick2_action(a.clone_action()),
-            //     }
-            // }
         }
 
         RunState::Ticking

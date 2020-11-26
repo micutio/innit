@@ -177,7 +177,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
             RunState::MainMenu(main_menu())
         }
         UiAction::ToggleDarkLightMode => {
-            // TODO
+            game.toggle_dark_light_mode();
             RunState::Ticking
         }
         UiAction::CharacterScreen => {

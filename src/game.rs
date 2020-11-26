@@ -18,13 +18,12 @@ use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_w
 use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::{render_gui, Hud};
 use crate::ui::menus::choose_action_menu::ActionItem;
-use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
+use crate::ui::menus::main_menu::MainMenuItem;
 use crate::ui::menus::{Menu, MenuItem};
 use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{Read, Write};
-use std::time::Duration;
 
 // environment constraints
 // game window
