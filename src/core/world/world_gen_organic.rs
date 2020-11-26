@@ -3,13 +3,8 @@ use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::ui::old_frontend::{blit_consoles, render_objects, GameFrontend};
 use crate::util::game_rng::{GameRng, RngExtended};
-
 use std::collections::HashSet;
-
-use crate::core::game_env::GameEnv;
-use rltk::Rltk;
 
 const CA_CYCLES: i32 = 45;
 
@@ -30,13 +25,7 @@ impl OrganicsWorldGenerator {
 impl WorldGen for OrganicsWorldGenerator {
     // TODO: Use the `level` parameter to scale object properties in some way.
     // Idea: use level to scale length of dna of generated entities
-    fn make_world(
-        &mut self,
-        state: &mut GameState,
-        ctx: &mut Rltk,
-        objects: &mut GameObjects,
-        level: u32,
-    ) {
+    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32) {
         // step 1: generate foundation pattern
         let mid_x = WORLD_WIDTH / 2;
         let mid_y = WORLD_HEIGHT / 2;
@@ -48,7 +37,6 @@ impl WorldGen for OrganicsWorldGenerator {
                 self.player_start = (x, y);
                 // println!("#1 flipped {}, {}", x, y);
             }
-            visualize_map(&state.env, frontend, objects);
         }
 
         let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
@@ -69,7 +57,6 @@ impl WorldGen for OrganicsWorldGenerator {
                     .replace(Tile::empty(*j, *k, state.env.debug_mode));
             }
             changed_tiles.clear();
-            visualize_map(&state.env, frontend, objects);
         }
 
         // world gen done, now insert objects
@@ -86,18 +73,6 @@ impl WorldGen for OrganicsWorldGenerator {
 
     fn get_player_start_pos(&self) -> (i32, i32) {
         self.player_start
-    }
-}
-
-fn visualize_map(env: &GameEnv, frontend: &mut GameFrontend, objects: &mut GameObjects) {
-    if env.debug_mode {
-        // let ten_millis = time::Duration::from_millis(100);
-        // thread::sleep(ten_millis);
-
-        frontend.con.clear();
-        render_objects(env, frontend, objects);
-        blit_consoles(frontend);
-        frontend.root.flush();
     }
 }
 

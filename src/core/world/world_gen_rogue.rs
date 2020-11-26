@@ -3,7 +3,6 @@ use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::ui::old_frontend::{blit_consoles, render_objects, GameFrontend};
 use rand::Rng;
 use std::{cmp, thread, time};
 
@@ -30,13 +29,7 @@ impl RogueWorldGenerator {
 }
 
 impl WorldGen for RogueWorldGenerator {
-    fn make_world(
-        &mut self,
-        state: &mut GameState,
-        frontend: &mut GameFrontend,
-        objects: &mut GameObjects,
-        level: u32,
-    ) {
+    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32) {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
@@ -94,11 +87,6 @@ impl WorldGen for RogueWorldGenerator {
             if state.env.debug_mode {
                 let ten_millis = time::Duration::from_millis(100);
                 thread::sleep(ten_millis);
-
-                frontend.con.clear();
-                render_objects(&state.env, frontend, objects);
-                blit_consoles(frontend);
-                frontend.root.flush();
             }
         }
     }

@@ -8,19 +8,13 @@ use crate::entity::ai::{AiPassive, AiRandom};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
+use crate::ui::color;
 use crate::ui::color::Color;
-use rltk::Rltk;
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
-    fn make_world(
-        &mut self,
-        state: &mut GameState,
-        ctx: &mut Rltk,
-        objects: &mut GameObjects,
-        level: u32,
-    );
+    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32);
 
     fn get_player_start_pos(&self) -> (i32, i32);
 }
@@ -70,7 +64,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("virus", 'v', colors::DESATURATED_GREEN)
+            .visualize("virus", 'v', Color::from(color::VIRUS))
             .physical(true, false, false)
             .genome(
                 0.75,
@@ -82,7 +76,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("bacteria", 'b', colors::DARKER_GREEN)
+            .visualize("bacteria", 'b', Color::from(color::BACTERIA))
             .physical(true, false, false)
             .genome(
                 0.9,

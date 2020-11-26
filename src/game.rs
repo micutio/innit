@@ -90,7 +90,7 @@ impl Game {
         // generate world terrain
         // let mut world_generator = RogueWorldGenerator::new();
         let mut world_generator = OrganicsWorldGenerator::new();
-        world_generator.make_world(&mut state, ctx, &mut objects, level);
+        world_generator.make_world(&mut state, &mut objects, level);
         // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
         objects.set_tile_dna(
             vec![

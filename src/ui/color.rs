@@ -1,6 +1,7 @@
 use rltk::{RGB, RGBA};
 
 pub const VIRUS: (u8, u8, u8) = (100, 255, 150);
+pub const BACTERIA: (u8, u8, u8) = (80, 235, 120);
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]
 pub struct Color {
