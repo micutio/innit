@@ -13,6 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_world};
 use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::{render_gui, Hud};
@@ -44,6 +45,7 @@ pub const MENU_WIDTH: i32 = 30;
 pub enum RunState {
     MainMenu(Menu<MainMenuItem>),
     ChooseActionMenu(Menu<ActionItem>),
+    InfoBox(InfoBox),
     Ticking,
     CheckInput,
 }
@@ -179,7 +181,7 @@ pub fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn
         debug!("SAVED GAME TO FILE");
         Ok(())
     } else {
-        // TODO: Create dialog with error message!
+        // TODO: Create dialog_s with error message!
         error!("CANNOT CREATE SAVE FILE!");
         Ok(())
     }

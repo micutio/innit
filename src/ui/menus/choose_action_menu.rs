@@ -1,5 +1,5 @@
 use crate::game::{Game, RunState};
-use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::menus::{Menu, MenuItem};
 use rltk::Rltk;
 
 #[derive(Clone)]

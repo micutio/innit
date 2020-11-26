@@ -5,7 +5,7 @@ use crate::game::{Game, RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
 use crate::util::modulus;
-use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode, RGB};
+use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
     fn process(game: &mut Game, ctx: &mut Rltk, menu: &mut Menu<Self>, item: &Self) -> RunState;

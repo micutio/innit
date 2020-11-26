@@ -7,6 +7,7 @@ use crate::entity::object::Object;
 use crate::game::{save_game, Game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::dialog::character::character_screen;
 use crate::ui::game_input::UiAction;
 use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory};
 use crate::ui::menus::main_menu::main_menu;
@@ -162,6 +163,7 @@ pub fn process_visual_feedback(
     }
 }
 
+// TODO: Move this somewhere more sensible.
 pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -> RunState {
     // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     debug!("received action {:?}", action);
@@ -176,8 +178,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
             RunState::Ticking
         }
         UiAction::CharacterScreen => {
-            // show_character_screen(state, frontend, input, objects);
-            RunState::Ticking
+            RunState::InfoBox(character_screen(&game.state, &game.objects))
         }
         UiAction::ChoosePrimaryAction => {
             if let Some(ref mut player) = game.objects[game.state.current_player_index] {
