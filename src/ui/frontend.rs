@@ -2,15 +2,16 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
-use crate::entity::action::{Action, TargetCategory};
+use crate::entity::action::TargetCategory;
 use crate::entity::object::Object;
 use crate::game::{save_game, Game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::game_input::UiAction;
 use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory};
 use crate::ui::menus::main_menu::main_menu;
 use num::Float;
-use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk};
+use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
 pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
@@ -37,7 +38,10 @@ pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
     for object in &to_draw {
         draw_batch.set(
             Point::new(object.pos.x, object.pos.y),
-            ColorPair::new(object.visual.color, rltk::BLACK),
+            ColorPair::new::<RGB, RGB>(
+                object.visual.fg_color.into(),
+                object.visual.bg_color.into(),
+            ),
             to_cp437(object.visual.glyph),
         );
     }
@@ -86,14 +90,14 @@ fn update_visual(
     dist_map: &mut Vec<f32>,
 ) {
     // go through all tiles and set their background color
-    let bwft = coloring.bg_wall_fov_true;
-    let bwff = coloring.bg_wall_fov_false;
-    let bgft = coloring.bg_ground_fov_true;
-    let bgff = coloring.bg_ground_fov_false;
-    let fwft = coloring.fg_wall_fov_true;
-    let fwff = coloring.fg_wall_fov_false;
-    let fgft = coloring.fg_ground_fov_true;
-    let fgff = coloring.fg_ground_fov_false;
+    let bwft: RGB = coloring.bg_wall_fov_true.into();
+    let bwff: RGB = coloring.bg_wall_fov_false.into();
+    let bgft: RGB = coloring.bg_ground_fov_true.into();
+    let bgff: RGB = coloring.bg_ground_fov_false.into();
+    let fwft: RGB = coloring.fg_wall_fov_true.into();
+    let fwff: RGB = coloring.fg_wall_fov_false.into();
+    let fgft: RGB = coloring.fg_ground_fov_true.into();
+    let fgff: RGB = coloring.fg_ground_fov_false.into();
 
     let wall = object.physics.is_blocking_sight;
 
@@ -124,12 +128,11 @@ fn update_visual(
         }
         if tile.is_explored {
             // show explored tiles only (any visible tile is explored already)
-            object.visual.color = tile_color_fg;
-            // TODO: set background as well
+            object.visual.fg_color = Color::from(tile_color_fg);
+            object.visual.bg_color = Color::from(tile_color_bg);
         }
     } else {
-        object.visual.color = tile_color_bg;
-        // TODO: Set foreground and background
+        object.visual.bg_color = Color::from(tile_color_bg);
     }
 }
 

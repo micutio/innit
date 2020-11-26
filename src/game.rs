@@ -11,14 +11,15 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_world};
 use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::{render_gui, Hud};
-use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::menus::choose_action_menu::ActionItem;
 use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
-use rltk::{GameState as Rltk_GameState, Rltk, RGB};
+use crate::ui::menus::{Menu, MenuItem};
+use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -106,7 +107,7 @@ impl Game {
         let player = Object::new()
             .position(new_x, new_y)
             .living(true)
-            .visualize("player", '@', RGB::from_u8(255, 255, 255))
+            .visualize("player", '@', Color::from((255, 255, 255)))
             .physical(true, false, false)
             .control(Controller::Player(PlayerCtrl::new()))
             .genome(

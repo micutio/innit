@@ -6,6 +6,7 @@ pub struct ColorPalette {
     // background colors
     pub bg_world: Color,
     pub bg_dialog: Color,
+    pub bg_dialog_selected: Color,
     pub bg_wall_fov_true: Color,
     pub bg_wall_fov_false: Color,
     pub bg_ground_fov_true: Color,
@@ -31,6 +32,7 @@ impl ColorPalette {
         ColorPalette {
             bg_world: Color::new(250, 250, 250),
             bg_dialog: Color::new(215, 133, 144),
+            bg_dialog_selected: Color::new(215, 143, 164),
             bg_wall_fov_true: Color::new(250, 110, 130),
             bg_wall_fov_false: Color::new(240, 240, 240),
             bg_ground_fov_true: Color::new(250, 160, 180),
@@ -53,6 +55,7 @@ impl ColorPalette {
         ColorPalette {
             bg_world: Color::new(0, 0, 0),
             bg_dialog: Color::new(144, 48, 90),
+            bg_dialog_selected: Color::new(144, 58, 110),
             bg_wall_fov_true: Color::new(176, 52, 96),
             bg_wall_fov_false: Color::new(30, 30, 30),
             bg_ground_fov_true: Color::new(124, 8, 59),

@@ -13,6 +13,7 @@ use crate::entity::control::Controller;
 use crate::entity::control::Controller::{Npc, Player};
 use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
+use crate::ui::color::{self, Color};
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -616,7 +617,7 @@ impl Action for ActProduceVirion {
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
                         .living(true)
-                        .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                        .visualize("virus", 'v', Color::from(color::VIRUS))
                         .physical(true, false, false)
                         .genome(0.75, state.gene_library.decode_dna(DnaType::Rna, dna))
                         .control(Controller::Npc(Box::new(AiVirus {}))),
@@ -645,7 +646,7 @@ impl Action for ActProduceVirion {
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
                                 .living(true)
-                                .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                                .visualize("virus", 'v', Color::from(color::VIRUS))
                                 .physical(true, false, false)
                                 .genome(
                                     0.75,

@@ -1,14 +1,11 @@
-use rand::Rng;
-use std::{cmp, thread, time};
-
-use tcod::console::*;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::old_frontend::{blit_consoles, render_objects, GameFrontend};
+use rand::Rng;
+use std::{cmp, thread, time};
 
 // room generation constraints
 const ROOM_MAX_SIZE: i32 = 10;

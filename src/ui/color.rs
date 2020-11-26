@@ -1,6 +1,8 @@
-use rltk::RGB;
+use rltk::{RGB, RGBA};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+pub const VIRUS: (u8, u8, u8) = (100, 255, 150);
+
+#[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]
 pub struct Color {
     r: u8,
     g: u8,
@@ -23,8 +25,20 @@ impl From<RGB> for Color {
     }
 }
 
+impl From<(u8, u8, u8)> for Color {
+    fn from(values: (u8, u8, u8)) -> Self {
+        Color::new(values.0, values.1, values.2)
+    }
+}
+
 impl Into<RGB> for Color {
     fn into(self) -> RGB {
         RGB::from_u8(self.r, self.g, self.b)
+    }
+}
+
+impl Into<RGBA> for Color {
+    fn into(self) -> RGBA {
+        RGBA::from_u8(self.r, self.g, self.b, 255)
     }
 }
