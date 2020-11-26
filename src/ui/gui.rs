@@ -6,6 +6,7 @@ use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 /// - `layout` for checking mouse interaction
 /// - `prev menu item` for cycling through via keys (use vector indices!)
 /// - `next menu item` for cycling through via keys (use vector indices!)
+#[derive(Clone)]
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
@@ -59,9 +60,7 @@ impl Hud {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(game: &mut Game, ctx: &mut Rltk, hud: &mut Hud) {
-    let mut draw_batch = DrawBatch::new();
-
+pub fn render_gui(game: &mut Game, _ctx: &mut Rltk, hud: &mut Hud) {
     // draw buttons
     let mut draw_batch = DrawBatch::new();
     draw_batch.draw_box(
@@ -78,7 +77,7 @@ pub fn render_gui(game: &mut Game, ctx: &mut Rltk, hud: &mut Hud) {
 
     draw_batch.submit(6000);
 
-    // draw ui boxes
+    // TODO: draw ui boxes
     if let Some(player) = game
         .objects
         .extract_by_index(game.state.current_player_index)

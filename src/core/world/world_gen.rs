@@ -2,15 +2,13 @@
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
 
-use tcod::colors;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::ai::{AiPassive, AiRandom};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
-use crate::ui::old_frontend::GameFrontend;
+use crate::ui::color::Color;
 use rltk::Rltk;
 
 /// The world generation trait only requests to implement a method that
@@ -39,7 +37,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", '\u{fa}', colors::WHITE)
+            .visualize("empty tile", '\u{fa}', Color::new(255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
             .control(Controller::Npc(Box::new(AiPassive::new())))
@@ -49,7 +47,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("wall tile", '\t', colors::WHITE)
+            .visualize("wall tile", '\t', Color::new(255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
             .control(Controller::Npc(Box::new(AiPassive::new())))

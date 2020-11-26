@@ -15,8 +15,9 @@ use crate::ui::color_palette::ColorPalette;
 use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_world};
 use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::{render_gui, Hud};
-use crate::ui::menu::MenuInstance;
-use crate::ui::menus::main_menu::{main_menu, MainMenuOption};
+use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::menus::choose_action_menu::ActionItem;
+use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use rltk::{GameState as Rltk_GameState, Rltk, RGB};
 use std::error::Error;
 use std::fs::{self, File};
@@ -39,8 +40,9 @@ pub const LIMIT_FPS: i32 = 60; // target fps
                                // menus
 pub const MENU_WIDTH: i32 = 30;
 
-pub(crate) enum RunState {
-    Menu(MenuInstance),
+pub enum RunState {
+    MainMenu(Menu<MainMenuItem>),
+    ChooseActionMenu(Menu<ActionItem>),
     Ticking,
     CheckInput,
 }
@@ -60,7 +62,7 @@ impl Game {
         Game {
             state,
             objects,
-            run_state: RunState::Menu(MenuInstance::MainMenu(main_menu())),
+            run_state: RunState::MainMenu(main_menu()),
             hud: Hud::new(),
             color_palette,
             is_light_mode: false,
@@ -199,11 +201,17 @@ impl Rltk_GameState for Game {
         render_world(self, ctx);
         render_gui(self, ctx, &mut self.hud);
 
-        self.run_state = match &self.run_state {
-            RunState::Menu(MenuInstance::MainMenu(mut instance)) => {
+        self.run_state = match self.run_state {
+            RunState::MainMenu(ref mut instance) => {
                 match instance.display(ctx, &self.color_palette) {
-                    Some(option) => MainMenuOption::process(self, ctx, instance, &option),
-                    None => RunState::Menu(MenuInstance::MainMenu(instance)),
+                    Some(option) => MainMenuItem::process(self, ctx, instance, &option),
+                    None => RunState::MainMenu(instance.clone()),
+                }
+            }
+            RunState::ChooseActionMenu(ref mut instance) => {
+                match instance.display(ctx, &self.color_palette) {
+                    Some(option) => ActionItem::process(self, ctx, instance, &option),
+                    None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
             RunState::Ticking => {

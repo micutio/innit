@@ -5,7 +5,7 @@ use crate::entity::control::Controller::Player;
 use crate::game::{Game, WORLD_WIDTH};
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
-use crate::ui::gui::{Hud, HudItem, UiItem};
+use crate::ui::gui::HudItem;
 use rltk::{Point, Rltk, VirtualKeyCode};
 
 #[derive(Clone, Debug)]
@@ -19,7 +19,6 @@ pub enum PlayerInput {
 #[derive(Clone, Debug)]
 pub enum UiAction {
     ExitGameLoop,
-    Fullscreen,
     CharacterScreen,
     ToggleDarkLightMode,
     ChoosePrimaryAction,
@@ -63,7 +62,6 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::Right, false, false) => PlayInput(PrimaryAction(East)),
         (VirtualKeyCode::Space, false, false) => PlayInput(PassTurn),
         (VirtualKeyCode::Escape, false, false) => MetaInput(ExitGameLoop),
-        (VirtualKeyCode::F4, false, false) => MetaInput(Fullscreen),
         _ => Undefined,
     }
 }

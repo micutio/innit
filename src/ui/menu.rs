@@ -1,24 +1,22 @@
-use crate::game::{MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{Game, RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
-use crate::ui::menus::main_menu::MainMenuOption;
 use crate::util::modulus;
 use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
-pub enum MenuInstance {
-    MainMenu(Menu<MainMenuOption>),
+pub trait MenuItem: Clone {
+    fn process(game: &mut Game, ctx: &mut Rltk, menu: &mut Menu<Self>, item: &Self) -> RunState;
 }
 
-pub enum MenuResult {}
-
 /// Non-click-away-able window menu.
-pub struct Menu<T: Copy> {
+#[derive(Clone)]
+pub struct Menu<T: MenuItem> {
     items: Vec<UiItem<T>>,
     selection: usize,
     layout: Rect,
 }
 
-impl<T: Copy> Menu<T> {
+impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, &str)>) -> Self {
         let menu_height = item_vec.len() as i32 + 2;
         let x1 = (SCREEN_WIDTH / 2) - (MENU_WIDTH / 2);
@@ -84,7 +82,7 @@ impl<T: Copy> Menu<T> {
                 }
                 VirtualKeyCode::Return => {
                     // return process_item(game, ctx, &self.items[self.selection].item_enum);
-                    return Some(self.items[self.selection].item_enum);
+                    return Some(self.items[self.selection].item_enum.clone());
                 }
                 _ => {}
             }
@@ -102,7 +100,7 @@ impl<T: Copy> Menu<T> {
                 self.selection = index;
             }
             if ctx.left_click {
-                return Some(self.items[self.selection].item_enum);
+                return Some(self.items[self.selection].item_enum.clone());
             }
         }
 

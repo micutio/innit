@@ -1,5 +1,3 @@
-use tcod::colors::Color;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, Messages, MsgClass};
 use crate::core::position::Position;
@@ -8,8 +6,7 @@ use crate::entity::action::*;
 use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
-
-use rltk::RGB;
+use crate::ui::color::Color;
 use std::cmp::min;
 use std::fmt;
 
@@ -47,7 +44,8 @@ pub struct Object {
 pub struct Visual {
     pub name: String,
     pub glyph: char,
-    pub color: RGB,
+    pub fg_color: Color,
+    pub bg_color: Color,
 }
 
 impl Visual {
@@ -55,7 +53,8 @@ impl Visual {
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            color: RGB::from_u8(255, 255, 255),
+            fg_color: Color::new(255, 255, 255),
+            bg_color: Color::new(0, 0, 0),
         }
     }
 }
@@ -111,10 +110,10 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, color: RGB) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: Color) -> Object {
         self.visual.name = name.into();
         self.visual.glyph = character;
-        self.visual.color = color;
+        self.visual.fg_color = fg_color;
         self
     }
 

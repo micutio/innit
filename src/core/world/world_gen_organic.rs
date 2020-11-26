@@ -10,7 +10,6 @@ use std::collections::HashSet;
 
 use crate::core::game_env::GameEnv;
 use rltk::Rltk;
-use tcod::console::*;
 
 const CA_CYCLES: i32 = 45;
 

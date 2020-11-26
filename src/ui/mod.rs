@@ -1,11 +1,13 @@
 pub mod dialog;
 pub mod game_input;
-pub mod old_frontend;
 
-mod animation;
+// pub mod old_frontend;
+// mod interactable;
+
+pub mod animation;
+pub mod color;
 pub mod color_palette;
 pub mod frontend;
-pub(crate) mod gui;
-mod interactable;
+pub mod gui;
 pub mod menu;
-pub(crate) mod menus;
+pub mod menus;

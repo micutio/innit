@@ -7,7 +7,7 @@ use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
-use crate::ui::old_frontend::AnimationType;
+use crate::ui::animation::AnimationType;
 use crate::util::game_rng::GameRng;
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]

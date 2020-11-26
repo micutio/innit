@@ -1,9 +1,9 @@
 use crate::game::{load_game, Game, RunState};
-use crate::ui::menu::{Menu, MenuInstance};
+use crate::ui::menu::{Menu, MenuItem};
 use rltk::Rltk;
 
 #[derive(Copy, Clone)]
-pub enum MainMenuOption {
+pub enum MainMenuItem {
     NewGame,
     Resume,
     // Controls,
@@ -11,22 +11,22 @@ pub enum MainMenuOption {
     Quit,
 }
 
-impl MainMenuOption {
-    pub fn process(
+impl MenuItem for MainMenuItem {
+    fn process(
         game: &mut Game,
         ctx: &mut Rltk,
-        menu: Menu<MainMenuOption>,
-        item: &MainMenuOption,
+        menu: &mut Menu<MainMenuItem>,
+        item: &MainMenuItem,
     ) -> RunState {
         match item {
-            MainMenuOption::NewGame => {
+            MainMenuItem::NewGame => {
                 // start new game
                 let (mut state, mut objects) = Game::new_game(game.state.env, ctx);
                 game.reset(state, objects);
                 RunState::Ticking
                 // game_loop(&mut state, frontend, &mut input, &mut objects);
             }
-            MainMenuOption::Resume => {
+            MainMenuItem::Resume => {
                 // load game from file
                 match load_game() {
                     Ok((mut state, mut objects)) => {
@@ -36,21 +36,21 @@ impl MainMenuOption {
                     Err(_e) => {
                         // TODO: Show alert to user... or not?
                         // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-                        RunState::Menu(MenuInstance::MainMenu(menu))
+                        RunState::MainMenu(menu.clone())
                     }
                 }
             }
-            MainMenuOption::Quit => {
+            MainMenuItem::Quit => {
                 std::process::exit(0);
             }
         }
     }
 }
 
-pub fn main_menu() -> Menu<MainMenuOption> {
+pub fn main_menu() -> Menu<MainMenuItem> {
     Menu::new(vec![
-        (MainMenuOption::NewGame, "New Game"),
-        (MainMenuOption::Resume, "Resume Last Game"),
-        (MainMenuOption::Quit, "Quit"),
+        (MainMenuItem::NewGame, "New Game"),
+        (MainMenuItem::Resume, "Resume Last Game"),
+        (MainMenuItem::Quit, "Quit"),
     ])
 }
