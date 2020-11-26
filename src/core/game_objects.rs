@@ -199,6 +199,10 @@ impl GameObjects {
         &self.obj_vec
     }
 
+    pub fn get_vector_mut(&mut self) -> &mut Vec<Option<Object>> {
+        &mut self.obj_vec
+    }
+
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles(&self) -> &[Option<Object>] {
         let start: usize = 1;

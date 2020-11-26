@@ -1,6 +1,5 @@
 use crate::game::{load_game, Game, RunState};
 use crate::ui::menus::{Menu, MenuItem};
-use rltk::Rltk;
 
 #[derive(Copy, Clone)]
 pub enum MainMenuItem {
@@ -12,16 +11,11 @@ pub enum MainMenuItem {
 }
 
 impl MenuItem for MainMenuItem {
-    fn process(
-        game: &mut Game,
-        ctx: &mut Rltk,
-        menu: &mut Menu<MainMenuItem>,
-        item: &MainMenuItem,
-    ) -> RunState {
+    fn process(game: &mut Game, menu: &mut Menu<MainMenuItem>, item: &MainMenuItem) -> RunState {
         match item {
             MainMenuItem::NewGame => {
                 // start new game
-                let (mut state, mut objects) = Game::new_game(game.state.env, ctx);
+                let (state, objects) = Game::new_game(game.state.env);
                 game.reset(state, objects);
                 RunState::Ticking
                 // game_loop(&mut state, frontend, &mut input, &mut objects);
@@ -29,7 +23,7 @@ impl MenuItem for MainMenuItem {
             MainMenuItem::Resume => {
                 // load game from file
                 match load_game() {
-                    Ok((mut state, mut objects)) => {
+                    Ok((state, objects)) => {
                         game.reset(state, objects);
                         RunState::Ticking
                     }
@@ -49,8 +43,8 @@ impl MenuItem for MainMenuItem {
 
 pub fn main_menu() -> Menu<MainMenuItem> {
     Menu::new(vec![
-        (MainMenuItem::NewGame, "New Game"),
-        (MainMenuItem::Resume, "Resume Last Game"),
-        (MainMenuItem::Quit, "Quit"),
+        (MainMenuItem::NewGame, "New Game".to_string()),
+        (MainMenuItem::Resume, "Resume Last Game".to_string()),
+        (MainMenuItem::Quit, "Quit".to_string()),
     ])
 }

@@ -114,7 +114,7 @@ impl GameState {
             // Innit doesn't have any action preparations as of yet.
 
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
-            let mut process_result =
+            let process_result =
                 // If not enough energy available try to metabolise.
                 if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy

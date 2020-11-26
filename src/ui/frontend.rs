@@ -59,25 +59,28 @@ fn update_visibility(game: &mut Game) {
         .collect();
 
     // set all objects invisible by default
-    game.objects.get_vector().iter_mut().flatten().map(|o| {
-        o.physics.is_visible = false;
-        // TODO: Does this need to be enabled?
-        // update_visual(o, &game.color_palette, -1, Position::default());
-    });
+    for object_opt in game.objects.get_vector_mut() {
+        if let Some(object) = object_opt {
+            object.physics.is_visible = false;
+            // TODO: Does this need to be enabled?
+            // update_visual(o, &game.color_palette, -1, Position::default());
+        }
+    }
 
     let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
     for (pos, range) in player_positions {
         let mut visible_pos = field_of_view(pos.to_point(), range, &game.objects);
         visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
-        game.objects
-            .get_vector()
-            .iter_mut()
-            .flatten()
-            .filter(|o| visible_pos.contains(&pos.to_point()))
-            .map(|o| {
-                o.physics.is_visible = true;
-                update_visual(o, &game.color_palette, range, pos, &mut dist_map);
-            });
+        let color_palette = ColorPalette::get(game.is_dark_color_palette);
+
+        for object_opt in game.objects.get_vector_mut() {
+            if let Some(object) = object_opt {
+                if visible_pos.contains(&object.pos.to_point()) {
+                    object.physics.is_visible = true;
+                    update_visual(object, color_palette, range, pos, &mut dist_map);
+                }
+            }
+        }
     }
 }
 

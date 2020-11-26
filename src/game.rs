@@ -26,8 +26,6 @@ use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::time::Duration;
 
-pub const MS_PER_FRAME: Duration = Duration::from_millis(16.0 as u64);
-
 // environment constraints
 // game window
 pub const SCREEN_WIDTH: i32 = 160;
@@ -38,8 +36,7 @@ pub const WORLD_HEIGHT: i32 = 90;
 // sidebar
 pub const SIDE_PANEL_WIDTH: i32 = 50;
 pub const SIDE_PANEL_HEIGHT: i32 = 90;
-pub const LIMIT_FPS: i32 = 60; // target fps
-                               // menus
+
 pub const MENU_WIDTH: i32 = 30;
 
 pub enum RunState {
@@ -53,24 +50,22 @@ pub enum RunState {
 pub struct Game {
     pub state: GameState,
     pub objects: GameObjects,
-    pub run_state: RunState,
+    pub run_state: Option<RunState>,
     pub hud: Hud,
-    pub color_palette: ColorPalette,
-    is_light_mode: bool,
+    pub is_dark_color_palette: bool,
 }
 
 impl Game {
-    pub fn new(env: GameEnv, ctx: &mut Rltk, color_palette: ColorPalette) -> Self {
-        let (state, objects) = Game::new_game(env, ctx);
-        Game {
-            state,
-            objects,
-            run_state: RunState::MainMenu(main_menu()),
-            hud: Hud::new(),
-            color_palette,
-            is_light_mode: false,
-        }
-    }
+    // pub fn new(env: GameEnv) -> Self {
+    //     let (state, objects) = Game::new_game(env);
+    //     Game {
+    //         state,
+    //         objects,
+    //         run_state: Some(RunState::MainMenu(main_menu())),
+    //         hud: Hud::new(),
+    //         is_dark_color_palette: true,
+    //     }
+    // }
 
     pub fn reset(&mut self, state: GameState, objects: GameObjects) {
         self.state = state;
@@ -78,7 +73,7 @@ impl Game {
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
-    pub fn new_game(env: GameEnv, ctx: &mut Rltk) -> (GameState, GameObjects) {
+    pub fn new_game(env: GameEnv) -> (GameState, GameObjects) {
         // create game state holding game-relevant information
         let level = 1;
         let mut state = GameState::new(env, level);
@@ -140,13 +135,7 @@ impl Game {
     }
 
     pub fn toggle_dark_light_mode(&mut self) {
-        if self.is_light_mode {
-            self.is_light_mode = false;
-            self.color_palette = ColorPalette::dark();
-        } else {
-            self.is_light_mode = true;
-            self.color_palette = ColorPalette::light();
-        }
+        self.is_dark_color_palette = !self.is_dark_color_palette;
     }
 }
 
@@ -202,18 +191,19 @@ impl Rltk_GameState for Game {
 
         // render everything
         render_world(self, ctx);
-        render_gui(self, ctx, &mut self.hud);
+        render_gui(self, ctx);
 
-        self.run_state = match &self.run_state {
+        let mut new_run_state = self.run_state.take().unwrap();
+        new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
-                match instance.display(ctx, &self.color_palette) {
-                    Some(option) => MainMenuItem::process(self, ctx, instance, &option),
+                match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
+                    Some(option) => MainMenuItem::process(self, instance, &option),
                     None => RunState::MainMenu(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => {
-                match instance.display(ctx, &self.color_palette) {
-                    Some(option) => ActionItem::process(self, ctx, instance, &option),
+                match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
+                    Some(option) => ActionItem::process(self, instance, &option),
                     None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
@@ -259,11 +249,14 @@ impl Rltk_GameState for Game {
                 // TODO: how to really handle this?
                 PlayerInput::Undefined => RunState::Ticking,
             },
-            RunState::InfoBox(infobox) => match infobox.display(ctx, &self.color_palette) {
-                Some(infobox) => RunState::InfoBox(infobox),
-                None => RunState::Ticking,
-            },
+            RunState::InfoBox(infobox) => {
+                match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
+                    Some(infobox) => RunState::InfoBox(infobox),
+                    None => RunState::Ticking,
+                }
+            }
         };
+        self.run_state.replace(new_run_state);
 
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
     }

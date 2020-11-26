@@ -1,4 +1,5 @@
 use crate::game::{Game, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH, WORLD_WIDTH};
+use crate::ui::color_palette::ColorPalette;
 use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -14,10 +15,10 @@ pub struct UiItem<T> {
 }
 
 impl<T> UiItem<T> {
-    pub fn new(item_enum: T, text: &str, layout: Rect) -> Self {
+    pub fn new(item_enum: T, text: String, layout: Rect) -> Self {
         UiItem {
             item_enum,
-            text: text.to_string(),
+            text,
             layout,
         }
     }
@@ -36,7 +37,7 @@ pub enum HudItem {
 
 pub struct Hud {
     layout: Rect,
-    pub(crate) items: Vec<UiItem<HudItem>>,
+    pub items: Vec<UiItem<HudItem>>,
     names_under_mouse: String,
 }
 
@@ -60,27 +61,28 @@ impl Hud {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(game: &mut Game, _ctx: &mut Rltk, hud: &mut Hud) {
+pub fn render_gui(game: &mut Game, _ctx: &mut Rltk) {
+    let color_palette = ColorPalette::get(game.is_dark_color_palette);
     // draw buttons
     let mut draw_batch = DrawBatch::new();
     draw_batch.draw_box(
-        hud.layout,
-        ColorPair::new(game.color_palette.fg_dialog, game.color_palette.bg_dialog),
+        game.hud.layout,
+        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
     );
-    for item in hud.items {
+    for item in &game.hud.items {
         draw_batch.print_color(
             item.top_left_corner(),
             &item.text,
-            ColorPair::new(game.color_palette.fg_dialog, game.color_palette.bg_dialog),
+            ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
         );
     }
 
-    draw_batch.submit(6000);
-
-    // TODO: draw ui boxes
-    if let Some(player) = game
-        .objects
-        .extract_by_index(game.state.current_player_index)
-    {}
-    draw_batch.submit(5000);
+    // draw_batch.submit(6000);
+    //
+    // // TODO: draw ui boxes
+    // if let Some(player) = game
+    //     .objects
+    //     .extract_by_index(game.state.current_player_index)
+    // {}
+    // draw_batch.submit(5000);
 }

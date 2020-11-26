@@ -8,7 +8,7 @@ use crate::util::modulus;
 use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
-    fn process(game: &mut Game, ctx: &mut Rltk, menu: &mut Menu<Self>, item: &Self) -> RunState;
+    fn process(game: &mut Game, menu: &mut Menu<Self>, item: &Self) -> RunState;
 }
 
 /// Non-click-away-able window menu.
@@ -20,7 +20,7 @@ pub struct Menu<T: MenuItem> {
 }
 
 impl<T: MenuItem> Menu<T> {
-    pub fn new(item_vec: Vec<(T, &str)>) -> Self {
+    pub fn new(item_vec: Vec<(T, String)>) -> Self {
         let menu_height = item_vec.len() as i32 + 2;
         let x1 = (SCREEN_WIDTH / 2) - (MENU_WIDTH / 2);
         let y1 = (SCREEN_HEIGHT / 2) - (menu_height / 2);

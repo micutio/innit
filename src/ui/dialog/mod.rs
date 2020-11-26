@@ -77,7 +77,7 @@ impl InfoBox {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(mut self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<InfoBox> {
+    pub fn display(self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<InfoBox> {
         // render current menu
         self.render(palette);
 
