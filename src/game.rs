@@ -204,7 +204,7 @@ impl Rltk_GameState for Game {
         render_world(self, ctx);
         render_gui(self, ctx, &mut self.hud);
 
-        self.run_state = match self.run_state {
+        self.run_state = match &self.run_state {
             RunState::MainMenu(ref mut instance) => {
                 match instance.display(ctx, &self.color_palette) {
                     Some(option) => MainMenuItem::process(self, ctx, instance, &option),
@@ -258,6 +258,10 @@ impl Rltk_GameState for Game {
                 }
                 // TODO: how to really handle this?
                 PlayerInput::Undefined => RunState::Ticking,
+            },
+            RunState::InfoBox(infobox) => match infobox.display(ctx, &self.color_palette) {
+                Some(infobox) => RunState::InfoBox(infobox),
+                None => RunState::Ticking,
             },
         };
 
