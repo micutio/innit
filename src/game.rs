@@ -189,12 +189,12 @@ impl Rltk_GameState for Game {
             debug!("RE-RENDER!!!!!!!!!!!");
             // let mut start_time = Instant::now();
             // ensure that the player action from previous turns is consumed
-            ctx.set_active_console(1);
-            ctx.cls();
-            ctx.set_active_console(0);
+            // ctx.set_active_console(1);
+            // ctx.cls();
+            // ctx.set_active_console(0);
             ctx.cls();
             render_world(self, ctx);
-            ctx.set_active_console(1);
+            // ctx.set_active_console(1);
             render_gui(self, ctx);
         }
 
