@@ -17,7 +17,7 @@ impl MenuItem for MainMenuItem {
                 // start new game
                 let (state, objects) = Game::new_game(game.state.env);
                 game.reset(state, objects);
-                RunState::Ticking
+                RunState::Ticking(true)
                 // game_loop(&mut state, frontend, &mut input, &mut objects);
             }
             MainMenuItem::Resume => {
@@ -25,7 +25,7 @@ impl MenuItem for MainMenuItem {
                 match load_game() {
                     Ok((state, objects)) => {
                         game.reset(state, objects);
-                        RunState::Ticking
+                        RunState::Ticking(true)
                     }
                     Err(_e) => {
                         // TODO: Show alert to user... or not?

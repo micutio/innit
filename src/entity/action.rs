@@ -182,16 +182,17 @@ impl Action for ActMove {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
+        if owner.physics.is_visible {
+            debug!(
+                "target position {:#?}, blocked: {}",
+                target_pos,
+                &objects.is_pos_blocked(&target_pos)
+            );
+        }
         if !&objects.is_pos_blocked(&target_pos) {
             owner.pos.set(target_pos.x, target_pos.y);
-            if let Some(Player(_)) = owner.control {
-                ActionResult::Success {
-                    callback: ObjectFeedback::NoFeedback,
-                }
-            } else {
-                ActionResult::Success {
-                    callback: ObjectFeedback::NoFeedback,
-                }
+            ActionResult::Success {
+                callback: ObjectFeedback::Render,
             }
         } else {
             info!("object {} blocked!", owner.visual.name);

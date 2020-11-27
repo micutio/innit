@@ -37,6 +37,7 @@ impl MessageLog for Vec<(String, MsgClass)> {
 pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
+    Render,
     Animate {
         anim_type: AnimationType,
         origin: Position,
@@ -94,7 +95,7 @@ impl GameState {
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
                     objects.replace(self.current_obj_index, active_object);
-                    return vec![];
+                    return vec![ObjectFeedback::NoAction];
                 }
             }
 
@@ -102,32 +103,43 @@ impl GameState {
             // 1. turn preparation
             // 2. turn action
             // 3. turn conclusion
-            trace!(
-                "{} | {}'s turn now @energy {}/{}",
-                self.current_obj_index,
-                active_object.visual.name,
-                active_object.processors.energy,
-                active_object.processors.energy_storage
-            );
+            if active_object.physics.is_visible {
+                trace!(
+                    "{} | {}'s turn now @energy {}/{}",
+                    self.current_obj_index,
+                    active_object.visual.name,
+                    active_object.processors.energy,
+                    active_object.processors.energy_storage
+                );
+            }
 
             // TURN PREPARATION ///////////////////////////////////////////////////////////////////
             // Innit doesn't have any action preparations as of yet.
 
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
-            let process_result =
+            let mut process_result =
                 // If not enough energy available try to metabolise.
                 if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy
+                    if active_object.physics.is_visible {
+                        debug!("replenishing");
+                    }
                     active_object.metabolize();
-                    vec![ObjectFeedback::NoFeedback]
+                    vec![]
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
+                    if active_object.physics.is_visible {
+                        debug!("next action: {}", next_action.get_identifier());
+                    }
                     active_object.processors.energy -= next_action.get_energy_cost();
                     self.process_action(objects, &mut active_object, next_action)
                 } else {
                     panic!("How can an object 'has_next_action' but NOT have an action?");
                     // ObjectProcResult::NoFeedback
                 };
+            if !active_object.physics.is_visible {
+                process_result.clear();
+            }
 
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
             // Apply recurring effects so that the player can factor this into the next action.
@@ -233,7 +245,10 @@ impl GameState {
     ) -> Vec<ObjectFeedback> {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => vec![callback],
+            ActionResult::Success { callback } => match callback {
+                ObjectFeedback::NoFeedback => vec![],
+                _ => vec![callback],
+            },
             ActionResult::Failure => vec![ObjectFeedback::NoAction], // how to handle fails?
             ActionResult::Consequence {
                 callback,

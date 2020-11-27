@@ -5,7 +5,7 @@ use crate::game::{Game, RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
 use crate::util::modulus;
-use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
+use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
     fn process(game: &mut Game, menu: &mut Menu<Self>, item: &Self) -> RunState;
@@ -25,7 +25,7 @@ impl<T: MenuItem> Menu<T> {
         let x1 = (SCREEN_WIDTH / 2) - (MENU_WIDTH / 2);
         let y1 = (SCREEN_HEIGHT / 2) - (menu_height / 2);
         let x2 = x1 + MENU_WIDTH;
-        let y2 = y1 + menu_height;
+        let y2 = y1 + menu_height - 1;
         let items: Vec<UiItem<T>> = item_vec
             .iter()
             .cloned()

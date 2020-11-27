@@ -50,7 +50,7 @@ pub const PALETTE_LIGHT: ColorPalette = ColorPalette {
 pub const PALETTE_DARK: ColorPalette = ColorPalette {
     bg_world: (0, 0, 0),
     bg_dialog: (144, 48, 90),
-    bg_dialog_selected: (144, 58, 110),
+    bg_dialog_selected: (104, 4, 50),
     bg_wall_fov_true: (176, 52, 96),
     bg_wall_fov_false: (30, 30, 30),
     bg_ground_fov_true: (124, 8, 59),

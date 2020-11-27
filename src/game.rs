@@ -3,7 +3,7 @@
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{ActPass, Target};
@@ -43,7 +43,7 @@ pub enum RunState {
     MainMenu(Menu<MainMenuItem>),
     ChooseActionMenu(Menu<ActionItem>),
     InfoBox(InfoBox),
-    Ticking,
+    Ticking(bool),
     CheckInput,
 }
 
@@ -182,18 +182,22 @@ impl Rltk_GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
-        // let mut start_time = Instant::now();
-        // ensure that the player action from previous turns is consumed
-        // ctx.set_active_console(1);
-        // ctx.cls();
-        ctx.set_active_console(0);
-        ctx.cls();
+        let mut new_run_state = self.run_state.take().unwrap();
 
         // render everything
-        render_world(self, ctx);
-        render_gui(self, ctx);
+        if let RunState::Ticking(true) = new_run_state {
+            debug!("RE-RENDER!!!!!!!!!!!");
+            // let mut start_time = Instant::now();
+            // ensure that the player action from previous turns is consumed
+            ctx.set_active_console(1);
+            ctx.cls();
+            ctx.set_active_console(0);
+            ctx.cls();
+            render_world(self, ctx);
+            ctx.set_active_console(1);
+            render_gui(self, ctx);
+        }
 
-        let mut new_run_state = self.run_state.take().unwrap();
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
@@ -207,13 +211,18 @@ impl Rltk_GameState for Game {
                     None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
-            RunState::Ticking => {
+            RunState::Ticking(_) => {
                 // let the game engine process an object
-                let action_feedback = self.state.process_object(&mut self.objects);
+                let mut action_feedback;
+                let mut i: i128 = 0;
+                loop {
+                    action_feedback = self.state.process_object(&mut self.objects);
+                    if !action_feedback.is_empty() {
+                        break;
+                    }
+                }
 
-                if action_feedback.is_empty() {
-                    RunState::Ticking
-                } else {
+                let re_render: bool = if !action_feedback.is_empty() {
                     // render animations and action vfx
                     process_visual_feedback(
                         &mut self.state,
@@ -221,7 +230,15 @@ impl Rltk_GameState for Game {
                         ctx,
                         action_feedback,
                     );
+                    true
+                } else {
+                    false
+                };
+
+                if self.state.is_players_turn() {
                     RunState::CheckInput
+                } else {
+                    RunState::Ticking(re_render)
                 }
             }
             RunState::CheckInput => match read_input(self, ctx) {
@@ -241,21 +258,18 @@ impl Rltk_GameState for Game {
                             PassTurn => Box::new(ActPass),
                         };
                         player.set_next_action(Some(a));
-                        RunState::Ticking
+                        RunState::Ticking(false)
                     } else {
-                        RunState::Ticking
+                        RunState::Ticking(false)
                     }
                 }
                 // TODO: how to really handle this?
-                PlayerInput::Undefined => {
-                    trace!("no action happened");
-                    RunState::CheckInput
-                }
+                PlayerInput::Undefined => RunState::CheckInput,
             },
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(infobox) => RunState::InfoBox(infobox),
-                    None => RunState::Ticking,
+                    None => RunState::Ticking(false),
                 }
             }
         };

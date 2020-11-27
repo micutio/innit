@@ -59,20 +59,26 @@ fn update_visibility(game: &mut Game) {
         .map(|o| (o.pos, o.sensors.sensing_range))
         .collect();
 
+    let color_palette = ColorPalette::get(game.is_dark_color_palette);
     // set all objects invisible by default
+    let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
     for object_opt in game.objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
             // TODO: Does this need to be enabled?
-            // update_visual(o, &game.color_palette, -1, Position::default());
+            update_visual(
+                object,
+                &color_palette,
+                -1,
+                Position::default(),
+                &mut dist_map,
+            );
         }
     }
 
-    let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
     for (pos, range) in player_positions {
         let mut visible_pos = field_of_view(pos.to_point(), range, &game.objects);
         visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
-        let color_palette = ColorPalette::get(game.is_dark_color_palette);
 
         for object_opt in game.objects.get_vector_mut() {
             if let Some(object) = object_opt {
@@ -156,6 +162,8 @@ pub fn process_visual_feedback(
             // action has been completed, but nothing needs to be done about it
             ObjectFeedback::NoFeedback => {}
 
+            ObjectFeedback::Render => {}
+
             ObjectFeedback::Animate {
                 anim_type: _,
                 origin: _,
@@ -179,7 +187,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
         }
         UiAction::ToggleDarkLightMode => {
             game.toggle_dark_light_mode();
-            RunState::Ticking
+            RunState::Ticking(true)
         }
         UiAction::CharacterScreen => {
             RunState::InfoBox(character_screen(&game.state, &game.objects))
@@ -199,7 +207,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
                     ActionCategory::Primary,
                 ))
             } else {
-                RunState::Ticking
+                RunState::Ticking(false)
             }
         }
         UiAction::ChooseSecondaryAction => {
@@ -217,7 +225,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
                     ActionCategory::Secondary,
                 ))
             } else {
-                RunState::Ticking
+                RunState::Ticking(false)
             }
         }
         UiAction::ChooseQuick1Action => {
@@ -225,7 +233,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick1))
             } else {
-                RunState::Ticking
+                RunState::Ticking(false)
             }
         }
         UiAction::ChooseQuick2Action => {
@@ -233,7 +241,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick2))
             } else {
-                RunState::Ticking
+                RunState::Ticking(false)
             }
         }
     }

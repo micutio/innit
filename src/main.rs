@@ -55,9 +55,10 @@ pub fn main() -> rltk::BError {
     let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap()
         .with_font("fonts/16x16-sm.png", 16, 16)
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/16x16-sm.png")
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
-        .with_fps_cap(30.0)
+        .with_fps_cap(60.0)
         .build()?;
     context.set_active_font(1, false);
     let game = game::Game::new(env);
