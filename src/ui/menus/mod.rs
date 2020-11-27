@@ -4,6 +4,7 @@ pub mod main_menu;
 use crate::game::{Game, RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
+use crate::ui::rex_assets::RexAssets;
 use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
@@ -45,8 +46,16 @@ impl<T: MenuItem> Menu<T> {
         }
     }
 
-    fn render(&self, palette: &ColorPalette) {
+    fn render(&self, ctx: &mut Rltk, palette: &ColorPalette) {
         let mut draw_batch = DrawBatch::new();
+        // TODO: Pull this out
+        let rex_assets = RexAssets::new();
+        ctx.render_xp_sprite(&rex_assets.menu, 0, 0);
+        draw_batch.fill_region(
+            self.layout,
+            ColorPair::new(palette.fg_dialog, palette.bg_dialog),
+            to_cp437(' '),
+        );
         draw_batch.draw_box(
             self.layout,
             ColorPair::new(palette.fg_dialog, palette.bg_dialog),
@@ -70,7 +79,7 @@ impl<T: MenuItem> Menu<T> {
     ///     - quitting the game
     pub fn display(&mut self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<T> {
         // render current menu
-        self.render(palette);
+        self.render(ctx, palette);
 
         // wait for user input
         // a) keyboard input

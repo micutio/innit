@@ -61,6 +61,7 @@ pub fn main() -> rltk::BError {
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(60.0)
+        // .with_automatic_console_resize(true)
         .build()?;
     // context.set_active_font(1, true);
     let game = game::Game::new(env);
