@@ -1,6 +1,6 @@
 [package]
 name = "innit"
-version = "0.0.2"
+version = "0.0.4"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
 edition = "2018"
@@ -18,5 +18,4 @@ rltk = "0.8.1"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-tcod = { version = "0.15", features = ["serialization"] }
 typetag = "0.1"
