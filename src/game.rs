@@ -18,7 +18,7 @@ use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_w
 use crate::ui::game_input::{read_input, PlayerInput};
 use crate::ui::gui::{render_gui, Hud};
 use crate::ui::menus::choose_action_menu::ActionItem;
-use crate::ui::menus::main_menu::MainMenuItem;
+use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menus::{Menu, MenuItem};
 use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
@@ -55,16 +55,16 @@ pub struct Game {
 }
 
 impl Game {
-    // pub fn new(env: GameEnv) -> Self {
-    //     let (state, objects) = Game::new_game(env);
-    //     Game {
-    //         state,
-    //         objects,
-    //         run_state: Some(RunState::MainMenu(main_menu())),
-    //         hud: Hud::new(),
-    //         is_dark_color_palette: true,
-    //     }
-    // }
+    pub fn new(env: GameEnv) -> Self {
+        let (state, objects) = Game::new_game(env);
+        Game {
+            state,
+            objects,
+            run_state: Some(RunState::MainMenu(main_menu())),
+            hud: Hud::new(),
+            is_dark_color_palette: true,
+        }
+    }
 
     pub fn reset(&mut self, state: GameState, objects: GameObjects) {
         self.state = state;
@@ -183,8 +183,8 @@ impl Rltk_GameState for Game {
     fn tick(&mut self, ctx: &mut Rltk) {
         // let mut start_time = Instant::now();
         // ensure that the player action from previous turns is consumed
-        ctx.set_active_console(1);
-        ctx.cls();
+        // ctx.set_active_console(1);
+        // ctx.cls();
         ctx.set_active_console(0);
         ctx.cls();
 

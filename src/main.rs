@@ -50,10 +50,14 @@ pub fn main() -> rltk::BError {
 
     // TODO: Create game environment from presets and command line flags!
 
-    let context = rltk::RltkBuilder::simple80x50()
-        .with_title("Innit alpha v0.0.2")
+    use rltk::RltkBuilder;
+    let mut context = RltkBuilder::simple(160, 90)
+        .unwrap()
+        .with_title("Innit alpha v0.0.4")
+        .with_vsync(false)
         .with_fps_cap(30.0)
         .build()?;
-    let gs = State {};
-    rltk::main_loop(context, gs)
+    context.with_post_scanlines(true);
+    let game = game::Game::new(env);
+    rltk::main_loop(context, game)
 }
