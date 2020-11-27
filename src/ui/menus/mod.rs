@@ -78,10 +78,12 @@ impl<T: MenuItem> Menu<T> {
         if let Some(key) = ctx.key {
             match key {
                 VirtualKeyCode::Up => {
-                    self.selection = modulus(self.selection - 1, self.items.len());
+                    self.selection =
+                        modulus(self.selection as i32 - 1, self.items.len() as i32) as usize;
                 }
                 VirtualKeyCode::Down => {
-                    self.selection = modulus(self.selection + 1, self.items.len());
+                    self.selection =
+                        modulus(self.selection as i32 + 1, self.items.len() as i32) as usize;
                 }
                 VirtualKeyCode::Return => {
                     // return process_item(game, ctx, &self.items[self.selection].item_enum);
