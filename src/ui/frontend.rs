@@ -46,6 +46,7 @@ pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
             to_cp437(object.visual.glyph),
         );
     }
+    draw_batch.submit(0).unwrap()
 }
 
 fn update_visibility(game: &mut Game) {
