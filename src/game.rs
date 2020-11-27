@@ -258,5 +258,6 @@ impl Rltk_GameState for Game {
         self.run_state.replace(new_run_state);
 
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
+        rltk::render_draw_buffer(ctx);
     }
 }
