@@ -12,7 +12,7 @@ pub trait MenuItem: Clone {
 }
 
 /// Non-click-away-able window menu.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Menu<T: MenuItem> {
     items: Vec<UiItem<T>>,
     selection: usize,

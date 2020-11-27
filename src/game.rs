@@ -27,17 +27,18 @@ use std::io::{Read, Write};
 
 // environment constraints
 // game window
-pub const SCREEN_WIDTH: i32 = 160;
-pub const SCREEN_HEIGHT: i32 = 90;
+pub const SCREEN_WIDTH: i32 = 100;
+pub const SCREEN_HEIGHT: i32 = 60;
 // world
-pub const WORLD_WIDTH: i32 = 110;
-pub const WORLD_HEIGHT: i32 = 90;
+pub const WORLD_WIDTH: i32 = 80;
+pub const WORLD_HEIGHT: i32 = 60;
 // sidebar
-pub const SIDE_PANEL_WIDTH: i32 = 50;
-pub const SIDE_PANEL_HEIGHT: i32 = 90;
+pub const SIDE_PANEL_WIDTH: i32 = 20;
+pub const SIDE_PANEL_HEIGHT: i32 = 60;
 
 pub const MENU_WIDTH: i32 = 30;
 
+#[derive(Debug)]
 pub enum RunState {
     MainMenu(Menu<MainMenuItem>),
     ChooseActionMenu(Menu<ActionItem>),
@@ -225,7 +226,7 @@ impl Rltk_GameState for Game {
             }
             RunState::CheckInput => match read_input(self, ctx) {
                 PlayerInput::MetaInput(meta_action) => {
-                    debug!("process meta action: {:#?}", meta_action);
+                    trace!("process meta action: {:#?}", meta_action);
                     handle_meta_actions(self, ctx, meta_action)
                 }
                 PlayerInput::PlayInput(in_game_action) => {
@@ -246,7 +247,10 @@ impl Rltk_GameState for Game {
                     }
                 }
                 // TODO: how to really handle this?
-                PlayerInput::Undefined => RunState::Ticking,
+                PlayerInput::Undefined => {
+                    trace!("no action happened");
+                    RunState::CheckInput
+                }
             },
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
@@ -258,6 +262,7 @@ impl Rltk_GameState for Game {
         self.run_state.replace(new_run_state);
 
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
-        rltk::render_draw_buffer(ctx);
+        rltk::render_draw_buffer(ctx).unwrap();
+        // debug!("current state: {:#?}", self.run_state);
     }
 }

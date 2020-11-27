@@ -1,7 +1,7 @@
 use crate::game::{Game, RunState};
 use crate::ui::menus::{Menu, MenuItem};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ActionCategory {
     Primary,
     Secondary,
@@ -9,7 +9,7 @@ pub enum ActionCategory {
     Quick2,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ActionItem {
     id: String,
     category: ActionCategory,

@@ -18,6 +18,7 @@ mod ui;
 mod util;
 
 use crate::core::game_env::GameEnv;
+use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use rltk::{GameState, Rltk};
 use std::env;
 
@@ -51,12 +52,14 @@ pub fn main() -> rltk::BError {
     // TODO: Create game environment from presets and command line flags!
 
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple(160, 90)
+    let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap()
+        .with_font("fonts/16x16-sm.png", 16, 16)
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(30.0)
         .build()?;
+    context.set_active_font(1, false);
     let game = game::Game::new(env);
     rltk::main_loop(context, game)
 }

@@ -56,7 +56,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::S, false, false) => PlayInput(SecondaryAction(South)),
         (VirtualKeyCode::S, true, false) => MetaInput(ChooseSecondaryAction),
         (VirtualKeyCode::W, false, false) => PlayInput(SecondaryAction(North)),
-        (VirtualKeyCode::Up, true, false) => PlayInput(PrimaryAction(North)),
+        (VirtualKeyCode::Up, false, false) => PlayInput(PrimaryAction(North)),
         (VirtualKeyCode::Down, false, false) => PlayInput(PrimaryAction(South)),
         (VirtualKeyCode::Left, false, false) => PlayInput(PrimaryAction(West)),
         (VirtualKeyCode::Right, false, false) => PlayInput(PrimaryAction(East)),
@@ -82,7 +82,9 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
 
 pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
     // 1) check if key has been pressed
+
     if let Some(key) = ctx.key {
+        debug!("key: {:#?}", ctx.key);
         return key_to_action(key, ctx.control, ctx.shift);
     }
     let mouse = Position::from_point(ctx.mouse_point());
@@ -92,7 +94,7 @@ pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
     if mouse.x < WORLD_WIDTH {
         // 2a) update hovered objects
         game.hud
-            .set_names_under_mouse(get_names_under_mouse(&mut game.objects, mouse));
+            .set_names_under_mouse(get_names_under_mouse(&game.objects, mouse));
         // 2b) check whether a mouse button has been pressed for player action
         if clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action

@@ -7,7 +7,7 @@ use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 /// - `layout` for checking mouse interaction
 /// - `prev menu item` for cycling through via keys (use vector indices!)
 /// - `next menu item` for cycling through via keys (use vector indices!)
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
@@ -43,10 +43,10 @@ pub struct Hud {
 
 impl Hud {
     pub fn new() -> Self {
-        let x1 = SCREEN_WIDTH - WORLD_WIDTH;
+        let x1 = SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + SIDE_PANEL_WIDTH;
-        let y2 = SIDE_PANEL_HEIGHT;
+        let y2 = SIDE_PANEL_HEIGHT - 1;
         Hud {
             layout: Rect::with_exact(x1, y1, x2, y2),
             items: Vec::new(),
@@ -65,6 +65,7 @@ pub fn render_gui(game: &mut Game, _ctx: &mut Rltk) {
     let color_palette = ColorPalette::get(game.is_dark_color_palette);
     // draw buttons
     let mut draw_batch = DrawBatch::new();
+    // draw_batch.dra
     draw_batch.draw_box(
         game.hud.layout,
         ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),

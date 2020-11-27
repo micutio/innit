@@ -1,7 +1,7 @@
 use crate::game::{load_game, Game, RunState};
 use crate::ui::menus::{Menu, MenuItem};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum MainMenuItem {
     NewGame,
     Resume,

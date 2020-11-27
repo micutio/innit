@@ -5,7 +5,7 @@ use crate::ui::color_palette::ColorPalette;
 use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 
 /// Non-click-away-able window menu.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct InfoBox {
     title: String,
     lines: Vec<String>,
