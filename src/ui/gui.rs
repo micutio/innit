@@ -1,4 +1,4 @@
-use crate::game::{Game, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH, WORLD_WIDTH};
+use crate::game::{SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
 
@@ -61,16 +61,15 @@ impl Hud {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(game: &mut Game, _ctx: &mut Rltk) {
-    let color_palette = ColorPalette::get(game.is_dark_color_palette);
+pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, color_palette: &ColorPalette) {
     // draw buttons
     let mut draw_batch = DrawBatch::new();
     // draw_batch.dra
     draw_batch.draw_box(
-        game.hud.layout,
+        hud.layout,
         ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
     );
-    for item in &game.hud.items {
+    for item in hud.items {
         draw_batch.print_color(
             item.top_left_corner(),
             &item.text,

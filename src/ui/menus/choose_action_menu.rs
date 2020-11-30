@@ -1,4 +1,6 @@
-use crate::game::{Game, RunState};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
+use crate::game::RunState;
 use crate::ui::menus::{Menu, MenuItem};
 
 #[derive(Clone, Copy, Debug)]
@@ -22,8 +24,13 @@ impl ActionItem {
 }
 
 impl MenuItem for ActionItem {
-    fn process(game: &mut Game, _menu: &mut Menu<ActionItem>, item: &ActionItem) -> RunState {
-        if let Some(ref mut object) = game.objects[game.state.current_player_index] {
+    fn process(
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        _menu: &mut Menu<ActionItem>,
+        item: &ActionItem,
+    ) -> RunState {
+        if let Some(ref mut object) = objects[state.current_player_index] {
             let action_opt = object.match_action(&item.id);
 
             if let Some(action) = action_opt {

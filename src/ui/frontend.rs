@@ -4,7 +4,7 @@ use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::action::TargetCategory;
 use crate::entity::object::Object;
-use crate::game::{save_game, Game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{save_game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::dialog::character::character_screen;
@@ -14,13 +14,17 @@ use crate::ui::menus::main_menu::main_menu;
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
-pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
+pub fn render_world(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    _ctx: &mut Rltk,
+    color_palette: &ColorPalette,
+) {
     let mut draw_batch = DrawBatch::new();
 
-    update_visibility(game);
+    update_visibility(objects, color_palette);
 
-    let mut to_draw: Vec<&Object> = game
-        .objects
+    let mut to_draw: Vec<&Object> = objects
         .get_vector()
         .iter()
         .flatten()
@@ -29,7 +33,7 @@ pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
             o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-                || (o.tile.is_some() && game.state.env.debug_mode)
+                || (o.tile.is_some() && state.env.debug_mode)
         })
         .collect();
 
@@ -49,9 +53,8 @@ pub fn render_world(game: &mut Game, _ctx: &mut Rltk) {
     draw_batch.submit(0).unwrap()
 }
 
-fn update_visibility(game: &mut Game) {
-    let player_positions: Vec<(Position, i32)> = game
-        .objects
+fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
+    let player_positions: Vec<(Position, i32)> = objects
         .get_vector()
         .iter()
         .flatten()
@@ -59,16 +62,15 @@ fn update_visibility(game: &mut Game) {
         .map(|o| (o.pos, o.sensors.sensing_range))
         .collect();
 
-    let color_palette = ColorPalette::get(game.is_dark_color_palette);
     // set all objects invisible by default
     let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
-    for object_opt in game.objects.get_vector_mut() {
+    for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
             // TODO: Does this need to be enabled?
             update_visual(
                 object,
-                &color_palette,
+                color_palette,
                 -1,
                 Position::default(),
                 &mut dist_map,
@@ -77,10 +79,10 @@ fn update_visibility(game: &mut Game) {
     }
 
     for (pos, range) in player_positions {
-        let mut visible_pos = field_of_view(pos.to_point(), range, &game.objects);
+        let mut visible_pos = field_of_view(pos.to_point(), range, objects);
         visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
 
-        for object_opt in game.objects.get_vector_mut() {
+        for object_opt in objects.get_vector_mut() {
             if let Some(object) = object_opt {
                 if visible_pos.contains(&object.pos.to_point()) {
                     object.physics.is_visible = true;
@@ -176,24 +178,28 @@ pub fn process_visual_feedback(
 }
 
 // TODO: Move this somewhere more sensible.
-pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -> RunState {
+pub fn handle_meta_actions(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    _ctx: &mut Rltk,
+    action: UiAction,
+) -> RunState {
     // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
-            let result = save_game(&game.state, &game.objects);
+            let result = save_game(&state, &objects);
             result.unwrap();
             RunState::MainMenu(main_menu())
         }
         UiAction::ToggleDarkLightMode => {
-            game.toggle_dark_light_mode();
-            RunState::Ticking(true)
+            // game.toggle_dark_light_mode();
+            // RunState::Ticking(true)
+            RunState::ToggleDarkLightMode
         }
-        UiAction::CharacterScreen => {
-            RunState::InfoBox(character_screen(&game.state, &game.objects))
-        }
+        UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
         UiAction::ChoosePrimaryAction => {
-            if let Some(ref mut player) = game.objects[game.state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 let action_items = get_available_actions(
                     player,
                     &[
@@ -211,7 +217,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
             }
         }
         UiAction::ChooseSecondaryAction => {
-            if let Some(ref mut player) = game.objects[game.state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 let action_items = get_available_actions(
                     player,
                     &[
@@ -229,7 +235,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
             }
         }
         UiAction::ChooseQuick1Action => {
-            if let Some(ref mut player) = game.objects[game.state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick1))
             } else {
@@ -237,7 +243,7 @@ pub fn handle_meta_actions(game: &mut Game, _ctx: &mut Rltk, action: UiAction) -
             }
         }
         UiAction::ChooseQuick2Action => {
-            if let Some(ref mut player) = game.objects[game.state.current_player_index] {
+            if let Some(ref mut player) = objects[state.current_player_index] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick2))
             } else {

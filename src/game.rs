@@ -3,7 +3,7 @@
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::game_state::{GameState, MessageLog, MsgClass};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{ActPass, Target};
@@ -41,26 +41,30 @@ pub const MENU_WIDTH: i32 = 30;
 #[derive(Debug)]
 pub enum RunState {
     MainMenu(Menu<MainMenuItem>),
+    NewGame,
+    LoadGame,
     ChooseActionMenu(Menu<ActionItem>),
     InfoBox(InfoBox),
     Ticking(bool),
     CheckInput,
+    ToggleDarkLightMode,
 }
 
-pub struct Game {
-    pub state: GameState,
-    pub objects: GameObjects,
-    pub run_state: Option<RunState>,
-    pub hud: Hud,
-    pub is_dark_color_palette: bool,
+pub(crate) struct Game {
+    state: Option<GameState>,
+    objects: Option<GameObjects>,
+    env: GameEnv,
+    run_state: Option<RunState>,
+    hud: Hud,
+    is_dark_color_palette: bool,
 }
 
 impl Game {
     pub fn new(env: GameEnv) -> Self {
-        let (state, objects) = Game::new_game(env);
         Game {
-            state,
-            objects,
+            state: None,
+            objects: None,
+            env,
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(),
             is_dark_color_palette: true,
@@ -68,8 +72,8 @@ impl Game {
     }
 
     pub fn reset(&mut self, state: GameState, objects: GameObjects) {
-        self.state = state;
-        self.objects = objects;
+        self.state = Some(state);
+        self.objects = Some(objects);
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
@@ -186,37 +190,57 @@ impl Rltk_GameState for Game {
 
         // render everything
         if let RunState::Ticking(true) = new_run_state {
-            debug!("RE-RENDER!!!!!!!!!!!");
             // let mut start_time = Instant::now();
             // ensure that the player action from previous turns is consumed
             // ctx.set_active_console(1);
             // ctx.cls();
             // ctx.set_active_console(0);
             ctx.cls();
-            render_world(self, ctx);
+            render_world(
+                &mut self.state,
+                &mut self.objects.unwrap(),
+                ctx,
+                ColorPalette::get(self.is_dark_color_palette),
+            );
             // ctx.set_active_console(1);
-            render_gui(self, ctx);
+            render_gui(
+                &mut self.hud,
+                ctx,
+                &ColorPalette::get(self.is_dark_color_palette),
+            );
         }
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
-                    Some(option) => MainMenuItem::process(self, instance, &option),
+                    Some(option) => MainMenuItem::process(
+                        &mut self.state.unwrap(),
+                        &mut self.objects.unwrap(),
+                        instance,
+                        &option,
+                    ),
                     None => RunState::MainMenu(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => {
                 match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
-                    Some(option) => ActionItem::process(self, instance, &option),
+                    Some(option) => ActionItem::process(
+                        &mut self.state.unwrap(),
+                        &mut self.objects.unwrap(),
+                        instance,
+                        &option,
+                    ),
                     None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
             RunState::Ticking(_) => {
                 // let the game engine process an object
                 let mut action_feedback;
-                let mut i: i128 = 0;
                 loop {
-                    action_feedback = self.state.process_object(&mut self.objects);
+                    action_feedback = self
+                        .state
+                        .unwrap()
+                        .process_object(&mut self.objects.unwrap());
                     if !action_feedback.is_empty() {
                         break;
                     }
@@ -225,8 +249,8 @@ impl Rltk_GameState for Game {
                 let re_render: bool = if !action_feedback.is_empty() {
                     // render animations and action vfx
                     process_visual_feedback(
-                        &mut self.state,
-                        &mut self.objects,
+                        &mut self.state.unwrap(),
+                        &mut self.objects.unwrap(),
                         ctx,
                         action_feedback,
                     );
@@ -235,41 +259,79 @@ impl Rltk_GameState for Game {
                     false
                 };
 
-                if self.state.is_players_turn() {
+                if self.state.unwrap().is_players_turn() {
                     RunState::CheckInput
                 } else {
                     RunState::Ticking(re_render)
                 }
             }
-            RunState::CheckInput => match read_input(self, ctx) {
-                PlayerInput::MetaInput(meta_action) => {
-                    trace!("process meta action: {:#?}", meta_action);
-                    handle_meta_actions(self, ctx, meta_action)
-                }
-                PlayerInput::PlayInput(in_game_action) => {
-                    trace!("inject in-game action {:#?} to player", in_game_action);
-                    if let Some(ref mut player) = self.objects[self.state.current_player_index] {
-                        use crate::ui::game_input::PlayerAction::*;
-                        let a = match in_game_action {
-                            PrimaryAction(dir) => player.get_primary_action(dir),
-                            SecondaryAction(dir) => player.get_secondary_action(dir),
-                            Quick1Action => player.get_quick1_action(),
-                            Quick2Action => player.get_quick2_action(),
-                            PassTurn => Box::new(ActPass),
-                        };
-                        player.set_next_action(Some(a));
-                        RunState::Ticking(false)
-                    } else {
-                        RunState::Ticking(false)
+            RunState::CheckInput => {
+                match read_input(
+                    &mut self.state.unwrap(),
+                    &mut self.objects.unwrap(),
+                    &mut self.hud,
+                    ctx,
+                ) {
+                    PlayerInput::MetaInput(meta_action) => {
+                        trace!("process meta action: {:#?}", meta_action);
+                        handle_meta_actions(
+                            &mut self.state.unwrap(),
+                            &mut self.objects.unwrap(),
+                            ctx,
+                            meta_action,
+                        )
                     }
+                    PlayerInput::PlayInput(in_game_action) => {
+                        trace!("inject in-game action {:#?} to player", in_game_action);
+                        if let Some(ref mut player) =
+                            self.objects.unwrap()[self.state.unwrap().current_player_index]
+                        {
+                            use crate::ui::game_input::PlayerAction::*;
+                            let a = match in_game_action {
+                                PrimaryAction(dir) => player.get_primary_action(dir),
+                                SecondaryAction(dir) => player.get_secondary_action(dir),
+                                Quick1Action => player.get_quick1_action(),
+                                Quick2Action => player.get_quick2_action(),
+                                PassTurn => Box::new(ActPass),
+                            };
+                            player.set_next_action(Some(a));
+                            RunState::Ticking(false)
+                        } else {
+                            RunState::Ticking(false)
+                        }
+                    }
+                    // TODO: how to really handle this?
+                    PlayerInput::Undefined => RunState::CheckInput,
                 }
-                // TODO: how to really handle this?
-                PlayerInput::Undefined => RunState::CheckInput,
-            },
+            }
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(infobox) => RunState::InfoBox(infobox),
                     None => RunState::Ticking(false),
+                }
+            }
+            RunState::ToggleDarkLightMode => {
+                self.is_dark_color_palette = !self.is_dark_color_palette;
+                RunState::Ticking(true)
+            }
+            RunState::NewGame => {
+                // start new game
+                let (new_state, new_objects) = Game::new_game(self.state.unwrap().env);
+                self.reset(new_state, new_objects);
+                RunState::Ticking(true)
+            }
+            RunState::LoadGame => {
+                // load game from file
+                match load_game() {
+                    Ok((state, objects)) => {
+                        self.reset(state, objects);
+                        RunState::Ticking(true)
+                    }
+                    Err(_e) => {
+                        // TODO: Show alert to user... or not?
+                        // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
+                        RunState::MainMenu(main_menu())
+                    }
                 }
             }
         };

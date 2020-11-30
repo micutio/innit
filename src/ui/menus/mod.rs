@@ -1,7 +1,9 @@
 pub mod choose_action_menu;
 pub mod main_menu;
 
-use crate::game::{Game, RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
+use crate::game::{RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
 use crate::ui::rex_assets::RexAssets;
@@ -9,7 +11,12 @@ use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
-    fn process(game: &mut Game, menu: &mut Menu<Self>, item: &Self) -> RunState;
+    fn process(
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        menu: &mut Menu<Self>,
+        item: &Self,
+    ) -> RunState;
 }
 
 /// Non-click-away-able window menu.

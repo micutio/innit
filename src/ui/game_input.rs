@@ -1,11 +1,12 @@
 use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::entity::action::*;
 use crate::entity::control::Controller::Player;
-use crate::game::{Game, WORLD_WIDTH};
+use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
-use crate::ui::gui::HudItem;
+use crate::ui::gui::{Hud, HudItem};
 use rltk::{Point, Rltk, VirtualKeyCode};
 
 #[derive(Clone, Debug)]
@@ -80,7 +81,12 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
     // names//.join(", ") // return names separated by commas
 }
 
-pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
+pub fn read_input(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    hud: &mut Hud,
+    ctx: &mut Rltk,
+) -> PlayerInput {
     // 1) check if key has been pressed
 
     if let Some(key) = ctx.key {
@@ -93,12 +99,11 @@ pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
     // 2) if mouse is over world
     if mouse.x < WORLD_WIDTH {
         // 2a) update hovered objects
-        game.hud
-            .set_names_under_mouse(get_names_under_mouse(&game.objects, mouse));
+        hud.set_names_under_mouse(get_names_under_mouse(objects, mouse));
         // 2b) check whether a mouse button has been pressed for player action
         if clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
-            if let Some(player) = &game.objects[game.state.current_player_index] {
+            if let Some(player) = &objects[state.current_player_index] {
                 if let Some(Player(ctrl)) = &player.control {
                     if let TargetCategory::Any = ctrl.primary_action.get_target_category() {
                         return PlayInput(PrimaryAction(Target::from_pos(&player.pos, &mouse)));
@@ -112,8 +117,7 @@ pub fn read_input(game: &mut Game, ctx: &mut Rltk) -> PlayerInput {
     } else {
         // 3) is mouse is over sidebar
         // 3a) update hovered button
-        if let Some(item) = game
-            .hud
+        if let Some(item) = hud
             .items
             .iter()
             .find(|i| i.layout.point_in_rect(Point::new(mouse.x, mouse.y)))
