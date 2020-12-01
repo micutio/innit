@@ -51,8 +51,8 @@ pub enum RunState {
 }
 
 pub(crate) struct Game {
-    state: Option<GameState>,
-    objects: Option<GameObjects>,
+    state: GameState,
+    objects: GameObjects,
     env: GameEnv,
     run_state: Option<RunState>,
     hud: Hud,
@@ -71,13 +71,13 @@ impl Game {
         }
     }
 
-    pub fn reset(&mut self, state: GameState, objects: GameObjects) {
+    fn reset(&mut self, state: GameState, objects: GameObjects) {
         self.state = Some(state);
         self.objects = Some(objects);
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
-    pub fn new_game(env: GameEnv) -> (GameState, GameObjects) {
+    fn new_game(env: GameEnv) -> (GameState, GameObjects) {
         // create game state holding game-relevant information
         let level = 1;
         let mut state = GameState::new(env, level);
@@ -138,7 +138,7 @@ impl Game {
         (state, objects)
     }
 
-    pub fn toggle_dark_light_mode(&mut self) {
+    fn toggle_dark_light_mode(&mut self) {
         self.is_dark_color_palette = !self.is_dark_color_palette;
     }
 }
