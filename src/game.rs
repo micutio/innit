@@ -57,6 +57,7 @@ pub struct Game {
     run_state: Option<RunState>,
     hud: Hud,
     is_dark_color_palette: bool,
+    rex_assets: RexAssets,
 }
 
 impl Game {
@@ -67,6 +68,7 @@ impl Game {
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(),
             is_dark_color_palette: true,
+            rex_assets: RexAssets::new(),
         }
     }
 
@@ -190,6 +192,7 @@ impl Rltk_GameState for Game {
             // ctx.set_active_console(1);
             // ctx.cls();
             // ctx.set_active_console(0);
+            debug!("rendering everything");
             ctx.cls();
             render_world(
                 &mut self.state,
@@ -214,9 +217,8 @@ impl Rltk_GameState for Game {
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
-                // TODO: Pull this out
-                let rex_assets = RexAssets::new();
-                ctx.render_xp_sprite(&rex_assets.menu, 0, 0);
+                // TODO: The following line crushes fps in the main menu. Find a way to render the background more efficiently!
+                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(option) => {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
