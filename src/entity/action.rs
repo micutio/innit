@@ -10,7 +10,7 @@ use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::entity::ai::{AiForceVirusProduction, AiVirus};
 use crate::entity::control::Controller;
-use crate::entity::control::Controller::{Npc, Player};
+use crate::entity::control::Controller::Npc;
 use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
 use crate::ui::color::{self, Color};

@@ -94,14 +94,14 @@ pub fn read_input(
         return key_to_action(key, ctx.control, ctx.shift);
     }
     let mouse = Position::from_point(ctx.mouse_point());
-    let clicked: bool = ctx.left_click;
+    let is_clicked: bool = ctx.left_click;
 
     // 2) if mouse is over world
     if mouse.x < WORLD_WIDTH {
         // 2a) update hovered objects
         hud.set_names_under_mouse(get_names_under_mouse(objects, mouse));
         // 2b) check whether a mouse button has been pressed for player action
-        if clicked {
+        if is_clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
             if let Some(player) = &objects[state.current_player_index] {
                 if let Some(Player(ctrl)) = &player.control {
@@ -123,11 +123,15 @@ pub fn read_input(
             .find(|i| i.layout.point_in_rect(Point::new(mouse.x, mouse.y)))
         {
             // TODO: Change item appearance!
-            return match item.item_enum {
-                HudItem::PrimaryAction => MetaInput(UiAction::ChoosePrimaryAction),
-                HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
-                HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
-                HudItem::QuickAction2 => MetaInput(UiAction::ChooseQuick2Action),
+            return if is_clicked {
+                match item.item_enum {
+                    HudItem::PrimaryAction => MetaInput(UiAction::ChoosePrimaryAction),
+                    HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
+                    HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
+                    HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
+                }
+            } else {
+                PlayerInput::Undefined
             };
         };
         // 3b) check for button press to activate ui buttons
