@@ -19,16 +19,7 @@ mod util;
 
 use crate::core::game_env::GameEnv;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
-use rltk::{GameState, Rltk};
 use std::env;
-
-struct State {}
-impl GameState for State {
-    fn tick(&mut self, ctx: &mut Rltk) {
-        ctx.cls();
-        ctx.print(1, 1, "Hello Rust World");
-    }
-}
 
 /// For game testing run with
 /// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
@@ -58,8 +49,7 @@ pub fn main() -> rltk::BError {
         // .with_font("fonts/rex_paint_14x14.png", 14, 14)
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png")
         .with_font("fonts/rogueyun_16x16_soft.png", 16, 16)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // hud
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(60.0)

@@ -42,7 +42,6 @@ pub const SIDE_PANEL_HEIGHT: i32 = 60;
 // consoles
 pub const WORLD_CON: usize = 0;
 pub const HUD_CON: usize = 1;
-pub const MENU_CON: usize = 2;
 
 pub const MENU_WIDTH: i32 = 30;
 
@@ -211,11 +210,8 @@ impl Rltk_GameState for Game {
         trace!("run state: {}", new_run_state);
 
         if let RunState::Ticking(render) = new_run_state {
-            // render what's necessary
-            ctx.set_active_console(MENU_CON);
+            ctx.set_active_console(HUD_CON);
             ctx.cls();
-            // work around for not-cleared sparse console
-            ctx.print(0, 0, " ");
 
             if render {
                 ctx.set_active_console(WORLD_CON);
@@ -224,7 +220,6 @@ impl Rltk_GameState for Game {
             }
 
             ctx.set_active_console(HUD_CON);
-            ctx.cls();
             let player = self
                 .objects
                 .extract_by_index(self.state.player_idx)
@@ -236,7 +231,7 @@ impl Rltk_GameState for Game {
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 // TODO: The following line crushes fps in the main menu. Find a way to render the background more efficiently!
-                ctx.set_active_console(HUD_CON);
+                ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx, color_palette) {
@@ -343,6 +338,7 @@ impl Rltk_GameState for Game {
         };
         self.run_state.replace(new_run_state);
 
+        ctx.set_active_console(WORLD_CON);
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
         rltk::render_draw_buffer(ctx).unwrap();
         // debug!("current state: {:#?}", self.run_state);
