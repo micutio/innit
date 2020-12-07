@@ -224,7 +224,7 @@ impl Rltk_GameState for Game {
                 .objects
                 .extract_by_index(self.state.player_idx)
                 .unwrap();
-            render_gui(&mut self.hud, ctx, &color_palette, &player);
+            render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
             self.objects.replace(self.state.player_idx, player);
         }
 

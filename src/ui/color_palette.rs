@@ -25,6 +25,10 @@ pub struct ColorPalette {
     pub magenta: (u8, u8, u8),
     pub yellow: (u8, u8, u8),
     pub player: (u8, u8, u8),
+    pub msg_alert: (u8, u8, u8),
+    pub msg_info: (u8, u8, u8),
+    pub msg_action: (u8, u8, u8),
+    pub msg_story: (u8, u8, u8),
 }
 
 pub const PALETTE_LIGHT: ColorPalette = ColorPalette {
@@ -47,6 +51,10 @@ pub const PALETTE_LIGHT: ColorPalette = ColorPalette {
     magenta: (190, 0, 190),
     yellow: (190, 190, 0),
     player: (100, 100, 100),
+    msg_alert: (255, 100, 100),
+    msg_info: (255, 255, 255),
+    msg_action: (100, 100, 255),
+    msg_story: (100, 180, 255),
 };
 
 pub const PALETTE_DARK: ColorPalette = ColorPalette {
@@ -71,6 +79,10 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     magenta: (180, 0, 220),
     yellow: (150, 150, 0),
     player: (170, 170, 170),
+    msg_alert: (255, 100, 100),
+    msg_info: (255, 255, 255),
+    msg_action: (100, 100, 255),
+    msg_story: (100, 180, 255),
 };
 
 // TODO: Find out what static lifetime is!

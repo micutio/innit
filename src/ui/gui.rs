@@ -1,10 +1,11 @@
+use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::action::Target;
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::util::modulus;
-use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk};
+use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
 /// - `text` for rendering
@@ -88,7 +89,13 @@ impl Hud {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, cp: &ColorPalette, player: &Object) {
+pub fn render_gui(
+    state: &GameState,
+    hud: &mut Hud,
+    _ctx: &mut Rltk,
+    cp: &ColorPalette,
+    player: &Object,
+) {
     let mut draw_batch = DrawBatch::new();
 
     // fill side panel background
@@ -101,7 +108,7 @@ pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, cp: &ColorPalette, player: &Ob
     // draw action header
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 1),
-        "Player Actions",
+        "Actions",
         ColorPair::new(cp.fg_dialog, cp.bg_dialog),
     );
 
@@ -170,6 +177,30 @@ pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, cp: &ColorPalette, player: &Ob
 
     render_dna(_ctx, cp, player, &mut draw_batch);
 
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13),
+        "Inventory",
+        ColorPair::new(cp.fg_dialog_highlight, cp.bg_dialog),
+    );
+    render_inventory(
+        &mut draw_batch,
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 14, SCREEN_WIDTH - 2, 22),
+        cp,
+        player,
+    );
+
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25),
+        "Log",
+        ColorPair::new(cp.fg_dialog_highlight, cp.bg_dialog),
+    );
+    render_log(
+        state,
+        &mut draw_batch,
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 57),
+        cp,
+    );
+
     draw_batch.submit(5000).unwrap();
 }
 
@@ -198,5 +229,72 @@ fn render_dna(
             c,
             ColorPair::new(col, color_palette.bg_dialog),
         );
+    }
+}
+
+fn render_inventory(draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette, player: &Object) {
+    draw_batch.fill_region(
+        layout.clone(),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog_selected),
+        to_cp437(' '),
+    );
+
+    for (idx, obj) in player.inventory.items.iter().enumerate() {
+        if idx as i32 > layout.height() {
+            break;
+        }
+        draw_batch.print_color(
+            Point::new(layout.x1, layout.y1 + idx as i32),
+            format!("{} ", obj.visual.glyph),
+            ColorPair::new(obj.visual.fg_color, cp.bg_dialog),
+        );
+        let name_chars: Vec<char> = obj.visual.name.chars().collect();
+        let name_fitted: String = name_chars[..(layout.width() - 3) as usize]
+            .to_vec()
+            .iter()
+            .collect();
+        draw_batch.print_color(
+            Point::new(layout.x1 + 3, layout.y1 + idx as i32),
+            format!("{}", name_fitted),
+            ColorPair::new(obj.visual.fg_color, cp.bg_dialog),
+        );
+    }
+}
+
+fn render_log(state: &GameState, draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette) {
+    draw_batch.fill_region(
+        layout,
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog_selected),
+        to_cp437(' '),
+    );
+
+    // print game messages, one line at a time
+    let mut y = layout.height();
+    for (ref msg, class) in &mut state.log.iter().rev() {
+        if y < 1 {
+            break;
+        }
+
+        // TODO: Use custom color scheme instead.
+        let color = match class {
+            MsgClass::Alert => cp.msg_alert,
+            MsgClass::Info => cp.msg_info,
+            MsgClass::Action => cp.msg_action,
+            MsgClass::Story => cp.msg_story,
+        };
+
+        let mut text_width = 0;
+        for c in msg.chars() {
+            draw_batch.print_color(
+                Point::new(layout.x1 + text_width, layout.y1 + y),
+                c,
+                ColorPair::new(color, cp.bg_dialog_selected),
+            );
+            text_width += 1;
+            if text_width >= layout.width() {
+                y -= 1;
+                text_width = 0;
+            }
+        }
     }
 }
