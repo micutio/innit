@@ -10,6 +10,7 @@ pub struct ColorPalette {
     pub bg_wall_fov_false: (u8, u8, u8),
     pub bg_ground_fov_true: (u8, u8, u8),
     pub bg_ground_fov_false: (u8, u8, u8),
+    pub bg_bar: (u8, u8, u8),
 
     // foreground colors
     pub fg_dialog: (u8, u8, u8),
@@ -34,6 +35,7 @@ pub const PALETTE_LIGHT: ColorPalette = ColorPalette {
     bg_wall_fov_false: (240, 240, 240),
     bg_ground_fov_true: (250, 160, 180),
     bg_ground_fov_false: (250, 250, 250),
+    bg_bar: (100, 100, 100),
     fg_dialog: (85, 85, 85),
     fg_dialog_border: (89, 198, 217),
     fg_dialog_highlight: (212, 192, 80),
@@ -55,6 +57,7 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     bg_wall_fov_false: (30, 30, 30),
     bg_ground_fov_true: (124, 8, 59),
     bg_ground_fov_false: (20, 20, 20),
+    bg_bar: (100, 100, 100),
 
     fg_dialog: (220, 220, 220),
 

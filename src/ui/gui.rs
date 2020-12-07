@@ -51,30 +51,30 @@ impl Hud {
         let y1 = 0;
         let x2 = x1 + SIDE_PANEL_WIDTH;
         let y2 = SIDE_PANEL_HEIGHT - 1;
-        let button_len = (SIDE_PANEL_WIDTH / 2) - 3;
-        let button_x = SCREEN_WIDTH - (SIDE_PANEL_WIDTH / 2);
+        let button_len = (SIDE_PANEL_WIDTH / 2) - 4;
+        let button_x = x1 + 4;
         Hud {
             layout: Rect::with_exact(x1, y1, x2, y2),
             items: vec![
                 UiItem::new(
                     HudItem::PrimaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 3, button_len, 1),
+                    Rect::with_size(button_x, 2, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::SecondaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 4, button_len, 1),
+                    Rect::with_size(button_x, 3, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick1Action,
                     String::new(),
-                    Rect::with_size(button_x, 5, button_len, 1),
+                    Rect::with_size(button_x, 4, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick2Action,
                     String::new(),
-                    Rect::with_size(button_x, 6, button_len, 1),
+                    Rect::with_size(button_x, 5, button_len, 1),
                 ),
             ],
             names_under_mouse: "".to_string(),
@@ -88,34 +88,43 @@ impl Hud {
 
 // TODO: Keep track of UI elements for mouse detection purposes.
 // TODO: Create gui struct to hold elements, hold parallel to game struct.
-pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, color_palette: &ColorPalette, player: &Object) {
-    // draw buttons
+pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, cp: &ColorPalette, player: &Object) {
     let mut draw_batch = DrawBatch::new();
+
+    // fill side panel background
     draw_batch.fill_region(
         hud.layout,
-        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
         rltk::to_cp437(' '),
     );
 
+    // draw action header
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1, 3),
-        "Primary Action".to_string(),
-        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 1),
+        "Player Actions",
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
+    );
+
+    // draw buttons
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
+        "P ".to_string(),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1, 4),
-        "Secondary Action".to_string(),
-        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 3),
+        "S ".to_string(),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1, 5),
-        "Quick Action 1".to_string(),
-        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 4),
+        "Q1".to_string(),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1, 6),
-        "Quick Action 2".to_string(),
-        ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
+        "Q2".to_string(),
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
     );
 
     for item in &hud.items {
@@ -131,11 +140,35 @@ pub fn render_gui(hud: &mut Hud, _ctx: &mut Rltk, color_palette: &ColorPalette, 
         draw_batch.print_color(
             item.top_left_corner(),
             text,
-            ColorPair::new(color_palette.fg_dialog, color_palette.bg_dialog_selected),
+            ColorPair::new(cp.fg_dialog, cp.bg_dialog_selected),
         );
     }
 
-    render_dna(_ctx, color_palette, player, &mut draw_batch);
+    // draw headers for vertical bars
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - 3, 1),
+        '♥',
+        ColorPair::new(cp.fg_dialog, cp.bg_dialog),
+    );
+    draw_batch.print(Point::new(SCREEN_WIDTH - 2, 1), '√');
+    draw_batch.print(Point::new(SCREEN_WIDTH - 1, 1), '☼');
+
+    draw_batch.bar_vertical(
+        Point::new(SCREEN_WIDTH - 3, 2),
+        10,
+        player.actuators.hp,
+        player.actuators.max_hp,
+        ColorPair::new(cp.magenta, cp.bg_bar),
+    );
+    draw_batch.bar_vertical(
+        Point::new(SCREEN_WIDTH - 2, 2),
+        10,
+        player.processors.energy,
+        player.processors.energy_storage,
+        ColorPair::new(cp.yellow, cp.bg_bar),
+    );
+
+    render_dna(_ctx, cp, player, &mut draw_batch);
 
     draw_batch.submit(5000).unwrap();
 }

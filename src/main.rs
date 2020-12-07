@@ -43,7 +43,7 @@ pub fn main() -> rltk::BError {
     // TODO: Create game environment from presets and command line flags!
 
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
+    let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap() // world
         // .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
         // .with_font("fonts/rex_paint_14x14.png", 14, 14)
@@ -55,7 +55,8 @@ pub fn main() -> rltk::BError {
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
         .build()?;
-    // context.set_active_font(1, true);
+
+    context.set_active_font(1, false);
     let game = game::Game::new(env);
     rltk::main_loop(context, game)
 }
