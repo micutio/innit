@@ -103,7 +103,7 @@ pub fn read_input(
         // 2b) check whether a mouse button has been pressed for player action
         if is_clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
-            if let Some(player) = &objects[state.current_player_index] {
+            if let Some(player) = &objects[state.player_idx] {
                 if let Some(Player(ctrl)) = &player.control {
                     if let TargetCategory::Any = ctrl.primary_action.get_target_category() {
                         return PlayInput(PrimaryAction(Target::from_pos(&player.pos, &mouse)));

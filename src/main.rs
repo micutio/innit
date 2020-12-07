@@ -52,12 +52,14 @@ pub fn main() -> rltk::BError {
     // TODO: Create game environment from presets and command line flags!
 
     use rltk::RltkBuilder;
-    let context = RltkBuilder::new()
+    let context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .unwrap() // world
         // .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
         // .with_font("fonts/rex_paint_14x14.png", 14, 14)
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png")
         .with_font("fonts/rogueyun_16x16_soft.png", 16, 16)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png")
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // hud
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(60.0)

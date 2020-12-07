@@ -54,8 +54,8 @@ pub struct GameState {
     pub turn: u128,
     pub dungeon_level: u32,
     pub gene_library: GeneLibrary,
-    pub current_obj_index: usize,
-    pub current_player_index: usize,
+    pub obj_idx: usize,    // current object index
+    pub player_idx: usize, // current player index
 }
 
 impl GameState {
@@ -74,27 +74,27 @@ impl GameState {
             turn: 0,
             dungeon_level: level,
             gene_library: GeneLibrary::new(),
-            current_obj_index: 0,
-            current_player_index: PLAYER,
+            obj_idx: 0,
+            player_idx: PLAYER,
         }
     }
 
     pub fn is_players_turn(&self) -> bool {
-        self.current_obj_index == self.current_player_index
+        self.obj_idx == self.player_idx
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
         // unpack object to process its next action
-        if let Some(mut active_object) = objects.extract_by_index(self.current_obj_index) {
+        if let Some(mut active_object) = objects.extract_by_index(self.obj_idx) {
             if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
-                self.current_player_index = self.current_obj_index;
+                self.player_idx = self.obj_idx;
                 // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
                 if !active_object.has_next_action()
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
-                    objects.replace(self.current_obj_index, active_object);
+                    objects.replace(self.obj_idx, active_object);
                     return vec![ObjectFeedback::NoAction];
                 }
             }
@@ -106,7 +106,7 @@ impl GameState {
             if active_object.physics.is_visible {
                 trace!(
                     "{} | {}'s turn now @energy {}/{}",
-                    self.current_obj_index,
+                    self.obj_idx,
                     active_object.visual.name,
                     active_object.processors.energy,
                     active_object.processors.energy_storage
@@ -217,22 +217,22 @@ impl GameState {
                 );
 
                 if active_object.is_player() {
-                    objects[self.current_obj_index].replace(active_object);
+                    objects[self.obj_idx].replace(active_object);
                 }
             } else {
-                objects[self.current_obj_index].replace(active_object);
+                objects[self.obj_idx].replace(active_object);
             }
 
             // finally increase object index and turn counter
-            self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
-            if self.current_obj_index == PLAYER {
+            self.obj_idx = (self.obj_idx + 1) % objects.get_num_objects();
+            if self.obj_idx == PLAYER {
                 self.turn += 1;
             }
 
             // return the result of our action
             process_result
         } else {
-            panic!("no object at index {}", self.current_obj_index);
+            panic!("no object at index {}", self.obj_idx);
         }
     }
 

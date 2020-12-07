@@ -3,7 +3,7 @@ pub mod main_menu;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
-use crate::game::{RunState, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{RunState, MENU_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::UiItem;
 use crate::util::modulus;
@@ -52,7 +52,9 @@ impl<T: MenuItem> Menu<T> {
         }
     }
 
-    fn render(&self, _ctx: &mut Rltk, palette: &ColorPalette) {
+    fn render(&self, ctx: &mut Rltk, palette: &ColorPalette) {
+        ctx.set_active_console(MENU_CON);
+        ctx.cls();
         let mut draw_batch = DrawBatch::new();
         draw_batch.fill_region(
             self.layout,

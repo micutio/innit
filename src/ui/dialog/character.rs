@@ -3,7 +3,7 @@ use crate::core::game_state::GameState;
 use crate::ui::dialog::InfoBox;
 
 pub fn character_screen(state: &GameState, objects: &GameObjects) -> InfoBox {
-    if let Some(ref player) = objects[state.current_player_index] {
+    if let Some(ref player) = objects[state.player_idx] {
         let title: String = "Character Information".to_string();
         let lines = vec![
             format!(

@@ -30,7 +30,7 @@ impl MenuItem for ActionItem {
         _menu: &mut Menu<ActionItem>,
         item: &ActionItem,
     ) -> RunState {
-        if let Some(ref mut object) = objects[state.current_player_index] {
+        if let Some(ref mut object) = objects[state.player_idx] {
             let action_opt = object.match_action(&item.id);
 
             if let Some(action) = action_opt {

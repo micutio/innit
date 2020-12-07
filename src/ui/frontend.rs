@@ -199,7 +199,7 @@ pub fn handle_meta_actions(
         }
         UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
         UiAction::ChoosePrimaryAction => {
-            if let Some(ref mut player) = objects[state.current_player_index] {
+            if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(
                     player,
                     &[
@@ -217,7 +217,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseSecondaryAction => {
-            if let Some(ref mut player) = objects[state.current_player_index] {
+            if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(
                     player,
                     &[
@@ -235,7 +235,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseQuick1Action => {
-            if let Some(ref mut player) = objects[state.current_player_index] {
+            if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick1))
             } else {
@@ -243,7 +243,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::ChooseQuick2Action => {
-            if let Some(ref mut player) = objects[state.current_player_index] {
+            if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
                 RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick2))
             } else {

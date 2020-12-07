@@ -21,8 +21,11 @@ use crate::ui::menus::choose_action_menu::ActionItem;
 use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menus::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
+use core::fmt;
 use rltk::{GameState as Rltk_GameState, Rltk};
+use serde::export::Formatter;
 use std::error::Error;
+use std::fmt::Display;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 
@@ -36,6 +39,10 @@ pub const WORLD_HEIGHT: i32 = 60;
 // sidebar
 pub const SIDE_PANEL_WIDTH: i32 = 20;
 pub const SIDE_PANEL_HEIGHT: i32 = 60;
+// consoles
+pub const WORLD_CON: usize = 0;
+pub const HUD_CON: usize = 1;
+pub const MENU_CON: usize = 2;
 
 pub const MENU_WIDTH: i32 = 30;
 
@@ -46,9 +53,24 @@ pub enum RunState {
     LoadGame,
     ChooseActionMenu(Menu<ActionItem>),
     InfoBox(InfoBox),
-    Ticking(bool),
+    Ticking(bool), // flags to render world, hud
     CheckInput,
     ToggleDarkLightMode,
+}
+
+impl Display for RunState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            RunState::MainMenu(_) => write!(f, "MainMenu"),
+            RunState::NewGame => write!(f, "NewGame"),
+            RunState::LoadGame => write!(f, "LoadGame"),
+            RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
+            RunState::InfoBox(_) => write!(f, "InfoBox"),
+            RunState::Ticking(render) => write!(f, "Ticking({})", render),
+            RunState::CheckInput => write!(f, "CheckInput"),
+            RunState::ToggleDarkLightMode => write!(f, "ToggleDarkLightMode"),
+        }
+    }
 }
 
 pub struct Game {
@@ -184,42 +206,40 @@ impl Rltk_GameState for Game {
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
         let mut new_run_state = self.run_state.take().unwrap();
+        let color_palette = ColorPalette::get(self.is_dark_color_palette);
 
-        // render everything
-        if let RunState::Ticking(true) = new_run_state {
-            // let mut start_time = Instant::now();
-            // ensure that the player action from previous turns is consumed
-            // ctx.set_active_console(1);
-            // ctx.cls();
-            // ctx.set_active_console(0);
-            debug!("rendering everything");
+        trace!("run state: {}", new_run_state);
+
+        if let RunState::Ticking(render) = new_run_state {
+            // render what's necessary
+            ctx.set_active_console(MENU_CON);
             ctx.cls();
-            render_world(
-                &mut self.state,
-                &mut self.objects,
-                ctx,
-                ColorPalette::get(self.is_dark_color_palette),
-            );
-            // ctx.set_active_console(1);
+            // work around for not-cleared sparse console
+            ctx.print(0, 0, " ");
+
+            if render {
+                ctx.set_active_console(WORLD_CON);
+                ctx.cls();
+                render_world(&mut self.state, &mut self.objects, ctx, color_palette);
+            }
+
+            ctx.set_active_console(HUD_CON);
+            ctx.cls();
             let player = self
                 .objects
-                .extract_by_index(self.state.current_player_index)
+                .extract_by_index(self.state.player_idx)
                 .unwrap();
-            render_gui(
-                &mut self.hud,
-                ctx,
-                &ColorPalette::get(self.is_dark_color_palette),
-                &player,
-            );
-            self.objects
-                .replace(self.state.current_player_index, player);
+            render_gui(&mut self.hud, ctx, &color_palette, &player);
+            self.objects.replace(self.state.player_idx, player);
         }
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 // TODO: The following line crushes fps in the main menu. Find a way to render the background more efficiently!
+                ctx.set_active_console(HUD_CON);
+                ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
-                match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
+                match instance.display(ctx, color_palette) {
                     Some(option) => {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
                     }
@@ -227,7 +247,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => {
-                match instance.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
+                match instance.display(ctx, color_palette) {
                     Some(option) => {
                         ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
                     }
@@ -271,8 +291,7 @@ impl Rltk_GameState for Game {
                     }
                     PlayerInput::PlayInput(in_game_action) => {
                         trace!("inject in-game action {:#?} to player", in_game_action);
-                        if let Some(ref mut player) = self.objects[self.state.current_player_index]
-                        {
+                        if let Some(ref mut player) = self.objects[self.state.player_idx] {
                             use crate::ui::game_input::PlayerAction::*;
                             let a = match in_game_action {
                                 PrimaryAction(dir) => player.get_primary_action(dir),
