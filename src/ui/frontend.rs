@@ -125,13 +125,13 @@ fn update_visual(
         // inside fov:
         // (true, true) => COLOR_LIGHT_WALL,
         (true, true) => (
-            fwft.lerp(fwff, dist_map[idx] / player_sensing_range as f32),
-            bwft.lerp(bwff, dist_map[idx] / player_sensing_range as f32),
+            fwft.lerp(fwff, dist_map[idx] / (player_sensing_range + 1) as f32),
+            bwft.lerp(bwff, dist_map[idx] / (player_sensing_range + 1) as f32),
         ),
         // (true, false) => COLOR_ground_in_fov,
         (true, false) => (
-            fgft.lerp(fgff, dist_map[idx] / player_sensing_range as f32),
-            bgft.lerp(bgff, dist_map[idx] / player_sensing_range as f32),
+            fgft.lerp(fgff, dist_map[idx] / (player_sensing_range + 1) as f32),
+            bgft.lerp(bgff, dist_map[idx] / (player_sensing_range + 1) as f32),
         ),
     };
 
