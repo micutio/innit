@@ -2,26 +2,19 @@
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
 
-use tcod::colors;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::ai::{AiPassive, AiRandom};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
-use crate::ui::game_frontend::GameFrontend;
+use crate::ui::color;
+use crate::ui::color::Color;
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
-    fn make_world(
-        &mut self,
-        state: &mut GameState,
-        frontend: &mut GameFrontend,
-        objects: &mut GameObjects,
-        level: u32,
-    );
+    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32);
 
     fn get_player_start_pos(&self) -> (i32, i32);
 }
@@ -38,7 +31,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", '\u{fa}', colors::WHITE)
+            .visualize("empty tile", '·', Color::new(255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
             .control(Controller::Npc(Box::new(AiPassive::new())))
@@ -48,7 +41,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("wall tile", '\t', colors::WHITE)
+            .visualize("wall tile", '◘', Color::new(255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
             .control(Controller::Npc(Box::new(AiPassive::new())))
@@ -71,7 +64,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("virus", 'v', colors::DESATURATED_GREEN)
+            .visualize("virus", 'v', Color::from(color::VIRUS))
             .physical(true, false, false)
             .genome(
                 0.75,
@@ -83,7 +76,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("bacteria", 'b', colors::DARKER_GREEN)
+            .visualize("bacteria", 'b', Color::from(color::BACTERIA))
             .physical(true, false, false)
             .genome(
                 0.9,

@@ -1,5 +1,3 @@
-use tcod::colors::Color;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, Messages, MsgClass};
 use crate::core::position::Position;
@@ -8,7 +6,7 @@ use crate::entity::action::*;
 use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
-
+use crate::ui::color::Color;
 use std::cmp::min;
 use std::fmt;
 
@@ -45,20 +43,18 @@ pub struct Object {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Visual {
     pub name: String,
-    pub character: char,
-    pub color: Color,
+    pub glyph: char,
+    pub fg_color: Color,
+    pub bg_color: Color,
 }
 
 impl Visual {
     pub fn new() -> Self {
         Visual {
             name: "unknown".into(),
-            character: '_',
-            color: Color {
-                r: 255,
-                g: 255,
-                b: 255,
-            },
+            glyph: '_',
+            fg_color: Color::new(255, 255, 255),
+            bg_color: Color::new(0, 0, 0),
         }
     }
 }
@@ -68,6 +64,7 @@ pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,
     pub is_always_visible: bool,
+    pub is_visible: bool,
 }
 
 impl Physics {
@@ -76,6 +73,7 @@ impl Physics {
             is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
+            is_visible: false,
         }
     }
 }
@@ -112,10 +110,10 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, color: Color) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: Color) -> Object {
         self.visual.name = name.into();
-        self.visual.character = character;
-        self.visual.color = color;
+        self.visual.glyph = character;
+        self.visual.fg_color = fg_color;
         self
     }
 
@@ -351,13 +349,14 @@ impl Object {
     }
 
     // TODO: Take plasmids into account!
-    pub fn get_all_actions(&self) -> Vec<&Box<dyn Action>> {
+    pub fn match_action(&self, id: &str) -> Option<Box<dyn Action>> {
         self.actuators
             .actions
             .iter()
             .chain(self.processors.actions.iter())
             .chain(self.sensors.actions.iter())
-            .collect()
+            .find(|a| a.get_identifier().eq(id))
+            .cloned()
     }
 
     pub fn add_to_inventory(&mut self, state: &mut GameState, o: Object) {
@@ -401,7 +400,7 @@ impl fmt::Display for Object {
             f,
             "{} [{}] at ({},{}), alive: {}, energy: {}",
             self.visual.name,
-            self.visual.character,
+            self.visual.glyph,
             self.pos.x,
             self.pos.y,
             self.alive,

@@ -8,6 +8,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::game_rng::GameRng;
+use rltk::{Algorithm2D, BaseMap, Point};
 
 /// The game object struct contains all game objects, including
 /// * player character
@@ -102,7 +103,7 @@ impl GameObjects {
         self.obj_vec.push(Some(object));
     }
 
-    pub fn extract(&mut self, index: usize) -> Option<Object> {
+    pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
         match self.obj_vec.get_mut(index) {
             Some(item) => match item.take() {
                 Some(object) => {
@@ -118,40 +119,40 @@ impl GameObjects {
         }
     }
 
-    pub fn extract_any_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+    pub fn extract_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         if let Some(i) = self
             .obj_vec
             .iter()
             .flatten()
             .position(|o| o.pos.is_equal(pos))
         {
-            Some((i, self.extract(i)))
+            Some((i, self.extract_by_index(i)))
         } else {
             None
         }
     }
 
-    pub fn extract_tile_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+    pub fn extract_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         if let Some(i) = self
             .obj_vec
             .iter()
             .flatten()
             .position(|o| o.pos.is_equal(pos) && o.tile.is_some())
         {
-            Some((i, self.extract(i)))
+            Some((i, self.extract_by_index(i)))
         } else {
             None
         }
     }
 
-    pub fn extract_entity_w_index(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+    pub fn extract_entity_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         if let Some(i) = self
             .obj_vec
             .iter()
             .flatten()
             .position(|o| o.pos.is_equal(pos) && o.tile.is_none())
         {
-            Some((i, self.extract(i)))
+            Some((i, self.extract_by_index(i)))
         } else {
             None
         }
@@ -198,6 +199,10 @@ impl GameObjects {
         &self.obj_vec
     }
 
+    pub fn get_vector_mut(&mut self) -> &mut Vec<Option<Object>> {
+        &mut self.obj_vec
+    }
+
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles(&self) -> &[Option<Object>] {
         let start: usize = 1;
@@ -231,5 +236,45 @@ impl IndexMut<usize> for GameObjects {
             Some(obj_option) => obj_option,
             None => panic!("[GameObjects::index] Error: invalid index {}", i),
         }
+    }
+}
+
+impl BaseMap for GameObjects {
+    fn is_opaque(&self, idx: usize) -> bool {
+        if idx > 0 && idx < self.obj_vec.len() {
+            if let Some(o) = &self.obj_vec[idx] {
+                o.physics.is_blocking
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
+        let w = WORLD_WIDTH as usize;
+        let p1 = Point::new(idx1 % w, idx1 / w);
+        let p2 = Point::new(idx2 % w, idx2 / w);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+    }
+}
+
+impl Algorithm2D for GameObjects {
+    /// Convert a Point (x/y) to an array index.
+    fn point2d_to_index(&self, pt: Point) -> usize {
+        (pt.y as usize * (WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)
+    }
+
+    /// Convert an array index to a point. Defaults to an index based on an array
+    fn index_to_point2d(&self, idx: usize) -> Point {
+        Point::new(
+            (idx - 1) as i32 % WORLD_WIDTH,
+            (idx - 1) as i32 / WORLD_WIDTH,
+        )
+    }
+
+    fn dimensions(&self) -> Point {
+        Point::new(WORLD_WIDTH, WORLD_HEIGHT)
     }
 }

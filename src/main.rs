@@ -7,8 +7,8 @@ extern crate rand_isaac;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate rltk;
 extern crate serde_json;
-extern crate tcod;
 
 mod core;
 mod entity;
@@ -17,19 +17,14 @@ mod test;
 mod ui;
 mod util;
 
-use std::env;
-
 use crate::core::game_env::GameEnv;
-use crate::ui::game_frontend::{main_menu, GameFrontend};
-
-pub fn launch_game(env: GameEnv) {
-    main_menu(env, &mut GameFrontend::new());
-}
+use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use std::env;
 
 /// For game testing run with
 /// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 /// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
-pub fn main() {
+pub fn main() -> rltk::BError {
     pretty_env_logger::init();
     let mut env: GameEnv = GameEnv::new();
 
@@ -47,5 +42,21 @@ pub fn main() {
 
     // TODO: Create game environment from presets and command line flags!
 
-    launch_game(env);
+    use rltk::RltkBuilder;
+    let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .unwrap() // world
+        // .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+        // .with_font("fonts/rex_paint_14x14.png", 14, 14)
+        // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png")
+        .with_font("fonts/rogueyun_16x16_soft.png", 16, 16)
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
+        .with_title("Innit alpha v0.0.4")
+        .with_vsync(false)
+        .with_fps_cap(60.0)
+        // .with_automatic_console_resize(true)
+        .build()?;
+
+    context.set_active_font(1, false);
+    let game = game::Game::new(env);
+    rltk::main_loop(context, game)
 }

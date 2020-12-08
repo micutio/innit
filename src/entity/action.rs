@@ -6,14 +6,14 @@
 use std::fmt::Debug;
 
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MsgClass, ObjectFeedback};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::entity::ai::{AiForceVirusProduction, AiVirus};
 use crate::entity::control::Controller;
-use crate::entity::control::Controller::{Npc, Player};
+use crate::entity::control::Controller::Npc;
 use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
-use tcod::colors;
+use crate::ui::color::{self, Color};
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
@@ -182,18 +182,17 @@ impl Action for ActMove {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
+        if owner.physics.is_visible {
+            debug!(
+                "target position {:#?}, blocked: {}",
+                target_pos,
+                &objects.is_pos_blocked(&target_pos)
+            );
+        }
         if !&objects.is_pos_blocked(&target_pos) {
             owner.pos.set(target_pos.x, target_pos.y);
-            if let Some(Player(_)) = owner.control {
-                ActionResult::Success {
-                    callback: ObjectFeedback::UpdatePlayerFOV,
-                }
-            } else {
-                ActionResult::Success {
-                    callback: ObjectFeedback::CheckEnterPlayerFOV {
-                        origin: owner.pos.clone(),
-                    },
-                }
+            ActionResult::Success {
+                callback: ObjectFeedback::Render,
             }
         } else {
             info!("object {} blocked!", owner.visual.name);
@@ -315,9 +314,7 @@ impl Action for ActAttack {
         if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {
-                callback: ObjectFeedback::CheckEnterPlayerFOV {
-                    origin: owner.pos.clone(),
-                },
+                callback: ObjectFeedback::NoFeedback,
             }
         } else {
             ActionResult::Failure
@@ -383,12 +380,12 @@ impl Action for ActInjectRnaVirus {
     // virus dna
     fn perform(
         &self,
-        _state: &mut GameState,
+        state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
@@ -426,15 +423,17 @@ impl Action for ActInjectRnaVirus {
             let target_name = target.visual.name.clone();
             objects.replace(index, target);
             if has_infected {
-                return ActionResult::Success {
-                    callback: ObjectFeedback::Message {
-                        msg: format!(
+                if owner.physics.is_visible {
+                    state.log.add(
+                        format!(
                             "{} injected a virus into {}",
                             owner.visual.name, target_name
                         ),
-                        class: MsgClass::Alert,
-                        origin: owner.pos.clone(),
-                    },
+                        MsgClass::Alert,
+                    );
+                }
+                return ActionResult::Success {
+                    callback: ObjectFeedback::NoFeedback,
                 };
             }
             ActionResult::Success {
@@ -504,8 +503,8 @@ impl Action for ActInjectRetrovirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        let feedback =
-            if let Some((index, Some(mut target))) = objects.extract_entity_w_index(&target_pos) {
+        let feedback: ObjectFeedback =
+            if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
                 // check whether the virus can attach to the object and whether the object is an actual
                 // cell and not a plasmid or another virus
                 // if yes, replace the control and force the cell to produce viruses
@@ -531,20 +530,24 @@ impl Action for ActInjectRetrovirus {
                     // Funny, because it's still debated as to whether viruses are alive to begin.
                     // TODO: Handle other death effects, such as change of blocking, symbol and color.
 
-                    ObjectFeedback::Message {
-                        msg: format!("A virus has infected {}!", target.visual.name),
-                        class: MsgClass::Alert,
-                        origin: owner.pos.clone(),
+                    if owner.physics.is_visible {
+                        state.log.add(
+                            format!("A virus has infected {}!", target.visual.name),
+                            MsgClass::Alert,
+                        )
                     }
+                    ObjectFeedback::NoFeedback
                 } else {
-                    ObjectFeedback::Message {
-                        msg: format!(
-                            "A virus has tried to infect {} but cannot find matching receptor!",
-                            target.visual.name
-                        ),
-                        class: MsgClass::Info,
-                        origin: owner.pos.clone(),
+                    if owner.physics.is_visible {
+                        state.log.add(
+                            format!(
+                                "A virus has tried to infect {} but cannot find matching receptor!",
+                                target.visual.name
+                            ),
+                            MsgClass::Alert,
+                        )
                     }
+                    ObjectFeedback::NoFeedback
                 };
                 objects.replace(index, target);
                 msg_feedback
@@ -615,7 +618,7 @@ impl Action for ActProduceVirion {
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
                         .living(true)
-                        .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                        .visualize("virus", 'v', Color::from(color::VIRUS))
                         .physical(true, false, false)
                         .genome(0.75, state.gene_library.decode_dna(DnaType::Rna, dna))
                         .control(Controller::Npc(Box::new(AiVirus {}))),
@@ -644,7 +647,7 @@ impl Action for ActProduceVirion {
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
                                 .living(true)
-                                .visualize("virus", 'v', colors::DESATURATED_GREEN)
+                                .visualize("virus", 'v', Color::from(color::VIRUS))
                                 .physical(true, false, false)
                                 .genome(
                                     0.75,

@@ -7,7 +7,7 @@ use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
-use crate::ui::game_frontend::AnimationType;
+use crate::ui::animation::AnimationType;
 use crate::util::game_rng::GameRng;
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -37,20 +37,11 @@ impl MessageLog for Vec<(String, MsgClass)> {
 pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
-    CheckEnterPlayerFOV {
-        origin: Position,
-    }, // check whether the object has entered the player FOV
-    Message {
-        msg: String,
-        class: MsgClass,
-        origin: Position,
-    }, // display a message, if position of origin is visible to the player
+    Render,
     Animate {
         anim_type: AnimationType,
         origin: Position,
     }, // play given animation to visualise action
-    UpdatePlayerFOV, // action completed, requires updating FOV
-    ReRender,   // trigger full re-render of the game world
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
@@ -63,8 +54,8 @@ pub struct GameState {
     pub turn: u128,
     pub dungeon_level: u32,
     pub gene_library: GeneLibrary,
-    pub current_obj_index: usize,
-    pub current_player_index: usize,
+    pub obj_idx: usize,    // current object index
+    pub player_idx: usize, // current player index
 }
 
 impl GameState {
@@ -83,28 +74,28 @@ impl GameState {
             turn: 0,
             dungeon_level: level,
             gene_library: GeneLibrary::new(),
-            current_obj_index: 0,
-            current_player_index: PLAYER,
+            obj_idx: 0,
+            player_idx: PLAYER,
         }
     }
 
     pub fn is_players_turn(&self) -> bool {
-        self.current_obj_index == self.current_player_index
+        self.obj_idx == self.player_idx
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
         // unpack object to process its next action
-        if let Some(mut active_object) = objects.extract(self.current_obj_index) {
+        if let Some(mut active_object) = objects.extract_by_index(self.obj_idx) {
             if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
-                self.current_player_index = self.current_obj_index;
+                self.player_idx = self.obj_idx;
                 // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
                 if !active_object.has_next_action()
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
-                    objects.replace(self.current_obj_index, active_object);
-                    return vec![];
+                    objects.replace(self.obj_idx, active_object);
+                    return vec![ObjectFeedback::NoAction];
                 }
             }
 
@@ -112,13 +103,15 @@ impl GameState {
             // 1. turn preparation
             // 2. turn action
             // 3. turn conclusion
-            trace!(
-                "{} | {}'s turn now @energy {}/{}",
-                self.current_obj_index,
-                active_object.visual.name,
-                active_object.processors.energy,
-                active_object.processors.energy_storage
-            );
+            if active_object.physics.is_visible {
+                trace!(
+                    "{} | {}'s turn now @energy {}/{}",
+                    self.obj_idx,
+                    active_object.visual.name,
+                    active_object.processors.energy,
+                    active_object.processors.energy_storage
+                );
+            }
 
             // TURN PREPARATION ///////////////////////////////////////////////////////////////////
             // Innit doesn't have any action preparations as of yet.
@@ -128,16 +121,25 @@ impl GameState {
                 // If not enough energy available try to metabolise.
                 if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy
+                    if active_object.physics.is_visible {
+                        debug!("replenishing");
+                    }
                     active_object.metabolize();
-                    vec![ObjectFeedback::NoFeedback]
+                    vec![]
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
+                    if active_object.physics.is_visible {
+                        debug!("next action: {}", next_action.get_identifier());
+                    }
                     active_object.processors.energy -= next_action.get_energy_cost();
                     self.process_action(objects, &mut active_object, next_action)
                 } else {
                     panic!("How can an object 'has_next_action' but NOT have an action?");
                     // ObjectProcResult::NoFeedback
                 };
+            if !active_object.physics.is_visible {
+                process_result.clear();
+            }
 
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
             // Apply recurring effects so that the player can factor this into the next action.
@@ -208,30 +210,29 @@ impl GameState {
             }
 
             // return object back to objects vector, if still alive
-            if !active_object.alive {
-                process_result.push(ObjectFeedback::Message {
-                    msg: format!("{} died!", active_object.visual.name),
-                    class: MsgClass::Alert,
-                    origin: active_object.pos.clone(),
-                });
+            if !active_object.alive && active_object.physics.is_visible {
+                self.log.add(
+                    format!("{} died!", active_object.visual.name),
+                    MsgClass::Alert,
+                );
 
                 if active_object.is_player() {
-                    objects[self.current_obj_index].replace(active_object);
+                    objects[self.obj_idx].replace(active_object);
                 }
             } else {
-                objects[self.current_obj_index].replace(active_object);
+                objects[self.obj_idx].replace(active_object);
             }
 
             // finally increase object index and turn counter
-            self.current_obj_index = (self.current_obj_index + 1) % objects.get_num_objects();
-            if self.current_obj_index == PLAYER {
+            self.obj_idx = (self.obj_idx + 1) % objects.get_num_objects();
+            if self.obj_idx == PLAYER {
                 self.turn += 1;
             }
 
             // return the result of our action
             process_result
         } else {
-            panic!("no object at index {}", self.current_obj_index);
+            panic!("no object at index {}", self.obj_idx);
         }
     }
 
@@ -244,7 +245,10 @@ impl GameState {
     ) -> Vec<ObjectFeedback> {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => vec![callback],
+            ActionResult::Success { callback } => match callback {
+                ObjectFeedback::NoFeedback => vec![],
+                _ => vec![callback],
+            },
             ActionResult::Failure => vec![ObjectFeedback::NoAction], // how to handle fails?
             ActionResult::Consequence {
                 callback,
