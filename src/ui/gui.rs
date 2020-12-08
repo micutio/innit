@@ -271,11 +271,10 @@ fn render_log(state: &GameState, draw_batch: &mut DrawBatch, layout: Rect, cp: &
     // print game messages, one line at a time
     let mut y = layout.height();
     for (ref msg, class) in &mut state.log.iter().rev() {
-        if y < 1 {
+        if y < 0 {
             break;
         }
 
-        // TODO: Use custom color scheme instead.
         let color = match class {
             MsgClass::Alert => cp.msg_alert,
             MsgClass::Info => cp.msg_info,
@@ -283,18 +282,38 @@ fn render_log(state: &GameState, draw_batch: &mut DrawBatch, layout: Rect, cp: &
             MsgClass::Story => cp.msg_story,
         };
 
-        let mut text_width = 0;
-        for c in msg.chars() {
+        let msg_lines = format_message(msg, layout.width());
+        let msg_start_y = layout.y1 + y + 1 - msg_lines.len() as i32;
+        for (idx, line) in msg_lines.iter().enumerate() {
             draw_batch.print_color(
-                Point::new(layout.x1 + text_width, layout.y1 + y),
-                c,
+                Point::new(layout.x1, msg_start_y + idx as i32),
+                line,
                 ColorPair::new(color, cp.bg_dialog_selected),
             );
-            text_width += 1;
-            if text_width >= layout.width() {
-                y -= 1;
-                text_width = 0;
-            }
+        }
+
+        y -= msg_lines.len() as i32;
+    }
+}
+
+fn format_message(text: &str, line_width: i32) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    let mut current_line: Vec<&str> = Vec::new();
+    let mut current_width = 0;
+    for word in text.split(' ') {
+        current_width += word.len() + 1;
+        if current_width <= line_width as usize + 1 {
+            current_line.push(word);
+        } else {
+            lines.push(current_line.join(" "));
+            current_line.clear();
+            current_line.push(word);
+            current_width = word.len() + 1;
         }
     }
+
+    if !current_line.is_empty() {
+        lines.push(current_line.join(" "));
+    }
+    lines
 }
