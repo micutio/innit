@@ -60,22 +60,22 @@ impl Hud {
                 UiItem::new(
                     HudItem::PrimaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 3, button_len, 0),
+                    Rect::with_size(button_x, 3, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::SecondaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 4, button_len, 0),
+                    Rect::with_size(button_x, 4, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick1Action,
                     String::new(),
-                    Rect::with_size(button_x, 5, button_len, 0),
+                    Rect::with_size(button_x, 5, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick2Action,
                     String::new(),
-                    Rect::with_size(button_x, 6, button_len, 0),
+                    Rect::with_size(button_x, 6, button_len, 1),
                 ),
             ],
             names_under_mouse: "".to_string(),
@@ -201,7 +201,7 @@ pub fn render_gui(
     render_log(
         state,
         &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 59),
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 58),
         cp,
     );
 
