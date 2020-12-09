@@ -58,18 +58,15 @@ impl<T: MenuItem> Menu<T> {
         let mut draw_batch = DrawBatch::new();
         draw_batch.fill_region(
             self.layout,
-            ColorPair::new(palette.fg_dialog, palette.bg_dialog),
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
             to_cp437(' '),
         );
-        draw_batch.draw_box(
-            self.layout,
-            ColorPair::new(palette.fg_dialog, palette.bg_dialog),
-        );
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(palette.fg_hud, palette.bg_hud));
         for (index, item) in self.items.iter().enumerate() {
             let color = if index == self.selection {
-                ColorPair::new(palette.fg_dialog, palette.bg_dialog_selected)
+                ColorPair::new(palette.fg_hud, palette.bg_hud_selected)
             } else {
-                ColorPair::new(palette.fg_dialog, palette.bg_dialog)
+                ColorPair::new(palette.fg_hud, palette.bg_hud)
             };
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }

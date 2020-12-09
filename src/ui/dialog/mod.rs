@@ -39,33 +39,33 @@ impl InfoBox {
         // draw box
         draw_batch.draw_box(
             self.layout,
-            ColorPair::new(palette.fg_dialog_border, palette.bg_dialog),
+            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
         );
         // draw title
         let title_pos = Point::new(self.layout.x1 + 3, self.layout.y1);
         draw_batch.print_color(
             title_pos,
             &self.title,
-            ColorPair::new(palette.fg_dialog, palette.bg_dialog),
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
         );
         let title_open = Point::new(self.layout.x1 + 2, self.layout.y1);
         draw_batch.print_color(
             title_open,
             rltk::to_cp437('/'),
-            ColorPair::new(palette.fg_dialog_border, palette.bg_dialog),
+            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
         );
         let title_close = Point::new(self.layout.x1 + 2 + self.title.len() as i32, self.layout.y1);
         draw_batch.print_color(
             title_close,
             rltk::to_cp437('/'),
-            ColorPair::new(palette.fg_dialog_border, palette.bg_dialog),
+            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
         );
 
         for (index, line) in self.lines.iter().enumerate() {
             draw_batch.print_color(
                 Point::new(self.layout.x1 + 1, self.layout.y1 + 1 + index as i32),
                 line,
-                ColorPair::new(palette.fg_dialog, palette.bg_dialog),
+                ColorPair::new(palette.fg_hud, palette.bg_hud),
             );
         }
 

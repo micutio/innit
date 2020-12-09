@@ -43,7 +43,7 @@ pub const SIDE_PANEL_HEIGHT: i32 = 60;
 pub const WORLD_CON: usize = 0;
 pub const HUD_CON: usize = 1;
 
-pub const MENU_WIDTH: i32 = 30;
+pub const MENU_WIDTH: i32 = 20;
 
 #[derive(Debug)]
 pub enum RunState {
@@ -234,6 +234,13 @@ impl Rltk_GameState for Game {
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                ctx.print_color_centered_at(
+                    SCREEN_WIDTH / 2,
+                    SCREEN_HEIGHT - 2,
+                    color_palette.yellow,
+                    color_palette.bg_hud,
+                    "by Michael Wagner",
+                );
                 match instance.display(ctx, color_palette) {
                     Some(option) => {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
