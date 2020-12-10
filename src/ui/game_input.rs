@@ -16,7 +16,6 @@ pub enum PlayerInput {
     Undefined,
 }
 
-// TODO: Add `SetPrimaryAction`, `SetSecondaryAction`, `SetQuickAction`
 #[derive(Clone, Debug)]
 pub enum UiAction {
     ExitGameLoop,
@@ -122,7 +121,6 @@ pub fn read_input(
             .iter()
             .find(|i| i.layout.point_in_rect(Point::new(mouse.x, mouse.y)))
         {
-            // TODO: Change item appearance!
             return if is_clicked {
                 match item.item_enum {
                     HudItem::PrimaryAction => MetaInput(UiAction::ChoosePrimaryAction),

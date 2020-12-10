@@ -87,8 +87,6 @@ impl Hud {
     }
 }
 
-// TODO: Keep track of UI elements for mouse detection purposes.
-// TODO: Create gui struct to hold elements, hold parallel to game struct.
 pub fn render_gui(
     state: &GameState,
     hud: &mut Hud,

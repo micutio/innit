@@ -1,4 +1,3 @@
-// TODO: Read constants from file.
 // TODO: Better readable colors between dark and light scheme
 
 pub struct ColorPalette {

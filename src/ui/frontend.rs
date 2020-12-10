@@ -29,7 +29,7 @@ pub fn render_world(
         .iter()
         .flatten()
         .filter(|o| {
-            // FIXME: there must be a better way than using `and_then`.
+            // Is there a better way than using `and_then`?
             o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
@@ -67,7 +67,6 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
-            // TODO: Does this need to be enabled?
             update_visual(
                 object,
                 color_palette,
@@ -94,7 +93,6 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
-// TODO: This can be moved into a non-frontend module.
 fn update_visual(
     object: &mut Object,
     coloring: &ColorPalette,
@@ -177,14 +175,12 @@ pub fn process_visual_feedback(
     }
 }
 
-// TODO: Move this somewhere more sensible.
 pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
     _ctx: &mut Rltk,
     action: UiAction,
 ) -> RunState {
-    // TODO: Screens for key mapping, primary and secondary action selection, dna operations.
     debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
@@ -251,8 +247,6 @@ pub fn handle_meta_actions(
             }
         }
     }
-    // re_render(state, frontend, objects, "");
-    // false
 }
 
 fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<String> {

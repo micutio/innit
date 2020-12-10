@@ -29,7 +29,7 @@ fn test_random_ai() {
         panic!();
     }
 
-    // // TODO: Set up monsters
+    // Set up monsters
     let virus_north = new_monster(&mut state, Monster::Virus, p_x, p_y - 1, 0);
 
     let virus_east = new_monster(&mut state, Monster::Virus, p_x + 1, p_y, 0);

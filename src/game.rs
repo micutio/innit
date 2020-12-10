@@ -230,7 +230,6 @@ impl Rltk_GameState for Game {
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
-                // TODO: The following line crushes fps in the main menu. Find a way to render the background more efficiently!
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
@@ -308,7 +307,6 @@ impl Rltk_GameState for Game {
                             RunState::Ticking(false)
                         }
                     }
-                    // TODO: how to really handle this?
                     PlayerInput::Undefined => RunState::CheckInput,
                 }
             }
@@ -336,7 +334,7 @@ impl Rltk_GameState for Game {
                         RunState::Ticking(true)
                     }
                     Err(_e) => {
-                        // TODO: Show alert to user... or not?
+                        // TODO: Show alert to user... or not? Maybe have inactive buttons.
                         // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
                         RunState::MainMenu(main_menu())
                     }
