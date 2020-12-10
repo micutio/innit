@@ -1,5 +1,5 @@
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectFeedback};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::action::TargetCategory;
@@ -204,10 +204,18 @@ pub fn handle_meta_actions(
                         TargetCategory::BlockingObject,
                     ],
                 );
-                RunState::ChooseActionMenu(choose_action_menu(
-                    action_items,
-                    ActionCategory::Primary,
-                ))
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Primary,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
             } else {
                 RunState::Ticking(false)
             }
@@ -222,10 +230,18 @@ pub fn handle_meta_actions(
                         TargetCategory::BlockingObject,
                     ],
                 );
-                RunState::ChooseActionMenu(choose_action_menu(
-                    action_items,
-                    ActionCategory::Secondary,
-                ))
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Secondary,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
             } else {
                 RunState::Ticking(false)
             }
@@ -233,7 +249,18 @@ pub fn handle_meta_actions(
         UiAction::ChooseQuick1Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
-                RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick1))
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Quick1,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
             } else {
                 RunState::Ticking(false)
             }
@@ -241,7 +268,18 @@ pub fn handle_meta_actions(
         UiAction::ChooseQuick2Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[TargetCategory::None]);
-                RunState::ChooseActionMenu(choose_action_menu(action_items, ActionCategory::Quick2))
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Quick2,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
             } else {
                 RunState::Ticking(false)
             }

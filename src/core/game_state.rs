@@ -100,7 +100,7 @@ impl GameState {
             // 2. turn action
             // 3. turn conclusion
             if active_object.physics.is_visible {
-                debug!(
+                trace!(
                     "{} | {}'s turn now @energy {}/{}",
                     self.obj_idx,
                     active_object.visual.name,

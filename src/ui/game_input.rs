@@ -87,10 +87,14 @@ pub fn read_input(
     ctx: &mut Rltk,
 ) -> PlayerInput {
     // 1) check if key has been pressed
-
+    let ctrl = ctx.control;
+    let shift = ctx.shift;
     if let Some(key) = ctx.key {
-        debug!("key: {:#?}", ctx.key);
-        return key_to_action(key, ctx.control, ctx.shift);
+        if ctrl || shift {
+            debug!("2key: {:#?}, CTRL {:#?}, SHIFT {:#?}", ctx.key, ctrl, shift);
+        }
+
+        return key_to_action(key, ctrl, shift);
     }
     let mouse = Position::from(ctx.mouse_point());
     let is_clicked: bool = ctx.left_click;
