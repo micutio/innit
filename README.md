@@ -1,8 +1,5 @@
 # Innit
 
-![innit title image](screenshots/innit_main_alpha-0.0.4.png)
-![innit ui sample](screenshots/ui/ui-0.0.4.png)
-
 A rogue-like game that puts you inside a living organism and lets you fight its microbial invaders.
 
 ## About
@@ -33,7 +30,12 @@ A long-term goal, would be to create an educational experience as well. Many of 
 
 Innit is still at the outset of development. The basic game engine is, apart from a bit of polish here and there, functional.
 
-### Running from source
+## Screenshots
+
+![innit title image](screenshots/innit_main_alpha-0.0.4.png)
+![innit ui sample](screenshots/ui/ui-0.0.4.png)
+
+### Running the game from source
 
 #### Linux
 Run the following commands in the command line.
