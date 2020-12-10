@@ -93,7 +93,7 @@ pub fn read_input(
         debug!("key: {:#?}", ctx.key);
         return key_to_action(key, ctx.control, ctx.shift);
     }
-    let mouse = Position::from_point(ctx.mouse_point());
+    let mouse = Position::from(ctx.mouse_point());
     let is_clicked: bool = ctx.left_click;
 
     // 2) if mouse is over world

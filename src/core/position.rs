@@ -1,23 +1,26 @@
 use rltk::Point;
 
-// TODO: Consider implementing From<Point>.
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone, Copy)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
 }
 
+impl Into<Point> for Position {
+    fn into(self) -> Point {
+        Point::new(self.x, self.y)
+    }
+}
+
+impl From<Point> for Position {
+    fn from(p: Point) -> Self {
+        Position::new(p.x, p.y)
+    }
+}
+
 impl Position {
     pub fn new(x: i32, y: i32) -> Self {
         Position { x, y }
-    }
-
-    pub fn from_point(p: Point) -> Self {
-        Position::new(p.x, p.y)
-    }
-
-    pub fn to_point(&self) -> Point {
-        Point::new(self.x, self.y)
     }
 
     pub fn is_equal(&self, other: &Position) -> bool {

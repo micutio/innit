@@ -79,12 +79,12 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
     }
 
     for (pos, range) in player_positions {
-        let mut visible_pos = field_of_view(pos.to_point(), range, objects);
+        let mut visible_pos = field_of_view(pos.into(), range, objects);
         visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
 
         for object_opt in objects.get_vector_mut() {
             if let Some(object) = object_opt {
-                if visible_pos.contains(&object.pos.to_point()) {
+                if visible_pos.contains(&object.pos.into()) {
                     object.physics.is_visible = true;
                     update_visual(object, color_palette, range, pos, &mut dist_map);
                 }
