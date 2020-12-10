@@ -1,6 +1,7 @@
 # Innit
 
-![innit title image](screenshots/innit_main_alpha.png)
+![innit title image](screenshots/innit_main_alpha-0.0.4.png)
+![innit ui sample](screenshots/ui/ui-0.0.4.png)
 
 A rogue-like game that puts you inside a living organism and lets you fight its microbial invaders.
 
