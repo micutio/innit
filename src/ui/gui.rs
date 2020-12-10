@@ -52,30 +52,30 @@ impl Hud {
         let y1 = 0;
         let x2 = x1 + SIDE_PANEL_WIDTH;
         let y2 = SIDE_PANEL_HEIGHT - 1;
-        let button_len = (SIDE_PANEL_WIDTH / 2) - 4;
-        let button_x = x1 + 4;
+        let button_len = SIDE_PANEL_WIDTH / 2;
+        let button_x = x1 + 3;
         Hud {
             layout: Rect::with_exact(x1, y1, x2, y2),
             items: vec![
                 UiItem::new(
                     HudItem::PrimaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 3, button_len, 1),
+                    Rect::with_size(button_x, 6, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::SecondaryAction,
                     String::new(),
-                    Rect::with_size(button_x, 4, button_len, 1),
+                    Rect::with_size(button_x, 7, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick1Action,
                     String::new(),
-                    Rect::with_size(button_x, 5, button_len, 1),
+                    Rect::with_size(button_x, 8, button_len, 1),
                 ),
                 UiItem::new(
                     HudItem::Quick2Action,
                     String::new(),
-                    Rect::with_size(button_x, 6, button_len, 1),
+                    Rect::with_size(button_x, 9, button_len, 1),
                 ),
             ],
             names_under_mouse: "".to_string(),
@@ -105,32 +105,72 @@ pub fn render_gui(
         rltk::to_cp437(' '),
     );
 
-    // draw action header
+    render_dna(_ctx, cp, player, &mut draw_batch);
+
+    // draw headers for bars
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
+        '♥',
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+
+    draw_batch.print(Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 3), '√');
+
+    // draw bars
+    draw_batch.bar_horizontal(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 2),
+        17,
+        player.actuators.hp,
+        player.actuators.max_hp,
+        ColorPair::new(cp.magenta, cp.bg_hud_content),
+    );
+    draw_batch.print_centered_at(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 2),
+        format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
+    );
+
+    draw_batch.bar_horizontal(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 3),
+        17,
+        player.processors.energy,
+        player.processors.energy_storage,
+        ColorPair::new(cp.yellow, cp.bg_bar),
+    );
+
+    draw_batch.print_centered_at(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 3),
+        format!(
+            "{}/{}",
+            player.processors.energy, player.processors.energy_storage
+        ),
+    );
+
+    // draw action header
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
         "Actions",
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
     // draw buttons
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 3),
-        "P ",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 4),
-        "S ",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
-        "Q1",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-    draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
-        "Q2",
+        "P",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
+        "S",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
+        "Q",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
+        "E",
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
@@ -144,11 +184,11 @@ pub fn render_gui(
             HudItem::Quick2Action => player.get_quick2_action().get_identifier(),
         };
 
-        draw_batch.fill_region(
-            Rect::with_size(item.layout.x1, item.layout.y1, SIDE_PANEL_WIDTH - 9, 0),
-            ColorPair::new(cp.bg_hud_content, cp.bg_hud_content),
-            to_cp437(' '),
-        );
+        // draw_batch.fill_region(
+        //     Rect::with_size(item.layout.x1, item.layout.y1, item.layout.width(), 0),
+        //     ColorPair::new(cp.bg_hud_content, cp.bg_hud_content),
+        //     to_cp437(' '),
+        // );
         draw_batch.print_color(
             item.top_left_corner(),
             text,
@@ -156,52 +196,31 @@ pub fn render_gui(
         );
     }
 
-    // draw headers for vertical bars
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - 4, 2),
-        '♥',
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-    draw_batch.print(Point::new(SCREEN_WIDTH - 3, 2), '√');
-
-    draw_batch.bar_vertical(
-        Point::new(SCREEN_WIDTH - 4, 3),
-        10,
-        player.actuators.hp,
-        player.actuators.max_hp,
-        ColorPair::new(cp.magenta, cp.bg_hud_content),
-    );
-    draw_batch.bar_vertical(
-        Point::new(SCREEN_WIDTH - 3, 3),
-        10,
-        player.processors.energy,
-        player.processors.energy_storage,
-        ColorPair::new(cp.yellow, cp.bg_bar),
-    );
-
-    render_dna(_ctx, cp, player, &mut draw_batch);
+    // draw inventory
 
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12),
         "Inventory",
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
     render_inventory(
         &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 14, SCREEN_WIDTH - 2, 23),
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13, SCREEN_WIDTH - 2, 22),
         cp,
         player,
     );
 
+    // draw log
+
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
         "Log",
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
     render_log(
         state,
         &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 58),
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58),
         cp,
     );
 
@@ -214,12 +233,24 @@ fn render_dna(_ctx: &mut Rltk, cp: &ColorPalette, player: &Object, draw_batch: &
         ColorPair::new(cp.bg_dna, cp.bg_dna),
         to_cp437(' '),
     );
+    draw_batch.fill_region(
+        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH, 0),
+        ColorPair::new(cp.bg_dna, cp.bg_dna),
+        to_cp437(' '),
+    );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - 5, 0),
-        "DNA→",
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 0),
+        "DNA ",
         ColorPair::new(cp.fg_hud, cp.bg_dna),
     );
-    for (vert_offset, g_trait) in player.dna.simplified.iter().enumerate() {
+
+    for (h_offset, g_trait) in player
+        .dna
+        .simplified
+        .iter()
+        .take(SIDE_PANEL_WIDTH as usize - 4)
+        .enumerate()
+    {
         let col: (u8, u8, u8) = match g_trait.trait_family {
             TraitFamily::Sensing => cp.cyan,
             TraitFamily::Processing => cp.magenta,
@@ -228,13 +259,40 @@ fn render_dna(_ctx: &mut Rltk, cp: &ColorPalette, player: &Object, draw_batch: &
             TraitFamily::Ltr => (255, 255, 255),  // TODO
         };
 
-        let c: char = if modulus(vert_offset, 2) == 0 {
+        let c: char = if modulus(h_offset, 2) == 0 {
             '▼'
         } else {
             '▲'
         };
         draw_batch.print_color(
-            Point::new(SCREEN_WIDTH - 1, vert_offset as i32),
+            Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32, 0),
+            c,
+            ColorPair::new(col, cp.bg_dna),
+        );
+    }
+
+    for (v_offset, g_trait) in player
+        .dna
+        .simplified
+        .iter()
+        .skip(SIDE_PANEL_WIDTH as usize - 4)
+        .enumerate()
+    {
+        let col: (u8, u8, u8) = match g_trait.trait_family {
+            TraitFamily::Sensing => cp.cyan,
+            TraitFamily::Processing => cp.magenta,
+            TraitFamily::Actuating => cp.yellow,
+            TraitFamily::Junk => (100, 100, 100), // TODO
+            TraitFamily::Ltr => (255, 255, 255),  // TODO
+        };
+
+        let c: char = if modulus(v_offset, 2) == 0 {
+            '▼'
+        } else {
+            '▲'
+        };
+        draw_batch.print_color(
+            Point::new(SCREEN_WIDTH - 1, v_offset as i32),
             c,
             ColorPair::new(col, cp.bg_dna),
         );
