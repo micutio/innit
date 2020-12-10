@@ -83,10 +83,32 @@ impl GameState {
         self.obj_idx == self.player_idx
     }
 
+    pub fn player_energy_full(&self, objects: &GameObjects) -> bool {
+        if let Some(player) = &objects[self.player_idx] {
+            player.processors.energy == player.processors.energy_storage
+        } else {
+            false
+        }
+    }
+
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract_by_index(self.obj_idx) {
+            // Object takes the turn, which has three phases:
+            // 1. turn preparation
+            // 2. turn action
+            // 3. turn conclusion
+            if active_object.physics.is_visible {
+                debug!(
+                    "{} | {}'s turn now @energy {}/{}",
+                    self.obj_idx,
+                    active_object.visual.name,
+                    active_object.processors.energy,
+                    active_object.processors.energy_storage
+                );
+            }
+
             if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.player_idx = self.obj_idx;
@@ -97,20 +119,6 @@ impl GameState {
                     objects.replace(self.obj_idx, active_object);
                     return vec![ObjectFeedback::NoAction];
                 }
-            }
-
-            // Object takes the turn, which has three phases:
-            // 1. turn preparation
-            // 2. turn action
-            // 3. turn conclusion
-            if active_object.physics.is_visible {
-                trace!(
-                    "{} | {}'s turn now @energy {}/{}",
-                    self.obj_idx,
-                    active_object.visual.name,
-                    active_object.processors.energy,
-                    active_object.processors.energy_storage
-                );
             }
 
             // TURN PREPARATION ///////////////////////////////////////////////////////////////////
@@ -125,7 +133,11 @@ impl GameState {
                         debug!("replenishing");
                     }
                     active_object.metabolize();
-                    vec![]
+                    if self.is_players_turn() {
+                        vec![ObjectFeedback::NoFeedback]
+                    } else {
+                        vec![]
+                    }
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
                     if active_object.physics.is_visible {

@@ -131,7 +131,7 @@ impl Game {
             .position(new_x, new_y)
             .living(true)
             .visualize("player", '@', Color::from((255, 255, 255)))
-            .physical(true, false, false)
+            .physical(true, false, true)
             .control(Controller::Player(PlayerCtrl::new()))
             .genome(
                 0.99,
@@ -279,7 +279,7 @@ impl Rltk_GameState for Game {
                     false
                 };
 
-                if self.state.is_players_turn() {
+                if self.state.is_players_turn() && self.state.player_energy_full(&self.objects) {
                     RunState::CheckInput
                 } else {
                     RunState::Ticking(re_render)

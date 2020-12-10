@@ -20,31 +20,9 @@ impl MenuItem for MainMenuItem {
         item: &MainMenuItem,
     ) -> RunState {
         match item {
-            MainMenuItem::NewGame => {
-                // start new game
-                // let (state, objects) = Game::new_game(game.state.env);
-                // game.reset(new_state, new_objects);
-                RunState::NewGame
-                // game_loop(&mut state, frontend, &mut input, &mut objects);
-            }
-            MainMenuItem::Resume => {
-                // load game from file
-                // match load_game() {
-                //     Ok((state, objects)) => {
-                //         game.reset(state, objects);
-                //         RunState::Ticking(true)
-                //     }
-                //     Err(_e) => {
-                //         // TODO: Show alert to user... or not?
-                //         // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-                //         RunState::MainMenu(menu.clone())
-                //     }
-                // }
-                RunState::LoadGame
-            }
-            MainMenuItem::Quit => {
-                std::process::exit(0);
-            }
+            MainMenuItem::NewGame => RunState::NewGame,
+            MainMenuItem::Resume => RunState::LoadGame,
+            MainMenuItem::Quit => std::process::exit(0),
         }
     }
 }

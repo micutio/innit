@@ -197,15 +197,9 @@ pub fn render_gui(
     }
 
     // draw inventory
-
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12),
-        "Inventory",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
     render_inventory(
         &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13, SCREEN_WIDTH - 2, 22),
+        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22),
         cp,
         player,
     );
@@ -300,6 +294,12 @@ fn render_dna(_ctx: &mut Rltk, cp: &ColorPalette, player: &Object, draw_batch: &
 }
 
 fn render_inventory(draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette, player: &Object) {
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
+        "Inventory",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
