@@ -294,7 +294,7 @@ impl ActAttack {
 impl Action for ActAttack {
     fn perform(
         &self,
-        _state: &mut GameState,
+        state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
@@ -310,13 +310,13 @@ impl Action for ActAttack {
             .filter(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos))
             .collect();
 
-        assert!(valid_targets.len() >= 1);
         if let Some(_target_obj) = valid_targets.first() {
             // TODO: Take damage
             ActionResult::Success {
                 callback: ObjectFeedback::NoFeedback,
             }
         } else {
+            state.log.add("Nothing to attack here", MsgClass::Info);
             ActionResult::Failure
         }
     }
