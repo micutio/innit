@@ -36,6 +36,9 @@ use crate::entity::action::*;
 use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
+use core::fmt;
+use serde::export::Formatter;
+use std::fmt::Display;
 
 pub const GENE_LEN: usize = 10;
 
@@ -47,6 +50,18 @@ pub enum TraitFamily {
     Actuating,
     Ltr,
     Junk,
+}
+
+impl Display for TraitFamily {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            TraitFamily::Sensing => write!(f, "Sense"),
+            TraitFamily::Processing => write!(f, "Process"),
+            TraitFamily::Actuating => write!(f, "Actuate"),
+            TraitFamily::Ltr => write!(f, "none"),
+            TraitFamily::Junk => write!(f, "none"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
@@ -94,7 +109,7 @@ impl GeneticTrait {
 
     fn junk() -> Self {
         GeneticTrait {
-            trait_name: "junk".to_string(),
+            trait_name: "Junk".to_string(),
             trait_family: TraitFamily::Junk,
             attribute: TraitAttribute::None,
             action: None,
@@ -107,36 +122,36 @@ fn create_trait_list() -> Vec<GeneticTrait> {
     use TraitFamily::*;
     vec![
         GeneticTrait::new(
-            "move",
+            "Move",
             Actuating,
             TraitAttribute::None,
             Some(Box::new(ActMove::new())),
         ),
         GeneticTrait::new(
-            "attack",
+            "Attack",
             Actuating,
             TraitAttribute::None,
             Some(Box::new(ActAttack::new())),
         ),
-        GeneticTrait::new("cell membrane", Actuating, TraitAttribute::Hp, None),
-        GeneticTrait::new("cell volume", Actuating, TraitAttribute::Volume, None),
+        GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
+        GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
         GeneticTrait::new(
-            "optical sensor",
+            "Optical Sensor",
             Sensing,
             TraitAttribute::SensingRange,
             None,
         ),
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
-        GeneticTrait::new("enzyme", Processing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("energy store", Processing, TraitAttribute::None, None),
+        GeneticTrait::new("Enzyme", Processing, TraitAttribute::Metabolism, None),
+        GeneticTrait::new("Energy Store", Processing, TraitAttribute::None, None),
         GeneticTrait::new(
-            "metabolize",
+            "Metabolism",
             Processing,
             TraitAttribute::Storage,
             Some(Box::new(ActMetabolise::new())),
         ),
-        GeneticTrait::new("receptor", Processing, TraitAttribute::Receptor, None),
+        GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
         GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
     ]
 }
@@ -357,7 +372,7 @@ impl GeneLibrary {
         }
 
         if has_ltr {
-            if let Some(ltr_code) = self.trait_to_gray.get("LTR marker") {
+            if let Some(ltr_code) = self.trait_to_gray.get("LTR Marker") {
                 dna.push(0 as u8);
                 dna.push(1 as u8);
                 dna.push(*ltr_code);

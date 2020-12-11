@@ -41,7 +41,9 @@ impl<T: MenuItem> Menu<T> {
                 UiItem::new(
                     enum_item,
                     text,
+                    vec![],
                     Rect::with_size(x1 + 1, y1 + 1 + i as i32, MENU_WIDTH - 2, 1),
+                    ColorPair::new((0, 0, 0), (0, 0, 0)),
                 )
             })
             .collect();

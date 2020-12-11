@@ -1,6 +1,6 @@
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::action::Target;
-use crate::entity::genetics::TraitFamily;
+use crate::entity::genetics::{GeneticTrait, TraitFamily};
 use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
@@ -16,15 +16,25 @@ use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
-    pub(crate) layout: Rect,
+    pub tooltip: Vec<String>,
+    pub layout: Rect,
+    pub color: ColorPair,
 }
 
 impl<T> UiItem<T> {
-    pub fn new(item_enum: T, text: String, layout: Rect) -> Self {
+    pub fn new<S1: Into<String>>(
+        item_enum: T,
+        text: S1,
+        tooltip: Vec<String>,
+        layout: Rect,
+        color: ColorPair,
+    ) -> Self {
         UiItem {
             item_enum,
-            text,
+            text: text.into(),
+            tooltip,
             layout,
+            color,
         }
     }
 
@@ -33,57 +43,164 @@ impl<T> UiItem<T> {
     }
 }
 
+#[derive(PartialEq)]
 pub enum HudItem {
     PrimaryAction,
     SecondaryAction,
     Quick1Action,
     Quick2Action,
+    DnaItem,
+}
+
+fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>> {
+    let button_len = SIDE_PANEL_WIDTH / 2;
+    let button_x = hud_layout.x1 + 3;
+    let items = vec![
+        UiItem::new(
+            HudItem::PrimaryAction,
+            "",
+            vec!["select new primary action".to_string()],
+            Rect::with_size(button_x, 6, button_len, 1),
+            ColorPair::new(cp.fg_hud, cp.bg_hud_content),
+        ),
+        UiItem::new(
+            HudItem::SecondaryAction,
+            "",
+            vec!["select new secondary action".to_string()],
+            Rect::with_size(button_x, 7, button_len, 1),
+            ColorPair::new(cp.fg_hud, cp.bg_hud_content),
+        ),
+        UiItem::new(
+            HudItem::Quick1Action,
+            "",
+            vec!["select new quick action".to_string()],
+            Rect::with_size(button_x, 8, button_len, 1),
+            ColorPair::new(cp.fg_hud, cp.bg_hud_content),
+        ),
+        UiItem::new(
+            HudItem::Quick2Action,
+            "",
+            vec!["select new quick action".to_string()],
+            Rect::with_size(button_x, 9, button_len, 1),
+            ColorPair::new(cp.fg_hud, cp.bg_hud_content),
+        ),
+    ];
+
+    items
+}
+
+fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
+    vec![
+        format!("trait: {}", g_trait.trait_name),
+        format!("group: {}", g_trait.trait_family),
+    ]
 }
 
 pub struct Hud {
     layout: Rect,
-    pub items: Vec<UiItem<HudItem>>,
-    names_under_mouse: String, // TODO: Find elegant way to render this and tooltips.
+    last_mouse: Point,
+    pub(crate) require_refresh: bool,
+    pub(crate) items: Vec<UiItem<HudItem>>,
+    tooltip: Vec<String>, // TODO: Find elegant way to render this and tooltips.
 }
 
 impl Hud {
-    pub fn new() -> Self {
+    pub fn new(cp: &ColorPalette) -> Self {
         let x1 = SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + SIDE_PANEL_WIDTH;
         let y2 = SIDE_PANEL_HEIGHT - 1;
-        let button_len = SIDE_PANEL_WIDTH / 2;
-        let button_x = x1 + 3;
+        let layout = Rect::with_exact(x1, y1, x2, y2);
         Hud {
-            layout: Rect::with_exact(x1, y1, x2, y2),
-            items: vec![
-                UiItem::new(
-                    HudItem::PrimaryAction,
-                    String::new(),
-                    Rect::with_size(button_x, 6, button_len, 1),
-                ),
-                UiItem::new(
-                    HudItem::SecondaryAction,
-                    String::new(),
-                    Rect::with_size(button_x, 7, button_len, 1),
-                ),
-                UiItem::new(
-                    HudItem::Quick1Action,
-                    String::new(),
-                    Rect::with_size(button_x, 8, button_len, 1),
-                ),
-                UiItem::new(
-                    HudItem::Quick2Action,
-                    String::new(),
-                    Rect::with_size(button_x, 9, button_len, 1),
-                ),
-            ],
-            names_under_mouse: "".to_string(),
+            layout,
+            last_mouse: Point::new(0, 0),
+            require_refresh: false,
+            items: create_hud_items(&layout, cp),
+            tooltip: Vec::new(),
         }
     }
 
-    pub fn set_names_under_mouse(&mut self, names: String) {
-        self.names_under_mouse = names;
+    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<String>) {
+        if let Some(item) = self
+            .items
+            .iter()
+            .find(|i| i.layout.point_in_rect(mouse_pos))
+        {
+            self.tooltip = item.tooltip.clone()
+        } else {
+            self.tooltip = names;
+        }
+
+        self.require_refresh = self.last_mouse != mouse_pos;
+        self.last_mouse = mouse_pos;
+    }
+
+    pub fn update_ui_items(&mut self, player: &Object, cp: &ColorPalette) {
+        self.items.retain(|i| i.item_enum != HudItem::DnaItem);
+
+        for (h_offset, g_trait) in player
+            .dna
+            .simplified
+            .iter()
+            .take(SIDE_PANEL_WIDTH as usize - 4)
+            .enumerate()
+        {
+            let col: (u8, u8, u8) = match g_trait.trait_family {
+                TraitFamily::Sensing => cp.cyan,
+                TraitFamily::Processing => cp.magenta,
+                TraitFamily::Actuating => cp.yellow,
+                TraitFamily::Junk => (100, 100, 100), // TODO
+                TraitFamily::Ltr => (255, 255, 255),  // TODO
+            };
+
+            let c: char = if modulus(h_offset, 2) == 0 {
+                '►'
+            } else {
+                '◄'
+            };
+
+            self.items.push(UiItem::new(
+                HudItem::DnaItem,
+                c,
+                tooltip_from(g_trait),
+                Rect::with_size(
+                    SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32,
+                    0,
+                    1,
+                    1,
+                ),
+                ColorPair::new(col, cp.bg_dna),
+            ));
+        }
+
+        for (v_offset, g_trait) in player
+            .dna
+            .simplified
+            .iter()
+            .skip(SIDE_PANEL_WIDTH as usize - 4)
+            .enumerate()
+        {
+            let col: (u8, u8, u8) = match g_trait.trait_family {
+                TraitFamily::Sensing => cp.cyan,
+                TraitFamily::Processing => cp.magenta,
+                TraitFamily::Actuating => cp.yellow,
+                TraitFamily::Junk => (100, 100, 100), // TODO
+                TraitFamily::Ltr => (255, 255, 255),  // TODO
+            };
+
+            let c: char = if modulus(v_offset, 2) == 0 {
+                '▼'
+            } else {
+                '▲'
+            };
+            self.items.push(UiItem::new(
+                HudItem::DnaItem,
+                c,
+                tooltip_from(g_trait),
+                Rect::with_size(SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
+                ColorPair::new(col, cp.bg_dna),
+            ));
+        }
     }
 }
 
@@ -103,8 +220,39 @@ pub fn render_gui(
         rltk::to_cp437(' '),
     );
 
-    render_dna(_ctx, cp, player, &mut draw_batch);
+    let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22);
+    let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58);
 
+    render_dna_region(cp, &mut draw_batch);
+    render_bars(player, cp, &mut draw_batch);
+    render_action_fields(player, hud, cp, &mut draw_batch);
+    render_inventory(player, inv_area, cp, &mut draw_batch);
+    render_log(state, log_area, cp, &mut draw_batch);
+    render_ui_items(hud, &mut draw_batch);
+    render_tooltip(hud, cp, &mut draw_batch);
+
+    draw_batch.submit(5000).unwrap();
+}
+
+fn render_dna_region(cp: &ColorPalette, draw_batch: &mut DrawBatch) {
+    draw_batch.fill_region(
+        Rect::with_size(SCREEN_WIDTH - 1, 0, 0, SCREEN_HEIGHT - 1),
+        ColorPair::new(cp.bg_dna, cp.bg_dna),
+        to_cp437(' '),
+    );
+    draw_batch.fill_region(
+        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH, 0),
+        ColorPair::new(cp.bg_dna, cp.bg_dna),
+        to_cp437(' '),
+    );
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 0),
+        "DNA ",
+        ColorPair::new(cp.fg_hud, cp.bg_dna),
+    );
+}
+
+fn render_bars(player: &Object, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
     // draw headers for bars
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
@@ -142,7 +290,14 @@ pub fn render_gui(
             player.processors.energy, player.processors.energy_storage
         ),
     );
+}
 
+fn render_action_fields(
+    player: &Object,
+    hud: &mut Hud,
+    cp: &ColorPalette,
+    draw_batch: &mut DrawBatch,
+) {
     // draw action header
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
@@ -172,126 +327,21 @@ pub fn render_gui(
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
-    for item in &hud.items {
-        let text = match item.item_enum {
-            HudItem::PrimaryAction => player.get_primary_action(Target::Center).get_identifier(),
-            HudItem::SecondaryAction => {
-                player.get_secondary_action(Target::Center).get_identifier()
-            }
-            HudItem::Quick1Action => player.get_quick1_action().get_identifier(),
-            HudItem::Quick2Action => player.get_quick2_action().get_identifier(),
-        };
-
-        // draw_batch.fill_region(
-        //     Rect::with_size(item.layout.x1, item.layout.y1, item.layout.width(), 0),
-        //     ColorPair::new(cp.bg_hud_content, cp.bg_hud_content),
-        //     to_cp437(' '),
-        // );
-        draw_batch.print_color(
-            item.top_left_corner(),
-            text,
-            ColorPair::new(cp.fg_hud, cp.bg_hud_content),
-        );
-    }
-
-    // draw inventory
-    render_inventory(
-        &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22),
-        cp,
-        player,
-    );
-
-    // draw log
-
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
-        "Log",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-    render_log(
-        state,
-        &mut draw_batch,
-        Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58),
-        cp,
-    );
-
-    draw_batch.submit(5000).unwrap();
+    // update action button texts
+    hud.items.iter_mut().for_each(|i| match i.item_enum {
+        HudItem::PrimaryAction => {
+            i.text = player.get_primary_action(Target::Center).get_identifier()
+        }
+        HudItem::SecondaryAction => {
+            i.text = player.get_secondary_action(Target::Center).get_identifier()
+        }
+        HudItem::Quick1Action => i.text = player.get_quick1_action().get_identifier(),
+        HudItem::Quick2Action => i.text = player.get_quick2_action().get_identifier(),
+        HudItem::DnaItem => {}
+    });
 }
 
-fn render_dna(_ctx: &mut Rltk, cp: &ColorPalette, player: &Object, draw_batch: &mut DrawBatch) {
-    draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - 1, 0, 0, SCREEN_HEIGHT - 1),
-        ColorPair::new(cp.bg_dna, cp.bg_dna),
-        to_cp437(' '),
-    );
-    draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH, 0),
-        ColorPair::new(cp.bg_dna, cp.bg_dna),
-        to_cp437(' '),
-    );
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 0),
-        "DNA ",
-        ColorPair::new(cp.fg_hud, cp.bg_dna),
-    );
-
-    for (h_offset, g_trait) in player
-        .dna
-        .simplified
-        .iter()
-        .take(SIDE_PANEL_WIDTH as usize - 4)
-        .enumerate()
-    {
-        let col: (u8, u8, u8) = match g_trait.trait_family {
-            TraitFamily::Sensing => cp.cyan,
-            TraitFamily::Processing => cp.magenta,
-            TraitFamily::Actuating => cp.yellow,
-            TraitFamily::Junk => (100, 100, 100), // TODO
-            TraitFamily::Ltr => (255, 255, 255),  // TODO
-        };
-
-        let c: char = if modulus(h_offset, 2) == 0 {
-            '▼'
-        } else {
-            '▲'
-        };
-        draw_batch.print_color(
-            Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32, 0),
-            c,
-            ColorPair::new(col, cp.bg_dna),
-        );
-    }
-
-    for (v_offset, g_trait) in player
-        .dna
-        .simplified
-        .iter()
-        .skip(SIDE_PANEL_WIDTH as usize - 4)
-        .enumerate()
-    {
-        let col: (u8, u8, u8) = match g_trait.trait_family {
-            TraitFamily::Sensing => cp.cyan,
-            TraitFamily::Processing => cp.magenta,
-            TraitFamily::Actuating => cp.yellow,
-            TraitFamily::Junk => (100, 100, 100), // TODO
-            TraitFamily::Ltr => (255, 255, 255),  // TODO
-        };
-
-        let c: char = if modulus(v_offset, 2) == 0 {
-            '▼'
-        } else {
-            '▲'
-        };
-        draw_batch.print_color(
-            Point::new(SCREEN_WIDTH - 1, v_offset as i32),
-            c,
-            ColorPair::new(col, cp.bg_dna),
-        );
-    }
-}
-
-fn render_inventory(draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette, player: &Object) {
+fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
         "Inventory",
@@ -326,7 +376,13 @@ fn render_inventory(draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette,
     }
 }
 
-fn render_log(state: &GameState, draw_batch: &mut DrawBatch, layout: Rect, cp: &ColorPalette) {
+fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
+        "Log",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
+    );
+
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
@@ -404,4 +460,47 @@ fn format_message(text: &str, line_width: i32) -> Vec<String> {
         lines.push(current_line.join(" "));
     }
     lines
+}
+
+fn render_ui_items(hud: &Hud, draw_batch: &mut DrawBatch) {
+    for item in &hud.items {
+        draw_batch.print_color(item.top_left_corner(), &item.text, item.color);
+    }
+}
+
+fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
+    if hud.tooltip.is_empty() {
+        return;
+    }
+
+    let tt_width: i32 = hud.tooltip.iter().map(|s| s.len()).max().unwrap() as i32 + 2;
+    let tt_height: i32 = hud.tooltip.len() as i32 + 2;
+    let tt_x: i32 = if hud.last_mouse.x + tt_width >= SCREEN_WIDTH {
+        hud.last_mouse.x - tt_width - 1
+    } else {
+        hud.last_mouse.x + 1
+    };
+    let tt_y: i32 = if hud.last_mouse.y + tt_height >= SCREEN_HEIGHT {
+        hud.last_mouse.y - tt_height - 1
+    } else {
+        hud.last_mouse.y + 1
+    };
+
+    draw_batch.fill_region(
+        Rect::with_size(tt_x, tt_y, tt_width, tt_height - 1),
+        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+        to_cp437(' '),
+    );
+    draw_batch.draw_hollow_box(
+        Rect::with_size(tt_x, tt_y, tt_width, tt_height - 1),
+        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+    );
+
+    for (idx, s) in hud.tooltip.iter().enumerate() {
+        draw_batch.print_color(
+            Point::new(tt_x + 1, tt_y + idx as i32 + 1),
+            s,
+            ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+        );
+    }
 }

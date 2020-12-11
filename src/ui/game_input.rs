@@ -66,7 +66,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
     }
 }
 
-fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
+fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> Vec<String> {
     // create a list with the names of all objects at the mouse's coordinates and in FOV
     objects
         .get_vector()
@@ -75,9 +75,7 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> String {
         .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
         .map(|o| o.visual.name.clone())
         .collect::<Vec<_>>()
-        .join(", ")
-
-    // names//.join(", ") // return names separated by commas
+    // .join(", ")
 }
 
 pub fn read_input(
@@ -99,11 +97,15 @@ pub fn read_input(
     let mouse = Position::from(ctx.mouse_point());
     let is_clicked: bool = ctx.left_click;
 
-    // 2) if mouse is over world
+    // 2) update hovered objects
+    hud.update_tooltips(
+        Point::from((mouse.x, mouse.y)),
+        get_names_under_mouse(objects, mouse),
+    );
+
+    // 3) if mouse is over world
     if mouse.x < WORLD_WIDTH {
-        // 2a) update hovered objects
-        hud.set_names_under_mouse(get_names_under_mouse(objects, mouse));
-        // 2b) check whether a mouse button has been pressed for player action
+        // 3b) check whether a mouse button has been pressed for player action
         if is_clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
             if let Some(player) = &objects[state.player_idx] {
@@ -118,8 +120,8 @@ pub fn read_input(
         }
         PlayerInput::Undefined
     } else {
-        // 3) is mouse is over sidebar
-        // 3a) update hovered button
+        // 4) is mouse is over sidebar
+        // 4a) update hovered button
         if let Some(item) = hud
             .items
             .iter()
@@ -131,6 +133,7 @@ pub fn read_input(
                     HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
                     HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
                     HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
+                    HudItem::DnaItem => PlayerInput::Undefined,
                 }
             } else {
                 PlayerInput::Undefined

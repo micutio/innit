@@ -1,16 +1,11 @@
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::game_state::{GameState, ObjectFeedback};
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
-use crate::entity::action::TargetCategory;
 use crate::entity::object::Object;
-use crate::game::{save_game, RunState, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::dialog::character::character_screen;
-use crate::ui::game_input::UiAction;
-use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory};
-use crate::ui::menus::main_menu::main_menu;
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
@@ -173,127 +168,4 @@ pub fn process_visual_feedback(
             }
         }
     }
-}
-
-pub fn handle_meta_actions(
-    state: &mut GameState,
-    objects: &mut GameObjects,
-    _ctx: &mut Rltk,
-    action: UiAction,
-) -> RunState {
-    debug!("received action {:?}", action);
-    match action {
-        UiAction::ExitGameLoop => {
-            let result = save_game(&state, &objects);
-            result.unwrap();
-            RunState::MainMenu(main_menu())
-        }
-        UiAction::ToggleDarkLightMode => {
-            // game.toggle_dark_light_mode();
-            // RunState::Ticking(true)
-            RunState::ToggleDarkLightMode
-        }
-        UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
-        UiAction::ChoosePrimaryAction => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(
-                    player,
-                    &[
-                        TargetCategory::Any,
-                        TargetCategory::EmptyObject,
-                        TargetCategory::BlockingObject,
-                    ],
-                );
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
-                        action_items,
-                        ActionCategory::Primary,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
-                    );
-                    RunState::Ticking(false)
-                }
-            } else {
-                RunState::Ticking(false)
-            }
-        }
-        UiAction::ChooseSecondaryAction => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(
-                    player,
-                    &[
-                        TargetCategory::Any,
-                        TargetCategory::EmptyObject,
-                        TargetCategory::BlockingObject,
-                    ],
-                );
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
-                        action_items,
-                        ActionCategory::Secondary,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
-                    );
-                    RunState::Ticking(false)
-                }
-            } else {
-                RunState::Ticking(false)
-            }
-        }
-        UiAction::ChooseQuick1Action => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[TargetCategory::None]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
-                        action_items,
-                        ActionCategory::Quick1,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
-                    );
-                    RunState::Ticking(false)
-                }
-            } else {
-                RunState::Ticking(false)
-            }
-        }
-        UiAction::ChooseQuick2Action => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[TargetCategory::None]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
-                        action_items,
-                        ActionCategory::Quick2,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
-                    );
-                    RunState::Ticking(false)
-                }
-            } else {
-                RunState::Ticking(false)
-            }
-        }
-    }
-}
-
-fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<String> {
-    obj.actuators
-        .actions
-        .iter()
-        .chain(obj.processors.actions.iter())
-        .chain(obj.sensors.actions.iter())
-        .filter(|a| targets.contains(&a.get_target_category()))
-        .map(|a| a.get_identifier())
-        .collect()
 }

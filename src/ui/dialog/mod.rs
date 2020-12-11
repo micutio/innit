@@ -1,8 +1,8 @@
 pub mod character;
 
-use crate::game::{MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
-use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
+use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 
 /// Non-click-away-able window menu.
 #[derive(Clone, Debug)]
@@ -14,19 +14,15 @@ pub struct InfoBox {
 
 impl InfoBox {
     pub fn new(title: String, lines: Vec<String>) -> Self {
-        let menu_width: i32 = if lines.is_empty() {
-            MENU_WIDTH
-        } else {
-            i32::max(
-                MENU_WIDTH,
-                lines.iter().map(|l| l.len()).max().unwrap() as i32,
-            )
-        };
-        let menu_height = lines.len() as i32 + 2;
-        let x1 = (SCREEN_WIDTH / 2) - (menu_width / 2);
-        let y1 = (SCREEN_HEIGHT / 2) - (menu_height / 2);
-        let x2 = x1 + menu_width;
-        let y2 = y1 + menu_height;
+        let box_width: i32 = usize::max(
+            title.len() + 3,
+            lines.iter().map(|l| l.len()).max().unwrap(),
+        ) as i32;
+        let box_height = lines.len() as i32 + 1;
+        let x1 = (SCREEN_WIDTH / 2) - (box_width / 2);
+        let y1 = (SCREEN_HEIGHT / 2) - (box_height / 2);
+        let x2 = x1 + box_width;
+        let y2 = y1 + box_height;
         InfoBox {
             title,
             lines,
@@ -37,27 +33,18 @@ impl InfoBox {
     fn render(&self, palette: &ColorPalette) {
         let mut draw_batch = DrawBatch::new();
         // draw box
-        draw_batch.draw_box(
+        draw_batch.fill_region(
             self.layout,
             ColorPair::new(palette.fg_hud_border, palette.bg_hud),
+            to_cp437(' '),
         );
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(palette.fg_hud, palette.bg_hud));
+
         // draw title
-        let title_pos = Point::new(self.layout.x1 + 3, self.layout.y1);
+        let title_pos = Point::new(self.layout.x1 + 2, self.layout.y1);
         draw_batch.print_color(
             title_pos,
             &self.title,
-            ColorPair::new(palette.fg_hud, palette.bg_hud),
-        );
-        let title_open = Point::new(self.layout.x1 + 2, self.layout.y1);
-        draw_batch.print_color(
-            title_open,
-            rltk::to_cp437('/'),
-            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
-        );
-        let title_close = Point::new(self.layout.x1 + 2 + self.title.len() as i32, self.layout.y1);
-        draw_batch.print_color(
-            title_close,
-            rltk::to_cp437('/'),
             ColorPair::new(palette.fg_hud_border, palette.bg_hud),
         );
 
@@ -89,7 +76,7 @@ impl InfoBox {
         }
 
         // b) mouse input
-        if ctx.left_click && self.layout.point_in_rect(ctx.mouse_point()) {
+        if ctx.left_click && !self.layout.point_in_rect(ctx.mouse_point()) {
             return None;
         }
 

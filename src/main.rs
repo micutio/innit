@@ -50,7 +50,7 @@ pub fn main() -> rltk::BError {
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png")
         .with_advanced_input(false)
         .with_font("fonts/rogueyun_16x16_soft.png", 16, 16)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rogueyun_16x16_soft.png") // menus
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(60.0)

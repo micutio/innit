@@ -6,18 +6,19 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::{ActPass, Target};
+use crate::entity::action::{ActPass, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
-use crate::ui::frontend::{handle_meta_actions, process_visual_feedback, render_world};
-use crate::ui::game_input::{read_input, PlayerInput};
+use crate::ui::frontend::{process_visual_feedback, render_world};
+use crate::ui::game_input::{read_input, PlayerInput, UiAction};
 use crate::ui::gui::{render_gui, Hud};
-use crate::ui::menus::choose_action_menu::ActionItem;
+use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
 use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menus::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
@@ -83,11 +84,14 @@ pub struct Game {
 
 impl Game {
     pub fn new(env: GameEnv) -> Self {
+        let state = GameState::new(env, 0);
+        let objects = GameObjects::new();
+
         Game {
-            state: GameState::new(env, 0),
-            objects: GameObjects::new(),
+            state,
+            objects,
             run_state: Some(RunState::MainMenu(main_menu())),
-            hud: Hud::new(),
+            hud: Hud::new(ColorPalette::get(true)),
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
         }
@@ -96,6 +100,11 @@ impl Game {
     fn reset(&mut self, state: GameState, objects: GameObjects) {
         self.state = state;
         self.objects = objects;
+
+        if let Some(player) = &self.objects[self.state.player_idx] {
+            self.hud
+                .update_ui_items(player, ColorPalette::get(self.is_dark_color_palette));
+        };
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
@@ -115,12 +124,12 @@ impl Game {
         // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
         objects.set_tile_dna(
             vec![
-                "cell membrane".to_string(),
-                "cell membrane".to_string(),
-                "cell membrane".to_string(),
-                "energy store".to_string(),
-                "energy store".to_string(),
-                "receptor".to_string(),
+                "Cell Membrane".to_string(),
+                "Cell Membrane".to_string(),
+                "Cell Membrane".to_string(),
+                "Energy Store".to_string(),
+                "Energy Store".to_string(),
+                "Receptor".to_string(),
             ],
             &state.gene_library,
         );
@@ -149,6 +158,7 @@ impl Game {
             "player default action: {:?}",
             player.get_primary_action(Target::Center).to_text()
         );
+
         objects.set_player(player);
 
         // a warm welcoming message
@@ -219,6 +229,19 @@ impl Rltk_GameState for Game {
                 render_world(&mut self.state, &mut self.objects, ctx, color_palette);
             }
 
+            ctx.set_active_console(HUD_CON);
+            let player = self
+                .objects
+                .extract_by_index(self.state.player_idx)
+                .unwrap();
+            render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
+            self.objects.replace(self.state.player_idx, player);
+        } else if self.hud.require_refresh {
+            ctx.set_active_console(HUD_CON);
+            ctx.cls();
+            ctx.set_active_console(WORLD_CON);
+            ctx.cls();
+            render_world(&mut self.state, &mut self.objects, ctx, color_palette);
             ctx.set_active_console(HUD_CON);
             let player = self
                 .objects
@@ -345,7 +368,132 @@ impl Rltk_GameState for Game {
 
         ctx.set_active_console(WORLD_CON);
         ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
+        // ctx.set_active_console(HUD_CON);
+        // ctx.print(0, 0, "");
         rltk::render_draw_buffer(ctx).unwrap();
         // debug!("current state: {:#?}", self.run_state);
     }
+}
+
+pub fn handle_meta_actions(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    _ctx: &mut Rltk,
+    action: UiAction,
+) -> RunState {
+    debug!("received action {:?}", action);
+    match action {
+        UiAction::ExitGameLoop => {
+            let result = save_game(&state, &objects);
+            result.unwrap();
+            RunState::MainMenu(main_menu())
+        }
+        UiAction::ToggleDarkLightMode => {
+            // game.toggle_dark_light_mode();
+            // RunState::Ticking(true)
+            RunState::ToggleDarkLightMode
+        }
+        UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
+        UiAction::ChoosePrimaryAction => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                let action_items = get_available_actions(
+                    player,
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                );
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Primary,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
+            } else {
+                RunState::Ticking(false)
+            }
+        }
+        UiAction::ChooseSecondaryAction => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                let action_items = get_available_actions(
+                    player,
+                    &[
+                        TargetCategory::Any,
+                        TargetCategory::EmptyObject,
+                        TargetCategory::BlockingObject,
+                    ],
+                );
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Secondary,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
+            } else {
+                RunState::Ticking(false)
+            }
+        }
+        UiAction::ChooseQuick1Action => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                let action_items = get_available_actions(player, &[TargetCategory::None]);
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Quick1,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
+            } else {
+                RunState::Ticking(false)
+            }
+        }
+        UiAction::ChooseQuick2Action => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                let action_items = get_available_actions(player, &[TargetCategory::None]);
+                if !action_items.is_empty() {
+                    RunState::ChooseActionMenu(choose_action_menu(
+                        action_items,
+                        ActionCategory::Quick2,
+                    ))
+                } else {
+                    state.log.add(
+                        "You have no actions available! Try modifying your genome.",
+                        MsgClass::Alert,
+                    );
+                    RunState::Ticking(false)
+                }
+            } else {
+                RunState::Ticking(false)
+            }
+        }
+    }
+}
+
+fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<String> {
+    obj.actuators
+        .actions
+        .iter()
+        .chain(obj.processors.actions.iter())
+        .chain(obj.sensors.actions.iter())
+        .filter(|a| targets.contains(&a.get_target_category()))
+        .map(|a| a.get_identifier())
+        .collect()
 }
