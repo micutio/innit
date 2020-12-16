@@ -51,7 +51,7 @@ pub fn main() -> rltk::BError {
         .with_title("Innit alpha v0.0.4")
         .with_vsync(false)
         .with_fps_cap(60.0)
-        .with_automatic_console_resize(true)
+        .with_automatic_console_resize(false)
         .build()?;
 
     context.set_active_font(1, false);

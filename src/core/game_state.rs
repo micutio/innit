@@ -140,7 +140,7 @@ impl GameState {
                     }
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
-                    if active_object.physics.is_visible {
+                    if active_object.physics.is_visible && next_action.get_identifier().ne("pass") {
                         debug!("next action: {}", next_action.get_identifier());
                     }
                     active_object.processors.energy -= next_action.get_energy_cost();

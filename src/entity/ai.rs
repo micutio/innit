@@ -147,6 +147,12 @@ impl Ai for AiRandom {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AiVirus {}
 
+impl AiVirus {
+    pub fn new() -> Self {
+        AiVirus {}
+    }
+}
+
 #[typetag::serde]
 impl Ai for AiVirus {
     fn act(
@@ -171,6 +177,7 @@ impl Ai for AiVirus {
             })
             .choose(&mut state.rng)
         {
+            assert!(!owner.dna.raw.is_empty());
             return Box::new(ActInjectRnaVirus::new(
                 Target::from_pos(&owner.pos, &target.pos),
                 owner.dna.raw.clone(),

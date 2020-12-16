@@ -4,7 +4,7 @@
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
-use crate::entity::ai::{AiPassive, AiRandom};
+use crate::entity::ai::{AiPassive, AiRandom, AiVirus};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -72,7 +72,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
                     .gene_library
                     .new_genetics(&mut state.rng, DnaType::Nucleoid, true, GENE_LEN),
             )
-            .control(Controller::Npc(Box::new(AiRandom::new()))),
+            .control(Controller::Npc(Box::new(AiVirus::new()))),
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)

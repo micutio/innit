@@ -614,6 +614,7 @@ impl Action for ActProduceVirion {
     ) -> ActionResult {
         match &self.virus_rna {
             Some(dna) => {
+                debug!("{} produces virion", owner.visual.name);
                 owner.inventory.items.push(
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)

@@ -40,7 +40,7 @@ use core::fmt;
 use serde::export::Formatter;
 use std::fmt::Display;
 
-pub const GENE_LEN: usize = 10;
+pub const GENE_LEN: usize = 30;
 
 /// All traits belong to one of three major categories, called trait families.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
