@@ -18,7 +18,7 @@ pub enum MsgClass {
     Story,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Log {
     pub is_changed: bool,
     pub messages: Vec<(String, MsgClass)>,
@@ -227,7 +227,7 @@ impl GameState {
             // }
 
             // check whether object is still alive
-            if active_object.actuators.hp <= 0 {
+            if active_object.actuators.hp == 0 {
                 active_object.die(self, objects);
             }
 

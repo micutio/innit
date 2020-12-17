@@ -363,10 +363,13 @@ fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch
             format!("{} ", obj.visual.glyph),
             ColorPair::new(obj.visual.fg_color, cp.bg_hud),
         );
-        let name_chars: Vec<char> = obj.visual.name.chars().collect();
-        let name_fitted: String = name_chars[..(layout.width() - 3) as usize]
-            .to_vec()
-            .iter()
+        // take only as many chars as fit into the inventory item name field, or less
+        // if the name is shorter
+        let name_fitted: String = obj
+            .visual
+            .name
+            .chars()
+            .take((layout.width() - 3) as usize)
             .collect();
         draw_batch.print_color(
             Point::new(layout.x1 + 3, layout.y1 + idx as i32),

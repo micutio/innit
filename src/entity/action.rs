@@ -631,13 +631,13 @@ impl Action for ActProduceVirion {
     ) -> ActionResult {
         match &self.virus_rna {
             Some(dna) => {
-                debug!("{} produces virion", owner.visual.name);
-                if owner.physics.is_visible || owner.is_player() {
-                    state.log.add(
-                        format!("{} is forced to produce virions", owner.visual.name),
-                        MsgClass::Alert,
-                    );
-                }
+                debug!("#{} produces virion", owner.visual.name);
+                // if owner.physics.is_visible || owner.is_player() {
+                state.log.add(
+                    format!("{} is forced to produce virions", owner.visual.name),
+                    MsgClass::Alert,
+                );
+                // }
                 owner.inventory.items.push(
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
