@@ -66,11 +66,12 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
             .living(true)
             .visualize("virus", 'v', Color::from(color::VIRUS))
             .physical(true, false, false)
+            // TODO: Pull genome create out of here. It's not the same for every NPC.
             .genome(
                 0.75,
                 state
                     .gene_library
-                    .new_genetics(&mut state.rng, DnaType::Nucleoid, true, GENE_LEN),
+                    .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(AiVirus::new()))),
         Monster::Bacteria => Object::new()

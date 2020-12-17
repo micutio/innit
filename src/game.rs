@@ -235,6 +235,7 @@ impl Rltk_GameState for Game {
                 .extract_by_index(self.state.player_idx)
                 .unwrap();
             render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
+            self.state.log.is_changed = false;
             self.objects.replace(self.state.player_idx, player);
         } else if self.hud.require_refresh {
             ctx.set_active_console(HUD_CON);
@@ -249,6 +250,7 @@ impl Rltk_GameState for Game {
                 .unwrap();
             render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
             self.objects.replace(self.state.player_idx, player);
+            self.state.log.is_changed = false;
         }
 
         new_run_state = match new_run_state {
@@ -283,7 +285,7 @@ impl Rltk_GameState for Game {
                 let mut action_feedback;
                 loop {
                     action_feedback = self.state.process_object(&mut self.objects);
-                    if !action_feedback.is_empty() {
+                    if !action_feedback.is_empty() || self.state.log.is_changed {
                         break;
                     }
                 }

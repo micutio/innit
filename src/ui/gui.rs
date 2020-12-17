@@ -392,7 +392,7 @@ fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &m
     // print game messages, one line at a time
     let mut y = layout.height();
     let mut bg_flag: bool = true;
-    for (ref msg, class) in &mut state.log.iter().rev() {
+    for (ref msg, class) in &mut state.log.messages.iter().rev() {
         if y < 0 {
             break;
         }

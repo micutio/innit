@@ -394,9 +394,22 @@ impl Action for ActInjectRnaVirus {
                 .receptors
                 .iter()
                 .any(|e| owner.processors.receptors.contains(e))
-                && (target.dna.dna_type != DnaType::Nucleus
+                && (target.dna.dna_type == DnaType::Nucleus
                     || target.dna.dna_type == DnaType::Nucleoid)
             {
+                if target.is_player()
+                    || target.physics.is_visible
+                    || owner.is_player()
+                    || owner.physics.is_visible
+                {
+                    state.log.add(
+                        format!(
+                            "{0} has infected {1} with virus RNA. {1} is forced to produce virions",
+                            owner.visual.name, target.visual.name
+                        ),
+                        MsgClass::Alert,
+                    );
+                }
                 // TODO: Add forced production for retroviruses
                 let original_ai = target.control.take();
                 target
@@ -423,13 +436,17 @@ impl Action for ActInjectRnaVirus {
             let target_name = target.visual.name.clone();
             objects.replace(index, target);
             if has_infected {
-                if owner.physics.is_visible {
+                if owner.physics.is_visible || owner.is_player() {
                     state.log.add(
                         format!(
-                            "{} injected a virus into {}",
+                            "{} injected virus RNA into {}",
                             owner.visual.name, target_name
                         ),
                         MsgClass::Alert,
+                    );
+                    debug!(
+                        "{} injected virus RNA into {}",
+                        owner.visual.name, target_name
                     );
                 }
                 return ActionResult::Success {
@@ -615,6 +632,12 @@ impl Action for ActProduceVirion {
         match &self.virus_rna {
             Some(dna) => {
                 debug!("{} produces virion", owner.visual.name);
+                if owner.physics.is_visible || owner.is_player() {
+                    state.log.add(
+                        format!("{} is forced to produce virions", owner.visual.name),
+                        MsgClass::Alert,
+                    );
+                }
                 owner.inventory.items.push(
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)

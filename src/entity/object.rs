@@ -1,5 +1,5 @@
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, Messages, MsgClass};
+use crate::core::game_state::{GameState, Log, MessageLog, MsgClass};
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
@@ -127,6 +127,7 @@ impl Object {
         self.physics.is_blocking = is_blocking;
         self.physics.is_blocking_sight = is_blocking_sight;
         self.physics.is_always_visible = is_always_visible;
+        self.physics.is_visible = is_always_visible;
         self
     }
 
@@ -178,7 +179,7 @@ impl Object {
     }
 
     /// Transform the object into an NPC or player. Part of the builder pattern.
-    pub fn set_control(mut self, controller: Controller, log: &mut Messages) {
+    pub fn set_control(mut self, controller: Controller, log: &mut Log) {
         match controller {
             Controller::Npc(_) => {
                 if self.is_player() {

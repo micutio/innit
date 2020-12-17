@@ -18,17 +18,30 @@ pub enum MsgClass {
     Story,
 }
 
-/// Messages are expressed as colored text.
-pub type Messages = Vec<(String, MsgClass)>;
+#[derive(Serialize, Deserialize)]
+pub struct Log {
+    pub is_changed: bool,
+    pub messages: Vec<(String, MsgClass)>,
+}
+
+impl Log {
+    pub fn new() -> Self {
+        Log {
+            is_changed: false,
+            messages: Vec::new(),
+        }
+    }
+}
 
 /// The message log can add text from any string collection.
 pub trait MessageLog {
     fn add<T: Into<String>>(&mut self, message: T, class: MsgClass);
 }
 
-impl MessageLog for Vec<(String, MsgClass)> {
+impl MessageLog for Log {
     fn add<T: Into<String>>(&mut self, message: T, class: MsgClass) {
-        self.push((message.into(), class));
+        self.messages.push((message.into(), class));
+        self.is_changed = true;
     }
 }
 
@@ -50,7 +63,7 @@ pub enum ObjectFeedback {
 pub struct GameState {
     pub env: GameEnv,
     pub rng: GameRng,
-    pub log: Messages,
+    pub log: Log,
     pub turn: u128,
     pub dungeon_level: u32,
     pub gene_library: GeneLibrary,
@@ -70,7 +83,7 @@ impl GameState {
             // create the list of game messages and their colours, starts empty
             env,
             rng: GameRng::new_from_u64_seed(rng_seed),
-            log: vec![],
+            log: Log::new(),
             turn: 0,
             dungeon_level: level,
             gene_library: GeneLibrary::new(),
@@ -129,9 +142,6 @@ impl GameState {
                 // If not enough energy available try to metabolise.
                 if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy
-                    if active_object.physics.is_visible {
-                        debug!("replenishing");
-                    }
                     active_object.metabolize();
                     if self.is_players_turn() {
                         vec![ObjectFeedback::NoFeedback]
@@ -227,9 +237,15 @@ impl GameState {
                     format!("{} died!", active_object.visual.name),
                     MsgClass::Alert,
                 );
+                debug!("{} died!", active_object.visual.name);
 
+                // if the dead object is a player then keep it in the world,
+                // otherwise remove it.
+                // TODO: Think about keeping dead material around.
                 if active_object.is_player() {
                     objects[self.obj_idx].replace(active_object);
+                } else {
+                    objects.get_vector_mut().remove(self.obj_idx);
                 }
             } else {
                 objects[self.obj_idx].replace(active_object);
