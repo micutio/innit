@@ -7,7 +7,8 @@ use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
 use crate::ui::gui::{Hud, HudItem};
-use rltk::{Point, Rltk, VirtualKeyCode};
+use rltk::prelude::INPUT;
+use rltk::{BEvent, Point, Rltk, VirtualKeyCode};
 
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
@@ -84,9 +85,18 @@ pub fn read_input(
     hud: &mut Hud,
     ctx: &mut Rltk,
 ) -> PlayerInput {
+    let mut input = INPUT.lock();
+    #[allow(clippy::single_match)]
+    input.for_each_message(|event| match event {
+        BEvent::CloseRequested => ctx.quitting = true,
+        _ => (),
+    });
+
     // 1) check if key has been pressed
-    let ctrl = ctx.control;
-    let shift = ctx.shift;
+    let ctrl = input.key_pressed_set().contains(&VirtualKeyCode::LControl)
+        || input.key_pressed_set().contains(&VirtualKeyCode::RControl);
+    let shift = input.key_pressed_set().contains(&VirtualKeyCode::LShift)
+        || input.key_pressed_set().contains(&VirtualKeyCode::RShift);
     if let Some(key) = ctx.key {
         if ctrl || shift {
             debug!("2key: {:#?}, CTRL {:#?}, SHIFT {:#?}", ctx.key, ctrl, shift);

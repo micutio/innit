@@ -45,7 +45,7 @@ pub fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap()
-        .with_advanced_input(false)
+        .with_advanced_input(true)
         .with_font("fonts/rex_paint_10x10.png", 10, 10)
         .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // menus
         .with_title("Innit alpha v0.0.4")
