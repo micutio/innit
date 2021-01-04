@@ -256,7 +256,10 @@ impl Object {
             }
             None => next_action = None,
         }
-        self.control = controller;
+
+        if self.control.is_none() {
+            self.control = controller;
+        }
         next_action
     }
 

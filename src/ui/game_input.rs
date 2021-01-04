@@ -97,13 +97,11 @@ pub fn read_input(
         || input.key_pressed_set().contains(&VirtualKeyCode::RControl);
     let shift = input.key_pressed_set().contains(&VirtualKeyCode::LShift)
         || input.key_pressed_set().contains(&VirtualKeyCode::RShift);
-    if let Some(key) = ctx.key {
-        if ctrl || shift {
-            debug!("2key: {:#?}, CTRL {:#?}, SHIFT {:#?}", ctx.key, ctrl, shift);
-        }
 
+    if let Some(key) = ctx.key {
         return key_to_action(key, ctrl, shift);
     }
+
     let mouse = Position::from(ctx.mouse_point());
     let is_clicked: bool = ctx.left_click;
 

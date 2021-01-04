@@ -229,7 +229,9 @@ impl Ai for AiForceVirusProduction {
     ) -> Box<dyn Action> {
         if let Some(t) = self.turns_active {
             if self.current_turn == t {
-                owner.control = self.original_ai.take();
+                if let Some(original_ai) = self.original_ai.take() {
+                    owner.control.replace(original_ai);
+                }
             } else {
                 self.current_turn += 1;
             }

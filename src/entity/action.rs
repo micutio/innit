@@ -412,13 +412,12 @@ impl Action for ActInjectRnaVirus {
                 }
                 // TODO: Add forced production for retroviruses
                 let original_ai = target.control.take();
-                target
-                    .control
-                    .replace(Npc(Box::new(AiForceVirusProduction::new_duration(
-                        original_ai,
-                        4,
-                        Some(owner.dna.raw.clone()),
-                    ))));
+                let overriding_ai = Npc(Box::new(AiForceVirusProduction::new_duration(
+                    original_ai,
+                    4,
+                    Some(owner.dna.raw.clone()),
+                )));
+                target.control.replace(overriding_ai);
 
                 // The virus becomes an empty shell after successfully transmitting its dna.
                 owner.dna.raw.clear();
