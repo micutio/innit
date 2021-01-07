@@ -55,6 +55,7 @@ pub enum ObjectFeedback {
         anim_type: AnimationType,
         origin: Position,
     }, // play given animation to visualise action
+    GameOver, // "main" player died
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
@@ -246,6 +247,10 @@ impl GameState {
                     objects[self.obj_idx].replace(active_object);
                 } else {
                     objects.get_vector_mut().remove(self.obj_idx);
+                }
+                // if the "main" player is dead, the game is over
+                if self.obj_idx == PLAYER {
+                    process_result.push(ObjectFeedback::GameOver);
                 }
             } else {
                 objects[self.obj_idx].replace(active_object);

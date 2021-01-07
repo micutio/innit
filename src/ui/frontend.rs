@@ -143,7 +143,7 @@ fn update_visual(
 }
 
 // TODO: Refactor this to 'process_animations'!
-pub fn process_visual_feedback(
+pub fn visualize_feedback(
     _state: &mut GameState,
     _objects: &mut GameObjects,
     _ctx: &mut Rltk,

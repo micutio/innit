@@ -15,7 +15,7 @@ use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
-use crate::ui::frontend::{process_visual_feedback, render_world};
+use crate::ui::frontend::{render_world, visualize_feedback};
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
 use crate::ui::gui::{render_gui, Hud};
 use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
@@ -292,12 +292,7 @@ impl Rltk_GameState for Game {
 
                 let re_render: bool = if !action_feedback.is_empty() {
                     // render animations and action vfx
-                    process_visual_feedback(
-                        &mut self.state,
-                        &mut self.objects,
-                        ctx,
-                        action_feedback,
-                    );
+                    visualize_feedback(&mut self.state, &mut self.objects, ctx, action_feedback);
                     true
                 } else {
                     false
