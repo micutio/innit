@@ -19,6 +19,7 @@ use crate::ui::frontend::{render_world, visualize_feedback};
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
 use crate::ui::gui::{render_gui, Hud};
 use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
+use crate::ui::menus::game_over_menu::GameOverMenuItem;
 use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menus::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
@@ -52,6 +53,7 @@ pub enum RunState {
     NewGame,
     LoadGame,
     ChooseActionMenu(Menu<ActionItem>),
+    GameOver(Menu<GameOverMenuItem>),
     InfoBox(InfoBox),
     Ticking(bool), // flags to render world, hud
     CheckInput,
@@ -65,6 +67,7 @@ impl Display for RunState {
             RunState::NewGame => write!(f, "NewGame"),
             RunState::LoadGame => write!(f, "LoadGame"),
             RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
+            RunState::GameOver(_) => write!(f, "GameOver"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
             RunState::Ticking(render) => write!(f, "Ticking({})", render),
             RunState::CheckInput => write!(f, "CheckInput"),
@@ -270,6 +273,27 @@ impl Rltk_GameState for Game {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
                     }
                     None => RunState::MainMenu(instance.clone()),
+                }
+            }
+            RunState::GameOver(ref mut instance) => {
+                ctx.set_active_console(WORLD_CON);
+                ctx.cls();
+                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                ctx.print_color_centered_at(
+                    SCREEN_WIDTH / 2,
+                    1,
+                    color_palette.yellow,
+                    color_palette.bg_hud,
+                    "GAME OVER", // TODO: Add more text
+                );
+                match instance.display(ctx, color_palette) {
+                    Some(option) => GameOverMenuItem::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    ),
+                    None => RunState::GameOver(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => {

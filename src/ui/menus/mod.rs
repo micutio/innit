@@ -1,4 +1,5 @@
 pub mod choose_action_menu;
+pub mod game_over_menu;
 pub mod main_menu;
 
 use crate::core::game_objects::GameObjects;
@@ -26,6 +27,7 @@ pub struct Menu<T: MenuItem> {
     layout: Rect,
 }
 
+// TODO: Try to turn String into generic IntoString type!
 impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
         let menu_height = item_vec.len() as i32 + 2;
