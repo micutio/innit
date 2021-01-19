@@ -28,17 +28,16 @@
 // TODO: Should attributes be fix on trait level or full-on generic as list of attribute objects?
 // TODO: How to best model synergies and anti-synergies across traits?
 
-use rand::Rng;
-use std::cmp;
-use std::collections::HashMap;
-
 use crate::entity::action::*;
 use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 use core::fmt;
-use serde::export::Formatter;
-use std::fmt::Display;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
+use std::cmp;
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 pub const GENE_LEN: usize = 30;
 

@@ -25,9 +25,8 @@ use crate::ui::menus::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
 use core::fmt;
 use rltk::{GameState as Rltk_GameState, Rltk};
-use serde::export::Formatter;
 use std::error::Error;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 

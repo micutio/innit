@@ -4,9 +4,6 @@
 
 // internal imports
 
-use rand::seq::{IteratorRandom, SliceRandom};
-use std::fmt::Debug;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::action::{
@@ -14,6 +11,9 @@ use crate::entity::action::{
 };
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
+use rand::seq::{IteratorRandom, SliceRandom};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AiPassive;

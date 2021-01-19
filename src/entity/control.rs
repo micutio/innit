@@ -3,6 +3,7 @@ use crate::core::game_state::GameState;
 use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 #[derive(Debug, Serialize, Deserialize)]

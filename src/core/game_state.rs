@@ -1,5 +1,3 @@
-use rand::RngCore;
-
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::position::Position;
@@ -9,6 +7,8 @@ use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::ui::animation::AnimationType;
 use crate::util::game_rng::GameRng;
+use rand::RngCore;
+use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum MsgClass {

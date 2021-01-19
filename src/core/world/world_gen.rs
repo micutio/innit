@@ -1,7 +1,6 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::ai::{AiPassive, AiRandom, AiVirus};
@@ -10,6 +9,7 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::ui::color;
 use crate::ui::color::Color;
+use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.

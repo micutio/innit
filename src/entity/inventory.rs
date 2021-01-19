@@ -1,4 +1,5 @@
 use crate::entity::object::Object;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Inventory {

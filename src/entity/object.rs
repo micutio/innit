@@ -7,6 +7,7 @@ use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
 use crate::ui::color::Color;
+use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
 

@@ -1,4 +1,5 @@
 use rltk::Point;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone, Copy)]
 pub struct Position {

@@ -1,5 +1,3 @@
-use std::ops::{Index, IndexMut};
-
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
@@ -9,6 +7,8 @@ use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::game_rng::GameRng;
 use rltk::{Algorithm2D, BaseMap, Point};
+use serde::{Deserialize, Serialize};
+use std::ops::{Index, IndexMut};
 
 /// The game object struct contains all game objects, including
 /// * player character

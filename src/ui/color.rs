@@ -1,4 +1,5 @@
 use rltk::{RGB, RGBA};
+use serde::{Deserialize, Serialize};
 
 pub const VIRUS: (u8, u8, u8) = (100, 255, 150);
 pub const BACTERIA: (u8, u8, u8) = (80, 235, 120);

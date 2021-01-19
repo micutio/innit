@@ -2,6 +2,7 @@
 //! This defines player actions, key bindings and more.
 
 use crate::entity::action::{ActPass, Action};
+use serde::{Deserialize, Serialize};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector
 #[derive(Debug, Serialize, Deserialize)]

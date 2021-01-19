@@ -3,8 +3,6 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
-use std::fmt::Debug;
-
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
@@ -14,6 +12,8 @@ use crate::entity::control::Controller::Npc;
 use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
 use crate::ui::color::{self, Color};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
