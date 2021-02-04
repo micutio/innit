@@ -3,28 +3,45 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    // "configurations": [
+    //     {
+    //         "type": "lldb",
+    //         "request": "launch",
+    //         "name": "Debug executable 'Innit'",
+    //         "cargo": {
+    //             "args": [
+    //                 "build",
+    //                 "--bin=innit",
+    //                 "--package=innit"
+    //             ],
+    //             "filter": {
+    //                 "name": "innit",
+    //                 "kind": "bin"
+    //             }
+    //         },
+    //         "args": [],
+    //         "cwd": "${workspaceFolder}",
+    //         "env": {
+    //             "RUST_LOG": "innit=trace",
+    //             "RUST_BACKTRACE": "1",
+    //         }
+    //     },
+    // ]
     "configurations": [
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'Innit'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=innit",
-                    "--package=innit"
-                ],
-                "filter": {
-                    "name": "innit",
-                    "kind": "bin"
-                }
-            },
+            "name": "Debug Innit",
+            "program": "${workspaceFolder}/target/debug/innit",
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {
                 "RUST_LOG": "innit=trace",
                 "RUST_BACKTRACE": "1",
-            }
-        },
+            },
+            "sourceLanguages": [
+                "rust"
+            ]
+        }
     ]
 }
