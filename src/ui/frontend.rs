@@ -144,38 +144,38 @@ fn update_visual(
 }
 
 // TODO: Refactor this to 'process_animations'!
-pub fn visualize_feedback(
-    _state: &mut GameState,
-    _objects: &mut GameObjects,
-    _ctx: &mut Rltk,
-    feedback: Vec<ObjectFeedback>,
-) -> RunState {
-    let mut re_render = false;
-    for f in feedback {
-        match f {
-            // no action has been performed, repeat the turn and try again
-            ObjectFeedback::NoAction => {}
-
-            // action has been completed, but nothing needs to be done about it
-            ObjectFeedback::NoFeedback => {}
-
-            ObjectFeedback::Render => {
-                re_render = true;
-            }
-
-            ObjectFeedback::Animate {
-                anim_type: _,
-                origin: _,
-            } => {
-                // TODO: Play animation, if origin is in player FOV
-                info!("animation");
-                re_render = true;
-            }
-            ObjectFeedback::GameOver => {
-                return RunState::GameOver(game_over_menu());
-            }
-        }
-    }
-    // TODO: Change boolean flag to true only if any object feedback
-    RunState::Ticking(re_render)
-}
+// pub fn visualize_feedback(
+//     _state: &mut GameState,
+//     _objects: &mut GameObjects,
+//     _ctx: &mut Rltk,
+//     feedback: Vec<ObjectFeedback>,
+// ) -> RunState {
+//     let mut re_render = false;
+//     for f in feedback {
+//         match f {
+//             // no action has been performed, repeat the turn and try again
+//             ObjectFeedback::NoAction => {}
+//
+//             // action has been completed, but nothing needs to be done about it
+//             ObjectFeedback::NoFeedback => {}
+//
+//             ObjectFeedback::Render => {
+//                 re_render = true;
+//             }
+//
+//             ObjectFeedback::Animate {
+//                 anim_type: _,
+//                 origin: _,
+//             } => {
+//                 // TODO: Play animation, if origin is in player FOV
+//                 info!("animation");
+//                 re_render = true;
+//             }
+//             ObjectFeedback::GameOver => {
+//                 return RunState::GameOver(game_over_menu());
+//             }
+//         }
+//     }
+//     // TODO: Change boolean flag to true only if any object feedback
+//     RunState::Ticking(re_render)
+// }

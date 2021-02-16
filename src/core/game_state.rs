@@ -51,10 +51,11 @@ pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
     Render,
-    Animate {
-        anim_type: AnimationType,
-        origin: Position,
-    }, // play given animation to visualise action
+    // TODO: Move animations/particle effects into separate particle effect handler
+    // Animate {
+    //     anim_type: AnimationType,
+    //     origin: Position,
+    // }, // play given animation to visualise action
     GameOver, // "main" player died
 }
 
@@ -106,7 +107,7 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    pub fn process_object(&mut self, objects: &mut GameObjects) -> Vec<ObjectFeedback> {
+    pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectFeedback {
         // unpack object to process its next action
         if let Some(mut active_object) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
@@ -131,7 +132,7 @@ impl GameState {
                     && active_object.processors.energy == active_object.processors.energy_storage
                 {
                     objects.replace(self.obj_idx, active_object);
-                    return vec![ObjectFeedback::NoAction];
+                    return ObjectFeedback::NoAction;
                 }
             }
 
@@ -145,9 +146,9 @@ impl GameState {
                     // replenish energy
                     active_object.metabolize();
                     if self.is_players_turn() {
-                        vec![ObjectFeedback::NoFeedback]
+                        ObjectFeedback::Render
                     } else {
-                        vec![]
+                        ObjectFeedback::NoFeedback
                     }
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
@@ -161,7 +162,8 @@ impl GameState {
                     // ObjectProcResult::NoFeedback
                 };
             if !active_object.physics.is_visible {
-                process_result.clear();
+                // process_result.clear();
+                process_result = ObjectFeedback::NoFeedback;
             }
 
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
@@ -250,7 +252,7 @@ impl GameState {
                 }
                 // if the "main" player is dead, the game is over
                 if self.obj_idx == PLAYER {
-                    process_result.push(ObjectFeedback::GameOver);
+                    process_result = ObjectFeedback::GameOver;
                 }
             } else {
                 objects[self.obj_idx].replace(active_object);
@@ -275,14 +277,14 @@ impl GameState {
         objects: &mut GameObjects,
         actor: &mut Object,
         action: Box<dyn Action>,
-    ) -> Vec<ObjectFeedback> {
+    ) -> ObjectFeedback {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
             ActionResult::Success { callback } => match callback {
-                ObjectFeedback::NoFeedback => vec![],
-                _ => vec![callback],
+                ObjectFeedback::NoFeedback => ObjectFeedback::NoFeedback,
+                _ => callback,
             },
-            ActionResult::Failure => vec![ObjectFeedback::NoAction], // how to handle fails?
+            ActionResult::Failure => ObjectFeedback::NoAction, // how to handle fails?
             ActionResult::Consequence {
                 callback,
                 follow_up,

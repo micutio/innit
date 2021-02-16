@@ -3,7 +3,7 @@
 
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass};
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{ActPass, Target, TargetCategory};
@@ -15,11 +15,11 @@ use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
-use crate::ui::frontend::{render_world, visualize_feedback};
+use crate::ui::frontend::render_world;
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
 use crate::ui::gui::{render_gui, Hud};
 use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
-use crate::ui::menus::game_over_menu::GameOverMenuItem;
+use crate::ui::menus::game_over_menu::{game_over_menu, GameOverMenuItem};
 use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menus::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
@@ -304,27 +304,34 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::Ticking(_) => {
-                // let the game engine process an object
-                let mut action_feedback;
+                let mut feedback;
+                // Let the game engine process objects until we have to re-render the world or UI.
+                // Re-rendering is necessary either because the world changed or messages need to
+                // be printed to the log.
                 loop {
-                    action_feedback = self.state.process_object(&mut self.objects);
-                    if !action_feedback.is_empty() || self.state.log.is_changed {
+                    feedback = self.state.process_object(&mut self.objects);
+                    match feedback {
+                        ObjectFeedback::NoAction => {}
+                        ObjectFeedback::NoFeedback => {}
+                        _ => break,
+                    }
+                    if self.state.log.is_changed {
                         break;
                     }
                 }
 
-                let re_render: bool = if !action_feedback.is_empty() {
-                    // render animations and action vfx
-                    visualize_feedback(&mut self.state, &mut self.objects, ctx, action_feedback);
-                    true
-                } else {
-                    false
-                };
-
-                if self.state.is_players_turn() && self.state.player_energy_full(&self.objects) {
-                    RunState::CheckInput
-                } else {
-                    RunState::Ticking(re_render)
+                match feedback {
+                    ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
+                    ObjectFeedback::Render => RunState::Ticking(true),
+                    _ => {
+                        if self.state.is_players_turn()
+                            && self.state.player_energy_full(&self.objects)
+                        {
+                            RunState::CheckInput
+                        } else {
+                            RunState::Ticking(false)
+                        }
+                    }
                 }
             }
             RunState::CheckInput => {
@@ -344,6 +351,7 @@ impl Rltk_GameState for Game {
                                 Quick2Action => player.get_quick2_action(),
                                 PassTurn => Box::new(ActPass),
                             };
+                            // TODO: Turn this into a queue to detach action sources from user input!
                             player.set_next_action(Some(a));
                             RunState::Ticking(false)
                         } else {
