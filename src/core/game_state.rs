@@ -1,11 +1,9 @@
 use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
-use crate::core::position::Position;
 use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
-use crate::ui::animation::AnimationType;
 use crate::util::game_rng::GameRng;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -115,13 +113,13 @@ impl GameState {
             // 2. turn action
             // 3. turn conclusion
             // if active_object.physics.is_visible {
-            //     trace!(
-            //         "{} | {}'s turn now @energy {}/{}",
-            //         self.obj_idx,
-            //         active_object.visual.name,
-            //         active_object.processors.energy,
-            //         active_object.processors.energy_storage
-            //     );
+            trace!(
+                "{} | {}'s turn now @energy {}/{}",
+                self.obj_idx,
+                active_object.visual.name,
+                active_object.processors.energy,
+                active_object.processors.energy_storage
+            );
             // }
 
             if active_object.is_player() {
@@ -289,10 +287,13 @@ impl GameState {
                 callback,
                 follow_up,
             } => {
-                // if we have a side effect, process it first and then the `main` action
-                let mut results = vec![callback];
-                results.append(&mut self.process_action(objects, actor, follow_up));
-                results
+                let consequence_feedback = self.process_action(objects, actor, follow_up);
+                match (&callback, &consequence_feedback) {
+                    (ObjectFeedback::NoFeedback, _) => consequence_feedback,
+                    (ObjectFeedback::NoAction, _) => consequence_feedback,
+                    (ObjectFeedback::GameOver, _) => callback,
+                    (ObjectFeedback::Render, _) => callback,
+                }
             }
         }
     }

@@ -1,4 +1,3 @@
-pub mod animation;
 pub mod color;
 pub mod color_palette;
 pub mod dialog;

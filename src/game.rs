@@ -308,27 +308,31 @@ impl Rltk_GameState for Game {
                 // Let the game engine process objects until we have to re-render the world or UI.
                 // Re-rendering is necessary either because the world changed or messages need to
                 // be printed to the log.
-                loop {
+                'processing: loop {
                     feedback = self.state.process_object(&mut self.objects);
-                    match feedback {
-                        ObjectFeedback::NoAction => {}
-                        ObjectFeedback::NoFeedback => {}
-                        _ => break,
-                    }
-                    if self.state.log.is_changed {
-                        break;
+                    println!("processing: feedback={:#?}", &feedback);
+                    // match feedback {
+                    //     // ObjectFeedback::NoAction => {}
+                    //     ObjectFeedback::NoFeedback => {}
+                    //     _ => break 'processing,
+                    // }
+                    if feedback != ObjectFeedback::NoFeedback || self.state.log.is_changed {
+                        break 'processing;
                     }
                 }
 
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
                     ObjectFeedback::Render => RunState::Ticking(true),
+                    // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
                             && self.state.player_energy_full(&self.objects)
                         {
+                            println!(">>>>>>> checking input");
                             RunState::CheckInput
                         } else {
+                            println!(">>>>>>> ticking");
                             RunState::Ticking(false)
                         }
                     }
