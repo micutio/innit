@@ -99,8 +99,8 @@ fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
 pub struct Hud {
     layout: Rect,
     last_mouse: Point,
-    pub(crate) require_refresh: bool,
-    pub(crate) items: Vec<UiItem<HudItem>>,
+    pub require_refresh: bool,
+    pub items: Vec<UiItem<HudItem>>,
     tooltip: Vec<String>, // TODO: Find elegant way to render this and tooltips.
 }
 

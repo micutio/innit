@@ -118,7 +118,25 @@ impl Clone for Box<dyn Action> {
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActPass;
+pub struct ActPass {
+    override_redraw: bool,
+}
+
+impl ActPass {
+    pub fn update() -> Self {
+        ActPass {
+            override_redraw: true,
+        }
+    }
+}
+
+impl Default for ActPass {
+    fn default() -> Self {
+        ActPass {
+            override_redraw: false,
+        }
+    }
+}
 
 #[typetag::serde]
 impl Action for ActPass {
@@ -130,9 +148,13 @@ impl Action for ActPass {
     ) -> ActionResult {
         // do nothing
         // duh
-        ActionResult::Success {
-            callback: ObjectFeedback::NoFeedback,
-        }
+        let callback = if self.override_redraw {
+            ObjectFeedback::Render
+        } else {
+            ObjectFeedback::NoFeedback
+        };
+
+        ActionResult::Success { callback }
     }
 
     fn set_target(&mut self, _target: Target) {}
@@ -631,6 +653,7 @@ impl Action for ActProduceVirion {
         match &self.virus_rna {
             Some(dna) => {
                 debug!("#{} produces virion", owner.visual.name);
+                assert!(!dna.is_empty());
                 // if owner.physics.is_visible || owner.is_player() {
                 state.log.add(
                     format!("{} is forced to produce virions", owner.visual.name),
@@ -683,7 +706,7 @@ impl Action for ActProduceVirion {
             }
         };
         ActionResult::Success {
-            callback: ObjectFeedback::NoFeedback,
+            callback: ObjectFeedback::Render,
         }
     }
 

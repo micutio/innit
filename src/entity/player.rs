@@ -17,10 +17,10 @@ pub struct PlayerCtrl {
 impl PlayerCtrl {
     pub fn new() -> Self {
         PlayerCtrl {
-            primary_action: Box::new(ActPass),
-            secondary_action: Box::new(ActPass),
-            quick1_action: Box::new(ActPass),
-            quick2_action: Box::new(ActPass),
+            primary_action: Box::new(ActPass::default()),
+            secondary_action: Box::new(ActPass::default()),
+            quick1_action: Box::new(ActPass::default()),
+            quick2_action: Box::new(ActPass::default()),
             next_action: None,
         }
     }

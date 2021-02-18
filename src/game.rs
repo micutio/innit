@@ -219,7 +219,7 @@ impl Rltk_GameState for Game {
         let mut new_run_state = self.run_state.take().unwrap();
         let color_palette = ColorPalette::get(self.is_dark_color_palette);
 
-        trace!("run state: {}", new_run_state);
+        // debug!("run state: {}", new_run_state);
 
         if let RunState::Ticking(render) = new_run_state {
             ctx.set_active_console(HUD_CON);
@@ -310,12 +310,6 @@ impl Rltk_GameState for Game {
                 // be printed to the log.
                 'processing: loop {
                     feedback = self.state.process_object(&mut self.objects);
-                    println!("processing: feedback={:#?}", &feedback);
-                    // match feedback {
-                    //     // ObjectFeedback::NoAction => {}
-                    //     ObjectFeedback::NoFeedback => {}
-                    //     _ => break 'processing,
-                    // }
                     if feedback != ObjectFeedback::NoFeedback || self.state.log.is_changed {
                         break 'processing;
                     }
@@ -329,10 +323,8 @@ impl Rltk_GameState for Game {
                         if self.state.is_players_turn()
                             && self.state.player_energy_full(&self.objects)
                         {
-                            println!(">>>>>>> checking input");
                             RunState::CheckInput
                         } else {
-                            println!(">>>>>>> ticking");
                             RunState::Ticking(false)
                         }
                     }
@@ -353,7 +345,7 @@ impl Rltk_GameState for Game {
                                 SecondaryAction(dir) => player.get_secondary_action(dir),
                                 Quick1Action => player.get_quick1_action(),
                                 Quick2Action => player.get_quick2_action(),
-                                PassTurn => Box::new(ActPass),
+                                PassTurn => Box::new(ActPass::default()),
                             };
                             // TODO: Turn this into a queue to detach action sources from user input!
                             player.set_next_action(Some(a));
