@@ -58,7 +58,8 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
         .collect();
 
     // set all objects invisible by default
-    let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
+    let mut dist_map: Vec<f32> =
+        vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize + WORLD_WIDTH as usize];
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
