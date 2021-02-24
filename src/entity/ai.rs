@@ -231,7 +231,7 @@ impl Ai for AiForceVirusProduction {
             if self.current_turn == t {
                 if let Some(original_ai) = self.original_ai.take() {
                     owner.control.replace(original_ai);
-                    Box::new(ActPass::update());
+                    return Box::new(ActPass::update());
                 }
             } else {
                 self.current_turn += 1;
