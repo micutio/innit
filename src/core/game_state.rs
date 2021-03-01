@@ -159,7 +159,7 @@ impl GameState {
                     panic!("How can an object 'has_next_action' but NOT have an action?");
                     // ObjectProcResult::NoFeedback
                 };
-            if !active_object.physics.is_visible {
+            if !active_object.physics.is_visible && !active_object.physics.is_always_visible {
                 // process_result.clear();
                 process_result = ObjectFeedback::NoFeedback;
             }
