@@ -325,21 +325,33 @@ impl Action for ActAttack {
         // assert that there is only one available
         // return
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        let valid_targets: Vec<&Object> = objects
-            .get_vector()
-            .iter()
+        let valid_target: Option<&mut Object> = objects
+            .get_vector_mut()
+            .iter_mut()
             .flatten()
-            .filter(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos))
-            .collect();
+            .find(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos));
 
-        if let Some(_target_obj) = valid_targets.first() {
-            // TODO: Take damage
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
+        match valid_target {
+            Some(t) => {
+                // deal damage
+                t.actuators.hp -= self.lvl;
+                debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
+                state.log.add(
+                    format!(
+                        "{} attacked {} for {} damage",
+                        &owner.visual.name, &t.visual.name, self.lvl
+                    ),
+                    MsgClass::Info,
+                );
+                ActionResult::Success {
+                    // TODO: Add particle to emphasise something happened!
+                    callback: ObjectFeedback::NoFeedback,
+                }
             }
-        } else {
-            state.log.add("Nothing to attack here", MsgClass::Info);
-            ActionResult::Failure
+            None => {
+                state.log.add("Nothing to attack here", MsgClass::Info);
+                ActionResult::Failure
+            }
         }
     }
 
