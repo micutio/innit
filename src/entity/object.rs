@@ -322,7 +322,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(ActPass)
+            Box::new(ActPass::default())
         }
     }
 
@@ -333,7 +333,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(ActPass)
+            Box::new(ActPass::default())
         }
     }
 
@@ -341,7 +341,7 @@ impl Object {
         if let Some(Controller::Player(ctrl)) = &self.control {
             ctrl.quick1_action.clone()
         } else {
-            Box::new(ActPass)
+            Box::new(ActPass::default())
         }
     }
 
@@ -349,7 +349,7 @@ impl Object {
         if let Some(Controller::Player(ctrl)) = &self.control {
             ctrl.quick2_action.clone()
         } else {
-            Box::new(ActPass)
+            Box::new(ActPass::default())
         }
     }
 

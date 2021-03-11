@@ -15,7 +15,7 @@ use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiPassive;
 
 impl AiPassive {
@@ -32,11 +32,11 @@ impl Ai for AiPassive {
         _objects: &mut GameObjects,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(ActPass)
+        Box::new(ActPass::default())
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiRandom;
 
 impl AiRandom {
@@ -58,7 +58,7 @@ impl Ai for AiRandom {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(ActPass);
+            return Box::new(ActPass::default());
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -139,12 +139,12 @@ impl Ai for AiRandom {
             }
             boxed_action
         } else {
-            Box::new(ActPass)
+            Box::new(ActPass::default())
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiVirus {}
 
 impl AiVirus {
@@ -183,7 +183,7 @@ impl Ai for AiVirus {
                 owner.dna.raw.clone(),
             ));
         }
-        Box::new(ActPass)
+        Box::new(ActPass::default())
     }
 }
 
@@ -231,12 +231,12 @@ impl Ai for AiForceVirusProduction {
             if self.current_turn == t {
                 if let Some(original_ai) = self.original_ai.take() {
                     owner.control.replace(original_ai);
+                    return Box::new(ActPass::update());
                 }
             } else {
                 self.current_turn += 1;
             }
         }
-
         Box::new(ActProduceVirion::new(self.rna.clone()))
     }
 }

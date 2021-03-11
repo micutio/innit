@@ -1,4 +1,3 @@
-pub mod animation;
 pub mod color;
 pub mod color_palette;
 pub mod dialog;
@@ -6,4 +5,4 @@ pub mod frontend;
 pub mod game_input;
 pub mod gui;
 pub mod menus;
-pub(crate) mod rex_assets;
+pub mod rex_assets;

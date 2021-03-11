@@ -1,12 +1,11 @@
 use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectFeedback};
+use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
-use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::menus::game_over_menu::game_over_menu;
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
@@ -58,7 +57,8 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
         .collect();
 
     // set all objects invisible by default
-    let mut dist_map: Vec<f32> = vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize];
+    let mut dist_map: Vec<f32> =
+        vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize + WORLD_WIDTH as usize];
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
@@ -143,38 +143,38 @@ fn update_visual(
 }
 
 // TODO: Refactor this to 'process_animations'!
-pub fn visualize_feedback(
-    _state: &mut GameState,
-    _objects: &mut GameObjects,
-    _ctx: &mut Rltk,
-    feedback: Vec<ObjectFeedback>,
-) -> RunState {
-    let mut re_render = false;
-    for f in feedback {
-        match f {
-            // no action has been performed, repeat the turn and try again
-            ObjectFeedback::NoAction => {}
-
-            // action has been completed, but nothing needs to be done about it
-            ObjectFeedback::NoFeedback => {}
-
-            ObjectFeedback::Render => {
-                re_render = true;
-            }
-
-            ObjectFeedback::Animate {
-                anim_type: _,
-                origin: _,
-            } => {
-                // TODO: Play animation, if origin is in player FOV
-                info!("animation");
-                re_render = true;
-            }
-            ObjectFeedback::GameOver => {
-                return RunState::GameOver(game_over_menu());
-            }
-        }
-    }
-    // TODO: Change boolean flag to true only if any object feedback
-    RunState::Ticking(re_render)
-}
+// pub fn visualize_feedback(
+//     _state: &mut GameState,
+//     _objects: &mut GameObjects,
+//     _ctx: &mut Rltk,
+//     feedback: Vec<ObjectFeedback>,
+// ) -> RunState {
+//     let mut re_render = false;
+//     for f in feedback {
+//         match f {
+//             // no action has been performed, repeat the turn and try again
+//             ObjectFeedback::NoAction => {}
+//
+//             // action has been completed, but nothing needs to be done about it
+//             ObjectFeedback::NoFeedback => {}
+//
+//             ObjectFeedback::Render => {
+//                 re_render = true;
+//             }
+//
+//             ObjectFeedback::Animate {
+//                 anim_type: _,
+//                 origin: _,
+//             } => {
+//                 // TODO: Play animation, if origin is in player FOV
+//                 info!("animation");
+//                 re_render = true;
+//             }
+//             ObjectFeedback::GameOver => {
+//                 return RunState::GameOver(game_over_menu());
+//             }
+//         }
+//     }
+//     // TODO: Change boolean flag to true only if any object feedback
+//     RunState::Ticking(re_render)
+// }
