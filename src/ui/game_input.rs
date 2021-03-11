@@ -67,6 +67,10 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
     }
 }
 
+// TODO: Create more detailed info panel as tooltip.
+// useful info:
+// - receptor matching or not
+// - virus RNA or DNA
 fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> Vec<String> {
     // create a list with the names of all objects at the mouse's coordinates and in FOV
     objects
@@ -74,6 +78,7 @@ fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> Vec<String> 
         .iter()
         .flatten()
         .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
+        //                              vvvvv---- replace function with `key-value`-list generating function.
         .map(|o| o.visual.name.clone())
         .collect::<Vec<_>>()
     // .join(", ")

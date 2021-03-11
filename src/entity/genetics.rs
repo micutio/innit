@@ -404,6 +404,7 @@ impl GeneLibrary {
         dna_type: DnaType,
         raw_dna: &[u8],
     ) -> (Sensors, Processors, Actuators, Dna) {
+        assert!(!raw_dna.is_empty());
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = raw_dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new(dna_type, raw_dna);
@@ -501,6 +502,7 @@ struct TraitBuilder {
 
 impl TraitBuilder {
     pub fn new(dna_type: DnaType, raw_dna: &[u8]) -> Self {
+        assert!(!raw_dna.is_empty());
         TraitBuilder {
             sensors: Sensors::new(),
             processors: Processors::new(),
