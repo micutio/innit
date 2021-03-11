@@ -394,7 +394,7 @@ fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &m
 
     // print game messages, one line at a time
     let mut y = layout.height();
-    let mut bg_flag: bool = true;
+    let mut bg_flag: bool = modulus(state.log.messages.len(), 2) == 0;
     for (ref msg, class) in &mut state.log.messages.iter().rev() {
         if y < 0 {
             break;
@@ -417,26 +417,25 @@ fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &m
         bg_flag = !bg_flag;
 
         let msg_lines = format_message(msg, layout.width());
-        let msg_start_y = layout.y1 + y + 1 - msg_lines.len() as i32;
+        let msg_end_y = layout.y1 + y;
+        let msg_start_y: i32 = msg_end_y - msg_lines.len() as i32 + 1;
+        let msg_area_start_y: i32 = i32::max(layout.y1, msg_end_y - msg_lines.len() as i32 + 1);
 
         // message background
         draw_batch.fill_region(
-            Rect::with_exact(
-                layout.x1,
-                msg_start_y,
-                layout.x2,
-                msg_start_y - 1 + msg_lines.len() as i32,
-            ),
+            Rect::with_exact(layout.x1, msg_area_start_y, layout.x2, msg_end_y),
             ColorPair::new(bg_color, bg_color),
             to_cp437(' '),
         );
 
         for (idx, line) in msg_lines.iter().enumerate() {
-            draw_batch.print_color(
-                Point::new(layout.x1, msg_start_y + idx as i32),
-                line,
-                ColorPair::new(fg_color, bg_color),
-            );
+            if (msg_start_y + idx as i32) >= layout.y1 {
+                draw_batch.print_color(
+                    Point::new(layout.x1, msg_start_y + idx as i32),
+                    line,
+                    ColorPair::new(fg_color, bg_color),
+                );
+            }
         }
 
         y -= msg_lines.len() as i32;

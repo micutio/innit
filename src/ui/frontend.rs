@@ -17,7 +17,6 @@ pub fn render_world(
     color_palette: &ColorPalette,
 ) {
     let mut draw_batch = DrawBatch::new();
-
     update_visibility(objects, color_palette);
 
     let mut to_draw: Vec<&Object> = objects
