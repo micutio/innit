@@ -1,3 +1,15 @@
+//! The GUI in Innit consists of the sidebar and any tooltips appearing over objects on the map or
+//! UI elements.
+//!
+//! TODO: Draft data structure for tooltips and generate them more selectively, not for empty tiles.
+//! - varying visibility and detail, depending on perception (add to genetic traits)
+//! - potential structure:
+//!   - header
+//!   - table with attributes and values:
+//!     - hp
+//!     - energy
+//!     - receptor and whether it's matching with us
+
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::action::Target;
 use crate::entity::genetics::{GeneticTrait, TraitFamily};
