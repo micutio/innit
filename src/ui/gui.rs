@@ -28,7 +28,7 @@ use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
-    pub tooltip: Vec<String>,
+    pub tooltip: ToolTip,
     pub layout: Rect,
     pub color: ColorPair,
 }
@@ -37,7 +37,7 @@ impl<T> UiItem<T> {
     pub fn new<S1: Into<String>>(
         item_enum: T,
         text: S1,
-        tooltip: Vec<String>,
+        tooltip: ToolTip,
         layout: Rect,
         color: ColorPair,
     ) -> Self {
@@ -101,12 +101,46 @@ fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>
     items
 }
 
-fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
-    vec![
-        format!("trait: {}", g_trait.trait_name),
-        format!("group: {}", g_trait.trait_family),
-    ]
+pub struct ToolTip {
+    header: Option<String>,
+    attributes: Vec<(String, String)>,
 }
+
+impl ToolTip {
+    fn new<S1: Into<String>>(header: S1, attrs: Vec<(String, String)>) -> Self {
+        ToolTip {
+            header: Some(header.into()),
+            attributes: attrs
+                .iter()
+                .map(|(e1, e2)| (e1.into(), e2.into()))
+                .collect(),
+        }
+    }
+
+    fn without_header(attrs: Vec<(String, String)>) -> Self {
+        ToolTip {
+            header: None,
+            attributes: attrs
+                .iter()
+                .map(|(e1, e2)| (e1.into(), e2.into()))
+                .collect(),
+        }
+    }
+
+    fn header_only<S1: Into<String>>(header: S1) -> Self {
+        ToolTip {
+            header: Some(header.into()),
+            attributes: Vec::new(),
+        }
+    }
+}
+
+// fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
+//     vec![
+//         format!("trait: {}", g_trait.trait_name),
+//         format!("group: {}", g_trait.trait_family),
+//     ]
+// }
 
 pub struct Hud {
     layout: Rect,
