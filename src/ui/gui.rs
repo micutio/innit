@@ -574,8 +574,6 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         .map(|t| t.render_height())
         .max()
         .unwrap_or(0);
-    let total_width = hud.tooltips.iter().map(|t| t.render_width()).sum();
-    let total_height = hud.tooltips.iter().map(|t| t.render_height()).sum();
 
     // check whether to render horizontally or vertically first
     let is_wide = max_width > max_height;
@@ -621,8 +619,8 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
                 Rect::with_size(next_x, next_y, tt_width, 3),
                 ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             );
-            draw_batch.print_color(
-                Point::new(next_x + 1, next_y + 1),
+            draw_batch.print_color_centered_at(
+                Point::new(next_x + (tt_width / 2), next_y + 1),
                 tooltip.header.unwrap(),
                 ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             );
