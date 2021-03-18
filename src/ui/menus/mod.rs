@@ -6,7 +6,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::gui::UiItem;
+use crate::ui::gui::{ToolTip, UiItem};
 use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
@@ -43,7 +43,7 @@ impl<T: MenuItem> Menu<T> {
                 UiItem::new(
                     enum_item,
                     text,
-                    vec![],
+                    ToolTip::header_only(""),
                     Rect::with_size(x1 + 1, y1 + 1 + i as i32, MENU_WIDTH - 2, 1),
                     ColorPair::new((0, 0, 0), (0, 0, 0)),
                 )

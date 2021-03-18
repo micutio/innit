@@ -17,6 +17,7 @@ use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::util::modulus;
+use num::Signed;
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -108,7 +109,7 @@ pub struct ToolTip {
 }
 
 impl ToolTip {
-    fn new<S1: Into<String>>(header: S1, attrs: Vec<(String, String)>) -> Self {
+    pub fn new<S1: Into<String>>(header: S1, attrs: Vec<(String, String)>) -> Self {
         ToolTip {
             header: Some(header.into()),
             attributes: attrs
@@ -118,7 +119,7 @@ impl ToolTip {
         }
     }
 
-    fn no_header(attrs: Vec<(String, String)>) -> Self {
+    pub fn no_header(attrs: Vec<(String, String)>) -> Self {
         ToolTip {
             header: None,
             attributes: attrs
@@ -128,7 +129,7 @@ impl ToolTip {
         }
     }
 
-    fn header_only<S1: Into<String>>(header: S1) -> Self {
+    pub fn header_only<S1: Into<String>>(header: S1) -> Self {
         ToolTip {
             header: Some(header.into()),
             attributes: Vec::new(),
@@ -196,7 +197,7 @@ impl Hud {
         }
     }
 
-    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<String>) {
+    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<ToolTip>) {
         if let Some(item) = self
             .items
             .iter()
@@ -204,7 +205,7 @@ impl Hud {
         {
             self.tooltips.push(item.tooltip.clone());
         } else {
-            self.tooltip = names;
+            self.tooltips = names;
         }
 
         self.require_refresh = self.last_mouse != mouse_pos;
@@ -576,30 +577,30 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         .unwrap_or(0);
 
     // check whether to render horizontally or vertically first
-    let is_wide = max_width > max_height;
-    let is_forwards: bool = if is_wide {
+    let is_render_horiz = max_width < max_height;
+    let is_forwards: bool = if is_render_horiz {
         // check whether to render tooltips left-to-right or the other way around
-        hud.last_mouse.x + max_width <= SCREEN_WIDTH
+        hud.last_mouse.x < SCREEN_WIDTH - hud.last_mouse.x
     } else {
         // check whether to render tooltips up-down or the other way around
-        hud.last_mouse.y + max_height <= SCREEN_HEIGHT
+        hud.last_mouse.y < SCREEN_HEIGHT - hud.last_mouse.y
     };
 
-    let x_direction = match (is_wide, is_forwards) {
+    let x_direction = match (is_render_horiz, is_forwards) {
+        (true, true) => 1,
+        (true, false) => -1,
+        (false, _) => 1,
+    };
+    let mut next_x = hud.last_mouse.x + x_direction;
+
+    let y_direction = match (is_render_horiz, is_forwards) {
         (true, _) => 0,
         (false, true) => 1,
         (false, false) => -1,
     };
-    let mut next_x = hud.last_mouse.x + x_direction;
-
-    let y_direction = match (is_wide, is_forwards) {
-        (false, _) => 0,
-        (true, true) => 1,
-        (true, false) => -1,
-    };
     let mut next_y = hud.last_mouse.y + y_direction;
 
-    for tooltip in hud.tooltips {
+    for tooltip in &hud.tooltips {
         let tt_width = tooltip.render_width();
         let tt_height = tooltip.render_height();
 
@@ -615,13 +616,37 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         let mut top_offset: i32 = 1;
         if tooltip.header.is_some() {
             top_offset = 3;
-            draw_batch.draw_hollow_box(
-                Rect::with_size(next_x, next_y, tt_width, 3),
-                ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
-            );
+
+            if !tooltip.attributes.is_empty() {
+                draw_batch.print_color(
+                    Point::new(next_x, next_y + 2),
+                    // to_cp437('─'),
+                    "├",
+                    ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                );
+                draw_batch.print_color(
+                    Point::new(next_x + tt_width, next_y + 2),
+                    // to_cp437('─'),
+                    "┤",
+                    ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                );
+                for x in (next_x + 1)..(next_x + tt_width) {
+                    draw_batch.print_color(
+                        Point::new(x, next_y + 2),
+                        // to_cp437('─'),
+                        "─",
+                        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                    );
+                }
+            }
+
+            // draw_batch.draw_hollow_box(
+            //     Rect::with_size(next_x, next_y, tt_width, 3),
+            //     ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            // );
             draw_batch.print_color_centered_at(
                 Point::new(next_x + (tt_width / 2), next_y + 1),
-                tooltip.header.unwrap(),
+                tooltip.header.as_ref().unwrap(),
                 ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             );
         }
@@ -633,14 +658,14 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
                 ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             );
             draw_batch.print_color_right(
-                Point::new(next_x + tt_width - 1, next_y + idx as i32 + top_offset),
+                Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
                 s2,
                 ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             );
         }
 
         // advance x and y coordinates for next box
-        if is_wide {
+        if is_render_horiz {
             let projected_x = next_x + (tt_width * x_direction);
             if projected_x > 0 && projected_x < SCREEN_WIDTH {
                 next_x = projected_x;

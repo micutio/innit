@@ -7,6 +7,7 @@ use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
 use crate::ui::color::Color;
+use crate::ui::gui::ToolTip;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
@@ -76,6 +77,21 @@ impl Physics {
             is_always_visible: false,
             is_visible: false,
         }
+    }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} [{}] at ({},{}), alive: {}, energy: {}",
+            self.visual.name,
+            self.visual.glyph,
+            self.pos.x,
+            self.pos.y,
+            self.alive,
+            self.processors.energy
+        )
     }
 }
 
@@ -397,19 +413,39 @@ impl Object {
             .decode_dna(self.dna.dna_type, &complete_dna);
         self.change_genome(s, p, a, d);
     }
-}
 
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} [{}] at ({},{}), alive: {}, energy: {}",
-            self.visual.name,
-            self.visual.glyph,
-            self.pos.x,
-            self.pos.y,
-            self.alive,
-            self.processors.energy
-        )
+    pub fn generate_tooltip(&self, other: &Object) -> ToolTip {
+        if self.tile.is_some() {
+            return ToolTip::header_only(self.visual.name.clone());
+        }
+
+        let receptor_match = if self
+            .processors
+            .receptors
+            .iter()
+            .any(|a| other.processors.receptors.contains(a))
+        {
+            "match".to_string()
+        } else {
+            "no match".to_string()
+        };
+
+        let header = self.visual.name.clone();
+        let attributes: Vec<(String, String)> = vec![
+            (
+                "hp:".to_string(),
+                format!("{}/{}", self.actuators.hp, self.actuators.max_hp).to_string(),
+            ),
+            (
+                "energy:".to_string(),
+                format!(
+                    "{}/{}",
+                    self.processors.energy, self.processors.energy_storage
+                )
+                .to_string(),
+            ),
+            ("receptors:".to_string(), receptor_match),
+        ];
+        ToolTip::new(header, attributes)
     }
 }
