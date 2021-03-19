@@ -416,7 +416,11 @@ impl Object {
 
     pub fn generate_tooltip(&self, other: &Object) -> ToolTip {
         if self.tile.is_some() {
-            return ToolTip::header_only(self.visual.name.clone());
+            return if !self.physics.is_blocking {
+                ToolTip::no_header(vec![])
+            } else {
+                ToolTip::header_only(self.visual.name.clone())
+            };
         }
 
         let receptor_match = if self

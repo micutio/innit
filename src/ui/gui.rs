@@ -136,7 +136,7 @@ impl ToolTip {
     }
 
     /// Calculate the width in `[cells]` that a text box will require to be rendered on screen.
-    fn render_width(&self) -> i32 {
+    fn content_width(&self) -> i32 {
         let header_width: usize = if let Some(h) = &self.header {
             h.len()
         } else {
@@ -146,24 +146,32 @@ impl ToolTip {
         let attributes_width: usize = self
             .attributes
             .iter()
-            .map(|(s1, s2)| s1.len() + s2.len())
+            .map(|(s1, s2)| s1.len() + s2.len() + 1)
             .max()
             .unwrap_or(0);
 
         // pad header with 2 and attributes with 3 to account for borders and separators
-        (header_width + 2).max(attributes_width + 3) as i32
+        (header_width + 2).max(attributes_width) as i32
     }
 
     /// Calculate the height in `[cells]` that a text box will require to be rendered on screen.
-    fn render_height(&self) -> i32 {
+    fn content_height(&self) -> i32 {
         // header takes two lines for header text and separator
-        let header_height = if self.header.is_some() { 2 } else { 0 };
+        let header_height = if self.header.is_some() {
+            if self.attributes.is_empty() {
+                1
+            } else {
+                2
+            }
+        } else {
+            0
+        };
 
         let attributes_height = self.attributes.len();
         // println!("ATTRIBUTES LEN {}", self.attributes.len());
 
         // pad height with 2 cells to account for rendering borders top and bottom
-        (header_height + attributes_height) as i32 + 2
+        (header_height + attributes_height) as i32
     }
 }
 
@@ -568,15 +576,17 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
     let max_width = hud
         .tooltips
         .iter()
-        .map(|t| t.render_width())
+        .map(|t| t.content_width())
         .max()
-        .unwrap_or(0);
+        .unwrap_or(0)
+        + 2;
     let max_height = hud
         .tooltips
         .iter()
-        .map(|t| t.render_height())
+        .map(|t| t.content_height())
         .max()
-        .unwrap_or(0);
+        .unwrap_or(0)
+        + 2;
 
     // check whether to render horizontally or vertically first
     let is_render_horiz = max_width < max_height;
@@ -611,18 +621,22 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
     };
 
     for tooltip in &hud.tooltips {
-        let tt_width = tooltip.render_width();
-        let tt_height = tooltip.render_height();
+        if tooltip.header.is_none() && tooltip.attributes.is_empty() {
+            continue;
+        }
+        // (+2) for borders and (-1) for starting from 0, equals (+1)
+        let tt_width = tooltip.content_width() + 1;
+        let tt_height = tooltip.content_height() + 1;
 
         println!("WIDTH {}, HEIGHT {}", tt_width, tt_height);
 
         draw_batch.fill_region(
-            Rect::with_size(next_x, next_y, tt_width, tt_height - 1),
+            Rect::with_size(next_x, next_y, tt_width, tt_height),
             ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
             to_cp437(' '),
         );
         draw_batch.draw_hollow_box(
-            Rect::with_size(next_x, next_y, tt_width, tt_height - 1),
+            Rect::with_size(next_x, next_y, tt_width, tt_height),
             ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
         );
         let mut top_offset: i32 = 1;
