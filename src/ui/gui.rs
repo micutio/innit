@@ -12,12 +12,11 @@
 
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::action::Target;
-use crate::entity::genetics::{GeneticTrait, TraitFamily};
+use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::util::modulus;
-use num::Signed;
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -157,12 +156,14 @@ impl ToolTip {
 
     /// Calculate the height in `[cells]` that a text box will require to be rendered on screen.
     fn render_height(&self) -> i32 {
-        let header_height = if self.header.is_some() { 1 } else { 0 };
+        // header takes two lines for header text and separator
+        let header_height = if self.header.is_some() { 2 } else { 0 };
 
         let attributes_height = self.attributes.len();
+        // println!("ATTRIBUTES LEN {}", self.attributes.len());
 
-        // pad height with 3 cells to account for rendering borders
-        (header_height + attributes_height) as i32 + 3
+        // pad height with 2 cells to account for rendering borders top and bottom
+        (header_height + attributes_height) as i32 + 2
     }
 }
 
@@ -198,6 +199,7 @@ impl Hud {
     }
 
     pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<ToolTip>) {
+        self.tooltips.clear();
         if let Some(item) = self
             .items
             .iter()
@@ -591,18 +593,28 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         (true, false) => -1,
         (false, _) => 1,
     };
-    let mut next_x = hud.last_mouse.x + x_direction;
+    let mut next_x = if hud.last_mouse.x + x_direction + max_width < SCREEN_WIDTH {
+        hud.last_mouse.x + x_direction
+    } else {
+        hud.last_mouse.x - (hud.last_mouse.x + x_direction + max_width - SCREEN_WIDTH)
+    };
 
     let y_direction = match (is_render_horiz, is_forwards) {
         (true, _) => 0,
         (false, true) => 1,
         (false, false) => -1,
     };
-    let mut next_y = hud.last_mouse.y + y_direction;
+    let mut next_y = if hud.last_mouse.y + y_direction + max_height < SCREEN_HEIGHT {
+        hud.last_mouse.y + y_direction
+    } else {
+        hud.last_mouse.y - (hud.last_mouse.y + y_direction + max_height - SCREEN_HEIGHT)
+    };
 
     for tooltip in &hud.tooltips {
         let tt_width = tooltip.render_width();
         let tt_height = tooltip.render_height();
+
+        println!("WIDTH {}, HEIGHT {}", tt_width, tt_height);
 
         draw_batch.fill_region(
             Rect::with_size(next_x, next_y, tt_width, tt_height - 1),
