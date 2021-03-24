@@ -1,8 +1,9 @@
 pub mod color;
 pub mod color_palette;
+pub mod custom;
 pub mod dialog;
 pub mod frontend;
 pub mod game_input;
 pub mod gui;
-pub mod menus;
+pub mod menu;
 pub mod rex_assets;
