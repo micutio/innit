@@ -13,6 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor, GenomeEditorFeatureSet};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
@@ -24,7 +25,7 @@ use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
 use core::fmt;
-use rltk::{GameState as Rltk_GameState, Rltk};
+use rltk::{GameState as Rltk_GameState, Rect, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
@@ -54,6 +55,7 @@ pub enum RunState {
     ChooseActionMenu(Menu<ActionItem>),
     GameOver(Menu<GameOverMenuItem>),
     InfoBox(InfoBox),
+    GenomeEditing(GenomeEditor),
     Ticking(bool), // flags to render world, hud
     CheckInput,
     ToggleDarkLightMode,
@@ -68,6 +70,7 @@ impl Display for RunState {
             RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
             RunState::GameOver(_) => write!(f, "GameOver"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
+            RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
             RunState::Ticking(render) => write!(f, "Ticking({})", render),
             RunState::CheckInput => write!(f, "CheckInput"),
             RunState::ToggleDarkLightMode => write!(f, "ToggleDarkLightMode"),
@@ -357,6 +360,16 @@ impl Rltk_GameState for Game {
                     PlayerInput::Undefined => RunState::CheckInput,
                 }
             }
+            RunState::GenomeEditing(genome_editor) => match genome_editor.current_state {
+                GenomeEditingState::Done => {
+                    if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                        player.set_dna(genome_editor.player_dna);
+                    }
+                    RunState::CheckInput
+                }
+
+                _ => genome_editor.display(ctx, color_palette),
+            },
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(infobox) => RunState::InfoBox(infobox),
@@ -506,6 +519,18 @@ pub fn handle_meta_actions(
                 }
             } else {
                 RunState::Ticking(false)
+            }
+        }
+        UiAction::GenomeEditor => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                let genome_editor = GenomeEditor::new(
+                    player.dna.clone(),
+                    Rect::with_size(10, 5, SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10),
+                    GenomeEditorFeatureSet::Extend,
+                );
+                RunState::GenomeEditing(genome_editor)
+            } else {
+                RunState::CheckInput
             }
         }
     }
