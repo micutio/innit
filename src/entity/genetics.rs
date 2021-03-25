@@ -268,7 +268,7 @@ impl Default for DnaType {
 /// For now objects hold DNA either contained in an organelle (Nucleus), free floating in the cell
 /// (Nucleoid) or in form of a ring structure that can be exchanged or picked up by certain other
 /// objects (Plasmid). This is indicated by the `dna_type`.
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Dna {
     pub dna_type: DnaType,
     pub raw: Vec<u8>,
