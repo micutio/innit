@@ -407,22 +407,22 @@ fn render_action_fields(
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
         "P",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
         "S",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
         "Q",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
         "E",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
 
     // update action button texts

@@ -337,7 +337,13 @@ impl Rltk_GameState for Game {
                 match read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
                     PlayerInput::MetaInput(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
-                        handle_meta_actions(&mut self.state, &mut self.objects, ctx, meta_action)
+                        handle_meta_actions(
+                            &mut self.state,
+                            &mut self.objects,
+                            ctx,
+                            color_palette,
+                            meta_action,
+                        )
                     }
                     PlayerInput::PlayInput(in_game_action) => {
                         trace!("inject in-game action {:#?} to player", in_game_action);
@@ -365,6 +371,7 @@ impl Rltk_GameState for Game {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                     }
+                    // TODO: Trigger re-render!
                     RunState::CheckInput
                 }
 
@@ -416,6 +423,7 @@ pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
     _ctx: &mut Rltk,
+    color_palette: &ColorPalette,
     action: UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
@@ -527,6 +535,7 @@ pub fn handle_meta_actions(
                     player.dna.clone(),
                     Rect::with_size(10, 5, SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10),
                     GenomeEditorFeatureSet::Extend,
+                    color_palette,
                 );
                 RunState::GenomeEditing(genome_editor)
             } else {
