@@ -3,7 +3,6 @@
 
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::game::{RunState, HUD_CON};
-use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
@@ -20,7 +19,8 @@ pub enum GenomeEditorFeatureSet {
 
 #[derive(Debug, Clone, Copy)]
 pub enum GenomeEditingState {
-    Idle,
+    ChooseGene,
+    ChooseFunction,
     Move,
     Cut,
     FlipBit,
@@ -32,8 +32,11 @@ pub enum GenomeEditingState {
 impl Display for GenomeEditingState {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            GenomeEditingState::Idle => {
-                write!(f, "")
+            GenomeEditingState::ChooseGene => {
+                write!(f, "ChooseGene")
+            }
+            GenomeEditingState::ChooseFunction => {
+                write!(f, "ChooseFunction")
             }
             GenomeEditingState::Move => {
                 write!(f, "Move")
@@ -105,8 +108,11 @@ impl GeneItem {
 pub struct GenomeEditor {
     layout: Rect,
     features: GenomeEditorFeatureSet,
-    active_item: usize,
-    pub current_state: GenomeEditingState,
+    hovered_gene: usize,
+    selected_gene: Option<usize>,
+    hovered_function: usize,
+    selected_function: Option<usize>,
+    pub state: GenomeEditingState,
     pub player_dna: Dna,
     clipboard: Option<GeneItem>,
     edit_functions: Vec<EditFunction>,
@@ -188,8 +194,11 @@ impl GenomeEditor {
         GenomeEditor {
             layout,
             features,
-            active_item: 0,
-            current_state: GenomeEditingState::Idle,
+            hovered_gene: 0,
+            selected_gene: None,
+            hovered_function: 0,
+            selected_function: None,
+            state: GenomeEditingState::ChooseGene,
             player_dna: dna,
             clipboard: None,
             edit_functions, // TODO: Create items and insert here!
@@ -199,20 +208,11 @@ impl GenomeEditor {
 
     pub fn display(self, ctx: &mut Rltk, palette: &ColorPalette) -> RunState {
         // 1. render everything
+        // TODO: Implement rendering of gene properties
         self.render(ctx, palette);
 
-        // 2. read user input
-        if let Some(key) = ctx.key {
-            return match key {
-                VirtualKeyCode::Escape => RunState::CheckInput,
-                _ => RunState::GenomeEditing(self),
-            };
-        }
-
-        // 3. make adjustments to genome
-
-        // 4. package editor back up and return it
-        RunState::GenomeEditing(self)
+        // 2. read user input and process
+        self.read_input(ctx)
     }
 
     fn render(&self, ctx: &mut Rltk, palette: &ColorPalette) {
@@ -263,5 +263,76 @@ impl GenomeEditor {
         }
 
         draw_batch.submit(6000).unwrap();
+    }
+
+    fn read_input(mut self, ctx: &mut Rltk) -> RunState {
+        // wait for user input
+        // a) keyboard input
+        // if we have a key activity, process and return immediately
+        use GenomeEditingState::*;
+        if let Some(key) = ctx.key {
+            match key {
+                VirtualKeyCode::Up => {
+                    if let ChooseGene = self.state {
+                        self.state = ChooseFunction
+                    }
+                }
+                VirtualKeyCode::Down => {
+                    if let ChooseFunction = self.state {
+                        self.state = ChooseGene
+                    }
+                }
+                // TODO: implement update of hovered function/gene for left/right keys
+                // TODO: implement choice of insertion for left/right keys when in 'move gene' state
+                VirtualKeyCode::Return => match self.state {
+                    ChooseGene => {
+                        if let Some(g) = self.selected_gene {
+                            self.selected_gene = None;
+                        } else {
+                            self.selected_gene = Some(self.hovered_gene);
+                        }
+                    }
+                    ChooseFunction => {
+                        // TODO: implement activation of functions
+                        unimplemented!();
+                    }
+                    _ => {}
+                },
+                VirtualKeyCode::Escape => return RunState::CheckInput,
+                _ => return RunState::GenomeEditing(self),
+            }
+        }
+
+        // b) mouse input
+        // if we have a mouse activity, check first for clicks, then for hovers
+        if let Some(item) = self
+            .edit_functions
+            .iter()
+            .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
+        {
+            // update active index
+            self.hovered_function = item.idx;
+            self.state = ChooseFunction;
+            if ctx.left_click {
+                self.selected_function = Some(item.idx);
+                // TODO: implement activation of functions
+            }
+        }
+
+        if let Some(item) = self
+            .gene_items
+            .iter()
+            .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
+        {
+            // update active index
+            self.hovered_gene = item.gene_idx;
+            self.state = ChooseGene;
+            if ctx.left_click {
+                self.selected_gene = Some(item.gene_idx);
+                // TODO: implement activation of functions
+            }
+        }
+
+        RunState::GenomeEditing(self)
     }
 }
