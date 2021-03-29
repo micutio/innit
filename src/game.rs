@@ -13,7 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor, GenomeEditorFeatureSet};
+use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor, PlasmidFeatureSet};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
@@ -534,7 +534,7 @@ pub fn handle_meta_actions(
                 let genome_editor = GenomeEditor::new(
                     player.dna.clone(),
                     Rect::with_size(10, 5, SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10),
-                    GenomeEditorFeatureSet::Extend,
+                    PlasmidFeatureSet::Extend,
                     color_palette,
                 );
                 RunState::GenomeEditing(genome_editor)
