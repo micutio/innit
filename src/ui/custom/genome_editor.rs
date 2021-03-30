@@ -283,6 +283,49 @@ impl GenomeEditor {
             );
         }
 
+        // draw line between gene and info box
+        let item_layout = self.gene_items.get(self.hovered_gene).unwrap().layout;
+        let connect_start = Point::new(item_layout.x1, item_layout.y1);
+        let connect_end = Point::new(11, 16);
+
+        draw_batch.print_color(
+            Point::new(connect_start.x, connect_start.y + 1),
+            "│",
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
+        );
+
+        draw_batch.print_color(
+            Point::new(connect_end.x, connect_end.y),
+            "│",
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
+        );
+
+        if connect_start.x == connect_end.x {
+            draw_batch.print_color(
+                Point::new(connect_start.x, connect_start.y + 2),
+                "│",
+                ColorPair::new(palette.fg_hud, palette.bg_hud),
+            );
+        } else {
+            draw_batch.print_color(
+                Point::new(connect_start.x, connect_start.y + 2),
+                "┘",
+                ColorPair::new(palette.fg_hud, palette.bg_hud),
+            );
+            draw_batch.print_color(
+                Point::new(connect_end.x, connect_start.y + 2),
+                "┌",
+                ColorPair::new(palette.fg_hud, palette.bg_hud),
+            );
+            for i in 1..(connect_start.x - connect_end.x) {
+                draw_batch.print_color(
+                    Point::new(connect_end.x + i, connect_start.y + 2),
+                    "─",
+                    ColorPair::new(palette.fg_hud, palette.bg_hud),
+                );
+            }
+        }
+
         draw_batch.submit(6000).unwrap();
     }
 
