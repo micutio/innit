@@ -4,6 +4,7 @@
 use crate::core::game_state::GameState;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::game::{RunState, HUD_CON};
+use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
 use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
@@ -81,11 +82,11 @@ struct GeneItem {
     layout: Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color: ColorPair,
+    color: Color,
 }
 
 impl GeneItem {
-    fn new(layout: Rect, gene_idx: usize, color: ColorPair) -> Self {
+    fn new(layout: Rect, gene_idx: usize, color: Color) -> Self {
         GeneItem {
             layout,
             gene_idx,
@@ -138,9 +139,9 @@ impl GenomeEditor {
         cp: &ColorPalette,
     ) -> Self {
         let mut top_row_x: i32 = 11;
-        let top_row_y: i32 = 6;
+        let top_row_y: i32 = 8;
         let mut mid_row_x: i32 = 11;
-        let mid_row_y: i32 = 14;
+        let mid_row_y: i32 = 13;
 
         use GenomeEditingState::*;
         let edit_functions: Vec<EditFunction> = [Move, Cut, FlipBit, Duplicate, Done]
@@ -175,7 +176,7 @@ impl GenomeEditor {
                 let item = GeneItem::new(
                     Rect::with_size(mid_row_x, mid_row_y, 1, 1),
                     idx,
-                    ColorPair::new(col, cp.bg_dna),
+                    Color::from(col),
                 );
                 mid_row_x += 1;
                 item
@@ -216,20 +217,34 @@ impl GenomeEditor {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
+        // draw window border
         draw_batch.fill_region(
             self.layout,
             ColorPair::new(palette.fg_hud, palette.bg_hud),
             to_cp437(' '),
         );
         draw_batch.draw_hollow_box(self.layout, ColorPair::new(palette.fg_hud, palette.bg_hud));
-        // for (index, item) in self.items.iter().enumerate() {
-        //     let color = if index == self.selection {
-        //         ColorPair::new(palette.fg_hud, palette.bg_hud_selected)
-        //     } else {
-        //         ColorPair::new(palette.fg_hud, palette.bg_hud)
-        //     };
-        //     draw_batch.print_color(item.top_left_corner(), &item.text, color);
-        // }
+
+        // draw title
+        draw_batch.print_color(
+            Point::new(self.layout.x1 + 10, self.layout.y1),
+            "Genome Manipulation",
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
+        );
+
+        // draw 'functions'
+        draw_batch.print_color(
+            Point::new(self.layout.x1 + 1, self.layout.y1 + 2),
+            "Functions",
+            ColorPair::new(palette.fg_hud, palette.bg_hud_content),
+        );
+
+        // draw 'DNA'
+        draw_batch.print_color(
+            Point::new(self.layout.x1 + 1, self.layout.y1 + 7),
+            "DNA",
+            ColorPair::new(palette.fg_hud, palette.bg_hud_content),
+        );
 
         // TODO: Render top row, middle row and bottom info field
         for item in &self.edit_functions {
@@ -256,7 +271,16 @@ impl GenomeEditor {
             } else {
                 '◄'
             };
-            draw_batch.print_color(item.layout.center(), c, item.color);
+            let bg_color = if item.gene_idx == self.hovered_gene {
+                palette.bg_hud_selected
+            } else {
+                palette.bg_hud
+            };
+            draw_batch.print_color(
+                item.layout.center(),
+                c,
+                ColorPair::new(item.color, bg_color),
+            );
         }
 
         draw_batch.submit(6000).unwrap();
@@ -301,10 +325,14 @@ impl GenomeEditor {
                         // }
                     }
                     GenomeEditingState::ChooseFunction => {
-                        self.hovered_function = usize::max(self.hovered_function - 1, 0);
+                        if self.hovered_function > 0 {
+                            self.hovered_function -= 1;
+                        }
                     }
                     GenomeEditingState::ChooseGene => {
-                        self.hovered_gene = usize::max(self.hovered_gene - 1, 0);
+                        if self.hovered_gene > 0 {
+                            self.hovered_gene -= 1;
+                        }
                     }
                     _ => {}
                 },

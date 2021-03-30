@@ -375,7 +375,7 @@ impl Rltk_GameState for Game {
                     RunState::CheckInput
                 }
 
-                _ => genome_editor.display(ctx, color_palette),
+                _ => genome_editor.display(&mut self.state, ctx, color_palette),
             },
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
@@ -534,6 +534,7 @@ pub fn handle_meta_actions(
                 let genome_editor = GenomeEditor::new(
                     player.dna.clone(),
                     Rect::with_size(10, 5, SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10),
+                    99,
                     PlasmidFeatureSet::Extend,
                     color_palette,
                 );
