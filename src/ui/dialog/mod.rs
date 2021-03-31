@@ -15,7 +15,7 @@ pub struct InfoBox {
 impl InfoBox {
     pub fn new(title: String, lines: Vec<String>) -> Self {
         let box_width: i32 = usize::max(
-            title.len() + 3,
+            title.len() + 5,
             lines.iter().map(|l| l.len()).max().unwrap(),
         ) as i32;
         let box_height = lines.len() as i32 + 1;
@@ -44,7 +44,7 @@ impl InfoBox {
         let title_pos = Point::new(self.layout.x1 + 2, self.layout.y1);
         draw_batch.print_color(
             title_pos,
-            &self.title,
+            format!(" {} ", self.title),
             ColorPair::new(palette.fg_hud_border, palette.bg_hud),
         );
 

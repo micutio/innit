@@ -387,9 +387,9 @@ impl GeneLibrary {
         // randomly grab a trait and add trait id, length and random attribute value
         for t in traits {
             // push 0x00 first as the genome start symbol
-            dna.push(0 as u8);
+            dna.push(0);
             // add length
-            dna.push(1 as u8);
+            dna.push(1);
             dna.push(*self.trait_to_gray.get(t).unwrap());
             //
             // // add random attribute value

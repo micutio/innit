@@ -426,30 +426,54 @@ fn render_action_fields(
     );
 
     // update action button texts
+    let p_action = player.get_primary_action(Target::Center);
+    let s_action = player.get_secondary_action(Target::Center);
+    let q1_action = player.get_quick1_action();
+    let q2_action = player.get_quick2_action();
     hud.items.iter_mut().for_each(|i| match i.item_enum {
         HudItem::PrimaryAction => {
-            i.text = player.get_primary_action(Target::Center).get_identifier()
+            i.text = format!(
+                "{} ({}√)",
+                p_action.get_identifier(),
+                p_action.get_energy_cost()
+            )
         }
         HudItem::SecondaryAction => {
-            i.text = player.get_secondary_action(Target::Center).get_identifier()
+            i.text = format!(
+                "{} ({}√)",
+                s_action.get_identifier(),
+                s_action.get_energy_cost()
+            )
         }
-        HudItem::Quick1Action => i.text = player.get_quick1_action().get_identifier(),
-        HudItem::Quick2Action => i.text = player.get_quick2_action().get_identifier(),
+        HudItem::Quick1Action => {
+            i.text = format!(
+                "{} ({}√)",
+                q1_action.get_identifier(),
+                q1_action.get_energy_cost()
+            )
+        }
+        HudItem::Quick2Action => {
+            i.text = format!(
+                "{} ({}√)",
+                q2_action.get_identifier(),
+                q2_action.get_energy_cost()
+            )
+        }
         HudItem::DnaItem => {}
     });
 }
 
 fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
-        "Inventory",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         to_cp437(' '),
+    );
+
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
+        "Inventory",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
     for (idx, obj) in player.inventory.items.iter().enumerate() {
@@ -478,16 +502,16 @@ fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch
 }
 
 fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
-        "Log",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         to_cp437(' '),
+    );
+
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
+        "Log",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
     // print game messages, one line at a time
