@@ -141,7 +141,7 @@ impl GenomeEditor {
         let mut top_row_x: i32 = 11;
         let top_row_y: i32 = 8;
         let mut mid_row_x: i32 = 11;
-        let mid_row_y: i32 = 13;
+        let mid_row_y: i32 = 11;
 
         use GenomeEditingState::*;
         let edit_functions: Vec<EditFunction> = [Move, Cut, FlipBit, Duplicate, Done]
@@ -151,7 +151,7 @@ impl GenomeEditor {
             .map(|((idx, e), s)| {
                 let len: i32 = (s.len() + 3) as i32;
                 let item = EditFunction::new(
-                    Rect::with_size(top_row_x, top_row_y, len, 2),
+                    Rect::with_size(top_row_x, top_row_y, len, 0),
                     *e,
                     idx,
                     s.to_string(),
@@ -236,14 +236,14 @@ impl GenomeEditor {
         draw_batch.print_color(
             Point::new(self.layout.x1 + 1, self.layout.y1 + 2),
             "Functions",
-            ColorPair::new(palette.fg_hud, palette.bg_hud_content),
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
         );
 
         // draw 'DNA'
         draw_batch.print_color(
-            Point::new(self.layout.x1 + 1, self.layout.y1 + 7),
+            Point::new(self.layout.x1 + 1, self.layout.y1 + 5),
             "DNA",
-            ColorPair::new(palette.fg_hud, palette.bg_hud_content),
+            ColorPair::new(palette.fg_hud, palette.bg_hud),
         );
 
         // TODO: Render top row, middle row and bottom info field
@@ -254,12 +254,12 @@ impl GenomeEditor {
                 to_cp437(' '),
             );
             draw_batch.print_color(
-                Point::new(item.layout.x1 + 1, item.layout.y1 + 1),
+                Point::new(item.layout.x1 + 1, item.layout.y1),
                 item.idx.to_string(),
                 ColorPair::new(palette.fg_hud_highlight, palette.bg_hud_content),
             );
             draw_batch.print_color(
-                Point::new(item.layout.x1 + 3, item.layout.y1 + 1),
+                Point::new(item.layout.x1 + 3, item.layout.y1),
                 item.title.to_string(),
                 ColorPair::new(palette.fg_hud, palette.bg_hud_content),
             );
@@ -286,7 +286,7 @@ impl GenomeEditor {
         // draw line between gene and info box
         let item_layout = self.gene_items.get(self.hovered_gene).unwrap().layout;
         let connect_start = Point::new(item_layout.x1, item_layout.y1);
-        let connect_end = Point::new(11, 16);
+        let connect_end = Point::new(11, 14);
 
         draw_batch.print_color(
             Point::new(connect_start.x, connect_start.y + 1),
