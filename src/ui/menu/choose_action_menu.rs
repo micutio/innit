@@ -43,7 +43,7 @@ impl MenuItem for ActionItem {
             }
         }
 
-        RunState::Ticking(true)
+        RunState::Ticking
     }
 }
 

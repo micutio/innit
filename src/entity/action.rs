@@ -386,6 +386,90 @@ impl Action for ActAttack {
 // - immobilising and manipulating another cell
 // - producing stuff
 
+// /// Attach to another object.
+// #[derive(Debug, Serialize, Deserialize, Clone)]
+// pub struct ActAttach {
+//     lvl: i32,
+//     target: Target,
+// }
+//
+// impl ActAttach {
+//     pub fn new() -> Self {
+//         ActAttach {
+//             lvl: 0,
+//             target: Target::Center,
+//         }
+//     }
+// }
+//
+// #[typetag::serde]
+// impl Action for ActAttach {
+//     fn perform(
+//         &self,
+//         state: &mut GameState,
+//         objects: &mut GameObjects,
+//         owner: &mut Object,
+//     ) -> ActionResult {
+//         // get coords of self position plus direction
+//         // find any objects that are at that position and blocking
+//         // assert that there is only one available
+//         // return
+//         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+//         let valid_target: Option<&mut Object> = objects
+//             .get_vector_mut()
+//             .iter_mut()
+//             .flatten()
+//             .find(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos));
+//
+//         match valid_target {
+//             Some(t) => {
+//                 // deal damage
+//                 t.actuators.hp -= self.lvl;
+//                 debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
+//                 state.log.add(
+//                     format!(
+//                         "{} attacked {} for {} damage",
+//                         &owner.visual.name, &t.visual.name, self.lvl
+//                     ),
+//                     MsgClass::Info,
+//                 );
+//                 ActionResult::Success {
+//                     // TODO: Add particle to emphasise something happened!
+//                     callback: ObjectFeedback::NoFeedback,
+//                 }
+//             }
+//             None => {
+//                 state.log.add("Nothing to attack here", MsgClass::Info);
+//                 ActionResult::Failure
+//             }
+//         }
+//     }
+//
+//     fn set_target(&mut self, target: Target) {
+//         self.target = target;
+//     }
+//
+//     fn set_level(&mut self, lvl: i32) {
+//         self.lvl = lvl;
+//     }
+//
+//     fn get_target_category(&self) -> TargetCategory {
+//         TargetCategory::BlockingObject
+//     }
+//
+//     fn get_identifier(&self) -> String {
+//         "attack".to_string()
+//     }
+//
+//     fn get_energy_cost(&self) -> i32 {
+//         self.lvl
+//     }
+//
+//     fn to_text(&self) -> String {
+//         format!("attack {:?}", self.target)
+//     }
+// }
+
 /// A virus' sole purpose is to go forth and multiply.
 /// This action corresponds to the virus trait which is located at the beginning of virus DNA.
 /// RNA viruses inject their RNA into a host cell and force them to replicate the virus WITHOUT

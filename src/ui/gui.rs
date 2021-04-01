@@ -309,6 +309,7 @@ pub fn render_gui(
     cp: &ColorPalette,
     player: &Object,
 ) {
+    hud.update_ui_items(player, cp);
     let mut draw_batch = DrawBatch::new();
 
     // fill side panel background
@@ -651,8 +652,6 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         // (+2) for borders and (-1) for starting from 0, equals (+1)
         let tt_width = tooltip.content_width() + 1;
         let tt_height = tooltip.content_height() + 1;
-
-        println!("WIDTH {}, HEIGHT {}", tt_width, tt_height);
 
         draw_batch.fill_region(
             Rect::with_size(next_x, next_y, tt_width, tt_height),

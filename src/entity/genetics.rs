@@ -88,7 +88,7 @@ pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
-    pub action: Option<Box<dyn Action>>, // TraitAction
+    pub action: Option<Box<dyn Action>>, // TraitActions
 }
 
 impl GeneticTrait {
@@ -433,6 +433,7 @@ impl GeneLibrary {
         (s, p, a, d)
     }
 
+    /// Decodes one complete from the bit vector, starting at `start_ptr`.
     fn decode_gene(
         &self,
         dna: &[u8],

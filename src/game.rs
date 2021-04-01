@@ -56,7 +56,7 @@ pub enum RunState {
     GameOver(Menu<GameOverMenuItem>),
     InfoBox(InfoBox),
     GenomeEditing(GenomeEditor),
-    Ticking(bool), // flags to render world, hud
+    Ticking,
     CheckInput,
     ToggleDarkLightMode,
 }
@@ -71,7 +71,7 @@ impl Display for RunState {
             RunState::GameOver(_) => write!(f, "GameOver"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
             RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
-            RunState::Ticking(render) => write!(f, "Ticking({})", render),
+            RunState::Ticking => write!(f, "Ticking"),
             RunState::CheckInput => write!(f, "CheckInput"),
             RunState::ToggleDarkLightMode => write!(f, "ToggleDarkLightMode"),
         }
@@ -83,6 +83,7 @@ pub struct Game {
     objects: GameObjects,
     run_state: Option<RunState>,
     hud: Hud,
+    re_render: bool,
     is_dark_color_palette: bool,
     rex_assets: RexAssets,
 }
@@ -97,6 +98,7 @@ impl Game {
             objects,
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(ColorPalette::get(true)),
+            re_render: false,
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
         }
@@ -224,25 +226,7 @@ impl Rltk_GameState for Game {
 
         // debug!("run state: {}", new_run_state);
 
-        if let RunState::Ticking(render) = new_run_state {
-            ctx.set_active_console(HUD_CON);
-            ctx.cls();
-
-            if render {
-                ctx.set_active_console(WORLD_CON);
-                ctx.cls();
-                render_world(&mut self.state, &mut self.objects, ctx, color_palette);
-            }
-
-            ctx.set_active_console(HUD_CON);
-            let player = self
-                .objects
-                .extract_by_index(self.state.player_idx)
-                .unwrap();
-            render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
-            self.state.log.is_changed = false;
-            self.objects.replace(self.state.player_idx, player);
-        } else if self.hud.require_refresh {
+        if self.re_render || self.hud.require_refresh {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
             ctx.set_active_console(WORLD_CON);
@@ -256,10 +240,14 @@ impl Rltk_GameState for Game {
             render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
             self.objects.replace(self.state.player_idx, player);
             self.state.log.is_changed = false;
+            self.hud.require_refresh = false
         }
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
+                self.state.log.is_changed = false;
+                self.hud.require_refresh = false;
+                self.re_render = false;
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
@@ -306,7 +294,7 @@ impl Rltk_GameState for Game {
                     None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
-            RunState::Ticking(_) => {
+            RunState::Ticking => {
                 let mut feedback;
                 // Let the game engine process objects until we have to re-render the world or UI.
                 // Re-rendering is necessary either because the world changed or messages need to
@@ -320,7 +308,10 @@ impl Rltk_GameState for Game {
 
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
-                    ObjectFeedback::Render => RunState::Ticking(true),
+                    ObjectFeedback::Render => {
+                        self.re_render = true;
+                        RunState::Ticking
+                    }
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
@@ -328,7 +319,8 @@ impl Rltk_GameState for Game {
                         {
                             RunState::CheckInput
                         } else {
-                            RunState::Ticking(false)
+                            self.re_render = false;
+                            RunState::Ticking
                         }
                     }
                 }
@@ -356,22 +348,21 @@ impl Rltk_GameState for Game {
                                 Quick2Action => player.get_quick2_action(),
                                 PassTurn => Box::new(ActPass::default()),
                             };
-                            // TODO: Turn this into a queue to detach action sources from user input!
                             player.set_next_action(Some(a));
-                            RunState::Ticking(false)
+                            RunState::Ticking
                         } else {
-                            RunState::Ticking(false)
+                            RunState::Ticking
                         }
                     }
                     PlayerInput::Undefined => RunState::CheckInput,
                 }
             }
             RunState::GenomeEditing(genome_editor) => match genome_editor.state {
-                GenomeEditingState::Done => {
+                GenomeEditingState::Confirm => {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                     }
-                    // TODO: Trigger re-render!
+                    self.re_render = true;
                     RunState::CheckInput
                 }
 
@@ -380,25 +371,28 @@ impl Rltk_GameState for Game {
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(infobox) => RunState::InfoBox(infobox),
-                    None => RunState::Ticking(false),
+                    None => RunState::Ticking,
                 }
             }
             RunState::ToggleDarkLightMode => {
                 self.is_dark_color_palette = !self.is_dark_color_palette;
-                RunState::Ticking(true)
+                self.re_render = true;
+                RunState::Ticking
             }
             RunState::NewGame => {
                 // start new game
                 let (new_state, new_objects) = Game::new_game(self.state.env);
                 self.reset(new_state, new_objects);
-                RunState::Ticking(true)
+                self.re_render = true;
+                RunState::Ticking
             }
             RunState::LoadGame => {
                 // load game from file
                 match load_game() {
                     Ok((state, objects)) => {
                         self.reset(state, objects);
-                        RunState::Ticking(true)
+                        self.re_render = true;
+                        RunState::Ticking
                     }
                     Err(_e) => {
                         // TODO: Show alert to user... or not? Maybe have inactive buttons.
@@ -459,10 +453,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseSecondaryAction => {
@@ -485,10 +479,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseQuick1Action => {
@@ -504,10 +498,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseQuick2Action => {
@@ -523,17 +517,16 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::GenomeEditor => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let genome_editor = GenomeEditor::new(
                     player.dna.clone(),
-                    Rect::with_size(10, 5, SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10),
                     99,
                     PlasmidFeatureSet::Extend,
                     color_palette,
