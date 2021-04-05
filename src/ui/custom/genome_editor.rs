@@ -1,5 +1,7 @@
-//! The genome editor provides the facilities for the player to manipulate their own DNA, provided
-//! they have a plasmid that allows this.
+/*!
+The genome editor provides the facilities for the player to manipulate their own DNA, provided
+they have a plasmid that allows this.
+*/
 
 use crate::core::game_state::GameState;
 use crate::entity::genetics::{Dna, TraitFamily};
@@ -434,6 +436,7 @@ impl GenomeEditor {
                     GenomeEditingState::Move => {
                         // if selected is leftmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
+                        // TODO: Pull out into own function
                         if let Some(idx) = self.selected_gene {
                             if idx > 0 {
                                 // self.gene_items[idx].gene_idx = idx + 1;
@@ -550,8 +553,12 @@ impl GenomeEditor {
         };
 
         if let Some(idx) = hovered_gene {
+            // if in state MOVE, first move and then update hovered gene idx
             // update active index
             self.hovered_gene = idx;
+            match self.state {
+                Move => {}
+            }
             self.state = ChooseGene;
             if ctx.left_click {
                 self.selected_gene = Some(idx);
