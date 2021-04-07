@@ -444,6 +444,7 @@ impl GenomeEditor {
                                 // self.gene_items.swap(idx, idx + 1);
                                 self.player_dna.simplified.swap(idx, idx - 1);
                                 self.selected_gene = Some(idx - 1);
+                                self.hovered_gene = idx - 1;
                                 self.regenerate_dna(game_state, cp);
                             }
                         }
@@ -471,6 +472,7 @@ impl GenomeEditor {
                                 // self.gene_items.swap(idx, idx + 1);
                                 self.player_dna.simplified.swap(idx, idx + 1);
                                 self.selected_gene = Some(idx + 1);
+                                self.hovered_gene = idx + 1;
                                 self.regenerate_dna(game_state, cp);
                             }
                         }
@@ -552,16 +554,41 @@ impl GenomeEditor {
             None
         };
 
-        if let Some(idx) = hovered_gene {
+        if let Some(target_idx) = hovered_gene {
             // if in state MOVE, first move and then update hovered gene idx
             // update active index
-            self.hovered_gene = idx;
+            // self.hovered_gene = idx;
             match self.state {
-                Move => {}
+                Move => {
+                    let step: i32 = if target_idx < self.hovered_gene {
+                        -1
+                    } else {
+                        1
+                    };
+                    let mut next_idx = self.hovered_function;
+                    while next_idx != target_idx {
+                        self.player_dna
+                            .simplified
+                            .swap(next_idx, (next_idx as i32 + step) as usize);
+                        next_idx = (next_idx as i32 + step) as usize;
+                        self.selected_gene = Some(next_idx);
+                        self.hovered_gene = next_idx;
+                        self.regenerate_dna(game_state, cp);
+                    }
+                }
+                _ => {
+                    self.state = ChooseGene;
+                }
             }
-            self.state = ChooseGene;
+
             if ctx.left_click {
-                self.selected_gene = Some(idx);
+                match self.state {
+                    Move => {}
+                    _ => {
+                        self.state = ChooseGene;
+                        self.selected_gene = Some(target_idx);
+                    }
+                }
             }
         }
 
@@ -583,6 +610,9 @@ impl GenomeEditor {
                         // start move action
                         self.state = Move;
                         self.selected_function = Some(item.idx);
+                        if self.selected_gene.is_none() {
+                            self.selected_gene = Some(self.hovered_gene);
+                        }
                     }
                 }
                 Cut => {

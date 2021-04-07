@@ -31,6 +31,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 use std::io::{Read, Write};
 
+
 // environment constraints
 // game window
 pub const SCREEN_WIDTH: i32 = 100;
