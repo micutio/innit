@@ -580,7 +580,7 @@ impl GenomeEditor {
                         Move => {}
                         _ => {
                             self.state = ChooseGene;
-                            self.selected_gene = Some(target_idx);
+                            self.selected_gene = target_idx;
                         }
                     }
                 }
