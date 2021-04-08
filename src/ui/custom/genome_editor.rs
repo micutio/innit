@@ -15,15 +15,7 @@ use std::ops::Add;
 const TOP_ROW_Y_OFFSET: i32 = 1;
 const MID_ROW_Y_OFFSET: i32 = 4;
 
-/// Determines which features of the editor are enabled.
-#[derive(Debug)]
-pub enum PlasmidFeatureSet {
-    Reduce,  // moving and cutting
-    InPlace, // editing without moving or extending, like flipping bits
-    Extend,  // copy and adding new
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GenomeEditingState {
     ChooseGene,
     ChooseFunction,
@@ -38,15 +30,23 @@ pub enum GenomeEditingState {
 #[derive(Debug)]
 struct EditFunction {
     layout: Rect,
+    is_enabled: bool,
     state: GenomeEditingState,
     idx: usize,
     title: String,
 }
 
 impl EditFunction {
-    fn new(layout: Rect, state: GenomeEditingState, idx: usize, title: String) -> Self {
+    fn new(
+        layout: Rect,
+        is_enabled: bool,
+        state: GenomeEditingState,
+        idx: usize,
+        title: String,
+    ) -> Self {
         EditFunction {
             layout,
+            is_enabled,
             state,
             idx,
             title,
@@ -84,14 +84,12 @@ pub struct GenomeEditor {
     layout: Rect,
     /// The used plasmid determines which operations the genome editor can perform.
     /// Not all plasmids offer the same capabilities.
-    plasmid_features: PlasmidFeatureSet,
     /// How many operations can be performed with the editor.
     /// Plasmids are consumed when using the editor to avoid infinite amounts of gene editing.
     plasmid_charges: usize,
-    hovered_gene: usize,
-    selected_gene: Option<usize>,
-    hovered_function: usize,
-    selected_function: Option<usize>,
+    selected_gene: usize,
+    gene_selection_locked: bool,
+    selected_function: usize,
     pub state: GenomeEditingState,
     pub player_dna: Dna,
     clipboard: Option<GeneItem>,
@@ -108,9 +106,11 @@ impl GenomeEditor {
     //   - move, cut, flip bit, copy, add new
 
     /// Creates a new instance of the editor. DNA is parsed into items that can be cycled through.
-    pub fn new(dna: Dna, charges: usize, features: PlasmidFeatureSet, cp: &ColorPalette) -> Self {
+    pub fn new(dna: Dna, charges: usize, cp: &ColorPalette) -> Self {
         use GenomeEditingState::*;
         let mut top_row_x = 1;
+        let enabled_functions: Vec<GenomeEditingState> =
+            vec![Move, Cut, FlipBit, Duplicate, Confirm, Cancel];
         let mut edit_functions: Vec<EditFunction> =
             [Move, Cut, FlipBit, Duplicate, Confirm, Cancel]
                 .iter()
@@ -118,8 +118,10 @@ impl GenomeEditor {
                 .zip(["Move", "Cut", "Mutate", "Duplicate", "Confirm", "Cancel"].iter())
                 .map(|((idx, e), s)| {
                     let len: i32 = (s.len() + 3) as i32;
+                    let is_enabled = enabled_functions.contains(e);
                     let item = EditFunction::new(
                         Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
+                        is_enabled,
                         *e,
                         idx,
                         s.to_string(),
@@ -155,12 +157,10 @@ impl GenomeEditor {
 
         GenomeEditor {
             layout,
-            plasmid_features: features,
             plasmid_charges: charges,
-            hovered_gene: 0,
-            selected_gene: None,
-            hovered_function: 0,
-            selected_function: None,
+            selected_gene: 0,
+            gene_selection_locked: false,
+            selected_function: 0,
             state: GenomeEditingState::ChooseGene,
             player_dna: dna,
             clipboard: None,
@@ -236,16 +236,21 @@ impl GenomeEditor {
             ColorPair::new(palette.fg_hud, palette.bg_hud),
         );
 
-        let function_idx = if let Some(i) = self.selected_function {
-            i
-        } else {
-            self.hovered_function
-        };
         for item in &self.edit_functions {
-            let bg_col = if item.idx == function_idx {
-                palette.bg_hud_selected
-            } else {
+            let bg_col = if !item.is_enabled {
                 palette.bg_hud
+            } else if item.idx == self.selected_function {
+                palette.bg_bar
+            } else if item.state == self.state {
+                palette.yellow
+            } else {
+                palette.bg_hud_content
+            };
+
+            let fg_col = if item.state == self.state {
+                palette.fg_hud_highlight
+            } else {
+                palette.fg_hud
             };
 
             draw_batch.fill_region(
@@ -255,7 +260,7 @@ impl GenomeEditor {
                     item.layout.width(),
                     item.layout.height() - 1,
                 ),
-                ColorPair::new(palette.fg_hud, bg_col),
+                ColorPair::new(fg_col, bg_col),
                 to_cp437(' '),
             );
             draw_batch.print_color(
@@ -270,12 +275,6 @@ impl GenomeEditor {
             );
         }
 
-        let gene_idx = if let Some(i) = self.selected_gene {
-            i
-        } else {
-            self.hovered_gene
-        };
-
         for item in &self.gene_items {
             let c: char = if modulus(item.gene_idx, 2) == 0 {
                 '►'
@@ -283,7 +282,9 @@ impl GenomeEditor {
                 '◄'
             };
 
-            let bg_color = if item.gene_idx == gene_idx {
+            let bg_color = if item.gene_idx == self.selected_gene {
+                palette.bg_hud_content
+            } else if self.gene_selection_locked {
                 palette.bg_hud_selected
             } else {
                 palette.bg_dna
@@ -297,7 +298,7 @@ impl GenomeEditor {
         }
 
         // draw line between gene and info box
-        let item_layout = self.gene_items.get(self.hovered_gene).unwrap().layout;
+        let item_layout = self.gene_items.get(self.selected_gene).unwrap().layout;
         let connect_start = Point::new(item_layout.x1, item_layout.y1 + 1);
         let connect_end = Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET + 2);
 
@@ -328,7 +329,8 @@ impl GenomeEditor {
         }
 
         // draw genome info box
-        if let Some(gene_item) = self.gene_items.get(self.hovered_gene) {
+        // TODO: Draw bit vector at the bottom of this!
+        if let Some(gene_item) = self.gene_items.get(self.selected_gene) {
             if let Some(genome) = self.player_dna.simplified.get(gene_item.gene_idx) {
                 let highlight = ColorPair::new(palette.fg_hud_highlight, palette.bg_hud);
                 let color = ColorPair::new(palette.fg_hud, palette.bg_hud);
@@ -437,26 +439,31 @@ impl GenomeEditor {
                         // if selected is leftmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
                         // TODO: Pull out into own function
-                        if let Some(idx) = self.selected_gene {
-                            if idx > 0 {
-                                // self.gene_items[idx].gene_idx = idx + 1;
-                                // self.gene_items[idx + 1].gene_idx = idx;
-                                // self.gene_items.swap(idx, idx + 1);
-                                self.player_dna.simplified.swap(idx, idx - 1);
-                                self.selected_gene = Some(idx - 1);
-                                self.hovered_gene = idx - 1;
-                                self.regenerate_dna(game_state, cp);
-                            }
+                        if self.selected_gene > 0 {
+                            // self.gene_items[idx].gene_idx = idx + 1;
+                            // self.gene_items[idx + 1].gene_idx = idx;
+                            // self.gene_items.swap(idx, idx + 1);
+                            self.player_dna
+                                .simplified
+                                .swap(self.selected_gene, self.selected_gene - 1);
+                            self.selected_gene -= 1;
+                            self.regenerate_dna(game_state, cp);
                         }
                     }
                     GenomeEditingState::ChooseFunction => {
-                        if self.hovered_function > 0 {
-                            self.hovered_function -= 1;
+                        let mut new_idx = self.selected_function;
+                        while new_idx > 0 {
+                            new_idx -= 1;
+                            if let Some(item) = self.edit_functions.get(new_idx) {
+                                if item.is_enabled {
+                                    self.selected_function = new_idx;
+                                }
+                            }
                         }
                     }
                     GenomeEditingState::ChooseGene => {
-                        if self.hovered_gene > 0 {
-                            self.hovered_gene -= 1;
+                        if self.selected_gene > 0 {
+                            self.selected_gene -= 1;
                         }
                     }
                     _ => {}
@@ -465,25 +472,31 @@ impl GenomeEditor {
                     GenomeEditingState::Move => {
                         // if selected is rightmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
-                        if let Some(idx) = self.selected_gene {
-                            if idx < self.gene_items.len() {
-                                // self.gene_items[idx].gene_idx = idx + 1;
-                                // self.gene_items[idx + 1].gene_idx = idx;
-                                // self.gene_items.swap(idx, idx + 1);
-                                self.player_dna.simplified.swap(idx, idx + 1);
-                                self.selected_gene = Some(idx + 1);
-                                self.hovered_gene = idx + 1;
-                                self.regenerate_dna(game_state, cp);
-                            }
+                        if self.selected_gene < self.gene_items.len() {
+                            // self.gene_items[idx].gene_idx = idx + 1;
+                            // self.gene_items[idx + 1].gene_idx = idx;
+                            // self.gene_items.swap(idx, idx + 1);
+                            self.player_dna
+                                .simplified
+                                .swap(self.selected_gene, self.selected_gene + 1);
+                            self.selected_gene += 1;
+                            self.regenerate_dna(game_state, cp);
                         }
                     }
                     GenomeEditingState::ChooseFunction => {
-                        self.hovered_function =
-                            usize::min(self.hovered_function + 1, self.edit_functions.len() - 1);
+                        let mut new_idx = self.selected_function;
+                        while new_idx <= self.edit_functions.len() - 1 {
+                            new_idx += 1;
+                            if let Some(item) = self.edit_functions.get(new_idx) {
+                                if item.is_enabled {
+                                    self.selected_function = new_idx;
+                                }
+                            }
+                        }
                     }
                     GenomeEditingState::ChooseGene => {
-                        self.hovered_gene =
-                            usize::min(self.hovered_gene + 1, self.gene_items.len() - 1);
+                        self.selected_gene =
+                            usize::min(self.selected_gene + 1, self.gene_items.len() - 1);
                     }
                     _ => {}
                 },
@@ -491,30 +504,10 @@ impl GenomeEditor {
                     // use dummy value, this function will call itself with the correct value.
                     return match self.state {
                         ChooseGene => {
-                            if self.selected_gene.is_some() {
-                                self.selected_gene = None;
-                            } else {
-                                self.selected_gene = Some(self.hovered_gene);
-                            }
+                            self.gene_selection_locked != self.gene_selection_locked;
                             RunState::GenomeEditing(self)
                         }
-                        ChooseFunction => {
-                            self.selected_function = Some(self.hovered_function);
-                            if let Some(idx) = self.selected_function {
-                                // self.selected_function is being re-assigned in the function call below
-                                self.do_action(game_state, cp, idx)
-                            } else {
-                                panic!("FUCK");
-                            }
-                        }
-                        _ => {
-                            if let Some(idx) = self.selected_function {
-                                // self.selected_function is being re-assigned in the function call below
-                                self.do_action(game_state, cp, idx)
-                            } else {
-                                panic!("FUCK");
-                            }
-                        }
+                        _ => self.do_action(game_state, cp, self.selected_function),
                     };
                 }
                 VirtualKeyCode::Escape => return RunState::CheckInput,
@@ -527,7 +520,7 @@ impl GenomeEditor {
         let hovered_function = if let Some(item) = self
             .edit_functions
             .iter()
-            .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
+            .find(|i| i.layout.point_in_rect(ctx.mouse_point()) && i.is_enabled)
         {
             Some(item.idx)
         } else {
@@ -536,7 +529,7 @@ impl GenomeEditor {
 
         if let Some(idx) = hovered_function {
             // update active index
-            self.hovered_function = idx;
+            self.selected_function = idx;
             // self.selected_function = Some(idx);
             self.state = ChooseFunction;
             if ctx.left_click {
@@ -544,49 +537,51 @@ impl GenomeEditor {
             }
         }
 
-        let hovered_gene = if let Some(item) = self
-            .gene_items
-            .iter()
-            .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
-        {
-            Some(item.gene_idx)
-        } else {
-            None
-        };
+        // only look for new selected genes if the selection is not locked
+        if !self.gene_selection_locked {
+            let hovered_gene = if let Some(item) = self
+                .gene_items
+                .iter()
+                .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
+            {
+                Some(item.gene_idx)
+            } else {
+                None
+            };
 
-        if let Some(target_idx) = hovered_gene {
-            // if in state MOVE, first move and then update hovered gene idx
-            // update active index
-            // self.hovered_gene = idx;
-            match self.state {
-                Move => {
-                    let step: i32 = if target_idx < self.hovered_gene {
-                        -1
-                    } else {
-                        1
-                    };
-                    let mut next_idx = self.hovered_function;
-                    while next_idx != target_idx {
-                        self.player_dna
-                            .simplified
-                            .swap(next_idx, (next_idx as i32 + step) as usize);
-                        next_idx = (next_idx as i32 + step) as usize;
-                        self.selected_gene = Some(next_idx);
-                        self.hovered_gene = next_idx;
-                        self.regenerate_dna(game_state, cp);
-                    }
-                }
-                _ => {
-                    self.state = ChooseGene;
-                }
-            }
-
-            if ctx.left_click {
+            if let Some(target_idx) = hovered_gene {
+                // if in state MOVE, first move and then update hovered gene idx
+                // update active index
+                // self.hovered_gene = idx;
                 match self.state {
-                    Move => {}
+                    Move => {
+                        let step: i32 = if target_idx < self.selected_gene {
+                            -1
+                        } else {
+                            1
+                        };
+                        let mut next_idx = self.selected_gene;
+                        while next_idx != target_idx {
+                            self.player_dna
+                                .simplified
+                                .swap(next_idx, (next_idx as i32 + step) as usize);
+                            next_idx = (next_idx as i32 + step) as usize;
+                            self.selected_gene = next_idx;
+                            self.regenerate_dna(game_state, cp);
+                        }
+                    }
                     _ => {
                         self.state = ChooseGene;
-                        self.selected_gene = Some(target_idx);
+                    }
+                }
+
+                if ctx.left_click {
+                    match self.state {
+                        Move => {}
+                        _ => {
+                            self.state = ChooseGene;
+                            self.selected_gene = Some(target_idx);
+                        }
                     }
                 }
             }
@@ -611,7 +606,7 @@ impl GenomeEditor {
                         self.state = Move;
                         self.selected_function = Some(item.idx);
                         if self.selected_gene.is_none() {
-                            self.selected_gene = Some(self.hovered_gene);
+                            self.selected_gene = Some(self.selected_gene);
                         }
                     }
                 }
@@ -621,7 +616,7 @@ impl GenomeEditor {
                         self.player_dna.simplified.remove(selected);
                         self.selected_function = None;
                         self.selected_gene = None;
-                        self.hovered_gene = usize::min(0, self.hovered_gene - 1);
+                        self.selected_gene = usize::min(0, self.selected_gene - 1);
                         self.plasmid_charges -= 1;
                         self.regenerate_dna(game_state, cp);
                     }
