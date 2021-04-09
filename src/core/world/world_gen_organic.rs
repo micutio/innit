@@ -153,11 +153,11 @@ fn place_objects(
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = state.rng.gen_range(0, max_monsters + 1);
+    let num_monsters = state.rng.gen_range(0..=max_monsters);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = state.rng.gen_range(0 + 1, WORLD_WIDTH);
-        let y = state.rng.gen_range(0 + 1, WORLD_HEIGHT);
+        let x = state.rng.gen_range(0 + 1..=WORLD_WIDTH);
+        let y = state.rng.gen_range(0 + 1..=WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
             let mut monster = match monster_chances[monster_dist.sample(&mut state.rng)].0 {
