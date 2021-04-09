@@ -13,7 +13,7 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
-use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor, PlasmidFeatureSet};
+use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
@@ -30,7 +30,6 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 use std::io::{Read, Write};
-
 
 // environment constraints
 // game window
@@ -526,12 +525,8 @@ pub fn handle_meta_actions(
         }
         UiAction::GenomeEditor => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let genome_editor = GenomeEditor::new(
-                    player.dna.clone(),
-                    99,
-                    PlasmidFeatureSet::Extend,
-                    color_palette,
-                );
+                // TODO: Read charges and features from plasmid
+                let genome_editor = GenomeEditor::new(player.dna.clone(), 99, color_palette);
                 RunState::GenomeEditing(genome_editor)
             } else {
                 RunState::CheckInput
