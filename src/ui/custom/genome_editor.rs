@@ -82,13 +82,13 @@ impl GeneItem {
 #[derive(Debug)]
 pub struct GenomeEditor {
     layout: Rect,
-    /// The used plasmid determines which operations the genome editor can perform.
+    gene_selection_locked: bool,
     /// Not all plasmids offer the same capabilities.
+    /// The used plasmid determines which operations the genome editor can perform.
     /// How many operations can be performed with the editor.
     /// Plasmids are consumed when using the editor to avoid infinite amounts of gene editing.
     plasmid_charges: usize,
     selected_gene: usize,
-    gene_selection_locked: bool,
     selected_function: usize,
     pub state: GenomeEditingState,
     pub player_dna: Dna,
@@ -535,7 +535,9 @@ impl GenomeEditor {
             // update active index
             self.selected_function = idx;
             // self.selected_function = Some(idx);
-            self.state = ChooseFunction;
+            if let ChooseGene = self.state {
+                self.state = ChooseFunction;
+            }
             // if we have a function and the mouse is clicked, then perform the function
             if ctx.left_click {
                 return self.do_action(game_state, cp, idx);
@@ -557,6 +559,7 @@ impl GenomeEditor {
         };
 
         if let Some(target_idx) = hovered_gene {
+            println!("STATE: {:#?}", self.state);
             match self.state {
                 Move => {
                     let step: i32 = if target_idx < self.selected_gene {
@@ -586,7 +589,8 @@ impl GenomeEditor {
 
             if ctx.left_click {
                 match self.state {
-                    Move => {}
+                    // If we're moving, finalise it now.
+                    Move => self.state = ChooseGene,
                     ChooseGene => {
                         self.gene_selection_locked = !self.gene_selection_locked;
                         // TODO: WHY IS THIS TRIGGERED TWICE?

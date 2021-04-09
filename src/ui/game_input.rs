@@ -130,10 +130,6 @@ pub fn read_input(
     let mouse = Position::from(ctx.mouse_point());
     let is_clicked: bool = ctx.left_click;
 
-    if is_clicked {
-        println!("CLICKED OMGWTFBBQ");
-    }
-
     // 2) update hovered objects
     hud.update_tooltips(
         Point::from((mouse.x, mouse.y)),

@@ -86,6 +86,9 @@ pub struct Game {
     re_render: bool,
     is_dark_color_palette: bool,
     rex_assets: RexAssets,
+    /// This workaround is required because each mouse click is registered twice (press & release),
+    /// Without it each mouse event is fired twice in a row and toggles are useless.
+    mouse_workaround: bool,
 }
 
 impl Game {
@@ -101,6 +104,7 @@ impl Game {
             re_render: false,
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
+            mouse_workaround: false,
         }
     }
 
@@ -221,10 +225,17 @@ impl Rltk_GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
+        // mouse workaround
+        if ctx.left_click {
+            if self.mouse_workaround {
+                ctx.left_click = false;
+                println!("ctx.left_click {}", ctx.left_click);
+            }
+            self.mouse_workaround = !self.mouse_workaround;
+        }
+
         let mut new_run_state = self.run_state.take().unwrap();
         let color_palette = ColorPalette::get(self.is_dark_color_palette);
-
-        // debug!("run state: {}", new_run_state);
 
         if self.re_render || self.hud.require_refresh {
             ctx.set_active_console(HUD_CON);
