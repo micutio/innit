@@ -459,6 +459,7 @@ impl GenomeEditor {
                             if let Some(item) = self.edit_functions.get(new_idx) {
                                 if item.is_enabled {
                                     self.selected_function = new_idx;
+                                    break;
                                 }
                             }
                         }
@@ -492,6 +493,7 @@ impl GenomeEditor {
                             if let Some(item) = self.edit_functions.get(new_idx) {
                                 if item.is_enabled {
                                     self.selected_function = new_idx;
+                                    break;
                                 }
                             }
                         }
