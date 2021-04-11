@@ -6,8 +6,10 @@ they have a plasmid that allows this.
 use crate::core::game_state::GameState;
 use crate::entity::genetics::{Dna, TraitFamily};
 use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::rand::Rng;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::util::game_rng::RngExtended;
 use crate::util::modulus;
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 use std::ops::Add;
@@ -639,9 +641,11 @@ impl GenomeEditor {
                 FlipBit => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                            let gene_bits: Vec<u8> = game_state
+                            let mut gene_bits: Vec<u8> = game_state
                                 .gene_library
                                 .dna_from_traits(&[g_trait.trait_name.to_string()]);
+                            let random_bit = game_state.rng.gen_range(0..gene_bits.len());
+                            gene_bits[random_bit] ^= game_state.rng.random_bit();
                             let new_dna: Dna = game_state
                                 .gene_library
                                 .decode_dna(self.player_dna.dna_type, &gene_bits)
