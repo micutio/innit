@@ -134,7 +134,7 @@ impl GenomeEditor {
         let mut func_width: i32 = edit_functions.iter().map(|item| item.layout.width()).sum();
         func_width += edit_functions.len() as i32 * 2 + 2;
         let total_width = func_width.max(dna.simplified.len() as i32 + 2);
-        let total_height = 11;
+        let total_height = 12;
         let layout = Rect::with_size(
             (SCREEN_WIDTH / 2) - (total_width / 2),
             (SCREEN_HEIGHT / 2) - (total_height / 2),
@@ -196,13 +196,13 @@ impl GenomeEditor {
     ) -> RunState {
         // 1. render everything
         // TODO: Implement rendering of gene properties
-        self.render(ctx, cp);
+        self.render(game_state, ctx, cp);
 
         // 2. read user input and process
         self.read_input(game_state, ctx, cp)
     }
 
-    fn render(&self, ctx: &mut Rltk, palette: &ColorPalette) {
+    fn render(&self, game_state: &GameState, ctx: &mut Rltk, palette: &ColorPalette) {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
@@ -339,10 +339,12 @@ impl GenomeEditor {
                 let family_header = "trait family:";
                 let action_header = "action:";
                 let attribute_header = "attribute:";
+                let code_header = "genetic code:";
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 1), "├", color);
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 2), "├", color);
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 3), "├", color);
-                draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 4), "└", color);
+                draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 4), "├", color);
+                draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 5), "└", color);
                 let spacing = [name_header, family_header, action_header, attribute_header]
                     .iter()
                     .map(|v| v.len())
@@ -397,6 +399,30 @@ impl GenomeEditor {
                     format!("{:#?}", genome.attribute),
                     color,
                 );
+                draw_batch.print_color(
+                    Point::new(connect_end.x + 2, connect_end.y + 5),
+                    code_header,
+                    highlight,
+                );
+
+                if let Some(item) = self.gene_items.get(self.selected_gene) {
+                    if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
+                        let gene_bits: Vec<u8> = game_state
+                            .gene_library
+                            .dna_from_traits(&[g_trait.trait_name.to_string()]);
+                        let gene_str: String = gene_bits
+                            .iter()
+                            .map(|b| format!("{:08b}", b))
+                            .collect::<Vec<String>>()
+                            .join("");
+
+                        draw_batch.print_color(
+                            Point::new(connect_end.x + spacing, connect_end.y + 5),
+                            format!("{:#?}", gene_str),
+                            color,
+                        );
+                    }
+                }
             }
         }
 
@@ -560,7 +586,6 @@ impl GenomeEditor {
         };
 
         if let Some(target_idx) = hovered_gene {
-            println!("STATE: {:#?}", self.state);
             match self.state {
                 Move => {
                     let step: i32 = if target_idx < self.selected_gene {
@@ -678,11 +703,6 @@ impl GenomeEditor {
                     self.state = Done;
                     return RunState::GenomeEditing(self);
                 }
-                Cancel => {
-                    // discard and return to input listening
-                    return RunState::CheckInput;
-                }
-
                 _ => {}
             }
         }

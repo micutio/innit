@@ -382,6 +382,7 @@ impl GeneLibrary {
         dna
     }
 
+    // TODO: Take care of the case where `traits` contains junk, literally.
     pub fn dna_from_traits(&self, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
