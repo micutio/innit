@@ -358,7 +358,7 @@ impl GeneLibrary {
             // add length
             dna.push(1 as u8);
             // pick random trait number from list and add trait id
-            let trait_num = rng.gen_range(1..=self.trait_count);
+            let trait_num = rng.gen_range(1..self.trait_count);
             trace!(
                 "sampled genetic trait {} ({})",
                 trait_num,
