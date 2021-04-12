@@ -369,7 +369,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::GenomeEditing(genome_editor) => match genome_editor.state {
-                GenomeEditingState::Confirm => {
+                GenomeEditingState::Done => {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                     }

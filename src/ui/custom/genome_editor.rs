@@ -4,7 +4,7 @@ they have a plasmid that allows this.
 */
 
 use crate::core::game_state::GameState;
-use crate::entity::genetics::{Dna, TraitFamily};
+use crate::entity::genetics::{Dna, GeneticTrait, TraitFamily};
 use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
 use crate::ui::color::Color;
@@ -25,8 +25,7 @@ pub enum GenomeEditingState {
     Cut,
     FlipBit,
     Duplicate,
-    Confirm,
-    Cancel,
+    Done,
 }
 
 #[derive(Debug)]
@@ -111,27 +110,25 @@ impl GenomeEditor {
     pub fn new(dna: Dna, charges: usize, cp: &ColorPalette) -> Self {
         use GenomeEditingState::*;
         let mut top_row_x = 1;
-        let enabled_functions: Vec<GenomeEditingState> =
-            vec![Move, Cut, FlipBit, Duplicate, Confirm, Cancel];
-        let mut edit_functions: Vec<EditFunction> =
-            [Move, Cut, FlipBit, Duplicate, Confirm, Cancel]
-                .iter()
-                .enumerate()
-                .zip(["Move", "Cut", "Mutate", "Duplicate", "Confirm", "Cancel"].iter())
-                .map(|((idx, e), s)| {
-                    let len: i32 = (s.len() + 3) as i32;
-                    let is_enabled = enabled_functions.contains(e);
-                    let item = EditFunction::new(
-                        Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
-                        is_enabled,
-                        *e,
-                        idx,
-                        s.to_string(),
-                    );
-                    top_row_x += len + 2;
-                    item
-                })
-                .collect();
+        let enabled_functions: Vec<GenomeEditingState> = vec![Move, Cut, FlipBit, Duplicate, Done];
+        let mut edit_functions: Vec<EditFunction> = [Move, Cut, FlipBit, Duplicate, Done]
+            .iter()
+            .enumerate()
+            .zip(["Move", "Cut", "Mutate", "Duplicate", "Done"].iter())
+            .map(|((idx, e), s)| {
+                let len: i32 = (s.len() + 3) as i32;
+                let is_enabled = enabled_functions.contains(e);
+                let item = EditFunction::new(
+                    Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
+                    is_enabled,
+                    *e,
+                    idx,
+                    s.to_string(),
+                );
+                top_row_x += len + 2;
+                item
+            })
+            .collect();
 
         // calculate layout for whole window
         let mut func_width: i32 = edit_functions.iter().map(|item| item.layout.width()).sum();
@@ -651,10 +648,6 @@ impl GenomeEditor {
                                 .decode_dna(self.player_dna.dna_type, &gene_bits)
                                 .3;
                             if let Some(new_repr) = new_dna.simplified.get(0) {
-                                // std::mem::replace(
-                                //     &mut &self.player_dna.simplified[selected],
-                                //     new_repr,
-                                // );
                                 self.player_dna.simplified[self.selected_gene] = new_repr.clone();
                                 self.plasmid_charges -= 1;
                                 self.regenerate_dna(game_state, cp);
@@ -664,17 +657,25 @@ impl GenomeEditor {
                     self.state = ChooseFunction;
                 }
                 Duplicate => {
-                    if let Some(item) = self.gene_items.get(self.selected_function) {
-                        let new_gene = item.clone();
-                        self.gene_items.insert(self.selected_function + 1, new_gene);
-                        self.plasmid_charges -= 1;
-                        self.regenerate_dna(game_state, cp);
+                    if let Some(item) = self.gene_items.get(self.selected_gene) {
+                        let mut trait_to_duplicate: Option<GeneticTrait> = None;
+                        if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
+                            trait_to_duplicate = Some(g_trait.clone());
+                        }
+
+                        if trait_to_duplicate.is_some() {
+                            self.player_dna
+                                .simplified
+                                .insert(self.selected_gene + 1, trait_to_duplicate.unwrap());
+                            self.plasmid_charges -= 1;
+                            self.regenerate_dna(game_state, cp);
+                        }
                     }
                     self.state = ChooseFunction;
                 }
-                Confirm => {
+                Done => {
                     // apply changed genome to player
-                    self.state = Confirm;
+                    self.state = Done;
                     return RunState::GenomeEditing(self);
                 }
                 Cancel => {
