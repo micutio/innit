@@ -202,7 +202,7 @@ impl GenomeEditor {
         self.read_input(game_state, ctx, cp)
     }
 
-    fn render(&self, game_state: &GameState, ctx: &mut Rltk, palette: &ColorPalette) {
+    fn render(&self, game_state: &mut GameState, ctx: &mut Rltk, palette: &ColorPalette) {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
@@ -407,9 +407,10 @@ impl GenomeEditor {
 
                 if let Some(item) = self.gene_items.get(self.selected_gene) {
                     if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                        let gene_bits: Vec<u8> = game_state
-                            .gene_library
-                            .dna_from_traits(&[g_trait.trait_name.to_string()]);
+                        let gene_bits: Vec<u8> = game_state.gene_library.dna_from_traits(
+                            &mut game_state.rng,
+                            &[g_trait.trait_name.to_string()],
+                        );
                         let gene_str: String = gene_bits
                             .iter()
                             .map(|b| format!("{:08b}", b))
@@ -663,9 +664,10 @@ impl GenomeEditor {
                 FlipBit => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                            let mut gene_bits: Vec<u8> = game_state
-                                .gene_library
-                                .dna_from_traits(&[g_trait.trait_name.to_string()]);
+                            let mut gene_bits: Vec<u8> = game_state.gene_library.dna_from_traits(
+                                &mut game_state.rng,
+                                &[g_trait.trait_name.to_string()],
+                            );
                             let random_bit = game_state.rng.gen_range(0..gene_bits.len());
                             gene_bits[random_bit] ^= game_state.rng.random_bit();
                             let new_dna: Dna = game_state
@@ -717,7 +719,9 @@ impl GenomeEditor {
             .iter()
             .map(|g| g.trait_name.clone())
             .collect();
-        let bit_vec = game_state.gene_library.dna_from_traits(&simplified);
+        let bit_vec = game_state
+            .gene_library
+            .dna_from_traits(&mut game_state.rng, &simplified);
         let new_dna = game_state
             .gene_library
             .decode_dna(self.player_dna.dna_type, &bit_vec);

@@ -134,6 +134,7 @@ impl Game {
         world_generator.make_world(&mut state, &mut objects, level);
         // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
         objects.set_tile_dna(
+            &mut state.rng,
             vec![
                 "Cell Membrane".to_string(),
                 "Cell Membrane".to_string(),

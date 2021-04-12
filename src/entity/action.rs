@@ -784,7 +784,9 @@ impl Action for ActProduceVirion {
                             .iter()
                             .map(|x| x.trait_name.clone())
                             .collect();
-                        let dna_from_seq = state.gene_library.dna_from_traits(&dna_sequence);
+                        let dna_from_seq = state
+                            .gene_library
+                            .dna_from_traits(&mut state.rng, &dna_sequence);
                         owner.inventory.items.push(
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)

@@ -383,7 +383,7 @@ impl GeneLibrary {
     }
 
     // TODO: Take care of the case where `traits` contains junk, literally.
-    pub fn dna_from_traits(&self, traits: &[String]) -> Vec<u8> {
+    pub fn dna_from_traits(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
         for t in traits {
@@ -391,7 +391,12 @@ impl GeneLibrary {
             dna.push(0);
             // add length
             dna.push(1);
-            dna.push(*self.trait_to_gray.get(t).unwrap());
+            if let Some(gray) = self.trait_to_gray.get(t) {
+                dna.push(*gray);
+            } else {
+                let defined_range = self.trait_to_gray.len() as u8;
+                dna.push(rng.gen_range(defined_range..=255));
+            }
             //
             // // add random attribute value
             // dna.push(game_rng.gen_range(0, 16) as u8);

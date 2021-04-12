@@ -84,6 +84,6 @@ fn test_dna_de_encoding() {
     let raw_dna = state.gene_library.new_dna(&mut state.rng, false, 10);
     let (_, _, _, d) = state.gene_library.decode_dna(DnaType::Nucleus, &raw_dna);
     let traits: Vec<String> = d.simplified.iter().map(|t| t.trait_name.clone()).collect();
-    let raw_dna_2 = state.gene_library.dna_from_traits(&traits);
+    let raw_dna_2 = state.gene_library.dna_from_traits(&mut state.rng, &traits);
     assert_eq!(raw_dna, raw_dna_2);
 }
