@@ -6,7 +6,7 @@ use crate::entity::control::Controller::Player;
 use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
-use crate::ui::gui::{Hud, HudItem};
+use crate::ui::gui::{Hud, HudItem, ToolTip};
 use rltk::prelude::INPUT;
 use rltk::{BEvent, Point, Rltk, VirtualKeyCode};
 
@@ -68,20 +68,38 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
 }
 
 // TODO: Create more detailed info panel as tooltip.
+// - list stats and (compare with player) to give hints about strength, receptors and such
+// - get player sensor quality, quantity and adjust how much info is shown
+// - either take the player out of the objects and compare to everything else
+//   or just gather all info and adjust visibility later when rendering tooltips in UI
 // useful info:
 // - receptor matching or not
 // - virus RNA or DNA
-fn get_names_under_mouse(objects: &GameObjects, mouse: Position) -> Vec<String> {
-    // create a list with the names of all objects at the mouse's coordinates and in FOV
-    objects
-        .get_vector()
-        .iter()
-        .flatten()
-        .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
-        //                              vvvvv---- replace function with `key-value`-list generating function.
-        .map(|o| o.visual.name.clone())
-        .collect::<Vec<_>>()
-    // .join(", ")
+fn get_names_under_mouse(
+    state: &GameState,
+    objects: &mut GameObjects,
+    mouse: Position,
+) -> Vec<ToolTip> {
+    let mut tooltips: Vec<ToolTip> = vec![];
+    let player = objects.extract_by_index(state.player_idx).unwrap();
+
+    if player.pos.eq(&mouse) {
+        tooltips.push(ToolTip::header_only("You".to_string()));
+    }
+
+    tooltips.append(
+        &mut objects
+            .get_vector()
+            .iter()
+            .flatten()
+            .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
+            //                              vvvvv---- replace function with `key-value`-list generating function.
+            .map(|o| o.generate_tooltip(&player))
+            .collect::<Vec<_>>(),
+    );
+
+    objects.replace(state.player_idx, player);
+    tooltips
 }
 
 pub fn read_input(
@@ -113,7 +131,7 @@ pub fn read_input(
     // 2) update hovered objects
     hud.update_tooltips(
         Point::from((mouse.x, mouse.y)),
-        get_names_under_mouse(objects, mouse),
+        get_names_under_mouse(state, objects, mouse),
     );
 
     // 3) if mouse is over world

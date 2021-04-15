@@ -12,7 +12,7 @@
 
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::action::Target;
-use crate::entity::genetics::{GeneticTrait, TraitFamily};
+use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::color_palette::ColorPalette;
@@ -28,7 +28,7 @@ use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
-    pub tooltip: Vec<String>,
+    pub tooltip: ToolTip,
     pub layout: Rect,
     pub color: ColorPair,
 }
@@ -37,7 +37,7 @@ impl<T> UiItem<T> {
     pub fn new<S1: Into<String>>(
         item_enum: T,
         text: S1,
-        tooltip: Vec<String>,
+        tooltip: ToolTip,
         layout: Rect,
         color: ColorPair,
     ) -> Self {
@@ -71,28 +71,28 @@ fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>
         UiItem::new(
             HudItem::PrimaryAction,
             "",
-            vec!["select new primary action".to_string()],
+            ToolTip::header_only("select new primary action"),
             Rect::with_size(button_x, 6, button_len, 1),
             ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         ),
         UiItem::new(
             HudItem::SecondaryAction,
             "",
-            vec!["select new secondary action".to_string()],
+            ToolTip::header_only("select new secondary action"),
             Rect::with_size(button_x, 7, button_len, 1),
             ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         ),
         UiItem::new(
             HudItem::Quick1Action,
             "",
-            vec!["select new quick action".to_string()],
+            ToolTip::header_only("select new quick action"),
             Rect::with_size(button_x, 8, button_len, 1),
             ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         ),
         UiItem::new(
             HudItem::Quick2Action,
             "",
-            vec!["select new quick action".to_string()],
+            ToolTip::header_only("select new quick action"),
             Rect::with_size(button_x, 9, button_len, 1),
             ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         ),
@@ -101,19 +101,93 @@ fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>
     items
 }
 
-fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
-    vec![
-        format!("trait: {}", g_trait.trait_name),
-        format!("group: {}", g_trait.trait_family),
-    ]
+#[derive(Clone, Debug)]
+pub struct ToolTip {
+    header: Option<String>,
+    attributes: Vec<(String, String)>,
 }
+
+impl ToolTip {
+    pub fn new<S1: Into<String>>(header: S1, attrs: Vec<(String, String)>) -> Self {
+        ToolTip {
+            header: Some(header.into()),
+            attributes: attrs
+                .iter()
+                .map(|(e1, e2)| (e1.into(), e2.into()))
+                .collect(),
+        }
+    }
+
+    pub fn no_header(attrs: Vec<(String, String)>) -> Self {
+        ToolTip {
+            header: None,
+            attributes: attrs
+                .iter()
+                .map(|(e1, e2)| (e1.into(), e2.into()))
+                .collect(),
+        }
+    }
+
+    pub fn header_only<S1: Into<String>>(header: S1) -> Self {
+        ToolTip {
+            header: Some(header.into()),
+            attributes: Vec::new(),
+        }
+    }
+
+    /// Calculate the width in `[cells]` that a text box will require to be rendered on screen.
+    fn content_width(&self) -> i32 {
+        let header_width: usize = if let Some(h) = &self.header {
+            h.len()
+        } else {
+            0
+        };
+
+        let attributes_width: usize = self
+            .attributes
+            .iter()
+            .map(|(s1, s2)| s1.len() + s2.len() + 1)
+            .max()
+            .unwrap_or(0);
+
+        // pad header with 2 and attributes with 3 to account for borders and separators
+        (header_width + 2).max(attributes_width) as i32
+    }
+
+    /// Calculate the height in `[cells]` that a text box will require to be rendered on screen.
+    fn content_height(&self) -> i32 {
+        // header takes two lines for header text and separator
+        let header_height = if self.header.is_some() {
+            if self.attributes.is_empty() {
+                1
+            } else {
+                2
+            }
+        } else {
+            0
+        };
+
+        let attributes_height = self.attributes.len();
+        // println!("ATTRIBUTES LEN {}", self.attributes.len());
+
+        // pad height with 2 cells to account for rendering borders top and bottom
+        (header_height + attributes_height) as i32
+    }
+}
+
+// fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
+//     vec![
+//         format!("trait: {}", g_trait.trait_name),
+//         format!("group: {}", g_trait.trait_family),
+//     ]
+// }
 
 pub struct Hud {
     layout: Rect,
     last_mouse: Point,
     pub require_refresh: bool,
     pub items: Vec<UiItem<HudItem>>,
-    tooltip: Vec<String>, // TODO: Find elegant way to render this and tooltips.
+    tooltips: Vec<ToolTip>, // TODO: Find elegant way to render this and tooltips.
 }
 
 impl Hud {
@@ -128,19 +202,20 @@ impl Hud {
             last_mouse: Point::new(0, 0),
             require_refresh: false,
             items: create_hud_items(&layout, cp),
-            tooltip: Vec::new(),
+            tooltips: Vec::new(),
         }
     }
 
-    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<String>) {
+    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<ToolTip>) {
+        self.tooltips.clear();
         if let Some(item) = self
             .items
             .iter()
             .find(|i| i.layout.point_in_rect(mouse_pos))
         {
-            self.tooltip = item.tooltip.clone()
+            self.tooltips.push(item.tooltip.clone());
         } else {
-            self.tooltip = names;
+            self.tooltips = names;
         }
 
         self.require_refresh = self.last_mouse != mouse_pos;
@@ -171,10 +246,15 @@ impl Hud {
                 '◄'
             };
 
+            let tooltip = ToolTip::no_header(vec![
+                ("trait:".to_string(), g_trait.trait_name.clone()),
+                ("group:".to_string(), g_trait.trait_family.to_string()),
+            ]);
+
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 c,
-                tooltip_from(g_trait),
+                tooltip,
                 Rect::with_size(
                     SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32,
                     0,
@@ -205,10 +285,16 @@ impl Hud {
             } else {
                 '▲'
             };
+
+            let tooltip = ToolTip::no_header(vec![
+                ("trait:".to_string(), g_trait.trait_name.clone()),
+                ("group:".to_string(), g_trait.trait_family.to_string()),
+            ]);
+
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 c,
-                tooltip_from(g_trait),
+                tooltip,
                 Rect::with_size(SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
                 ColorPair::new(col, cp.bg_dna),
             ));
@@ -483,38 +569,152 @@ fn render_ui_items(hud: &Hud, draw_batch: &mut DrawBatch) {
 }
 
 fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
-    if hud.tooltip.is_empty() {
+    if hud.tooltips.is_empty() {
         return;
     }
 
-    let tt_width: i32 = hud.tooltip.iter().map(|s| s.len()).max().unwrap() as i32 + 2;
-    let tt_height: i32 = hud.tooltip.len() as i32 + 2;
-    let tt_x: i32 = if hud.last_mouse.x + tt_width >= SCREEN_WIDTH {
-        hud.last_mouse.x - tt_width - 1
+    let max_width = hud
+        .tooltips
+        .iter()
+        .map(|t| t.content_width())
+        .max()
+        .unwrap_or(0)
+        + 2;
+    let max_height = hud
+        .tooltips
+        .iter()
+        .map(|t| t.content_height())
+        .max()
+        .unwrap_or(0)
+        + 2;
+
+    // check whether to render horizontally or vertically first
+    let is_render_horiz = max_width < max_height;
+    let is_forwards: bool = if is_render_horiz {
+        // check whether to render tooltips left-to-right or the other way around
+        hud.last_mouse.x < SCREEN_WIDTH - hud.last_mouse.x
     } else {
-        hud.last_mouse.x + 1
-    };
-    let tt_y: i32 = if hud.last_mouse.y + tt_height >= SCREEN_HEIGHT {
-        hud.last_mouse.y - tt_height - 1
-    } else {
-        hud.last_mouse.y + 1
+        // check whether to render tooltips up-down or the other way around
+        hud.last_mouse.y < SCREEN_HEIGHT - hud.last_mouse.y
     };
 
-    draw_batch.fill_region(
-        Rect::with_size(tt_x, tt_y, tt_width, tt_height - 1),
-        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
-        to_cp437(' '),
-    );
-    draw_batch.draw_hollow_box(
-        Rect::with_size(tt_x, tt_y, tt_width, tt_height - 1),
-        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
-    );
+    let x_direction = match (is_render_horiz, is_forwards) {
+        (true, true) => 1,
+        (true, false) => -1,
+        (false, _) => 1,
+    };
+    let mut next_x = if hud.last_mouse.x + x_direction + max_width < SCREEN_WIDTH {
+        hud.last_mouse.x + x_direction
+    } else {
+        hud.last_mouse.x - (hud.last_mouse.x + x_direction + max_width - SCREEN_WIDTH)
+    };
 
-    for (idx, s) in hud.tooltip.iter().enumerate() {
-        draw_batch.print_color(
-            Point::new(tt_x + 1, tt_y + idx as i32 + 1),
-            s,
+    let y_direction = match (is_render_horiz, is_forwards) {
+        (true, _) => 0,
+        (false, true) => 1,
+        (false, false) => -1,
+    };
+    let mut next_y = if hud.last_mouse.y + y_direction + max_height < SCREEN_HEIGHT {
+        hud.last_mouse.y + y_direction
+    } else {
+        hud.last_mouse.y - (hud.last_mouse.y + y_direction + max_height - SCREEN_HEIGHT)
+    };
+
+    for tooltip in &hud.tooltips {
+        if tooltip.header.is_none() && tooltip.attributes.is_empty() {
+            continue;
+        }
+        // (+2) for borders and (-1) for starting from 0, equals (+1)
+        let tt_width = tooltip.content_width() + 1;
+        let tt_height = tooltip.content_height() + 1;
+
+        println!("WIDTH {}, HEIGHT {}", tt_width, tt_height);
+
+        draw_batch.fill_region(
+            Rect::with_size(next_x, next_y, tt_width, tt_height),
+            ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            to_cp437(' '),
+        );
+        draw_batch.draw_hollow_box(
+            Rect::with_size(next_x, next_y, tt_width, tt_height),
             ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
         );
+        let mut top_offset: i32 = 1;
+        if tooltip.header.is_some() {
+            top_offset = 3;
+
+            if !tooltip.attributes.is_empty() {
+                draw_batch.print_color(
+                    Point::new(next_x, next_y + 2),
+                    // to_cp437('─'),
+                    "├",
+                    ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                );
+                draw_batch.print_color(
+                    Point::new(next_x + tt_width, next_y + 2),
+                    // to_cp437('─'),
+                    "┤",
+                    ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                );
+                for x in (next_x + 1)..(next_x + tt_width) {
+                    draw_batch.print_color(
+                        Point::new(x, next_y + 2),
+                        // to_cp437('─'),
+                        "─",
+                        ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+                    );
+                }
+            }
+
+            // draw_batch.draw_hollow_box(
+            //     Rect::with_size(next_x, next_y, tt_width, 3),
+            //     ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            // );
+            draw_batch.print_color_centered_at(
+                Point::new(next_x + (tt_width / 2), next_y + 1),
+                tooltip.header.as_ref().unwrap(),
+                ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            );
+        }
+
+        for (idx, (s1, s2)) in tooltip.attributes.iter().enumerate() {
+            draw_batch.print_color(
+                Point::new(next_x + 1, next_y + idx as i32 + top_offset),
+                s1,
+                ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            );
+            draw_batch.print_color_right(
+                Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
+                s2,
+                ColorPair::new(cp.fg_hud, cp.bg_hud_selected),
+            );
+        }
+
+        // advance x and y coordinates for next box
+        if is_render_horiz {
+            let projected_x = next_x + (tt_width * x_direction);
+            if projected_x > 0 && projected_x < SCREEN_WIDTH {
+                next_x = projected_x;
+            } else {
+                if x_direction < 0 {
+                    next_x = SCREEN_WIDTH - 1;
+                } else {
+                    next_x = 1;
+                }
+                next_y += tt_height * y_direction;
+            }
+        } else {
+            let projected_y = next_y + (tt_height * x_direction);
+            if projected_y > 0 && projected_y < SCREEN_HEIGHT {
+                next_y = projected_y;
+            } else {
+                if y_direction < 0 {
+                    next_y = SCREEN_HEIGHT - 1;
+                } else {
+                    next_y = 1
+                }
+                next_x += tt_width * x_direction;
+            }
+        }
     }
 }
