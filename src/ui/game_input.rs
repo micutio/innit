@@ -26,6 +26,7 @@ pub enum UiAction {
     ChooseSecondaryAction,
     ChooseQuick1Action,
     ChooseQuick2Action,
+    GenomeEditor,
 }
 
 #[derive(Clone, Debug)]
@@ -50,6 +51,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::D, false, false) => PlayInput(SecondaryAction(East)),
         (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
         (VirtualKeyCode::E, true, false) => MetaInput(ChooseQuick2Action),
+        (VirtualKeyCode::G, false, false) => MetaInput(GenomeEditor),
         (VirtualKeyCode::L, false, false) => MetaInput(ToggleDarkLightMode),
         (VirtualKeyCode::P, true, false) => MetaInput(ChoosePrimaryAction),
         (VirtualKeyCode::Q, false, false) => PlayInput(Quick1Action),

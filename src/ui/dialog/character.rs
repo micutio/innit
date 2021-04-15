@@ -7,14 +7,14 @@ pub fn character_screen(state: &GameState, objects: &GameObjects) -> InfoBox {
         let title: String = "Character Information".to_string();
         let lines = vec![
             format!(
-                "Energy:        {}/{}",
+                "Energy:      {}/{}",
                 player.processors.energy, player.processors.energy_storage
             ),
-            format!("Metabolism:    {}", player.processors.metabolism),
-            format!("Sense Range:   {}", player.sensors.sensing_range),
-            format!("HP:            {}", player.actuators.max_hp),
-            format!("Alive:         {}", player.alive),
-            format!("Turn:          {}", state.turn),
+            format!("Metabolism:  {}", player.processors.metabolism),
+            format!("Sense Range: {}", player.sensors.sensing_range),
+            format!("HP:          {}", player.actuators.max_hp),
+            format!("Alive:       {}", player.alive),
+            format!("Turn:        {}", state.turn),
         ];
         InfoBox::new(title, lines)
     } else {

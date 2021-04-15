@@ -69,14 +69,21 @@ impl GameObjects {
         }
     }
 
-    pub fn set_tile_dna(&mut self, traits: Vec<String>, gene_library: &GeneLibrary) {
+    pub fn set_tile_dna(
+        &mut self,
+        rng: &mut GameRng,
+        traits: Vec<String>,
+        gene_library: &GeneLibrary,
+    ) {
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 if let Some(tile) =
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
-                    let (sensors, processors, actuators, dna) = gene_library
-                        .decode_dna(DnaType::Nucleus, &gene_library.dna_from_traits(&traits));
+                    let (sensors, processors, actuators, dna) = gene_library.decode_dna(
+                        DnaType::Nucleus,
+                        &gene_library.dna_from_traits(rng, &traits),
+                    );
                     tile.change_genome(sensors, processors, actuators, dna);
                 }
             }

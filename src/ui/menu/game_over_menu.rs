@@ -1,7 +1,7 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::game::RunState;
-use crate::ui::menus::{Menu, MenuItem};
+use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Copy, Clone, Debug)]
 pub enum GameOverMenuItem {

@@ -309,6 +309,7 @@ pub fn render_gui(
     cp: &ColorPalette,
     player: &Object,
 ) {
+    hud.update_ui_items(player, cp);
     let mut draw_batch = DrawBatch::new();
 
     // fill side panel background
@@ -407,49 +408,73 @@ fn render_action_fields(
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
         "P",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
         "S",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
         "Q",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
         "E",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
+        ColorPair::new(cp.fg_hud_highlight, cp.bg_hud),
     );
 
     // update action button texts
+    let p_action = player.get_primary_action(Target::Center);
+    let s_action = player.get_secondary_action(Target::Center);
+    let q1_action = player.get_quick1_action();
+    let q2_action = player.get_quick2_action();
     hud.items.iter_mut().for_each(|i| match i.item_enum {
         HudItem::PrimaryAction => {
-            i.text = player.get_primary_action(Target::Center).get_identifier()
+            i.text = format!(
+                "{} ({}√)",
+                p_action.get_identifier(),
+                p_action.get_energy_cost()
+            )
         }
         HudItem::SecondaryAction => {
-            i.text = player.get_secondary_action(Target::Center).get_identifier()
+            i.text = format!(
+                "{} ({}√)",
+                s_action.get_identifier(),
+                s_action.get_energy_cost()
+            )
         }
-        HudItem::Quick1Action => i.text = player.get_quick1_action().get_identifier(),
-        HudItem::Quick2Action => i.text = player.get_quick2_action().get_identifier(),
+        HudItem::Quick1Action => {
+            i.text = format!(
+                "{} ({}√)",
+                q1_action.get_identifier(),
+                q1_action.get_energy_cost()
+            )
+        }
+        HudItem::Quick2Action => {
+            i.text = format!(
+                "{} ({}√)",
+                q2_action.get_identifier(),
+                q2_action.get_energy_cost()
+            )
+        }
         HudItem::DnaItem => {}
     });
 }
 
 fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
-        "Inventory",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         to_cp437(' '),
+    );
+
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
+        "Inventory",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
     for (idx, obj) in player.inventory.items.iter().enumerate() {
@@ -478,16 +503,16 @@ fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch
 }
 
 fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
-        "Log",
-        ColorPair::new(cp.fg_hud, cp.bg_hud),
-    );
-
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
         to_cp437(' '),
+    );
+
+    draw_batch.print_color(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
+        "Log",
+        ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
     // print game messages, one line at a time
@@ -627,8 +652,6 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
         // (+2) for borders and (-1) for starting from 0, equals (+1)
         let tt_width = tooltip.content_width() + 1;
         let tt_height = tooltip.content_height() + 1;
-
-        println!("WIDTH {}, HEIGHT {}", tt_width, tt_height);
 
         draw_batch.fill_region(
             Rect::with_size(next_x, next_y, tt_width, tt_height),

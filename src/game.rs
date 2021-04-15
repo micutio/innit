@@ -13,15 +13,16 @@ use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
 use crate::ui::gui::{render_gui, Hud};
-use crate::ui::menus::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
-use crate::ui::menus::game_over_menu::{game_over_menu, GameOverMenuItem};
-use crate::ui::menus::main_menu::{main_menu, MainMenuItem};
-use crate::ui::menus::{Menu, MenuItem};
+use crate::ui::menu::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
+use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
+use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
+use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
 use core::fmt;
 use rltk::{GameState as Rltk_GameState, Rltk};
@@ -54,7 +55,8 @@ pub enum RunState {
     ChooseActionMenu(Menu<ActionItem>),
     GameOver(Menu<GameOverMenuItem>),
     InfoBox(InfoBox),
-    Ticking(bool), // flags to render world, hud
+    GenomeEditing(GenomeEditor),
+    Ticking,
     CheckInput,
     ToggleDarkLightMode,
 }
@@ -68,7 +70,8 @@ impl Display for RunState {
             RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
             RunState::GameOver(_) => write!(f, "GameOver"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
-            RunState::Ticking(render) => write!(f, "Ticking({})", render),
+            RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
+            RunState::Ticking => write!(f, "Ticking"),
             RunState::CheckInput => write!(f, "CheckInput"),
             RunState::ToggleDarkLightMode => write!(f, "ToggleDarkLightMode"),
         }
@@ -80,8 +83,12 @@ pub struct Game {
     objects: GameObjects,
     run_state: Option<RunState>,
     hud: Hud,
+    re_render: bool,
     is_dark_color_palette: bool,
     rex_assets: RexAssets,
+    /// This workaround is required because each mouse click is registered twice (press & release),
+    /// Without it each mouse event is fired twice in a row and toggles are useless.
+    mouse_workaround: bool,
 }
 
 impl Game {
@@ -94,8 +101,10 @@ impl Game {
             objects,
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(ColorPalette::get(true)),
+            re_render: false,
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
+            mouse_workaround: false,
         }
     }
 
@@ -125,6 +134,7 @@ impl Game {
         world_generator.make_world(&mut state, &mut objects, level);
         // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
         objects.set_tile_dna(
+            &mut state.rng,
             vec![
                 "Cell Membrane".to_string(),
                 "Cell Membrane".to_string(),
@@ -216,30 +226,19 @@ impl Rltk_GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
+        // mouse workaround
+        if ctx.left_click {
+            if self.mouse_workaround {
+                ctx.left_click = false;
+                println!("ctx.left_click {}", ctx.left_click);
+            }
+            self.mouse_workaround = !self.mouse_workaround;
+        }
+
         let mut new_run_state = self.run_state.take().unwrap();
         let color_palette = ColorPalette::get(self.is_dark_color_palette);
 
-        // debug!("run state: {}", new_run_state);
-
-        if let RunState::Ticking(render) = new_run_state {
-            ctx.set_active_console(HUD_CON);
-            ctx.cls();
-
-            if render {
-                ctx.set_active_console(WORLD_CON);
-                ctx.cls();
-                render_world(&mut self.state, &mut self.objects, ctx, color_palette);
-            }
-
-            ctx.set_active_console(HUD_CON);
-            let player = self
-                .objects
-                .extract_by_index(self.state.player_idx)
-                .unwrap();
-            render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
-            self.state.log.is_changed = false;
-            self.objects.replace(self.state.player_idx, player);
-        } else if self.hud.require_refresh {
+        if self.re_render || self.hud.require_refresh {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
             ctx.set_active_console(WORLD_CON);
@@ -253,10 +252,14 @@ impl Rltk_GameState for Game {
             render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
             self.objects.replace(self.state.player_idx, player);
             self.state.log.is_changed = false;
+            self.hud.require_refresh = false
         }
 
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
+                self.state.log.is_changed = false;
+                self.hud.require_refresh = false;
+                self.re_render = false;
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
@@ -303,7 +306,7 @@ impl Rltk_GameState for Game {
                     None => RunState::ChooseActionMenu(instance.clone()),
                 }
             }
-            RunState::Ticking(_) => {
+            RunState::Ticking => {
                 let mut feedback;
                 // Let the game engine process objects until we have to re-render the world or UI.
                 // Re-rendering is necessary either because the world changed or messages need to
@@ -317,7 +320,10 @@ impl Rltk_GameState for Game {
 
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
-                    ObjectFeedback::Render => RunState::Ticking(true),
+                    ObjectFeedback::Render => {
+                        self.re_render = true;
+                        RunState::Ticking
+                    }
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
@@ -325,7 +331,8 @@ impl Rltk_GameState for Game {
                         {
                             RunState::CheckInput
                         } else {
-                            RunState::Ticking(false)
+                            self.re_render = false;
+                            RunState::Ticking
                         }
                     }
                 }
@@ -334,7 +341,13 @@ impl Rltk_GameState for Game {
                 match read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
                     PlayerInput::MetaInput(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
-                        handle_meta_actions(&mut self.state, &mut self.objects, ctx, meta_action)
+                        handle_meta_actions(
+                            &mut self.state,
+                            &mut self.objects,
+                            ctx,
+                            color_palette,
+                            meta_action,
+                        )
                     }
                     PlayerInput::PlayInput(in_game_action) => {
                         trace!("inject in-game action {:#?} to player", in_game_action);
@@ -347,38 +360,51 @@ impl Rltk_GameState for Game {
                                 Quick2Action => player.get_quick2_action(),
                                 PassTurn => Box::new(ActPass::default()),
                             };
-                            // TODO: Turn this into a queue to detach action sources from user input!
                             player.set_next_action(Some(a));
-                            RunState::Ticking(false)
+                            RunState::Ticking
                         } else {
-                            RunState::Ticking(false)
+                            RunState::Ticking
                         }
                     }
                     PlayerInput::Undefined => RunState::CheckInput,
                 }
             }
+            RunState::GenomeEditing(genome_editor) => match genome_editor.state {
+                GenomeEditingState::Done => {
+                    if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                        player.set_dna(genome_editor.player_dna);
+                    }
+                    self.re_render = true;
+                    RunState::CheckInput
+                }
+
+                _ => genome_editor.display(&mut self.state, ctx, color_palette),
+            },
             RunState::InfoBox(infobox) => {
                 match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
                     Some(infobox) => RunState::InfoBox(infobox),
-                    None => RunState::Ticking(false),
+                    None => RunState::Ticking,
                 }
             }
             RunState::ToggleDarkLightMode => {
                 self.is_dark_color_palette = !self.is_dark_color_palette;
-                RunState::Ticking(true)
+                self.re_render = true;
+                RunState::Ticking
             }
             RunState::NewGame => {
                 // start new game
                 let (new_state, new_objects) = Game::new_game(self.state.env);
                 self.reset(new_state, new_objects);
-                RunState::Ticking(true)
+                self.re_render = true;
+                RunState::Ticking
             }
             RunState::LoadGame => {
                 // load game from file
                 match load_game() {
                     Ok((state, objects)) => {
                         self.reset(state, objects);
-                        RunState::Ticking(true)
+                        self.re_render = true;
+                        RunState::Ticking
                     }
                     Err(_e) => {
                         // TODO: Show alert to user... or not? Maybe have inactive buttons.
@@ -403,6 +429,7 @@ pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
     _ctx: &mut Rltk,
+    color_palette: &ColorPalette,
     action: UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
@@ -438,10 +465,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseSecondaryAction => {
@@ -464,10 +491,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseQuick1Action => {
@@ -483,10 +510,10 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
             }
         }
         UiAction::ChooseQuick2Action => {
@@ -502,10 +529,19 @@ pub fn handle_meta_actions(
                         "You have no actions available! Try modifying your genome.",
                         MsgClass::Alert,
                     );
-                    RunState::Ticking(false)
+                    RunState::Ticking
                 }
             } else {
-                RunState::Ticking(false)
+                RunState::Ticking
+            }
+        }
+        UiAction::GenomeEditor => {
+            if let Some(ref mut player) = objects[state.player_idx] {
+                // TODO: Read charges and features from plasmid
+                let genome_editor = GenomeEditor::new(player.dna.clone(), 99, color_palette);
+                RunState::GenomeEditing(genome_editor)
+            } else {
+                RunState::CheckInput
             }
         }
     }

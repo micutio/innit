@@ -88,7 +88,8 @@ pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
-    pub action: Option<Box<dyn Action>>, // TraitAction
+    pub action: Option<Box<dyn Action>>, // TraitActions
+    pub position: u32,                   // position of the gene within the genome
 }
 
 impl GeneticTrait {
@@ -103,6 +104,7 @@ impl GeneticTrait {
             trait_family,
             attribute,
             action,
+            position: 0,
         }
     }
 
@@ -112,6 +114,7 @@ impl GeneticTrait {
             trait_family: TraitFamily::Junk,
             attribute: TraitAttribute::None,
             action: None,
+            position: 0,
         }
     }
 }
@@ -268,7 +271,7 @@ impl Default for DnaType {
 /// For now objects hold DNA either contained in an organelle (Nucleus), free floating in the cell
 /// (Nucleoid) or in form of a ring structure that can be exchanged or picked up by certain other
 /// objects (Plasmid). This is indicated by the `dna_type`.
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Dna {
     pub dna_type: DnaType,
     pub raw: Vec<u8>,
@@ -358,7 +361,7 @@ impl GeneLibrary {
             // add length
             dna.push(1 as u8);
             // pick random trait number from list and add trait id
-            let trait_num = rng.gen_range(1, self.trait_count + 1);
+            let trait_num = rng.gen_range(1..self.trait_count);
             trace!(
                 "sampled genetic trait {} ({})",
                 trait_num,
@@ -382,15 +385,21 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn dna_from_traits(&self, traits: &[String]) -> Vec<u8> {
+    // TODO: Take care of the case where `traits` contains junk, literally.
+    pub fn dna_from_traits(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         // randomly grab a trait and add trait id, length and random attribute value
         for t in traits {
             // push 0x00 first as the genome start symbol
-            dna.push(0 as u8);
+            dna.push(0);
             // add length
-            dna.push(1 as u8);
-            dna.push(*self.trait_to_gray.get(t).unwrap());
+            dna.push(1);
+            if let Some(gray) = self.trait_to_gray.get(t) {
+                dna.push(*gray);
+            } else {
+                let defined_range = self.trait_to_gray.len() as u8;
+                dna.push(rng.gen_range(defined_range..=255));
+            }
             //
             // // add random attribute value
             // dna.push(game_rng.gen_range(0, 16) as u8);
@@ -408,11 +417,14 @@ impl GeneLibrary {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = raw_dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new(dna_type, raw_dna);
+        let mut position: u32 = 0;
 
         while start_ptr < raw_dna.len() - 2 {
-            let (s_ptr, e_ptr) = self.decode_gene(raw_dna, start_ptr, end_ptr, &mut trait_builder);
+            let (s_ptr, e_ptr) =
+                self.decode_gene(raw_dna, start_ptr, end_ptr, position, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
+            position += 1;
         }
 
         // return sensor, processor and actuator instances
@@ -433,11 +445,14 @@ impl GeneLibrary {
         (s, p, a, d)
     }
 
+    /// Decodes one complete gene from the bit vector, starting at `start_ptr`.
+    /// Returns the new positions for `start_ptr` and `end_ptr` after decoding is done.
     fn decode_gene(
         &self,
         dna: &[u8],
         mut start_ptr: usize,
         mut end_ptr: usize,
+        position: u32,
         trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
@@ -470,9 +485,11 @@ impl GeneLibrary {
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
                     trace!("found genetic trait {}", genetic_trait.trait_name);
-                    trait_builder.record_trait(genetic_trait.clone());
-                    trait_builder.add_action(genetic_trait);
-                    trait_builder.add_attribute(genetic_trait.attribute);
+                    let mut this_trait = genetic_trait.clone();
+                    this_trait.position = position;
+                    trait_builder.add_action(&this_trait);
+                    trait_builder.add_attribute(this_trait.attribute);
+                    trait_builder.record_trait(this_trait);
                 } else {
                     error!("no trait for id {}", trait_name);
                 }

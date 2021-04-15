@@ -395,6 +395,10 @@ impl Object {
         }
     }
 
+    pub fn set_dna(&mut self, new_dna: Dna) {
+        self.dna = new_dna;
+    }
+
     /// Resets the sensor, processor and actuator properties and action from the combined dna of
     /// this object and all the plasmid-dna it contains in the inventory
     fn reread_dna(&mut self, state: &mut GameState) {
