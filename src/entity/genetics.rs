@@ -89,6 +89,7 @@ pub struct GeneticTrait {
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
     pub action: Option<Box<dyn Action>>, // TraitActions
+    pub position: u32,                   // position of the gene within the genome
 }
 
 impl GeneticTrait {
@@ -103,6 +104,7 @@ impl GeneticTrait {
             trait_family,
             attribute,
             action,
+            position: 0,
         }
     }
 
@@ -112,6 +114,7 @@ impl GeneticTrait {
             trait_family: TraitFamily::Junk,
             attribute: TraitAttribute::None,
             action: None,
+            position: 0,
         }
     }
 }
@@ -414,11 +417,14 @@ impl GeneLibrary {
         let mut start_ptr: usize = 0;
         let mut end_ptr: usize = raw_dna.len();
         let mut trait_builder: TraitBuilder = TraitBuilder::new(dna_type, raw_dna);
+        let mut position: u32 = 0;
 
         while start_ptr < raw_dna.len() - 2 {
-            let (s_ptr, e_ptr) = self.decode_gene(raw_dna, start_ptr, end_ptr, &mut trait_builder);
+            let (s_ptr, e_ptr) =
+                self.decode_gene(raw_dna, start_ptr, end_ptr, position, &mut trait_builder);
             start_ptr = s_ptr;
             end_ptr = e_ptr;
+            position += 1;
         }
 
         // return sensor, processor and actuator instances
@@ -439,12 +445,14 @@ impl GeneLibrary {
         (s, p, a, d)
     }
 
-    /// Decodes one complete from the bit vector, starting at `start_ptr`.
+    /// Decodes one complete gene from the bit vector, starting at `start_ptr`.
+    /// Returns the new positions for `start_ptr` and `end_ptr` after decoding is done.
     fn decode_gene(
         &self,
         dna: &[u8],
         mut start_ptr: usize,
         mut end_ptr: usize,
+        position: u32,
         trait_builder: &mut TraitBuilder,
     ) -> (usize, usize) {
         // pointing at 0x00 now
@@ -477,9 +485,11 @@ impl GeneLibrary {
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
                     trace!("found genetic trait {}", genetic_trait.trait_name);
-                    trait_builder.record_trait(genetic_trait.clone());
-                    trait_builder.add_action(genetic_trait);
-                    trait_builder.add_attribute(genetic_trait.attribute);
+                    let mut this_trait = genetic_trait.clone();
+                    this_trait.position = position;
+                    trait_builder.add_action(&this_trait);
+                    trait_builder.add_attribute(this_trait.attribute);
+                    trait_builder.record_trait(this_trait);
                 } else {
                     error!("no trait for id {}", trait_name);
                 }

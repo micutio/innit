@@ -4,7 +4,7 @@ they have a plasmid that allows this.
 */
 
 use crate::core::game_state::GameState;
-use crate::entity::genetics::{Dna, GeneticTrait, TraitFamily};
+use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
 use crate::ui::color::Color;
@@ -340,6 +340,11 @@ impl GenomeEditor {
                 let action_header = "action:";
                 let attribute_header = "attribute:";
                 let code_header = "genetic code:";
+                let trait_name: String = if TraitAttribute::Receptor == genome.attribute {
+                    format!("{}-({})", genome.trait_name, genome.position)
+                } else {
+                    genome.trait_name.clone()
+                };
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 1), "├", color);
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 2), "├", color);
                 draw_batch.print_color(Point::new(connect_end.x, connect_end.y + 3), "├", color);
@@ -358,7 +363,7 @@ impl GenomeEditor {
                 );
                 draw_batch.print_color(
                     Point::new(connect_end.x + spacing, connect_end.y + 1),
-                    &genome.trait_name,
+                    trait_name,
                     color,
                 );
                 draw_batch.print_color(
