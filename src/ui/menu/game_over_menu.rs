@@ -1,6 +1,7 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::game::RunState;
+use crate::ui::menu::main_menu::main_menu;
 use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Copy, Clone, Debug)]
@@ -18,7 +19,7 @@ impl MenuItem for GameOverMenuItem {
     ) -> RunState {
         match item {
             GameOverMenuItem::Credits => unimplemented!(),
-            GameOverMenuItem::ReturnToMain => unimplemented!(),
+            GameOverMenuItem::ReturnToMain => RunState::MainMenu(main_menu()),
         }
     }
 }

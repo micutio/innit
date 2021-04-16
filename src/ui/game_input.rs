@@ -167,6 +167,7 @@ pub fn read_input(
                     HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
                     HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
                     HudItem::DnaItem => PlayerInput::Undefined,
+                    HudItem::InventoryItem => PlayerInput::Undefined, // TODO: execute action
                 }
             } else {
                 PlayerInput::Undefined

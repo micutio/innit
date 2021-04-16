@@ -62,6 +62,7 @@ pub enum HudItem {
     Quick1Action,
     Quick2Action,
     DnaItem,
+    InventoryItem,
 }
 
 fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>> {
@@ -184,6 +185,8 @@ impl ToolTip {
 
 pub struct Hud {
     layout: Rect,
+    pub inv_area: Rect,
+    pub log_area: Rect,
     last_mouse: Point,
     pub require_refresh: bool,
     pub items: Vec<UiItem<HudItem>>,
@@ -197,8 +200,12 @@ impl Hud {
         let x2 = x1 + SIDE_PANEL_WIDTH;
         let y2 = SIDE_PANEL_HEIGHT - 1;
         let layout = Rect::with_exact(x1, y1, x2, y2);
+        let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22);
+        let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58);
         Hud {
             layout,
+            inv_area,
+            log_area,
             last_mouse: Point::new(0, 0),
             require_refresh: false,
             items: create_hud_items(&layout, cp),
@@ -299,6 +306,35 @@ impl Hud {
                 ColorPair::new(col, cp.bg_dna),
             ));
         }
+
+        for (idx, obj) in player.inventory.items.iter().enumerate() {
+            if idx as i32 > self.inv_area.height() {
+                break;
+            }
+            // take only as many chars as fit into the inventory item name field, or less
+            // if the name is shorter
+            let name_fitted: String = obj
+                .visual
+                .name
+                .chars()
+                .take((self.inv_area.width() - 3) as usize)
+                .collect();
+            // TODO: Extend tooltip to include additional info.
+            let tt: ToolTip = ToolTip::header_only(&obj.visual.name);
+            let layout = Rect::with_size(
+                self.inv_area.x1 + 3,
+                self.inv_area.y1 + idx as i32,
+                self.inv_area.width(),
+                1,
+            );
+            self.items.push(UiItem::new(
+                HudItem::InventoryItem,
+                format!("{} {}", obj.visual.glyph, name_fitted),
+                tt,
+                layout,
+                ColorPair::new(obj.visual.fg_color, cp.bg_hud_content),
+            ));
+        }
     }
 }
 
@@ -319,14 +355,11 @@ pub fn render_gui(
         rltk::to_cp437(' '),
     );
 
-    let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22);
-    let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58);
-
     render_dna_region(cp, &mut draw_batch);
     render_bars(player, cp, &mut draw_batch);
     render_action_fields(player, hud, cp, &mut draw_batch);
-    render_inventory(player, inv_area, cp, &mut draw_batch);
-    render_log(state, log_area, cp, &mut draw_batch);
+    render_inventory(hud, player, hud.inv_area, cp, &mut draw_batch);
+    render_log(state, hud.log_area, cp, &mut draw_batch);
     render_ui_items(hud, &mut draw_batch);
     render_tooltip(hud, cp, &mut draw_batch);
 
@@ -461,10 +494,17 @@ fn render_action_fields(
             )
         }
         HudItem::DnaItem => {}
+        HudItem::InventoryItem => {}
     });
 }
 
-fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
+fn render_inventory(
+    hud: &Hud,
+    player: &Object,
+    layout: Rect,
+    cp: &ColorPalette,
+    draw_batch: &mut DrawBatch,
+) {
     draw_batch.fill_region(
         layout,
         ColorPair::new(cp.fg_hud, cp.bg_hud_content),
@@ -473,33 +513,40 @@ fn render_inventory(player: &Object, layout: Rect, cp: &ColorPalette, draw_batch
 
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
-        "Inventory",
+        format!(
+            "Inventory [{}/{}]",
+            player.inventory.items.len(),
+            player.actuators.volume
+        ),
         ColorPair::new(cp.fg_hud, cp.bg_hud),
     );
 
-    for (idx, obj) in player.inventory.items.iter().enumerate() {
-        if idx as i32 > layout.height() {
-            break;
-        }
-        draw_batch.print_color(
-            Point::new(layout.x1, layout.y1 + idx as i32),
-            format!("{} ", obj.visual.glyph),
-            ColorPair::new(obj.visual.fg_color, cp.bg_hud),
-        );
-        // take only as many chars as fit into the inventory item name field, or less
-        // if the name is shorter
-        let name_fitted: String = obj
-            .visual
-            .name
-            .chars()
-            .take((layout.width() - 3) as usize)
-            .collect();
-        draw_batch.print_color(
-            Point::new(layout.x1 + 3, layout.y1 + idx as i32),
-            name_fitted,
-            ColorPair::new(obj.visual.fg_color, cp.bg_hud),
-        );
-    }
+    // for (idx, obj) in player.inventory.items.iter().enumerate() {
+    //     if idx as i32 > layout.height() {
+    //         break;
+    //     }
+    //     draw_batch.print_color(
+    //         Point::new(layout.x1, layout.y1 + idx as i32),
+    //         format!("{} ", obj.visual.glyph),
+    //         ColorPair::new(obj.visual.fg_color, cp.bg_hud),
+    //     );
+    //     // take only as many chars as fit into the inventory item name field, or less
+    //     // if the name is shorter
+    //     let name_fitted: String = obj
+    //         .visual
+    //         .name
+    //         .chars()
+    //         .take((layout.width() - 3) as usize)
+    //         .collect();
+
+    // }
+
+    hud.items
+        .iter()
+        .filter(|item| HudItem::InventoryItem == item.item_enum)
+        .for_each(|item| {
+            draw_batch.print_color(item.top_left_corner(), &item.text, item.color);
+        });
 }
 
 fn render_log(state: &GameState, layout: Rect, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
