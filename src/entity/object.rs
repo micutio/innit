@@ -40,6 +40,7 @@ pub struct Object {
     pub processors: Processors,
     pub actuators: Actuators,
     pub inventory: Inventory,
+    pub item: Option<Item>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -80,6 +81,21 @@ impl Physics {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Item {
+    description: String,
+    use_action: Option<Box<dyn Action>>,
+}
+
+impl Item {
+    pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
+        Item {
+            description: descr.into(),
+            use_action,
+        }
+    }
+}
+
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -111,6 +127,7 @@ impl Object {
             processors: Processors::new(),
             actuators: Actuators::new(),
             inventory: Inventory::new(),
+            item: None,
         }
     }
 
@@ -158,6 +175,12 @@ impl Object {
         self.change_genome(sensors, processors, actuators, dna);
 
         // debug!("default action: {:#?}", self.default_action);
+        self
+    }
+
+    /// Turn the object into a collectible item. Part of the builder pattern.
+    pub fn inventory_item(mut self, item: Item) -> Object {
+        self.item = Some(item);
         self
     }
 

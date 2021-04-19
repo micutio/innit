@@ -1,14 +1,14 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
 use crate::entity::ai::{AiPassive, AiRandom, AiVirus};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::ui::color;
 use crate::ui::color::Color;
+use crate::{core::game_objects::GameObjects, entity::object::Item};
+use crate::{core::game_state::GameState, entity::action::GenomeEditorAction};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -56,6 +56,7 @@ pub fn is_explored(tile: &Tile) -> Option<&bool> {
 pub enum Monster {
     Bacteria,
     Virus,
+    Plasmid,
 }
 
 pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _level: u32) -> Object {
@@ -86,5 +87,23 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
                     .new_genetics(&mut state.rng, DnaType::Nucleoid, false, GENE_LEN),
             )
             .control(Controller::Npc(Box::new(AiRandom::new()))),
+        Monster::Plasmid => Object::new()
+            .position(x, y)
+            .living(true)
+            .visualize("Plasmid", 'p', Color::from(color::PLASMID))
+            .physical(false, false, false)
+            .inventory_item(Item::new(
+                "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
+                Some(Box::new(GenomeEditorAction::new())),
+            ))
+            .genome(
+                1.0,
+                state.gene_library.new_genetics(
+                    &mut state.rng,
+                    DnaType::Plasmid,
+                    false,
+                    _level as usize,
+                ),
+            ),
     }
 }

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub const VIRUS: (u8, u8, u8) = (100, 255, 150);
 pub const BACTERIA: (u8, u8, u8) = (80, 235, 120);
+pub const PLASMID: (u8, u8, u8) = (50, 50, 250);
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]
 pub struct Color {

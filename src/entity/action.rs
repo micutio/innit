@@ -830,3 +830,50 @@ impl Action for ActProduceVirion {
         "produces virus".to_string()
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GenomeEditorAction {
+    lvl: i32,
+}
+
+impl GenomeEditorAction {
+    pub fn new() -> Self {
+        GenomeEditorAction { lvl: 0 }
+    }
+}
+
+#[typetag::serde]
+impl Action for GenomeEditorAction {
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        ActionResult::Success {
+            callback: ObjectFeedback::GenomeManipulator,
+        }
+    }
+
+    fn set_target(&mut self, t: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "Manipulate Genome".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        "Manipulate Genome".to_string()
+    }
+}

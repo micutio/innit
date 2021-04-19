@@ -49,6 +49,7 @@ pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
     Render,
+    GenomeManipulator,
     // TODO: Move animations/particle effects into separate particle effect handler
     // Animate {
     //     anim_type: AnimationType,
@@ -293,6 +294,8 @@ impl GameState {
                     (ObjectFeedback::NoAction, _) => consequence_feedback,
                     (ObjectFeedback::GameOver, _) => callback,
                     (ObjectFeedback::Render, _) => callback,
+                    // TODO: Refresh how this is supposed to work
+                    (ObjectFeedback::GenomeManipulator, _) => consequence_feedback,
                 }
             }
         }
