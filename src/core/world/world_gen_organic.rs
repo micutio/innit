@@ -149,7 +149,11 @@ fn place_objects(
         level,
     );
 
-    let monster_chances = [("virus", 80), ("bacteria", bacteria_chance)];
+    let monster_chances = [
+        (Monster::Virus, 60),
+        (Monster::Bacteria, bacteria_chance),
+        (Monster::Plasmid, 40),
+    ];
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
@@ -160,12 +164,8 @@ fn place_objects(
         let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let mut monster = match monster_chances[monster_dist.sample(&mut state.rng)].0 {
-                "virus" => new_monster(state, Monster::Virus, x, y, level),
-                "bacteria" => new_monster(state, Monster::Bacteria, x, y, level),
-                _ => unreachable!(),
-            };
-
+            let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
+            let mut monster = new_monster(state, monster_type, x, y, level);
             monster.alive = true;
             objects.push(monster);
         }

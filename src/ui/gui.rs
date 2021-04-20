@@ -62,7 +62,16 @@ pub enum HudItem {
     Quick1Action,
     Quick2Action,
     DnaItem,
-    InventoryItem,
+    UseInventory { idx: usize },
+}
+
+impl HudItem {
+    fn is_inventory_item(&self) -> bool {
+        match *self {
+            Self::UseInventory { idx: _ } => true,
+            _ => false,
+        }
+    }
 }
 
 fn create_hud_items(hud_layout: &Rect, cp: &ColorPalette) -> Vec<UiItem<HudItem>> {
@@ -328,7 +337,7 @@ impl Hud {
                 1,
             );
             self.items.push(UiItem::new(
-                HudItem::InventoryItem,
+                HudItem::UseInventory { idx },
                 format!("{} {}", obj.visual.glyph, name_fitted),
                 tt,
                 layout,
@@ -493,8 +502,8 @@ fn render_action_fields(
                 q2_action.get_energy_cost()
             )
         }
-        HudItem::DnaItem => {}
-        HudItem::InventoryItem => {}
+        _ => {} // HudItem::DnaItem => {}
+                // HudItem::UseInventory(_) => {}
     });
 }
 
@@ -543,7 +552,7 @@ fn render_inventory(
 
     hud.items
         .iter()
-        .filter(|item| HudItem::InventoryItem == item.item_enum)
+        .filter(|item| item.item_enum.is_inventory_item())
         .for_each(|item| {
             draw_batch.print_color(item.top_left_corner(), &item.text, item.color);
         });

@@ -846,16 +846,16 @@ impl GenomeEditorAction {
 impl Action for GenomeEditorAction {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
-        owner: &mut Object,
+        _state: &mut GameState,
+        _objects: &mut GameObjects,
+        _owner: &mut Object,
     ) -> ActionResult {
         ActionResult::Success {
             callback: ObjectFeedback::GenomeManipulator,
         }
     }
 
-    fn set_target(&mut self, t: Target) {}
+    fn set_target(&mut self, _t: Target) {}
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;

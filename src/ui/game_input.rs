@@ -36,6 +36,7 @@ pub enum PlayerAction {
     Quick1Action,            // using 'Q', un-targeted quick action
     Quick2Action,            // using 'E', un-targeted second quick action
     PassTurn,
+    UseItem(usize),
 }
 
 /// Translate between bracket's keys and our own key codes.
@@ -167,7 +168,9 @@ pub fn read_input(
                     HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
                     HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
                     HudItem::DnaItem => PlayerInput::Undefined,
-                    HudItem::InventoryItem => PlayerInput::Undefined, // TODO: execute action
+                    HudItem::UseInventory { idx } => {
+                        PlayerInput::PlayInput(PlayerAction::UseItem(idx))
+                    }
                 }
             } else {
                 PlayerInput::Undefined

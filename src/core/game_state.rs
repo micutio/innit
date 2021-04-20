@@ -295,7 +295,7 @@ impl GameState {
                     (ObjectFeedback::GameOver, _) => callback,
                     (ObjectFeedback::Render, _) => callback,
                     // TODO: Refresh how this is supposed to work
-                    (ObjectFeedback::GenomeManipulator, _) => consequence_feedback,
+                    (ObjectFeedback::GenomeManipulator, _) => callback,
                 }
             }
         }

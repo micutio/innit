@@ -6,7 +6,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::{ActPass, Target, TargetCategory};
+use crate::entity::action::{ActPass, Action, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -324,6 +324,17 @@ impl Rltk_GameState for Game {
                         self.re_render = true;
                         RunState::Ticking
                     }
+                    ObjectFeedback::GenomeManipulator => {
+                        if let Some(genome_editor) = create_genome_manipulator(
+                            &mut self.state,
+                            &mut self.objects,
+                            color_palette,
+                        ) {
+                            RunState::GenomeEditing(genome_editor)
+                        } else {
+                            RunState::CheckInput
+                        }
+                    }
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
@@ -353,14 +364,21 @@ impl Rltk_GameState for Game {
                         trace!("inject in-game action {:#?} to player", in_game_action);
                         if let Some(ref mut player) = self.objects[self.state.player_idx] {
                             use crate::ui::game_input::PlayerAction::*;
-                            let a = match in_game_action {
-                                PrimaryAction(dir) => player.get_primary_action(dir),
-                                SecondaryAction(dir) => player.get_secondary_action(dir),
-                                Quick1Action => player.get_quick1_action(),
-                                Quick2Action => player.get_quick2_action(),
-                                PassTurn => Box::new(ActPass::default()),
+                            let a: Option<Box<dyn Action>> = match in_game_action {
+                                PrimaryAction(dir) => Some(player.get_primary_action(dir)),
+                                SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
+                                Quick1Action => Some(player.get_quick1_action()),
+                                Quick2Action => Some(player.get_quick2_action()),
+                                UseItem(idx) => {
+                                    if let Some(inv_item) = &player.inventory.items[idx].item {
+                                        inv_item.use_action.clone()
+                                    } else {
+                                        None
+                                    }
+                                }
+                                PassTurn => Some(Box::new(ActPass::default())),
                             };
-                            player.set_next_action(Some(a));
+                            player.set_next_action(a);
                             RunState::Ticking
                         } else {
                             RunState::Ticking
@@ -536,9 +554,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::GenomeEditor => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                // TODO: Read charges and features from plasmid
-                let genome_editor = GenomeEditor::new(player.dna.clone(), 99, color_palette);
+            if let Some(genome_editor) = create_genome_manipulator(state, objects, color_palette) {
                 RunState::GenomeEditing(genome_editor)
             } else {
                 RunState::CheckInput
@@ -556,4 +572,18 @@ fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<St
         .filter(|a| targets.contains(&a.get_target_category()))
         .map(|a| a.get_identifier())
         .collect()
+}
+
+fn create_genome_manipulator(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    color_palette: &ColorPalette,
+) -> Option<GenomeEditor> {
+    if let Some(ref mut player) = objects[state.player_idx] {
+        // TODO: Read charges and features from plasmid
+        let genome_editor = GenomeEditor::new(player.dna.clone(), 99, color_palette);
+        Some(genome_editor)
+    } else {
+        None
+    }
 }

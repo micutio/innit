@@ -7,7 +7,7 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::ui::color;
 use crate::ui::color::Color;
-use crate::{core::game_objects::GameObjects, entity::object::Item};
+use crate::{core::game_objects::GameObjects, entity::object::InventoryItem};
 use crate::{core::game_state::GameState, entity::action::GenomeEditorAction};
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +53,7 @@ pub fn is_explored(tile: &Tile) -> Option<&bool> {
     Some(&tile.is_explored)
 }
 
+#[derive(Clone, Copy)]
 pub enum Monster {
     Bacteria,
     Virus,
@@ -92,7 +93,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
             .living(true)
             .visualize("Plasmid", 'p', Color::from(color::PLASMID))
             .physical(false, false, false)
-            .inventory_item(Item::new(
+            .inventory_item(InventoryItem::new(
                 "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
                 Some(Box::new(GenomeEditorAction::new())),
             ))

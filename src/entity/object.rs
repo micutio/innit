@@ -40,7 +40,7 @@ pub struct Object {
     pub processors: Processors,
     pub actuators: Actuators,
     pub inventory: Inventory,
-    pub item: Option<Item>,
+    pub item: Option<InventoryItem>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -81,15 +81,15 @@ impl Physics {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Item {
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct InventoryItem {
     description: String,
-    use_action: Option<Box<dyn Action>>,
+    pub use_action: Option<Box<dyn Action>>,
 }
 
-impl Item {
+impl InventoryItem {
     pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
-        Item {
+        InventoryItem {
             description: descr.into(),
             use_action,
         }
@@ -178,8 +178,10 @@ impl Object {
         self
     }
 
+    // TODO: Implement picking up items!
+
     /// Turn the object into a collectible item. Part of the builder pattern.
-    pub fn inventory_item(mut self, item: Item) -> Object {
+    pub fn inventory_item(mut self, item: InventoryItem) -> Object {
         self.item = Some(item);
         self
     }
