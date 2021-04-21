@@ -370,6 +370,7 @@ impl Rltk_GameState for Game {
                                 Quick1Action => Some(player.get_quick1_action()),
                                 Quick2Action => Some(player.get_quick2_action()),
                                 UseItem(idx) => {
+                                    println!("PlayInput USE_ITEM");
                                     if let Some(inv_item) = &player.inventory.items[idx].item {
                                         inv_item.use_action.clone()
                                     } else {

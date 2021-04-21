@@ -877,3 +877,61 @@ impl Action for GenomeEditorAction {
         "Manipulate Genome".to_string()
     }
 }
+
+/// Pick up an item and store it in the inventory.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PickUpAction;
+
+#[typetag::serde]
+impl Action for PickUpAction {
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        let target_pos: Position = owner.pos.get_translated(&owner.pos);
+        let feedback: ObjectFeedback =
+            if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&target_pos) {
+                // do stuff with object
+                println!("LETS GET THAT ITEM!");
+                if target_obj.item.is_some() {
+                    if owner.inventory.items.len() < owner.actuators.volume as usize {
+                        // only add object if it has in item tag
+                        owner.add_to_inventory(state, target_obj);
+                    } else {
+                        state.log.add("Your inventory is full!", MsgClass::Info);
+                    }
+                } else {
+                    // otherwise put it back into the world
+                    objects.replace(index, target_obj);
+                }
+                ObjectFeedback::NoFeedback
+            } else {
+                println!("NO COLLECTIBLE ITEM!");
+                ObjectFeedback::NoFeedback
+            };
+
+        ActionResult::Success { callback: feedback }
+    }
+
+    fn set_target(&mut self, _t: Target) {}
+
+    fn set_level(&mut self, _lvl: i32) {}
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_identifier(&self) -> String {
+        "pick up item".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0
+    }
+
+    fn to_text(&self) -> String {
+        "pick up item".to_string()
+    }
+}

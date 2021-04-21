@@ -208,7 +208,6 @@ impl Processors {
     }
 }
 
-// TODO: To be extended in the future.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Receptor {
     GenericReceptor,
@@ -654,6 +653,14 @@ impl TraitBuilder {
             })
             .filter_map(|o| o)
             .collect();
+
+        // Space for 'post-processing'
+        // Add equip function for anything but viruses and plasmids
+        if matches!(self.dna.dna_type, DnaType::Nucleoid)
+            || matches!(self.dna.dna_type, DnaType::Nucleus)
+        {
+            self.actuators.actions.push(Box::new(PickUpAction))
+        }
 
         (self.sensors, self.processors, self.actuators, self.dna)
     }

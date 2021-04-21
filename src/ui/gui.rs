@@ -783,7 +783,7 @@ fn render_tooltip(hud: &Hud, cp: &ColorPalette, draw_batch: &mut DrawBatch) {
                 next_y += tt_height * y_direction;
             }
         } else {
-            let projected_y = next_y + (tt_height * x_direction);
+            let projected_y = next_y + 1 + (tt_height * x_direction);
             if projected_y > 0 && projected_y < SCREEN_HEIGHT {
                 next_y = projected_y;
             } else {

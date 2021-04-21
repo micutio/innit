@@ -141,7 +141,9 @@ impl GameState {
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
             let mut process_result =
                 // If not enough energy available try to metabolise.
-                if active_object.processors.energy < active_object.processors.energy_storage {
+                if active_object.control.is_none() {
+                    ObjectFeedback::NoFeedback
+                } else if active_object.processors.energy < active_object.processors.energy_storage {
                     // replenish energy
                     active_object.metabolize();
                     if self.is_players_turn() {

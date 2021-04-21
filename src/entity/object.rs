@@ -27,7 +27,7 @@ use std::fmt;
 /// influenced or amplified by certain attributes.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Object {
-    // TODO: Add plasmids, antigen-markers
+    // TODO: Add antigen-markers
     pub alive: bool,
     pub gene_stability: f64,
     pub pos: Position,

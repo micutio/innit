@@ -165,6 +165,16 @@ impl GameObjects {
         }
     }
 
+    pub fn extract_item_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+        if let Some(i) = self.obj_vec.iter().flatten().position(|o| {
+            o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
+        }) {
+            Some((i, self.extract_by_index(i)))
+        } else {
+            None
+        }
+    }
+
     pub fn replace(&mut self, index: usize, object: Object) {
         let item = self.obj_vec.get_mut(index);
         match item {
