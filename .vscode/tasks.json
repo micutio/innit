@@ -4,8 +4,8 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "cargo build debug",
             "type": "cargo",
+            "label": "cargo build debug",
             "command": "build",
             // "args": [
             //     "-j1"
@@ -14,6 +14,31 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "problemMatcher": [
+                "$rustc"
+            ]
         },
+        {
+            "type": "cargo",
+            "label": "cargo test build",
+            "command": "test build",
+            "args": [
+                "--no-run"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        // {
+        //     "type": "shell",
+        //     "label": "cargo test build",
+        //     "command": "cargo",
+        //     "args": [
+        //         "test", "--no-run"
+        //     ],
+        //     "problemMatcher": [
+        //         "$rustc"
+        //     ]
+        // }
     ]
 }
