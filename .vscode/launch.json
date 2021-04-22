@@ -7,7 +7,24 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug Innit",
+            "name": "debug Innit",
+            "program": "${workspaceFolder}/target/debug/innit",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "innit=debug",
+                "RUST_BACKTRACE": "1",
+            },
+            "stopOnEntry": false,
+            "sourceLanguages": [
+                "rust"
+            ],
+            "preLaunchTask": "cargo build debug",
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "trace Innit",
             "program": "${workspaceFolder}/target/debug/innit",
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -18,7 +35,8 @@
             "stopOnEntry": false,
             "sourceLanguages": [
                 "rust"
-            ]
+            ],
+            "preLaunchTask": "cargo build debug",
         }
     ]
 }
