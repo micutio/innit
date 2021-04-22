@@ -332,9 +332,9 @@ impl Hud {
                     .take((self.inv_area.width() - 5) as usize)
                     .collect();
                 let use_layout = Rect::with_size(
-                    self.inv_area.x1 + 3,
+                    self.inv_area.x1 + 1,
                     self.inv_area.y1 + idx as i32,
-                    self.inv_area.width() - 2,
+                    self.inv_area.width() - 3,
                     1,
                 );
                 self.items.push(UiItem::new(
@@ -349,9 +349,9 @@ impl Hud {
                 ));
 
                 let drop_layout = Rect::with_size(
-                    self.inv_area.width() - 4,
+                    self.inv_area.x1 + self.inv_area.width() - 2,
                     self.inv_area.y1 + idx as i32,
-                    self.inv_area.width() - 2,
+                    2,
                     1,
                 );
                 self.items.push(UiItem::new(
@@ -359,7 +359,7 @@ impl Hud {
                     " x",
                     ToolTip::header_only(format!("drop {}", &obj.visual.name)),
                     drop_layout,
-                    ColorPair::new(obj.visual.fg_color, cp.bg_hud_content),
+                    ColorPair::new(cp.magenta, cp.bg_hud_content),
                 ));
             }
         }

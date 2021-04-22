@@ -126,10 +126,6 @@ impl GameState {
             if active_object.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.player_idx = self.obj_idx;
-                println!(
-                    "#OBJECTS IN THE FUCKING WORLD: {}",
-                    objects.get_vector().len()
-                );
                 // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
                 if !active_object.has_next_action()
                     && active_object.processors.energy == active_object.processors.energy_storage

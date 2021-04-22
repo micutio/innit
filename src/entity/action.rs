@@ -926,7 +926,6 @@ impl Action for ActPickUpItem {
     ) -> ActionResult {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
             // do stuff with object
-            println!("LETS GET THAT ITEM!");
             if target_obj.item.is_some() {
                 if owner.inventory.items.len() < owner.actuators.volume as usize {
                     // only add object if it has in item tag
@@ -952,7 +951,6 @@ impl Action for ActPickUpItem {
             objects.replace(index, target_obj);
             ActionResult::Failure
         } else {
-            println!("NO COLLECTIBLE ITEM!");
             ActionResult::Failure
         }
     }

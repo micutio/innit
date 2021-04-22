@@ -230,7 +230,6 @@ impl Rltk_GameState for Game {
         if ctx.left_click {
             if self.mouse_workaround {
                 ctx.left_click = false;
-                println!("ctx.left_click {}", ctx.left_click);
             }
             self.mouse_workaround = !self.mouse_workaround;
         }
@@ -238,7 +237,7 @@ impl Rltk_GameState for Game {
         let mut new_run_state = self.run_state.take().unwrap();
         let color_palette = ColorPalette::get(self.is_dark_color_palette);
 
-        if self.re_render || self.hud.require_refresh {
+        if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
             ctx.set_active_console(WORLD_CON);
@@ -307,6 +306,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::Ticking => {
+                trace!("enter RunState::Ticking {}", self.state.log.is_changed);
                 let mut feedback;
                 // Let the game engine process objects until we have to re-render the world or UI.
                 // Re-rendering is necessary either because the world changed or messages need to
@@ -318,6 +318,7 @@ impl Rltk_GameState for Game {
                     }
                 }
 
+                trace!("process feedback in RunState::Ticking: {:#?}", feedback);
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
                     ObjectFeedback::Render => {

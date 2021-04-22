@@ -114,10 +114,7 @@ impl GameObjects {
         match self.obj_vec.get_mut(index) {
             Some(item) => match item.take() {
                 Some(object) => {
-                    // debug!(
-                    //     "extract object {} @ index {}",
-                    //     object.visual.name, index
-                    // );
+                    // debug!("extract object {} @ index {}", object.visual.name, index);
                     Some(object)
                 }
                 None => None,
@@ -140,12 +137,13 @@ impl GameObjects {
     }
 
     pub fn extract_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self
-            .obj_vec
-            .iter()
-            .flatten()
-            .position(|o| o.pos.is_equal(pos) && o.tile.is_some())
-        {
+        if let Some(i) = self.obj_vec.iter().position(|opt| {
+            if let Some(obj) = opt {
+                obj.pos.is_equal(pos) && obj.tile.is_some()
+            } else {
+                false
+            }
+        }) {
             Some((i, self.extract_by_index(i)))
         } else {
             None
@@ -153,12 +151,13 @@ impl GameObjects {
     }
 
     pub fn extract_entity_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self
-            .obj_vec
-            .iter()
-            .flatten()
-            .position(|o| o.pos.is_equal(pos) && o.tile.is_none())
-        {
+        if let Some(i) = self.obj_vec.iter().position(|opt| {
+            if let Some(obj) = opt {
+                obj.pos.is_equal(pos) && obj.tile.is_none()
+            } else {
+                false
+            }
+        }) {
             Some((i, self.extract_by_index(i)))
         } else {
             None
@@ -166,8 +165,16 @@ impl GameObjects {
     }
 
     pub fn extract_item_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self.obj_vec.iter().flatten().position(|o| {
-            o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
+        if let Some(i) = self.obj_vec.iter().position(|opt| {
+            if let Some(obj) = opt {
+                obj.pos.is_equal(pos)
+                    && obj.tile.is_none()
+                    && obj.item.is_some()
+                    && !obj.physics.is_blocking
+            } else {
+                false
+            }
+            // o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
         }) {
             Some((i, self.extract_by_index(i)))
         } else {
