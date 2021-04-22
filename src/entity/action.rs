@@ -931,7 +931,7 @@ impl Action for ActPickUpItem {
                     // only add object if it has in item tag
                     state.log.add(
                         format!(
-                            "{} picked up {}",
+                            "{} picked up a {}",
                             owner.visual.name, &target_obj.visual.name
                         ),
                         MsgClass::Info,
@@ -996,14 +996,17 @@ impl ActDropItem {
 impl Action for ActDropItem {
     fn perform(
         &self,
-        _state: &mut GameState,
+        state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
         // make sure there is an item at slot [self.lvl]
         if owner.inventory.items.len() > self.lvl as usize {
             let mut item: Object = owner.inventory.items.remove(self.lvl as usize);
-
+            state.log.add(
+                format!("{} dropped a {}", owner.visual.name, &item.visual.name),
+                MsgClass::Info,
+            );
             // set the item to be dropped at the same position as the player
             item.pos.set(owner.pos.x, owner.pos.y);
             objects.get_vector_mut().push(Some(item));
