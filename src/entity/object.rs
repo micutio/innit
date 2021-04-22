@@ -414,7 +414,7 @@ impl Object {
         // add action to drop it
         self.inventory
             .inv_actions
-            .push(Box::new(DropItemAction::new(new_idx as i32)));
+            .push(Box::new(ActDropItem::new(new_idx as i32)));
         if reread_dna {
             self.reread_dna(state);
         }

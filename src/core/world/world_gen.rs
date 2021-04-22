@@ -8,7 +8,7 @@ use crate::entity::object::Object;
 use crate::ui::color;
 use crate::ui::color::Color;
 use crate::{core::game_objects::GameObjects, entity::object::InventoryItem};
-use crate::{core::game_state::GameState, entity::action::GenomeEditorAction};
+use crate::{core::game_state::GameState, entity::action::ActEditGenome};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -95,7 +95,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
             .physical(false, false, false)
             .inventory_item(InventoryItem::new(
                 "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
-                Some(Box::new(GenomeEditorAction::new())),
+                Some(Box::new(ActEditGenome::new())),
             ))
             .genome(
                 1.0,

@@ -862,18 +862,18 @@ impl Action for ActProduceVirion {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GenomeEditorAction {
+pub struct ActEditGenome {
     lvl: i32,
 }
 
-impl GenomeEditorAction {
+impl ActEditGenome {
     pub fn new() -> Self {
-        GenomeEditorAction { lvl: 0 }
+        ActEditGenome { lvl: 0 }
     }
 }
 
 #[typetag::serde]
-impl Action for GenomeEditorAction {
+impl Action for ActEditGenome {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -914,10 +914,10 @@ impl Action for GenomeEditorAction {
 
 /// Pick up an item and store it in the inventory.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PickUpItemAction;
+pub struct ActPickUpItem;
 
 #[typetag::serde]
-impl Action for PickUpItemAction {
+impl Action for ActPickUpItem {
     fn perform(
         &self,
         state: &mut GameState,
@@ -984,18 +984,18 @@ impl Action for PickUpItemAction {
 
 /// Drop an item from the owner's inventory. The action level determines the item slot.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DropItemAction {
+pub struct ActDropItem {
     lvl: i32,
 }
 
-impl DropItemAction {
+impl ActDropItem {
     pub fn new(lvl: i32) -> Self {
-        DropItemAction { lvl }
+        ActDropItem { lvl }
     }
 }
 
 #[typetag::serde]
-impl Action for DropItemAction {
+impl Action for ActDropItem {
     fn perform(
         &self,
         _state: &mut GameState,

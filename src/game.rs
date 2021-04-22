@@ -6,7 +6,7 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::{ActPass, Action, DropItemAction, Target, TargetCategory};
+use crate::entity::action::{ActDropItem, ActPass, Action, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -380,7 +380,7 @@ impl Rltk_GameState for Game {
                                 DropItem(idx) => {
                                     trace!("PlayInput DROP_ITEM");
                                     if player.inventory.items.len() > idx {
-                                        Some(Box::new(DropItemAction::new(idx as i32)))
+                                        Some(Box::new(ActDropItem::new(idx as i32)))
                                     } else {
                                         None
                                     }
