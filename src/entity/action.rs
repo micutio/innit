@@ -890,29 +890,37 @@ impl Action for PickUpAction {
         objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
-        let target_pos: Position = owner.pos.get_translated(&owner.pos);
-        let feedback: ObjectFeedback =
-            if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&target_pos) {
-                // do stuff with object
-                println!("LETS GET THAT ITEM!");
-                if target_obj.item.is_some() {
-                    if owner.inventory.items.len() < owner.actuators.volume as usize {
-                        // only add object if it has in item tag
-                        owner.add_to_inventory(state, target_obj);
-                    } else {
-                        state.log.add("Your inventory is full!", MsgClass::Info);
-                    }
+        if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
+            // do stuff with object
+            println!("LETS GET THAT ITEM!");
+            if target_obj.item.is_some() {
+                if owner.inventory.items.len() < owner.actuators.volume as usize {
+                    // only add object if it has in item tag
+                    state.log.add(
+                        format!(
+                            "{} picked up {}",
+                            owner.visual.name, &target_obj.visual.name
+                        ),
+                        MsgClass::Info,
+                    );
+                    owner.add_to_inventory(state, target_obj);
+                    // objects.get_vector_mut().remove(index);
+                    return ActionResult::Success {
+                        callback: ObjectFeedback::NoFeedback,
+                    };
                 } else {
-                    // otherwise put it back into the world
-                    objects.replace(index, target_obj);
+                    state.log.add("Your inventory is full!", MsgClass::Info);
                 }
-                ObjectFeedback::NoFeedback
-            } else {
-                println!("NO COLLECTIBLE ITEM!");
-                ObjectFeedback::NoFeedback
-            };
-
-        ActionResult::Success { callback: feedback }
+            }
+            //else {
+            // otherwise put it back into the world
+            //}
+            objects.replace(index, target_obj);
+            ActionResult::Failure
+        } else {
+            println!("NO COLLECTIBLE ITEM!");
+            ActionResult::Failure
+        }
     }
 
     fn set_target(&mut self, _t: Target) {}

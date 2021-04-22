@@ -466,6 +466,10 @@ impl Object {
         let header = self.visual.name.clone();
         let attributes: Vec<(String, String)> = vec![
             (
+                "position".to_string(),
+                format!("{}, {}", self.pos.x, self.pos.y),
+            ),
+            (
                 "hp:".to_string(),
                 format!("{}/{}", self.actuators.hp, self.actuators.max_hp).to_string(),
             ),

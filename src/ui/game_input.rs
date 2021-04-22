@@ -87,7 +87,8 @@ fn get_names_under_mouse(
     let player = objects.extract_by_index(state.player_idx).unwrap();
 
     if player.pos.eq(&mouse) {
-        tooltips.push(ToolTip::header_only("You".to_string()));
+        // tooltips.push(ToolTip::header_only("You".to_string()));
+        tooltips.push(player.generate_tooltip(&player));
     }
 
     tooltips.append(
