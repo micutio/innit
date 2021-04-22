@@ -63,6 +63,7 @@ pub enum HudItem {
     Quick2Action,
     DnaItem,
     UseInventory { idx: usize },
+    DropInventory { idx: usize },
 }
 
 impl HudItem {
@@ -320,29 +321,47 @@ impl Hud {
             if idx as i32 > self.inv_area.height() {
                 break;
             }
-            // take only as many chars as fit into the inventory item name field, or less
-            // if the name is shorter
-            let name_fitted: String = obj
-                .visual
-                .name
-                .chars()
-                .take((self.inv_area.width() - 3) as usize)
-                .collect();
-            // TODO: Extend tooltip to include additional info.
-            let tt: ToolTip = ToolTip::header_only(&obj.visual.name);
-            let layout = Rect::with_size(
-                self.inv_area.x1 + 3,
-                self.inv_area.y1 + idx as i32,
-                self.inv_area.width(),
-                1,
-            );
-            self.items.push(UiItem::new(
-                HudItem::UseInventory { idx },
-                format!("{} {}", obj.visual.glyph, name_fitted),
-                tt,
-                layout,
-                ColorPair::new(obj.visual.fg_color, cp.bg_hud_content),
-            ));
+
+            if let Some(item) = &obj.item {
+                // take only as many chars as fit into the inventory item name field, or less
+                // if the name is shorter
+                let name_fitted: String = obj
+                    .visual
+                    .name
+                    .chars()
+                    .take((self.inv_area.width() - 5) as usize)
+                    .collect();
+                let use_layout = Rect::with_size(
+                    self.inv_area.x1 + 3,
+                    self.inv_area.y1 + idx as i32,
+                    self.inv_area.width() - 2,
+                    1,
+                );
+                self.items.push(UiItem::new(
+                    HudItem::UseInventory { idx },
+                    format!("{} {}", obj.visual.glyph, name_fitted),
+                    ToolTip::new(
+                        format!("use {}", &obj.visual.name),
+                        vec![(item.description.clone(), "".to_string())],
+                    ),
+                    use_layout,
+                    ColorPair::new(obj.visual.fg_color, cp.bg_hud_content),
+                ));
+
+                let drop_layout = Rect::with_size(
+                    self.inv_area.width() - 4,
+                    self.inv_area.y1 + idx as i32,
+                    self.inv_area.width() - 2,
+                    1,
+                );
+                self.items.push(UiItem::new(
+                    HudItem::DropInventory { idx },
+                    " x",
+                    ToolTip::header_only(format!("drop {}", &obj.visual.name)),
+                    drop_layout,
+                    ColorPair::new(obj.visual.fg_color, cp.bg_hud_content),
+                ));
+            }
         }
     }
 }

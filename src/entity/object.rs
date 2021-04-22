@@ -83,7 +83,7 @@ impl Physics {
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct InventoryItem {
-    description: String,
+    pub description: String,
     pub use_action: Option<Box<dyn Action>>,
 }
 
@@ -407,7 +407,14 @@ impl Object {
 
     pub fn add_to_inventory(&mut self, state: &mut GameState, o: Object) {
         let reread_dna = o.dna.dna_type == DnaType::Plasmid;
+        let new_idx = self.inventory.items.len();
+
+        // add item to inventory
         self.inventory.items.push(o);
+        // add action to drop it
+        self.inventory
+            .inv_actions
+            .push(Box::new(DropItemAction::new(new_idx as i32)));
         if reread_dna {
             self.reread_dna(state);
         }

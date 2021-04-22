@@ -90,6 +90,8 @@ pub trait Action: ActionClone + Debug {
 
     fn get_target_category(&self) -> TargetCategory;
 
+    fn get_level(&self) -> i32;
+
     fn get_identifier(&self) -> String;
 
     fn get_energy_cost(&self) -> i32;
@@ -165,6 +167,10 @@ impl Action for ActPass {
         TargetCategory::None
     }
 
+    fn get_level(&self) -> i32 {
+        0
+    }
+
     fn get_identifier(&self) -> String {
         "pass".to_string()
     }
@@ -234,6 +240,10 @@ impl Action for ActMove {
         TargetCategory::EmptyObject
     }
 
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
     fn get_identifier(&self) -> String {
         "move".to_string()
     }
@@ -281,6 +291,10 @@ impl Action for ActMetabolise {
 
     fn get_target_category(&self) -> TargetCategory {
         TargetCategory::None
+    }
+
+    fn get_level(&self) -> i32 {
+        self.lvl
     }
 
     fn get_identifier(&self) -> String {
@@ -365,6 +379,10 @@ impl Action for ActAttack {
 
     fn get_target_category(&self) -> TargetCategory {
         TargetCategory::BlockingObject
+    }
+
+    fn get_level(&self) -> i32 {
+        self.lvl
     }
 
     fn get_identifier(&self) -> String {
@@ -591,6 +609,10 @@ impl Action for ActInjectRnaVirus {
         TargetCategory::None
     }
 
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
     fn get_identifier(&self) -> String {
         "inject RNA virus".to_string()
     }
@@ -705,6 +727,10 @@ impl Action for ActInjectRetrovirus {
         TargetCategory::None
     }
 
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
     fn get_identifier(&self) -> String {
         "inject retrovirus".to_string()
     }
@@ -814,6 +840,10 @@ impl Action for ActProduceVirion {
         self.lvl = lvl;
     }
 
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
     fn get_target_category(&self) -> TargetCategory {
         TargetCategory::None
     }
@@ -865,6 +895,10 @@ impl Action for GenomeEditorAction {
         TargetCategory::None
     }
 
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
     fn get_identifier(&self) -> String {
         "Manipulate Genome".to_string()
     }
@@ -880,10 +914,10 @@ impl Action for GenomeEditorAction {
 
 /// Pick up an item and store it in the inventory.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PickUpAction;
+pub struct PickUpItemAction;
 
 #[typetag::serde]
-impl Action for PickUpAction {
+impl Action for PickUpItemAction {
     fn perform(
         &self,
         state: &mut GameState,
@@ -931,6 +965,10 @@ impl Action for PickUpAction {
         TargetCategory::None
     }
 
+    fn get_level(&self) -> i32 {
+        0
+    }
+
     fn get_identifier(&self) -> String {
         "pick up item".to_string()
     }
@@ -941,5 +979,74 @@ impl Action for PickUpAction {
 
     fn to_text(&self) -> String {
         "pick up item".to_string()
+    }
+}
+
+/// Drop an item from the owner's inventory. The action level determines the item slot.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DropItemAction {
+    lvl: i32,
+}
+
+impl DropItemAction {
+    pub fn new(lvl: i32) -> Self {
+        DropItemAction { lvl }
+    }
+}
+
+#[typetag::serde]
+impl Action for DropItemAction {
+    fn perform(
+        &self,
+        _state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        // make sure there is an item at slot [self.lvl]
+        if owner.inventory.items.len() > self.lvl as usize {
+            let mut item: Object = owner.inventory.items.remove(self.lvl as usize);
+
+            // set the item to be dropped at the same position as the player
+            item.pos.set(owner.pos.x, owner.pos.y);
+            objects.get_vector_mut().push(Some(item));
+
+            // Remove this action from the inventory.
+            owner.inventory.inv_actions.retain(|action| {
+                action.get_identifier() != self.get_identifier()
+                    || action.get_level() != self.get_level()
+            });
+
+            ActionResult::Success {
+                callback: ObjectFeedback::NoFeedback,
+            }
+        } else {
+            ActionResult::Failure
+        }
+    }
+
+    fn set_target(&mut self, _t: Target) {}
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::None
+    }
+
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
+    fn get_identifier(&self) -> String {
+        "drop item".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        0
+    }
+
+    fn to_text(&self) -> String {
+        "drop item".to_string()
     }
 }

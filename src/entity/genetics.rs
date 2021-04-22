@@ -659,7 +659,7 @@ impl TraitBuilder {
         if matches!(self.dna.dna_type, DnaType::Nucleoid)
             || matches!(self.dna.dna_type, DnaType::Nucleus)
         {
-            self.actuators.actions.push(Box::new(PickUpAction))
+            self.actuators.actions.push(Box::new(PickUpItemAction))
         }
 
         (self.sensors, self.processors, self.actuators, self.dna)
