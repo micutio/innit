@@ -67,9 +67,23 @@ pub enum HudItem {
 }
 
 impl HudItem {
-    fn is_inventory_item(&self) -> bool {
+    fn is_use_inventory_item(&self) -> bool {
         match *self {
             Self::UseInventory { idx: _ } => true,
+            _ => false,
+        }
+    }
+
+    fn is_drop_inventory_item(&self) -> bool {
+        match *self {
+            Self::DropInventory { idx: _ } => true,
+            _ => false,
+        }
+    }
+
+    fn is_dna_item(&self) -> bool {
+        match *self {
+            Self::DnaItem => true,
             _ => false,
         }
     }
@@ -240,7 +254,11 @@ impl Hud {
     }
 
     pub fn update_ui_items(&mut self, player: &Object, cp: &ColorPalette) {
-        self.items.retain(|i| i.item_enum != HudItem::DnaItem);
+        self.items.retain(|i| {
+            !i.item_enum.is_dna_item()
+                && !i.item_enum.is_use_inventory_item()
+                && !i.item_enum.is_drop_inventory_item()
+        });
 
         for (h_offset, g_trait) in player
             .dna
@@ -571,7 +589,7 @@ fn render_inventory(
 
     hud.items
         .iter()
-        .filter(|item| item.item_enum.is_inventory_item())
+        .filter(|item| item.item_enum.is_use_inventory_item())
         .for_each(|item| {
             draw_batch.print_color(item.top_left_corner(), &item.text, item.color);
         });

@@ -234,15 +234,18 @@ impl Rltk_GameState for Game {
             self.mouse_workaround = !self.mouse_workaround;
         }
 
-        let mut new_run_state = self.run_state.take().unwrap();
         let color_palette = ColorPalette::get(self.is_dark_color_palette);
 
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
-            ctx.set_active_console(WORLD_CON);
-            ctx.cls();
-            render_world(&mut self.state, &mut self.objects, ctx, color_palette);
+
+            if self.re_render {
+                ctx.set_active_console(WORLD_CON);
+                ctx.cls();
+                render_world(&mut self.state, &mut self.objects, ctx, color_palette);
+            }
+
             ctx.set_active_console(HUD_CON);
             let player = self
                 .objects
@@ -250,10 +253,13 @@ impl Rltk_GameState for Game {
                 .unwrap();
             render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
             self.objects.replace(self.state.player_idx, player);
+
+            // switch off any triggers
             self.state.log.is_changed = false;
             self.hud.require_refresh = false
         }
 
+        let mut new_run_state = self.run_state.take().unwrap();
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 self.state.log.is_changed = false;
@@ -335,6 +341,10 @@ impl Rltk_GameState for Game {
                         } else {
                             RunState::CheckInput
                         }
+                    }
+                    ObjectFeedback::UpdateHud => {
+                        self.hud.require_refresh = true;
+                        RunState::Ticking
                     }
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {

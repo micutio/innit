@@ -47,7 +47,8 @@ pub fn main() -> rltk::BError {
         .unwrap()
         .with_advanced_input(true)
         .with_font("fonts/rex_paint_10x10.png", 10, 10)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // menu
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png")
+        // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // menu
         // .with_font("fonts/rex_paint_14x14.png", 14, 14)
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png") // menu
         .with_title("Innit alpha v0.0.4")

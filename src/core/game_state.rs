@@ -49,6 +49,7 @@ pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
     Render,
+    UpdateHud,
     GenomeManipulator,
     // TODO: Move animations/particle effects into separate particle effect handler
     // Animate {
@@ -260,7 +261,7 @@ impl GameState {
             }
 
             // finally increase object index and turn counter
-            self.obj_idx = (self.obj_idx + 1) % objects.get_num_objects();
+            self.obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
             if self.obj_idx == PLAYER {
                 self.turn += 1;
             }
@@ -268,9 +269,9 @@ impl GameState {
             // return the result of our action
             process_result
         } else {
-            warn!("no object at index {}", self.obj_idx);
-            objects.get_vector_mut().remove(self.obj_idx);
-            ObjectFeedback::NoAction
+            panic!("no object at index {}", self.obj_idx);
+            // objects.get_vector_mut().remove(self.obj_idx);
+            // ObjectFeedback::NoAction
         }
     }
 
@@ -298,7 +299,7 @@ impl GameState {
                     (ObjectFeedback::NoAction, _) => consequence_feedback,
                     (ObjectFeedback::GameOver, _) => callback,
                     (ObjectFeedback::Render, _) => callback,
-                    // TODO: Refresh how this is supposed to work
+                    (ObjectFeedback::UpdateHud, _) => callback,
                     (ObjectFeedback::GenomeManipulator, _) => callback,
                 }
             }

@@ -937,7 +937,10 @@ impl Action for ActPickUpItem {
                         MsgClass::Info,
                     );
                     owner.add_to_inventory(state, target_obj);
-                    // objects.get_vector_mut().remove(index);
+
+                    // keep the object vector neat and tidy
+                    objects.get_vector_mut().remove(index);
+
                     return ActionResult::Success {
                         callback: ObjectFeedback::NoFeedback,
                     };
@@ -1016,6 +1019,11 @@ impl Action for ActDropItem {
                 action.get_identifier() != self.get_identifier()
                     || action.get_level() != self.get_level()
             });
+
+            println!("inventory:");
+            for item in &owner.inventory.items {
+                println!("{}", item);
+            }
 
             ActionResult::Success {
                 callback: ObjectFeedback::NoFeedback,

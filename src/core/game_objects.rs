@@ -215,7 +215,7 @@ impl GameObjects {
             .any(|object| object.pos.is_equal(p))
     }
 
-    pub fn get_num_objects(&self) -> usize {
+    pub fn get_obj_count(&self) -> usize {
         self.obj_vec.len()
     }
 

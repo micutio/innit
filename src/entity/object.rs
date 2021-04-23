@@ -277,6 +277,19 @@ impl Object {
                     self.visual.name, ctrl.primary_action
                 );
             }
+
+            if let Some(def_action) = self
+                .actuators
+                .actions
+                .iter()
+                .find(|a| a.as_ref().get_identifier() == "pick up item")
+            {
+                ctrl.quick1_action = def_action.clone_action();
+                debug!(
+                    "{} new quick action: {:#?}",
+                    self.visual.name, ctrl.primary_action
+                );
+            }
         }
     }
 
