@@ -36,7 +36,7 @@ pub enum PlayerAction {
     Quick1Action,            // using 'Q', un-targeted quick action
     Quick2Action,            // using 'E', un-targeted second quick action
     PassTurn,
-    UseItem(usize),
+    UseInventoryItem(usize),
     DropItem(usize),
 }
 
@@ -171,7 +171,7 @@ pub fn read_input(
                     HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
                     HudItem::DnaItem => PlayerInput::Undefined,
                     HudItem::UseInventory { idx } => {
-                        PlayerInput::PlayInput(PlayerAction::UseItem(idx))
+                        PlayerInput::PlayInput(PlayerAction::UseInventoryItem(idx))
                     }
                     HudItem::DropInventory { idx } => {
                         PlayerInput::PlayInput(PlayerAction::DropItem(idx))

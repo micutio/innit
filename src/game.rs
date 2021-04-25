@@ -380,10 +380,15 @@ impl Rltk_GameState for Game {
                                 SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
                                 Quick1Action => Some(player.get_quick1_action()),
                                 Quick2Action => Some(player.get_quick2_action()),
-                                UseItem(idx) => {
+                                UseInventoryItem(idx) => {
                                     trace!("PlayInput USE_ITEM");
-                                    if let Some(inv_item) = &player.inventory.items[idx].item {
-                                        inv_item.use_action.clone()
+                                    let inventory_object = &player.inventory.items.remove(idx);
+                                    player.inventory.inv_actions.retain(|a| {
+                                        a.get_identifier() != "drop item"
+                                            || a.get_level() == idx as i32
+                                    });
+                                    if let Some(item) = &inventory_object.item {
+                                        item.use_action.clone()
                                     } else {
                                         None
                                     }
