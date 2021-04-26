@@ -606,7 +606,7 @@ fn create_genome_manipulator(
 ) -> Option<GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
         // TODO: Read charges and features from plasmid
-        let genome_editor = GenomeEditor::new(player.dna.clone(), 99, color_palette);
+        let genome_editor = GenomeEditor::new(player.dna.clone(), 1, color_palette);
         Some(genome_editor)
     } else {
         None

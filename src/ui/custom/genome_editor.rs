@@ -242,6 +242,8 @@ impl GenomeEditor {
                 palette.bg_bar
             } else if item.state == self.state {
                 palette.yellow
+            } else if item.is_enabled == false {
+                palette.bg_hud
             } else {
                 palette.bg_hud_content
             };
@@ -654,7 +656,7 @@ impl GenomeEditor {
                     if let Move = self.state {
                         // finalise move action
                         self.state = ChooseFunction;
-                        self.plasmid_charges -= 1;
+                        self.decrease_charge();
                     } else {
                         // start move action
                         self.state = Move;
@@ -663,7 +665,7 @@ impl GenomeEditor {
                 Cut => {
                     self.player_dna.simplified.remove(self.selected_gene);
                     self.selected_gene = usize::min(0, self.selected_gene - 1);
-                    self.plasmid_charges -= 1;
+                    self.decrease_charge();
                     self.regenerate_dna(game_state, cp);
                 }
                 FlipBit => {
@@ -681,7 +683,7 @@ impl GenomeEditor {
                                 .3;
                             if let Some(new_repr) = new_dna.simplified.get(0) {
                                 self.player_dna.simplified[self.selected_gene] = new_repr.clone();
-                                self.plasmid_charges -= 1;
+                                self.decrease_charge();
                                 self.regenerate_dna(game_state, cp);
                             }
                         }
@@ -699,7 +701,7 @@ impl GenomeEditor {
                             self.player_dna
                                 .simplified
                                 .insert(self.selected_gene + 1, trait_to_duplicate.unwrap());
-                            self.plasmid_charges -= 1;
+                            self.decrease_charge();
                             self.regenerate_dna(game_state, cp);
                         }
                     }
@@ -714,6 +716,21 @@ impl GenomeEditor {
             }
         }
         RunState::GenomeEditing(self)
+    }
+
+    /// Decrease the plasmid charge and update the UI accordingly
+    fn decrease_charge(&mut self) {
+        if self.plasmid_charges > 0 {
+            self.plasmid_charges -= 1;
+            if self.plasmid_charges == 0 {
+                self.edit_functions
+                    .iter_mut()
+                    .filter(|f| f.state != GenomeEditingState::Done)
+                    .for_each(|f| f.is_enabled = false);
+            }
+        } else {
+            panic!("attempting to decrease plasmid changes below zero!");
+        }
     }
 
     /// Re-build the player dna from the current simplified representation.
