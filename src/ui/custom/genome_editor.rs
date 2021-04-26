@@ -98,7 +98,6 @@ pub struct GenomeEditor {
     gene_items: Vec<GeneItem>,
 }
 
-// TODO: Take into account limited 'charges' of plasmids.
 impl GenomeEditor {
     // required functions
     // - constructor
@@ -195,7 +194,6 @@ impl GenomeEditor {
         cp: &ColorPalette,
     ) -> RunState {
         // 1. render everything
-        // TODO: Implement rendering of gene properties
         self.render(game_state, ctx, cp);
 
         // 2. read user input and process
@@ -336,7 +334,6 @@ impl GenomeEditor {
         }
 
         // draw genome info box
-        // TODO: Draw bit vector at the bottom of this!
         if let Some(gene_item) = self.gene_items.get(self.selected_gene) {
             if let Some(genome) = self.player_dna.simplified.get(gene_item.gene_idx) {
                 let highlight = ColorPair::new(palette.fg_hud_highlight, palette.bg_hud);
@@ -477,7 +474,6 @@ impl GenomeEditor {
                     GenomeEditingState::Move => {
                         // if selected is leftmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
-                        // TODO: Pull out into own function
                         if self.selected_gene > 0 {
                             // self.gene_items[idx].gene_idx = idx + 1;
                             // self.gene_items[idx + 1].gene_idx = idx;
@@ -631,7 +627,6 @@ impl GenomeEditor {
                     Move => self.state = ChooseGene,
                     ChooseGene => {
                         self.gene_selection_locked = !self.gene_selection_locked;
-                        // TODO: WHY IS THIS TRIGGERED TWICE?
                     }
                     _ => {
                         self.state = ChooseGene;

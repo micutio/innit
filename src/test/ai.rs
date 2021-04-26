@@ -6,8 +6,6 @@ use crate::entity::action::ActMove;
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 
-// TODO: extend available actions and tests to include attacking
-
 #[test]
 fn test_random_ai() {
     use crate::core::world::world_gen::new_monster;

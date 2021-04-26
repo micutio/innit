@@ -1,7 +1,6 @@
 //! The GUI in Innit consists of the sidebar and any tooltips appearing over objects on the map or
 //! UI elements.
 //!
-//! TODO: Draft data structure for tooltips and generate them more selectively, not for empty tiles.
 //! - varying visibility and detail, depending on perception (add to genetic traits)
 //! - potential structure:
 //!   - header
@@ -214,7 +213,7 @@ pub struct Hud {
     last_mouse: Point,
     pub require_refresh: bool,
     pub items: Vec<UiItem<HudItem>>,
-    tooltips: Vec<ToolTip>, // TODO: Find elegant way to render this and tooltips.
+    tooltips: Vec<ToolTip>,
 }
 
 impl Hud {

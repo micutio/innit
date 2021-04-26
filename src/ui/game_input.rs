@@ -71,7 +71,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
     }
 }
 
-// TODO: Create more detailed info panel as tooltip.
+// Create A detailed info panel as tooltip.
 // - list stats and (compare with player) to give hints about strength, receptors and such
 // - get player sensor quality, quantity and adjust how much info is shown
 // - either take the player out of the objects and compare to everything else

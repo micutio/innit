@@ -76,7 +76,6 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
-// TODO: If return true, flip to walkable, if false flip back to wall!
 fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, y: i32) -> bool {
     let directions = [
         // (-1, -1),

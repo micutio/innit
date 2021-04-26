@@ -26,7 +26,7 @@ A long-term goal, would be to create an educational experience as well. Many of 
 
 ## Current version
 
-### Alpha 0.0.3
+### Alpha 0.0.4
 
 Innit is still at the outset of development. The basic game engine is, apart from a bit of polish here and there, functional.
 
@@ -38,14 +38,13 @@ Innit is still at the outset of development. The basic game engine is, apart fro
 ### Running the game from source
 
 #### Linux
+
 Run the following commands in the command line.
-Innit is built upon tcod, which requires libsdl to be installed.
 
 ```bash
-sudo apt install libsdl2-dev
 cargo build
 ```
 
 ## Known Issues
 
-The game is being developed in Linux, but the Rust compiler should allow for Windows and Mac releases as well. As there is no official Alpha release as of yet, multi-platform deployment has not yet been attempted.
+The game is being developed in Linux, but the Rust compiler should allow for Windows and Mac releases as well. As there is no playable Alpha release as of yet, multi-platform deployment has not yet been attempted.

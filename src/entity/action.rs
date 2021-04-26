@@ -513,7 +513,7 @@ impl ActInjectRnaVirus {
 #[typetag::serde]
 impl Action for ActInjectRnaVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
-    // virus dna
+    //       virus dna
     fn perform(
         &self,
         state: &mut GameState,
@@ -648,8 +648,6 @@ impl ActInjectRetrovirus {
 
 #[typetag::serde]
 impl Action for ActInjectRetrovirus {
-    // TODO: Find a way to get the position of this gene within the dna, to parse the complete
-    //       virus dna.
     // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
     //       cyclic activity
     fn perform(
@@ -1005,7 +1003,7 @@ impl Action for ActDropItem {
     ) -> ActionResult {
         // make sure there is an item at slot [self.lvl]
         if owner.inventory.items.len() > self.lvl as usize {
-            let mut item: Object = owner.inventory.items.remove(self.lvl as usize);
+            let mut item: Object = owner.remove_from_inventory(state, self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
                 MsgClass::Info,

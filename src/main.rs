@@ -4,10 +4,8 @@ extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
 extern crate rand_isaac;
-extern crate serde;
-// #[macro_use]
-// extern crate serde_derive;
 extern crate rltk;
+extern crate serde;
 extern crate serde_json;
 
 mod core;
@@ -17,20 +15,32 @@ mod test;
 mod ui;
 mod util;
 
-use crate::core::game_env::GameEnv;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{core::game_env::GameEnv, game::Game};
 use std::env;
 
 /// For game testing run with
 /// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
-/// (fish) `env RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
 pub fn main() -> rltk::BError {
+    println!(
+        r#"
+        _____             _ _   
+        \_   \_ __  _ __ (_) |_ 
+         / /\/ '_ \| '_ \| | __|
+      /\/ /_ | | | | | | | | |_ 
+      \____/ |_| |_|_| |_|_|\__|  
+
+      2019 - 2021 Michael Wagner
+    "#
+    );
+
+    // init logger
     pretty_env_logger::init();
     let mut env: GameEnv = GameEnv::new();
 
+    // parse program arguments
     let args: Vec<String> = env::args().collect();
     println!("args: {:?}", args);
-
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
             env.set_debug_mode(true);
@@ -40,7 +50,7 @@ pub fn main() -> rltk::BError {
         }
     }
 
-    // TODO: Create game environment from presets and command line flags!
+    // TODO: Create game environment from presets and command line flags.
 
     use rltk::RltkBuilder;
     let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -58,6 +68,5 @@ pub fn main() -> rltk::BError {
         .build()?;
 
     context.set_active_font(1, false);
-    let game = game::Game::new(env);
-    rltk::main_loop(context, game)
+    rltk::main_loop(context, Game::new(env))
 }

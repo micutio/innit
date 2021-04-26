@@ -1,5 +1,3 @@
-// TODO: Better readable colors between dark and light scheme
-
 pub struct ColorPalette {
     // background colors
     pub bg_world: (u8, u8, u8),
@@ -101,7 +99,6 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     msg_story: (100, 180, 255),
 };
 
-// TODO: Find out what static lifetime is!
 impl ColorPalette {
     pub fn get(dark_mode: bool) -> &'static Self {
         if dark_mode {

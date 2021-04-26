@@ -51,11 +51,6 @@ pub enum ObjectFeedback {
     Render,
     UpdateHud,
     GenomeManipulator,
-    // TODO: Move animations/particle effects into separate particle effect handler
-    // Animate {
-    //     anim_type: AnimationType,
-    //     origin: Position,
-    // }, // play given animation to visualise action
     GameOver, // "main" player died
 }
 
@@ -171,7 +166,6 @@ impl GameState {
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
             // Apply recurring effects so that the player can factor this into the next action.
 
-            // TODO: Damage from overloading
             if active_object.inventory.items.len() as i32 > active_object.actuators.volume {
                 active_object.actuators.hp -= 1;
                 if active_object.is_player() {

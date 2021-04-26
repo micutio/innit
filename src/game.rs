@@ -291,7 +291,7 @@ impl Rltk_GameState for Game {
                     1,
                     color_palette.yellow,
                     color_palette.bg_hud,
-                    "GAME OVER", // TODO: Add more text
+                    "GAME OVER",
                 );
                 match instance.display(ctx, color_palette) {
                     Some(option) => GameOverMenuItem::process(
@@ -449,11 +449,7 @@ impl Rltk_GameState for Game {
                         self.re_render = true;
                         RunState::Ticking
                     }
-                    Err(_e) => {
-                        // TODO: Show alert to user... or not? Maybe have inactive buttons.
-                        // msg_box(frontend, &mut None, "", "\nNo saved game to load\n", 24);
-                        RunState::MainMenu(main_menu())
-                    }
+                    Err(_e) => RunState::MainMenu(main_menu()),
                 }
             }
         };
@@ -605,7 +601,7 @@ fn create_genome_manipulator(
     color_palette: &ColorPalette,
 ) -> Option<GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
-        // TODO: Read charges and features from plasmid
+        // NOTE: In the future editor features could be read from the plasmid.
         let genome_editor = GenomeEditor::new(player.dna.clone(), 1, color_palette);
         Some(genome_editor)
     } else {

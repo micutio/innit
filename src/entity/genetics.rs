@@ -22,11 +22,12 @@
 //! a previous gene. The genes should be small and encoding the presence of a quality. Attributes or
 //! versatility is then controlled by the cumulative occurrence of a gene.
 //! Basically: the more often a gene occurs, the stronger its trait will be.
-// TODO: How to handle synergies/anti-synergies?
-// TODO: How to calculate energy cost per action?
-// TODO: Can behavior be encoded in the genome too i.e., fight or flight?
-// TODO: Should attributes be fix on trait level or full-on generic as list of attribute objects?
-// TODO: How to best model synergies and anti-synergies across traits?
+// TODO: Things to think about:
+// How to handle synergies/anti-synergies?
+// How to calculate energy cost per action?
+// Can behavior be encoded in the genome too i.e., fight or flight?
+// Should attributes be fix on trait level or full-on generic as list of attribute objects?
+// How to best model synergies and anti-synergies across traits?
 
 use crate::entity::action::*;
 use crate::entity::genetics::DnaType::Nucleoid;

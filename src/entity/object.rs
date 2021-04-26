@@ -178,8 +178,6 @@ impl Object {
         self
     }
 
-    // TODO: Implement picking up items!
-
     /// Turn the object into a collectible item. Part of the builder pattern.
     pub fn inventory_item(mut self, item: InventoryItem) -> Object {
         self.item = Some(item);
@@ -367,7 +365,7 @@ impl Object {
         }
     }
 
-    // TODO: Consider moving the player-action-related methods into PlayerCtrl.
+    // NOTE: Consider moving the player-action-related methods into PlayerCtrl.
 
     pub fn get_primary_action(&self, target: Target) -> Box<dyn Action> {
         // Some(def_action.clone())
@@ -407,7 +405,6 @@ impl Object {
         }
     }
 
-    // TODO: Take plasmids into account!
     pub fn match_action(&self, id: &str) -> Option<Box<dyn Action>> {
         self.actuators
             .actions
@@ -433,11 +430,12 @@ impl Object {
         }
     }
 
-    pub fn remove_from_inventory(&mut self, state: &mut GameState, index: usize) {
+    pub fn remove_from_inventory(&mut self, state: &mut GameState, index: usize) -> Object {
         let o = self.inventory.items.remove(index);
         if o.dna.dna_type == DnaType::Plasmid {
             self.reread_dna(state);
         }
+        o
     }
 
     pub fn set_dna(&mut self, new_dna: Dna) {
