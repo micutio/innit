@@ -237,18 +237,18 @@ impl GenomeEditor {
 
         for item in &self.edit_functions {
             let bg_col = if !item.is_enabled {
-                palette.bg_hud
+                palette.bg_hud_disabled
             } else if item.idx == self.selected_function {
-                palette.bg_bar
-            } else if item.state == self.state {
-                palette.yellow
-            } else if item.is_enabled == false {
+                palette.fg_hud_highlight
+            } else if self.state == item.state {
+                palette.white
+            } else if self.state != GenomeEditingState::ChooseFunction {
                 palette.bg_hud
             } else {
                 palette.bg_hud_content
             };
 
-            let fg_col = if item.state == self.state {
+            let fg_col = if self.state == item.state {
                 palette.fg_hud_highlight
             } else {
                 palette.fg_hud
@@ -286,6 +286,10 @@ impl GenomeEditor {
             let bg_color = if item.gene_idx == self.selected_gene {
                 if self.gene_selection_locked {
                     palette.bg_hud_selected
+                } else if self.state == GenomeEditingState::ChooseGene
+                    || self.state == GenomeEditingState::Move
+                {
+                    palette.white
                 } else {
                     palette.bg_hud_content
                 }
@@ -664,7 +668,7 @@ impl GenomeEditor {
                 }
                 Cut => {
                     self.player_dna.simplified.remove(self.selected_gene);
-                    self.selected_gene = usize::min(0, self.selected_gene - 1);
+                    self.selected_gene = usize::max(0, self.selected_gene - 1);
                     self.decrease_charge();
                     self.regenerate_dna(game_state, cp);
                 }
