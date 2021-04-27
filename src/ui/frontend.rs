@@ -108,6 +108,9 @@ fn update_visual(
     let wall = object.physics.is_blocking_sight;
 
     let idx = object.pos.y as usize * (WORLD_WIDTH as usize) + object.pos.x as usize;
+    if idx >= dist_map.len() {
+        panic!("Invalid object index!");
+    }
     dist_map[idx] = dist_map[idx].min(object.pos.distance(&player_pos));
 
     // set tile foreground and background colors

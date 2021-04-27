@@ -283,6 +283,9 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::GameOver(ref mut instance) => {
+                self.state.log.is_changed = false;
+                self.hud.require_refresh = false;
+                self.re_render = false;
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
