@@ -1,8 +1,6 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::core::game_env::GameEnv;
-use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
@@ -24,6 +22,8 @@ use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
 use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
+use crate::{core::game_env::GameEnv, ui::particle::ParticleSystem};
+use crate::{core::game_objects::GameObjects, ui::palette};
 use core::fmt;
 use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
@@ -83,6 +83,7 @@ pub struct Game {
     objects: GameObjects,
     run_state: Option<RunState>,
     hud: Hud,
+    particle_sys: ParticleSystem,
     re_render: bool,
     is_dark_color_palette: bool,
     rex_assets: RexAssets,
@@ -100,7 +101,8 @@ impl Game {
             state,
             objects,
             run_state: Some(RunState::MainMenu(main_menu())),
-            hud: Hud::new(ColorPalette::get(true)),
+            hud: Hud::new(),
+            particle_sys: ParticleSystem::new(),
             re_render: false,
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
@@ -113,8 +115,7 @@ impl Game {
         self.objects = objects;
 
         if let Some(player) = &self.objects[self.state.player_idx] {
-            self.hud
-                .update_ui_items(player, ColorPalette::get(self.is_dark_color_palette));
+            self.hud.update_ui_items(player);
         };
     }
 
@@ -234,8 +235,9 @@ impl Rltk_GameState for Game {
             self.mouse_workaround = !self.mouse_workaround;
         }
 
-        let color_palette = ColorPalette::get(self.is_dark_color_palette);
-
+        // Render world and world only if there is any new information, otherwise save the
+        // computation. However the particles need to be queried each cycle to activate and cull
+        // them in a timely manner.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
@@ -243,7 +245,7 @@ impl Rltk_GameState for Game {
             if self.re_render {
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
-                render_world(&mut self.state, &mut self.objects, ctx, color_palette);
+                render_world(&mut self.state, &mut self.objects, ctx);
             }
 
             ctx.set_active_console(HUD_CON);
@@ -251,7 +253,7 @@ impl Rltk_GameState for Game {
                 .objects
                 .extract_by_index(self.state.player_idx)
                 .unwrap();
-            render_gui(&self.state, &mut self.hud, ctx, &color_palette, &player);
+            render_gui(&self.state, &mut self.hud, ctx, &player);
             self.objects.replace(self.state.player_idx, player);
 
             // switch off any triggers
@@ -271,11 +273,11 @@ impl Rltk_GameState for Game {
                 ctx.print_color_centered_at(
                     SCREEN_WIDTH / 2,
                     SCREEN_HEIGHT - 2,
-                    color_palette.yellow,
-                    color_palette.bg_hud,
+                    palette().yellow,
+                    palette().bg_hud,
                     "by Michael Wagner",
                 );
-                match instance.display(ctx, color_palette) {
+                match instance.display(ctx) {
                     Some(option) => {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
                     }
@@ -292,11 +294,11 @@ impl Rltk_GameState for Game {
                 ctx.print_color_centered_at(
                     SCREEN_WIDTH / 2,
                     1,
-                    color_palette.yellow,
-                    color_palette.bg_hud,
+                    palette().yellow,
+                    palette().bg_hud,
                     "GAME OVER",
                 );
-                match instance.display(ctx, color_palette) {
+                match instance.display(ctx) {
                     Some(option) => GameOverMenuItem::process(
                         &mut self.state,
                         &mut self.objects,
@@ -306,14 +308,12 @@ impl Rltk_GameState for Game {
                     None => RunState::GameOver(instance.clone()),
                 }
             }
-            RunState::ChooseActionMenu(ref mut instance) => {
-                match instance.display(ctx, color_palette) {
-                    Some(option) => {
-                        ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
-                    }
-                    None => RunState::ChooseActionMenu(instance.clone()),
+            RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
+                Some(option) => {
+                    ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
                 }
-            }
+                None => RunState::ChooseActionMenu(instance.clone()),
+            },
             RunState::Ticking => {
                 trace!("enter RunState::Ticking {}", self.state.log.is_changed);
                 let mut feedback;
@@ -335,11 +335,9 @@ impl Rltk_GameState for Game {
                         RunState::Ticking
                     }
                     ObjectFeedback::GenomeManipulator => {
-                        if let Some(genome_editor) = create_genome_manipulator(
-                            &mut self.state,
-                            &mut self.objects,
-                            color_palette,
-                        ) {
+                        if let Some(genome_editor) =
+                            create_genome_manipulator(&mut self.state, &mut self.objects)
+                        {
                             RunState::GenomeEditing(genome_editor)
                         } else {
                             RunState::CheckInput
@@ -366,13 +364,7 @@ impl Rltk_GameState for Game {
                 match read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
                     PlayerInput::MetaInput(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
-                        handle_meta_actions(
-                            &mut self.state,
-                            &mut self.objects,
-                            ctx,
-                            color_palette,
-                            meta_action,
-                        )
+                        handle_meta_actions(&mut self.state, &mut self.objects, ctx, meta_action)
                     }
                     PlayerInput::PlayInput(in_game_action) => {
                         trace!("inject in-game action {:#?} to player", in_game_action);
@@ -424,14 +416,12 @@ impl Rltk_GameState for Game {
                     RunState::CheckInput
                 }
 
-                _ => genome_editor.display(&mut self.state, ctx, color_palette),
+                _ => genome_editor.display(&mut self.state, ctx),
             },
-            RunState::InfoBox(infobox) => {
-                match infobox.display(ctx, ColorPalette::get(self.is_dark_color_palette)) {
-                    Some(infobox) => RunState::InfoBox(infobox),
-                    None => RunState::Ticking,
-                }
-            }
+            RunState::InfoBox(infobox) => match infobox.display(ctx) {
+                Some(infobox) => RunState::InfoBox(infobox),
+                None => RunState::Ticking,
+            },
             RunState::ToggleDarkLightMode => {
                 self.is_dark_color_palette = !self.is_dark_color_palette;
                 self.re_render = true;
@@ -471,7 +461,6 @@ pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
     _ctx: &mut Rltk,
-    color_palette: &ColorPalette,
     action: UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
@@ -578,7 +567,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::GenomeEditor => {
-            if let Some(genome_editor) = create_genome_manipulator(state, objects, color_palette) {
+            if let Some(genome_editor) = create_genome_manipulator(state, objects) {
                 RunState::GenomeEditing(genome_editor)
             } else {
                 RunState::CheckInput
@@ -601,11 +590,10 @@ fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<St
 fn create_genome_manipulator(
     state: &mut GameState,
     objects: &mut GameObjects,
-    color_palette: &ColorPalette,
 ) -> Option<GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
         // NOTE: In the future editor features could be read from the plasmid.
-        let genome_editor = GenomeEditor::new(player.dna.clone(), 1, color_palette);
+        let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
         Some(genome_editor)
     } else {
         None

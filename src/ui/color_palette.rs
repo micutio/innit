@@ -34,38 +34,6 @@ pub struct ColorPalette {
     pub msg_story: (u8, u8, u8),
 }
 
-pub const PALETTE_LIGHT: ColorPalette = ColorPalette {
-    bg_world: (250, 250, 250),
-    bg_hud: (215, 133, 144),
-    bg_dna: (215, 133, 144),
-    bg_hud_selected: (215, 143, 164),
-    bg_hud_content: (215, 143, 164),
-    bg_hud_disabled: (164, 164, 164),
-    bg_hud_log1: (215, 143, 164),
-    bg_hud_log2: (215, 143, 164),
-    bg_wall_fov_true: (250, 110, 130),
-    bg_wall_fov_false: (240, 240, 240),
-    bg_ground_fov_true: (250, 160, 180),
-    bg_ground_fov_false: (250, 250, 250),
-    bg_bar: (100, 100, 100),
-    fg_hud: (85, 85, 85),
-    fg_hud_border: (89, 198, 217),
-    fg_hud_highlight: (212, 192, 80),
-    fg_wall_fov_true: (255, 80, 105),
-    fg_wall_fov_false: (230, 230, 230),
-    fg_ground_fov_true: (255, 130, 150),
-    fg_ground_fov_false: (210, 210, 210),
-    cyan: (0, 190, 190),
-    magenta: (190, 0, 190),
-    yellow: (190, 190, 0),
-    white: (250, 250, 250),
-    player: (100, 100, 100),
-    msg_alert: (255, 100, 100),
-    msg_info: (255, 255, 255),
-    msg_action: (100, 100, 255),
-    msg_story: (100, 180, 255),
-};
-
 pub const PALETTE_DARK: ColorPalette = ColorPalette {
     bg_world: (0, 0, 0),
     bg_hud: (144, 48, 90),
@@ -98,13 +66,3 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     msg_action: (100, 100, 255),
     msg_story: (100, 180, 255),
 };
-
-impl ColorPalette {
-    pub fn get(dark_mode: bool) -> &'static Self {
-        if dark_mode {
-            &PALETTE_DARK
-        } else {
-            &PALETTE_LIGHT
-        }
-    }
-}

@@ -2,12 +2,12 @@ pub mod choose_action_menu;
 pub mod game_over_menu;
 pub mod main_menu;
 
-use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::{ToolTip, UiItem};
 use crate::util::modulus;
+use crate::{core::game_objects::GameObjects, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
@@ -55,21 +55,24 @@ impl<T: MenuItem> Menu<T> {
         }
     }
 
-    fn render(&self, ctx: &mut Rltk, palette: &ColorPalette) {
+    fn render(&self, ctx: &mut Rltk) {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
         draw_batch.fill_region(
             self.layout,
-            ColorPair::new(palette.fg_hud, palette.bg_hud),
+            ColorPair::new(palette().fg_hud, palette().bg_hud),
             to_cp437(' '),
         );
-        draw_batch.draw_hollow_box(self.layout, ColorPair::new(palette.fg_hud, palette.bg_hud));
+        draw_batch.draw_hollow_box(
+            self.layout,
+            ColorPair::new(palette().fg_hud, palette().bg_hud),
+        );
         for (index, item) in self.items.iter().enumerate() {
             let color = if index == self.selection {
-                ColorPair::new(palette.fg_hud, palette.bg_hud_selected)
+                ColorPair::new(palette().fg_hud, palette().bg_hud_selected)
             } else {
-                ColorPair::new(palette.fg_hud, palette.bg_hud)
+                ColorPair::new(palette().fg_hud, palette().bg_hud)
             };
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }
@@ -82,9 +85,9 @@ impl<T: MenuItem> Menu<T> {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(&mut self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<T> {
+    pub fn display(&mut self, ctx: &mut Rltk) -> Option<T> {
         // render current menu
-        self.render(ctx, palette);
+        self.render(ctx);
 
         // wait for user input
         // a) keyboard input

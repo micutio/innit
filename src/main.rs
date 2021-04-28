@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate lazy_static;
 extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
@@ -19,8 +21,9 @@ use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::{core::game_env::GameEnv, game::Game};
 use std::env;
 
-/// For game testing run with
-/// (bash) `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`
+// For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
+// Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
+
 pub fn main() -> rltk::BError {
     println!(
         r#"

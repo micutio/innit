@@ -1,4 +1,3 @@
-use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
@@ -6,17 +5,13 @@ use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
 use crate::ui::color_palette::ColorPalette;
+use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
-pub fn render_world(
-    state: &mut GameState,
-    objects: &mut GameObjects,
-    _ctx: &mut Rltk,
-    color_palette: &ColorPalette,
-) {
+pub fn render_world(state: &mut GameState, objects: &mut GameObjects, _ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
-    update_visibility(objects, color_palette);
+    update_visibility(objects);
 
     let mut to_draw: Vec<&Object> = objects
         .get_vector()
@@ -50,7 +45,7 @@ pub fn render_world(
     draw_batch.submit(0).unwrap()
 }
 
-fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
+fn update_visibility(objects: &mut GameObjects) {
     let player_positions: Vec<(Position, i32)> = objects
         .get_vector()
         .iter()
@@ -65,13 +60,7 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
-            update_visual(
-                object,
-                color_palette,
-                -1,
-                Position::default(),
-                &mut dist_map,
-            );
+            update_visual(object, -1, Position::default(), &mut dist_map);
         }
     }
 
@@ -83,7 +72,7 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
             if let Some(object) = object_opt {
                 if visible_pos.contains(&object.pos.into()) {
                     object.physics.is_visible = true;
-                    update_visual(object, color_palette, range, pos, &mut dist_map);
+                    update_visual(object, range, pos, &mut dist_map);
                 }
             }
         }
@@ -93,20 +82,19 @@ fn update_visibility(objects: &mut GameObjects, color_palette: &ColorPalette) {
 /// Update the player's field of view and updated which tiles are visible/explored.
 fn update_visual(
     object: &mut Object,
-    coloring: &ColorPalette,
     player_sensing_range: i32,
     player_pos: Position,
     dist_map: &mut Vec<f32>,
 ) {
     // go through all tiles and set their background color
-    let bwft: RGB = coloring.bg_wall_fov_true.into();
-    let bwff: RGB = coloring.bg_wall_fov_false.into();
-    let bgft: RGB = coloring.bg_ground_fov_true.into();
-    let bgff: RGB = coloring.bg_ground_fov_false.into();
-    let fwft: RGB = coloring.fg_wall_fov_true.into();
-    let fwff: RGB = coloring.fg_wall_fov_false.into();
-    let fgft: RGB = coloring.fg_ground_fov_true.into();
-    let fgff: RGB = coloring.fg_ground_fov_false.into();
+    let bwft: RGB = palette().bg_wall_fov_true.into();
+    let bwff: RGB = palette().bg_wall_fov_false.into();
+    let bgft: RGB = palette().bg_ground_fov_true.into();
+    let bgff: RGB = palette().bg_ground_fov_false.into();
+    let fwft: RGB = palette().fg_wall_fov_true.into();
+    let fwff: RGB = palette().fg_wall_fov_false.into();
+    let fgft: RGB = palette().fg_ground_fov_true.into();
+    let fgff: RGB = palette().fg_ground_fov_false.into();
 
     let wall = object.physics.is_blocking_sight;
 

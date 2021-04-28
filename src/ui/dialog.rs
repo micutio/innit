@@ -1,7 +1,9 @@
 pub mod character;
 
-use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
-use crate::ui::color_palette::ColorPalette;
+use crate::{
+    game::{SCREEN_HEIGHT, SCREEN_WIDTH},
+    ui::palette,
+};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 
 /// Non-click-away-able window menu.
@@ -30,29 +32,32 @@ impl InfoBox {
         }
     }
 
-    fn render(&self, palette: &ColorPalette) {
+    fn render(&self) {
         let mut draw_batch = DrawBatch::new();
         // draw box
         draw_batch.fill_region(
             self.layout,
-            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
+            ColorPair::new(palette().fg_hud_border, palette().bg_hud),
             to_cp437(' '),
         );
-        draw_batch.draw_hollow_box(self.layout, ColorPair::new(palette.fg_hud, palette.bg_hud));
+        draw_batch.draw_hollow_box(
+            self.layout,
+            ColorPair::new(palette().fg_hud, palette().bg_hud),
+        );
 
         // draw title
         let title_pos = Point::new(self.layout.x1 + 2, self.layout.y1);
         draw_batch.print_color(
             title_pos,
             format!(" {} ", self.title),
-            ColorPair::new(palette.fg_hud_border, palette.bg_hud),
+            ColorPair::new(palette().fg_hud_border, palette().bg_hud),
         );
 
         for (index, line) in self.lines.iter().enumerate() {
             draw_batch.print_color(
                 Point::new(self.layout.x1 + 1, self.layout.y1 + 1 + index as i32),
                 line,
-                ColorPair::new(palette.fg_hud, palette.bg_hud),
+                ColorPair::new(palette().fg_hud, palette().bg_hud),
             );
         }
 
@@ -64,9 +69,9 @@ impl InfoBox {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(self, ctx: &mut Rltk, palette: &ColorPalette) -> Option<InfoBox> {
+    pub fn display(self, ctx: &mut Rltk) -> Option<InfoBox> {
         // render current menu
-        self.render(palette);
+        self.render();
 
         // wait for user input
         // a) keyboard input

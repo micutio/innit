@@ -55,7 +55,8 @@ pub enum ObjectFeedback {
 }
 
 /// The game state struct contains all information necessary to represent the current state of the
-/// game, EXCEPT the object vector.
+/// game, EXCEPT the object vector. Each field in this struct is serialised and written to the save
+/// file and thus persistent data. No volatile data is allowed here.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
     pub env: GameEnv,

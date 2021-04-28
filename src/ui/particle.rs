@@ -14,7 +14,13 @@ pub struct Particle {
 }
 
 impl Particle {
-    fn new(pos: Position, col_fg: Color, col_bg: Color, glyph: char, lifetime: f32) -> Self {
+    pub(crate) fn new(
+        pos: Position,
+        col_fg: Color,
+        col_bg: Color,
+        glyph: char,
+        lifetime: f32,
+    ) -> Self {
         Particle {
             pos,
             col_fg,
@@ -30,18 +36,18 @@ pub struct ParticleSystem {
 }
 
 impl ParticleSystem {
-    fn new() -> Self {
+    pub fn new() -> Self {
         ParticleSystem {
             particles: Vec::new(),
         }
     }
 
-    fn is_active(&self) -> bool {
+    pub fn is_active(&self) -> bool {
         !self.particles.is_empty()
     }
 
     /// Advance the particle lifetimes and cull all those that have expired.
-    fn update(&mut self, ctx: &Rltk) {
+    pub fn update(&mut self, ctx: &Rltk) {
         self.particles
             .iter_mut()
             .filter(|p| p.lifetime - ctx.frame_time_ms < 0.0)
