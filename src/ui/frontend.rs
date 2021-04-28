@@ -44,6 +44,9 @@ pub fn render_world(
             to_cp437(object.visual.glyph),
         );
     }
+
+    // TODO: Render particles here.
+
     draw_batch.submit(0).unwrap()
 }
 
