@@ -1,6 +1,7 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
+use crate::core::game_env::GameEnv;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
@@ -10,7 +11,6 @@ use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::color::Color;
-use crate::ui::color_palette::ColorPalette;
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
@@ -22,7 +22,6 @@ use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
 use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
-use crate::{core::game_env::GameEnv, ui::particle::ParticleSystem};
 use crate::{core::game_objects::GameObjects, ui::palette};
 use core::fmt;
 use rltk::{GameState as Rltk_GameState, Rltk};
@@ -83,7 +82,6 @@ pub struct Game {
     objects: GameObjects,
     run_state: Option<RunState>,
     hud: Hud,
-    particle_sys: ParticleSystem,
     re_render: bool,
     is_dark_color_palette: bool,
     rex_assets: RexAssets,
@@ -102,7 +100,6 @@ impl Game {
             objects,
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(),
-            particle_sys: ParticleSystem::new(),
             re_render: false,
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),

@@ -15,12 +15,20 @@ impl Into<Point> for Position {
 
 impl From<Point> for Position {
     fn from(p: Point) -> Self {
+        // temporary sanity check
+        if p.x > 80 || p.y > 60 {
+            panic!("invalid postion ({}, {})", p.x, p.y);
+        }
         Position::new(p.x, p.y)
     }
 }
 
 impl Position {
     pub fn new(x: i32, y: i32) -> Self {
+        // temporary sanity check
+        if x > 80 || y > 60 {
+            panic!("invalid postion ({}, {})", x, y);
+        }
         Position { x, y }
     }
 
@@ -33,6 +41,11 @@ impl Position {
     }
 
     pub fn set(&mut self, a: i32, b: i32) {
+        // temporary sanity check
+        if a > 80 || b > 60 {
+            panic!("invalid postion ({}, {})", a, b);
+        }
+
         self.x = a;
         self.y = b;
     }
@@ -48,8 +61,7 @@ impl Position {
     }
 
     pub fn translate(&mut self, offset: &Position) {
-        self.x += offset.x;
-        self.y += offset.y;
+        self.set(self.x + offset.x, self.y + offset.y);
     }
 
     pub fn get_translated(&self, offset: &Position) -> Position {

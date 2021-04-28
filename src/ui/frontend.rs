@@ -4,7 +4,6 @@ use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::ui::color::Color;
-use crate::ui::color_palette::ColorPalette;
 use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};

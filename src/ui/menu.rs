@@ -4,7 +4,6 @@ pub mod main_menu;
 
 use crate::core::game_state::GameState;
 use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
-use crate::ui::color_palette::ColorPalette;
 use crate::ui::gui::{ToolTip, UiItem};
 use crate::util::modulus;
 use crate::{core::game_objects::GameObjects, ui::palette};
