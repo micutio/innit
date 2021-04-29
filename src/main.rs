@@ -53,8 +53,7 @@ pub fn main() -> rltk::BError {
         }
     }
 
-    // TODO: Create game environment from presets and command line flags.
-
+    // build engine and launch the game
     use rltk::RltkBuilder;
     let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap()
@@ -71,5 +70,5 @@ pub fn main() -> rltk::BError {
         .build()?;
 
     context.set_active_font(1, false);
-    rltk::main_loop(context, Game::new(env))
+    rltk::main_loop(context, Game::new())
 }

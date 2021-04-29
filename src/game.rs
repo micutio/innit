@@ -1,7 +1,6 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::core::game_env::GameEnv;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
@@ -91,8 +90,8 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(env: GameEnv) -> Self {
-        let state = GameState::new(env, 0);
+    pub fn new() -> Self {
+        let state = GameState::new(0);
         let objects = GameObjects::new();
 
         Game {
@@ -117,14 +116,14 @@ impl Game {
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
-    fn new_game(env: GameEnv) -> (GameState, GameObjects) {
+    fn new_game() -> (GameState, GameObjects) {
         // create game state holding game-relevant information
         let level = 1;
-        let mut state = GameState::new(env, level);
+        let mut state = GameState::new(level);
 
         // create blank game world
         let mut objects = GameObjects::new();
-        objects.blank_world(&mut state);
+        objects.blank_world();
 
         // generate world terrain
         // let mut world_generator = RogueWorldGenerator::new();
@@ -242,7 +241,7 @@ impl Rltk_GameState for Game {
             if self.re_render {
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
-                render_world(&mut self.state, &mut self.objects, ctx);
+                render_world(&mut self.objects, ctx);
             }
 
             ctx.set_active_console(HUD_CON);
@@ -426,7 +425,7 @@ impl Rltk_GameState for Game {
             }
             RunState::NewGame => {
                 // start new game
-                let (new_state, new_objects) = Game::new_game(self.state.env);
+                let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
                 self.re_render = true;
                 RunState::Ticking

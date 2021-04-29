@@ -1,4 +1,4 @@
-use crate::core::game_state::GameState;
+use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::genetics::{DnaType, GeneLibrary, GENE_LEN};
@@ -41,7 +41,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn blank_world(&mut self, state: &mut GameState) {
+    pub fn blank_world(&mut self) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
@@ -49,7 +49,7 @@ impl GameObjects {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y, state.env.debug_mode));
+                    .replace(Tile::wall(x, y, innit_env().debug_mode));
                 println!("new tile at {},{}", x, y);
             }
         }

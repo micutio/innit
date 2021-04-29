@@ -1,6 +1,6 @@
-use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
+use crate::core::innit_env;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::ActMove;
 use crate::entity::control::Controller;
@@ -74,30 +74,30 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
 
     // create game state holding game-relevant information
     let level = 1;
-    let mut state = GameState::new(GameEnv::new(), level);
+    let state = GameState::new(level);
 
     // create blank game world
     let mut objects = GameObjects::new();
-    objects.blank_world(&mut state);
+    objects.blank_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 
     // make tiles near the player walkable
     objects
         .get_tile_at(p_x as usize, p_y as usize)
-        .replace(Tile::empty(p_x, p_y, state.env.debug_mode));
+        .replace(Tile::empty(p_x, p_y, innit_env().debug_mode));
     objects
         .get_tile_at((p_x + 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x + 1, p_y, state.env.debug_mode));
+        .replace(Tile::empty(p_x + 1, p_y, innit_env().debug_mode));
     objects
         .get_tile_at((p_x - 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x - 1, p_y, state.env.debug_mode));
+        .replace(Tile::empty(p_x - 1, p_y, innit_env().debug_mode));
     objects
         .get_tile_at(p_x as usize, (p_y - 1) as usize)
-        .replace(Tile::empty(p_x, p_y - 1, state.env.debug_mode));
+        .replace(Tile::empty(p_x, p_y - 1, innit_env().debug_mode));
     objects
         .get_tile_at(p_x as usize, (p_y + 1) as usize)
-        .replace(Tile::empty(p_x, p_y + 1, state.env.debug_mode));
+        .replace(Tile::empty(p_x, p_y + 1, innit_env().debug_mode));
 
     let player = Object::new()
         .position(p_x, p_y)

@@ -1,4 +1,4 @@
-use crate::core::game_state::GameState;
+use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
@@ -8,7 +8,7 @@ use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 
-pub fn render_world(state: &mut GameState, objects: &mut GameObjects, _ctx: &mut Rltk) {
+pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
     update_visibility(objects);
 
@@ -21,7 +21,7 @@ pub fn render_world(state: &mut GameState, objects: &mut GameObjects, _ctx: &mut
             o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-                || (o.tile.is_some() && state.env.debug_mode)
+                || (o.tile.is_some() && innit_env().debug_mode)
         })
         .collect();
 

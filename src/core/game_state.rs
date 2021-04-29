@@ -1,5 +1,5 @@
-use crate::core::game_env::GameEnv;
 use crate::core::game_objects::GameObjects;
+use crate::core::innit_env;
 use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
@@ -59,7 +59,6 @@ pub enum ObjectFeedback {
 /// file and thus persistent data. No volatile data is allowed here.
 #[derive(Serialize, Deserialize)]
 pub struct GameState {
-    pub env: GameEnv,
     pub rng: GameRng,
     pub log: Log,
     pub turn: u128,
@@ -70,8 +69,8 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new(env: GameEnv, level: u32) -> Self {
-        let rng_seed = if env.use_fixed_seed {
+    pub fn new(level: u32) -> Self {
+        let rng_seed = if innit_env().use_fixed_seed {
             0
         } else {
             rand::thread_rng().next_u64()
@@ -79,7 +78,6 @@ impl GameState {
 
         GameState {
             // create the list of game messages and their colours, starts empty
-            env,
             rng: GameRng::new_from_u64_seed(rng_seed),
             log: Log::new(),
             turn: 0,

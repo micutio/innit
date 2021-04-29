@@ -1,7 +1,7 @@
-use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{from_dungeon_level, GameState, Transition};
 use crate::core::position::Position;
 use crate::core::world::world_gen::{new_monster, Monster, Tile, WorldGen};
+use crate::core::{game_objects::GameObjects, innit_env};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
@@ -33,7 +33,7 @@ impl WorldGen for OrganicsWorldGenerator {
             for x in mid_x - 2..mid_x + 2 {
                 objects
                     .get_tile_at(x as usize, y as usize)
-                    .replace(Tile::empty(x, y, state.env.debug_mode));
+                    .replace(Tile::empty(x, y, innit_env().debug_mode));
                 self.player_start = (x, y);
                 // println!("#1 flipped {}, {}", x, y);
             }
@@ -54,7 +54,7 @@ impl WorldGen for OrganicsWorldGenerator {
             for (j, k) in &changed_tiles {
                 objects
                     .get_tile_at(*j as usize, *k as usize)
-                    .replace(Tile::empty(*j, *k, state.env.debug_mode));
+                    .replace(Tile::empty(*j, *k, innit_env().debug_mode));
             }
             changed_tiles.clear();
         }

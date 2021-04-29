@@ -1,4 +1,3 @@
-use crate::core::game_env::GameEnv;
 use crate::core::game_state::GameState;
 use crate::entity::genetics::DnaType;
 
@@ -80,7 +79,7 @@ fn test_dna_encoding() {
 /// Test dna encoding and decoding by performing a 'round trip'
 #[test]
 fn test_dna_de_encoding() {
-    let mut state = GameState::new(GameEnv::new(), 0);
+    let mut state = GameState::new(0);
     let raw_dna = state.gene_library.new_dna(&mut state.rng, false, 10);
     let (_, _, _, d) = state.gene_library.decode_dna(DnaType::Nucleus, &raw_dna);
     let traits: Vec<String> = d.simplified.iter().map(|t| t.trait_name.clone()).collect();
