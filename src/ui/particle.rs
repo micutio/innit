@@ -42,10 +42,6 @@ impl ParticleSystem {
         }
     }
 
-    pub fn is_active(&self) -> bool {
-        !self.particles.is_empty()
-    }
-
     /// Advance the particle lifetimes and cull all those that have expired.
     pub fn update(&mut self, ctx: &Rltk) {
         self.particles

@@ -12,11 +12,6 @@ lazy_static! {
     static ref GAME_ENV: Mutex<GameEnv> = Mutex::new(GameEnv::new());
 }
 
-pub fn set_debug_mode(is_debug: bool) {
-    let mut env: MutexGuard<GameEnv> = GAME_ENV.lock().unwrap();
-    env.set_debug_mode(is_debug);
-}
-
 pub fn innit_env<'a>() -> MutexGuard<'a, GameEnv> {
     GAME_ENV.lock().unwrap()
 }

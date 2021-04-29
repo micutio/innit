@@ -31,7 +31,7 @@ pub fn register_particle(pos: Position, col_fg: Color, col_bg: Color, glyph: cha
         .push(Particle::new(pos, col_fg, col_bg, glyph, lifetime));
 }
 
-pub fn active_particles<'a>() -> MutexGuard<'a, ParticleSystem> {
+pub fn particles<'a>() -> MutexGuard<'a, ParticleSystem> {
     PARTICLE_SYS.lock().unwrap()
 }
 

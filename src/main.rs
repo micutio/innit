@@ -59,7 +59,8 @@ pub fn main() -> rltk::BError {
         .unwrap()
         .with_advanced_input(true)
         .with_font("fonts/rex_paint_10x10.png", 10, 10)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png")
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // ui layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // particles
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_10x10.png") // menu
         // .with_font("fonts/rex_paint_14x14.png", 14, 14)
         // .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, "fonts/rex_paint_14x14.png") // menu

@@ -3,7 +3,6 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
-use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::position::Position;
 use crate::entity::ai::{AiForceVirusProduction, AiVirus};
@@ -12,6 +11,10 @@ use crate::entity::control::Controller::Npc;
 use crate::entity::genetics::{DnaType, TraitFamily};
 use crate::entity::object::Object;
 use crate::ui::color::{self, Color};
+use crate::{
+    core::game_objects::GameObjects,
+    ui::{palette, register_particle},
+};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -146,10 +149,18 @@ impl Action for ActPass {
         &self,
         _state: &mut GameState,
         _objects: &mut GameObjects,
-        _owner: &mut Object,
+        owner: &mut Object,
     ) -> ActionResult {
-        // do nothing
-        // duh
+        // play a little particle effect
+        // TODO: improve color handling
+        register_particle(
+            owner.pos.into(),
+            Color::from(palette().yellow),
+            Color::from(palette().bg_ground_fov_true),
+            'Z',
+            250.0,
+        );
+
         let callback = if self.override_redraw {
             ObjectFeedback::Render
         } else {

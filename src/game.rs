@@ -1,7 +1,6 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::world::world_gen::WorldGen;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::entity::action::{ActDropItem, ActPass, Action, Target, TargetCategory};
@@ -22,8 +21,12 @@ use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menu::{Menu, MenuItem};
 use crate::ui::rex_assets::RexAssets;
 use crate::{core::game_objects::GameObjects, ui::palette};
+use crate::{
+    core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback},
+    ui::particles,
+};
 use core::fmt;
-use rltk::{GameState as Rltk_GameState, Rltk};
+use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
@@ -42,6 +45,7 @@ pub const SIDE_PANEL_HEIGHT: i32 = 60;
 // consoles
 pub const WORLD_CON: usize = 0;
 pub const HUD_CON: usize = 1;
+pub const PAR_CON: usize = 2;
 
 pub const MENU_WIDTH: i32 = 20;
 
@@ -232,8 +236,7 @@ impl Rltk_GameState for Game {
         }
 
         // Render world and world only if there is any new information, otherwise save the
-        // computation. However the particles need to be queried each cycle to activate and cull
-        // them in a timely manner.
+        // computation.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
@@ -256,6 +259,22 @@ impl Rltk_GameState for Game {
             self.state.log.is_changed = false;
             self.hud.require_refresh = false
         }
+
+        // The particles need to be queried each cycle to activate and cull them in time.
+        trace!("updating particles");
+        ctx.set_active_console(PAR_CON);
+        ctx.cls();
+        let mut draw_batch = DrawBatch::new();
+        for particle in &particles().particles {
+            draw_batch.print_color(
+                particle.pos.into(),
+                particle.glyph,
+                ColorPair::new(particle.col_fg, particle.col_bg),
+            );
+        }
+        // TODO: Use constants for z_order!
+        draw_batch.submit(10000).unwrap();
+        particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
         new_run_state = match new_run_state {
