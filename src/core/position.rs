@@ -15,11 +15,7 @@ impl Into<Point> for Position {
 
 impl From<Point> for Position {
     fn from(p: Point) -> Self {
-        // temporary sanity check
-        if p.x > 80 || p.y > 60 {
-            panic!("invalid postion ({}, {})", p.x, p.y);
-        }
-        Position::new(p.x, p.y)
+        Position { x: p.x, y: p.y }
     }
 }
 

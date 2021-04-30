@@ -7,7 +7,7 @@ use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
 use crate::ui::color::Color;
-use crate::ui::gui::ToolTip;
+use crate::ui::hud::ToolTip;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
@@ -196,12 +196,18 @@ impl Object {
         self
     }
 
+    /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
+    pub fn itemize(mut self, item: InventoryItem) -> Object {
+        self.item = Some(item);
+        self
+    }
+
     /// Perform necessary actions when object dies.
     pub fn die(&mut self, _state: &mut GameState, objects: &mut GameObjects) {
         self.alive = false;
         // empty inventory into this objects' current position
         for mut o in self.inventory.items.drain(..) {
-            o.pos.translate(&self.pos);
+            o.pos.set(self.pos.x, self.pos.y);
             objects.push(o);
         }
         // take this object out of the world

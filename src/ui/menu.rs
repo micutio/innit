@@ -4,7 +4,7 @@ pub mod main_menu;
 
 use crate::core::game_state::GameState;
 use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
-use crate::ui::gui::{ToolTip, UiItem};
+use crate::ui::hud::{ToolTip, UiItem};
 use crate::util::modulus;
 use crate::{core::game_objects::GameObjects, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
@@ -58,20 +58,16 @@ impl<T: MenuItem> Menu<T> {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
-        draw_batch.fill_region(
-            self.layout,
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
-            to_cp437(' '),
-        );
-        draw_batch.draw_hollow_box(
-            self.layout,
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
-        );
+        let fg_hud = palette().fg_hud;
+        let bg_hud = palette().bg_hud;
+        let bg_hud_selected = palette().bg_hud_selected;
+        draw_batch.fill_region(self.layout, ColorPair::new(fg_hud, bg_hud), to_cp437(' '));
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_hud, bg_hud));
         for (index, item) in self.items.iter().enumerate() {
             let color = if index == self.selection {
-                ColorPair::new(palette().fg_hud, palette().bg_hud_selected)
+                ColorPair::new(fg_hud, bg_hud_selected)
             } else {
-                ColorPair::new(palette().fg_hud, palette().bg_hud)
+                ColorPair::new(fg_hud, bg_hud)
             };
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }

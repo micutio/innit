@@ -153,13 +153,11 @@ impl Action for ActPass {
     ) -> ActionResult {
         // play a little particle effect
         // TODO: improve color handling
-        register_particle(
-            owner.pos.into(),
-            Color::from(palette().yellow),
-            Color::from(palette().bg_ground_fov_true),
-            'Z',
-            250.0,
-        );
+        let fg = palette().yellow;
+        let bg = palette().bg_ground_fov_true;
+        if owner.physics.is_visible {
+            register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
+        }
 
         let callback = if self.override_redraw {
             ObjectFeedback::Render

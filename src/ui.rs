@@ -4,7 +4,7 @@ pub mod custom;
 pub mod dialog;
 pub mod frontend;
 pub mod game_input;
-pub mod gui;
+pub mod hud;
 pub mod menu;
 pub mod particle;
 pub mod rex_assets;
@@ -14,7 +14,6 @@ use std::sync::{Mutex, MutexGuard};
 use crate::{
     core::position::Position,
     ui::{
-        color::Color,
         color_palette::{ColorPalette, PALETTE_DARK},
         particle::{Particle, ParticleSystem},
     },
@@ -24,7 +23,13 @@ lazy_static! {
     static ref PARTICLE_SYS: Mutex<ParticleSystem> = Mutex::new(ParticleSystem::new());
 }
 
-pub fn register_particle(pos: Position, col_fg: Color, col_bg: Color, glyph: char, lifetime: f32) {
+pub fn register_particle(
+    pos: Position,
+    col_fg: (u8, u8, u8),
+    col_bg: (u8, u8, u8),
+    glyph: char,
+    lifetime: f32,
+) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
     particle_sys
         .particles

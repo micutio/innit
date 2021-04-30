@@ -1,7 +1,7 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
-use crate::entity::ai::{AiPassive, AiRandom, AiVirus};
+use crate::entity::ai::{AiRandom, AiVirus};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -34,7 +34,7 @@ impl Tile {
             .visualize("empty tile", '·', Color::new(255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
-            .control(Controller::Npc(Box::new(AiPassive::new())))
+        // .control(Controller::Npc(Box::new(AiPassive::new())))
     }
 
     pub fn wall(x: i32, y: i32, is_visible: bool) -> Object {
@@ -44,7 +44,7 @@ impl Tile {
             .visualize("wall tile", '◘', Color::new(255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
-            .control(Controller::Npc(Box::new(AiPassive::new())))
+        // .control(Controller::Npc(Box::new(AiPassive::new())))
     }
 }
 

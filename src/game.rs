@@ -14,7 +14,7 @@ use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
-use crate::ui::gui::{render_gui, Hud};
+use crate::ui::hud::{render_gui, Hud};
 use crate::ui::menu::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
 use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
 use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
@@ -282,14 +282,17 @@ impl Rltk_GameState for Game {
                 self.state.log.is_changed = false;
                 self.hud.require_refresh = false;
                 self.re_render = false;
+                particles().particles.clear();
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                let fg = palette().yellow;
+                let bg = palette().bg_hud;
                 ctx.print_color_centered_at(
                     SCREEN_WIDTH / 2,
                     SCREEN_HEIGHT - 2,
-                    palette().yellow,
-                    palette().bg_hud,
+                    fg,
+                    bg,
                     "by Michael Wagner",
                 );
                 match instance.display(ctx) {
@@ -303,16 +306,13 @@ impl Rltk_GameState for Game {
                 self.state.log.is_changed = false;
                 self.hud.require_refresh = false;
                 self.re_render = false;
+                particles().particles.clear();
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
-                ctx.print_color_centered_at(
-                    SCREEN_WIDTH / 2,
-                    1,
-                    palette().yellow,
-                    palette().bg_hud,
-                    "GAME OVER",
-                );
+                let fg = palette().yellow;
+                let bg = palette().bg_hud;
+                ctx.print_color_centered_at(SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
                     Some(option) => GameOverMenuItem::process(
                         &mut self.state,

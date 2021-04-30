@@ -34,30 +34,30 @@ impl InfoBox {
 
     fn render(&self) {
         let mut draw_batch = DrawBatch::new();
+        let fg_hud_border = palette().fg_hud_border;
+        let fg_hud = palette().fg_hud;
+        let bg_hud = palette().bg_hud;
         // draw box
         draw_batch.fill_region(
             self.layout,
-            ColorPair::new(palette().fg_hud_border, palette().bg_hud),
+            ColorPair::new(fg_hud_border, bg_hud),
             to_cp437(' '),
         );
-        draw_batch.draw_hollow_box(
-            self.layout,
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
-        );
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_hud, bg_hud));
 
         // draw title
         let title_pos = Point::new(self.layout.x1 + 2, self.layout.y1);
         draw_batch.print_color(
             title_pos,
             format!(" {} ", self.title),
-            ColorPair::new(palette().fg_hud_border, palette().bg_hud),
+            ColorPair::new(fg_hud_border, bg_hud),
         );
 
         for (index, line) in self.lines.iter().enumerate() {
             draw_batch.print_color(
                 Point::new(self.layout.x1 + 1, self.layout.y1 + 1 + index as i32),
                 line,
-                ColorPair::new(palette().fg_hud, palette().bg_hud),
+                ColorPair::new(fg_hud, bg_hud),
             );
         }
 

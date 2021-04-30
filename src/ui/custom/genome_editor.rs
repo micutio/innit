@@ -164,14 +164,17 @@ impl GenomeEditor {
 
     fn build_gene_items(dna: &Dna, start_x: i32, y: i32) -> Vec<GeneItem> {
         let mut x = start_x;
+        let cyan = palette().cyan;
+        let magenta = palette().magenta;
+        let yellow = palette().yellow;
         dna.simplified
             .iter()
             .enumerate()
             .map(|(idx, i)| {
                 let col: (u8, u8, u8) = match i.trait_family {
-                    TraitFamily::Sensing => palette().cyan,
-                    TraitFamily::Processing => palette().magenta,
-                    TraitFamily::Actuating => palette().yellow,
+                    TraitFamily::Sensing => cyan,
+                    TraitFamily::Processing => magenta,
+                    TraitFamily::Actuating => yellow,
                     TraitFamily::Junk => (100, 100, 100), // TODO: coloring
                     TraitFamily::Ltr => (255, 255, 255),  // TODO: coloring
                 };
@@ -194,55 +197,56 @@ impl GenomeEditor {
         ctx.set_active_console(HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
+        let fg_hud = palette().fg_hud;
+        let fg_hud_highlight = palette().fg_hud_highlight;
+        let bg_hud = palette().bg_hud;
+        let bg_hud_disabled = palette().bg_hud_disabled;
+        let bg_hud_content = palette().bg_hud_content;
+        let bg_hud_selected = palette().bg_hud_selected;
+        let bg_dna = palette().bg_dna;
+        let white = palette().white;
         // draw window border
-        draw_batch.fill_region(
-            self.layout,
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
-            to_cp437(' '),
-        );
-        draw_batch.draw_hollow_box(
-            self.layout,
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
-        );
+        draw_batch.fill_region(self.layout, ColorPair::new(fg_hud, bg_hud), to_cp437(' '));
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_hud, bg_hud));
 
         // draw title
         draw_batch.print_color_centered_at(
             Point::new(SCREEN_WIDTH / 2, self.layout.y1),
             " Genome Manipulation ",
-            ColorPair::new(palette().fg_hud_highlight, palette().bg_hud),
+            ColorPair::new(fg_hud_highlight, bg_hud),
         );
 
         // draw 'functions'
         draw_batch.print_color(
             Point::new(self.layout.x1 + 1, self.layout.y1 + TOP_ROW_Y_OFFSET),
             "Functions",
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
+            ColorPair::new(fg_hud, bg_hud),
         );
 
         // draw 'DNA'
         draw_batch.print_color(
             Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET),
             "DNA",
-            ColorPair::new(palette().fg_hud, palette().bg_hud),
+            ColorPair::new(fg_hud, bg_hud),
         );
 
         for item in &self.edit_functions {
             let bg_col = if !item.is_enabled {
-                palette().bg_hud_disabled
+                bg_hud_disabled
             } else if item.idx == self.selected_function {
-                palette().fg_hud_highlight
+                fg_hud_highlight
             } else if self.state == item.state {
-                palette().white
+                white
             } else if self.state != GenomeEditingState::ChooseFunction {
-                palette().bg_hud
+                bg_hud
             } else {
-                palette().bg_hud_content
+                bg_hud_content
             };
 
             let fg_col = if self.state == item.state {
-                palette().fg_hud_highlight
+                fg_hud_highlight
             } else {
-                palette().fg_hud
+                fg_hud
             };
 
             draw_batch.fill_region(
@@ -258,12 +262,12 @@ impl GenomeEditor {
             draw_batch.print_color(
                 Point::new(item.layout.x1 + 1, item.layout.y1),
                 item.idx.to_string(),
-                ColorPair::new(palette().fg_hud_highlight, bg_col),
+                ColorPair::new(fg_hud_highlight, bg_col),
             );
             draw_batch.print_color(
                 Point::new(item.layout.x1 + 3, item.layout.y1),
                 item.title.to_string(),
-                ColorPair::new(palette().fg_hud, bg_col),
+                ColorPair::new(fg_hud, bg_col),
             );
         }
 
@@ -276,16 +280,16 @@ impl GenomeEditor {
 
             let bg_color = if item.gene_idx == self.selected_gene {
                 if self.gene_selection_locked {
-                    palette().bg_hud_selected
+                    bg_hud_selected
                 } else if self.state == GenomeEditingState::ChooseGene
                     || self.state == GenomeEditingState::Move
                 {
-                    palette().white
+                    white
                 } else {
-                    palette().bg_hud_content
+                    bg_hud_content
                 }
             } else {
-                palette().bg_dna
+                bg_dna
             };
 
             draw_batch.print_color(
@@ -301,27 +305,19 @@ impl GenomeEditor {
         let connect_end = Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET + 2);
 
         if connect_start.x == connect_end.x {
-            draw_batch.print_color(
-                connect_end,
-                "│",
-                ColorPair::new(palette().fg_hud, palette().bg_hud),
-            );
+            draw_batch.print_color(connect_end, "│", ColorPair::new(fg_hud, bg_hud));
         } else {
             draw_batch.print_color(
                 Point::new(connect_start.x, connect_end.y),
                 "┘",
-                ColorPair::new(palette().fg_hud, palette().bg_hud),
+                ColorPair::new(fg_hud, bg_hud),
             );
-            draw_batch.print_color(
-                connect_end,
-                "┌",
-                ColorPair::new(palette().fg_hud, palette().bg_hud),
-            );
+            draw_batch.print_color(connect_end, "┌", ColorPair::new(fg_hud, bg_hud));
             for i in 1..(connect_start.x - connect_end.x) {
                 draw_batch.print_color(
                     Point::new(connect_end.x + i, connect_end.y),
                     "─",
-                    ColorPair::new(palette().fg_hud, palette().bg_hud),
+                    ColorPair::new(fg_hud, bg_hud),
                 );
             }
         }
@@ -329,8 +325,8 @@ impl GenomeEditor {
         // draw genome info box
         if let Some(gene_item) = self.gene_items.get(self.selected_gene) {
             if let Some(genome) = self.player_dna.simplified.get(gene_item.gene_idx) {
-                let highlight = ColorPair::new(palette().fg_hud_highlight, palette().bg_hud);
-                let color = ColorPair::new(palette().fg_hud, palette().bg_hud);
+                let highlight = ColorPair::new(fg_hud_highlight, bg_hud);
+                let color = ColorPair::new(fg_hud, bg_hud);
                 let name_header = "trait name:";
                 let family_header = "trait family:";
                 let action_header = "action:";

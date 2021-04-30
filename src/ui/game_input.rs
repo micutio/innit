@@ -6,7 +6,7 @@ use crate::entity::control::Controller::Player;
 use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
-use crate::ui::gui::{Hud, HudItem, ToolTip};
+use crate::ui::hud::{Hud, HudItem, ToolTip};
 use rltk::prelude::INPUT;
 use rltk::{BEvent, Point, Rltk, VirtualKeyCode};
 
