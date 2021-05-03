@@ -1,14 +1,11 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::core::world::world_gen::WorldGen;
-use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::entity::action::{ActDropItem, ActPass, Action, Target, TargetCategory};
+use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::ui::color::Color;
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::InfoBox;
@@ -24,6 +21,10 @@ use crate::{core::game_objects::GameObjects, ui::palette};
 use crate::{
     core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback},
     ui::particles,
+};
+use crate::{core::world::world_gen::WorldGen, entity::action::inventory::ActDropItem};
+use crate::{
+    core::world::world_gen_organic::OrganicsWorldGenerator, entity::action::hereditary::ActPass,
 };
 use core::fmt;
 use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
@@ -152,7 +153,7 @@ impl Game {
         let player = Object::new()
             .position(new_x, new_y)
             .living(true)
-            .visualize("You", '@', Color::from((255, 255, 255)))
+            .visualize("You", '@', (255, 255, 255))
             .physical(true, false, true)
             .control(Controller::Player(PlayerCtrl::new()))
             .genome(

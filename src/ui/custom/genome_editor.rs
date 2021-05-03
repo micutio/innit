@@ -6,7 +6,6 @@ they have a plasmid that allows this.
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
-use crate::ui::color::Color;
 use crate::util::game_rng::RngExtended;
 use crate::util::modulus;
 use crate::{core::game_state::GameState, ui::palette};
@@ -59,11 +58,11 @@ struct GeneItem {
     layout: Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color: Color,
+    color: (u8, u8, u8),
 }
 
 impl GeneItem {
-    fn new(layout: Rect, gene_idx: usize, color: Color) -> Self {
+    fn new(layout: Rect, gene_idx: usize, color: (u8, u8, u8)) -> Self {
         GeneItem {
             layout,
             gene_idx,
@@ -178,7 +177,7 @@ impl GenomeEditor {
                     TraitFamily::Junk => (100, 100, 100), // TODO: coloring
                     TraitFamily::Ltr => (255, 255, 255),  // TODO: coloring
                 };
-                let item = GeneItem::new(Rect::with_size(x, y, 1, 1), idx, Color::from(col));
+                let item = GeneItem::new(Rect::with_size(x, y, 1, 1), idx, col);
                 x += 1;
                 item
             })

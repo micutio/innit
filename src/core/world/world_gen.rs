@@ -1,14 +1,15 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 // TODO: WorldGen should offer an API to define spawn and drop tables.
-use crate::entity::ai::{AiRandom, AiVirus};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
-use crate::ui::color;
-use crate::ui::color::Color;
 use crate::{core::game_objects::GameObjects, entity::object::InventoryItem};
-use crate::{core::game_state::GameState, entity::action::ActEditGenome};
+use crate::{core::game_state::GameState, entity::action::hereditary::ActEditGenome};
+use crate::{
+    entity::ai::{AiRandom, AiVirus},
+    ui::palette,
+};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -31,7 +32,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", '·', Color::new(255, 255, 255))
+            .visualize("empty tile", '·', (255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
         // .control(Controller::Npc(Box::new(AiPassive::new())))
@@ -41,7 +42,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("wall tile", '◘', Color::new(255, 255, 255))
+            .visualize("wall tile", '◘', (255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
         // .control(Controller::Npc(Box::new(AiPassive::new())))
@@ -66,7 +67,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("virus", 'v', Color::from(color::VIRUS))
+            .visualize("virus", 'v', palette().virus)
             .physical(true, false, false)
             // TODO: Pull genome create out of here. It's not the same for every NPC.
             .genome(
@@ -79,7 +80,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("bacteria", 'b', Color::from(color::BACTERIA))
+            .visualize("bacteria", 'b', palette().bacteria)
             .physical(true, false, false)
             .genome(
                 0.9,
@@ -91,7 +92,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Plasmid => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("Plasmid", 'p', Color::from(color::PLASMID))
+            .visualize("Plasmid", 'p', palette().plasmid)
             .physical(false, false, false)
             .inventory_item(InventoryItem::new(
                 "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",

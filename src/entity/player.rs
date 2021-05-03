@@ -1,7 +1,7 @@
 //! Game settings pertaining to the player.
 //! This defines player actions, key bindings and more.
 
-use crate::entity::action::{ActPass, Action};
+use crate::entity::action::{hereditary::ActPass, Action};
 use serde::{Deserialize, Serialize};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector

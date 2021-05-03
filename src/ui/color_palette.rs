@@ -32,6 +32,10 @@ pub struct ColorPalette {
     pub msg_info: (u8, u8, u8),
     pub msg_action: (u8, u8, u8),
     pub msg_story: (u8, u8, u8),
+
+    pub virus: (u8, u8, u8),
+    pub bacteria: (u8, u8, u8),
+    pub plasmid: (u8, u8, u8),
 }
 
 pub const PALETTE_DARK: ColorPalette = ColorPalette {
@@ -56,6 +60,7 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     fg_wall_fov_false: (30, 30, 30),
     fg_ground_fov_true: (144, 48, 90),
     fg_ground_fov_false: (20, 20, 20),
+
     cyan: (0, 150, 150),
     magenta: (180, 0, 220),
     yellow: (180, 170, 0),
@@ -65,4 +70,8 @@ pub const PALETTE_DARK: ColorPalette = ColorPalette {
     msg_info: (255, 255, 255),
     msg_action: (100, 100, 255),
     msg_story: (100, 180, 255),
+
+    virus: (100, 255, 150),
+    bacteria: (80, 235, 120),
+    plasmid: (50, 50, 250),
 };

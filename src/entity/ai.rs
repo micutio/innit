@@ -4,25 +4,22 @@
 
 // internal imports
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::entity::action::{
-    ActInjectRnaVirus, ActPass, ActProduceVirion, Action, Target, TargetCategory,
-};
+use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
+use crate::{
+    core::game_objects::GameObjects,
+    entity::action::hereditary::{ActInjectRnaVirus, ActPass},
+};
+use crate::{core::game_state::GameState, entity::action::hereditary::ActProduceVirion};
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
+/// As the name suggests this AI passes its turn forever.
+/// This might actually be replaced with [Object.control](crate::entity::object::Object) == None, which save some more CPU cycles.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiPassive;
-
-impl AiPassive {
-    pub fn new() -> Self {
-        AiPassive {}
-    }
-}
 
 #[typetag::serde]
 impl Ai for AiPassive {
@@ -36,6 +33,7 @@ impl Ai for AiPassive {
     }
 }
 
+/// Each turn chooses a random valid action with a random valid target
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiRandom;
 

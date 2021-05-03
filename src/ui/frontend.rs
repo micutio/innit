@@ -3,7 +3,6 @@ use crate::core::position::Position;
 use crate::core::world::world_gen::is_explored;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::ui::color::Color;
 use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
@@ -127,10 +126,22 @@ fn update_visual(
         }
         if tile.is_explored {
             // show explored tiles only (any visible tile is explored already)
-            object.visual.fg_color = Color::from(tile_color_fg);
-            object.visual.bg_color = Color::from(tile_color_bg);
+            object.visual.fg_color = (
+                (tile_color_fg.r * 255.0) as u8,
+                (tile_color_fg.g * 255.0) as u8,
+                (tile_color_fg.b * 255.0) as u8,
+            );
+            object.visual.bg_color = (
+                (tile_color_bg.r * 255.0) as u8,
+                (tile_color_bg.g * 255.0) as u8,
+                (tile_color_bg.b * 255.0) as u8,
+            );
         }
     } else {
-        object.visual.bg_color = Color::from(tile_color_bg);
+        object.visual.bg_color = (
+            (tile_color_bg.r * 255.0) as u8,
+            (tile_color_bg.g * 255.0) as u8,
+            (tile_color_bg.b * 255.0) as u8,
+        );
     }
 }

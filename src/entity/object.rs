@@ -1,13 +1,15 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, Log, MessageLog, MsgClass};
 use crate::core::position::Position;
 use crate::core::world::world_gen::Tile;
 use crate::entity::action::*;
 use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
-use crate::ui::color::Color;
 use crate::ui::hud::ToolTip;
+use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActPass};
+use crate::{
+    core::game_state::{GameState, Log, MessageLog, MsgClass},
+    entity::action::inventory::ActDropItem,
+};
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
@@ -47,8 +49,8 @@ pub struct Object {
 pub struct Visual {
     pub name: String,
     pub glyph: char,
-    pub fg_color: Color,
-    pub bg_color: Color,
+    pub fg_color: (u8, u8, u8),
+    pub bg_color: (u8, u8, u8),
 }
 
 impl Visual {
@@ -56,8 +58,8 @@ impl Visual {
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            fg_color: Color::new(255, 255, 255),
-            bg_color: Color::new(0, 0, 0),
+            fg_color: (255, 255, 255),
+            bg_color: (0, 0, 0),
         }
     }
 }
@@ -144,7 +146,7 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, fg_color: Color) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: (u8, u8, u8)) -> Object {
         self.visual.name = name.into();
         self.visual.glyph = character;
         self.visual.fg_color = fg_color;

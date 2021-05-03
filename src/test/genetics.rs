@@ -1,9 +1,11 @@
-use crate::core::game_state::GameState;
 use crate::entity::genetics::DnaType;
+use crate::{
+    core::game_state::GameState,
+    entity::action::{hereditary::ActMove, inventory::ActPickUpItem},
+};
 
 #[test]
 fn test_dna_encoding() {
-    use crate::entity::action::{ActMove, ActPickUpItem};
     use crate::entity::genetics::{Actuators, GeneLibrary, Processors, Sensors};
     use crate::util::generate_gray_code;
 

@@ -29,7 +29,11 @@
 // Should attributes be fix on trait level or full-on generic as list of attribute objects?
 // How to best model synergies and anti-synergies across traits?
 
-use crate::entity::action::*;
+use crate::entity::action::{
+    hereditary::{ActAttack, ActMetabolise, ActMove},
+    inventory::ActPickUpItem,
+    Action,
+};
 use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
