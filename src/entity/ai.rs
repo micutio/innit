@@ -4,7 +4,6 @@
 
 // internal imports
 
-use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
 use crate::{
@@ -12,6 +11,10 @@ use crate::{
     entity::action::hereditary::{ActInjectRnaVirus, ActPass},
 };
 use crate::{core::game_state::GameState, entity::action::hereditary::ActProduceVirion};
+use crate::{
+    entity::action::{hereditary::ActMove, Action, Target, TargetCategory},
+    util::game_rng::RngExtended,
+};
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -143,6 +146,39 @@ impl Ai for AiRandom {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiRandomWalk;
+
+#[typetag::serde]
+impl Ai for AiRandomWalk {
+    fn act(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> Box<dyn Action> {
+        // try and find some empty adjacent cells that can be walked to
+        if let Some(t) = objects
+            .get_vector()
+            .iter()
+            .flatten()
+            .filter(|obj| {
+                owner.pos.is_adjacent(&obj.pos)
+                    && (obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
+            })
+            // .filter_map(|o| o.as_ref())
+            .collect::<Vec<&Object>>()
+            .choose(&mut state.rng)
+        {
+            let mut action = Box::new(ActMove::new());
+            action.set_target(Target::from_pos(&owner.pos, &t.pos));
+            action
+        } else {
+            Box::new(ActPass::default())
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiVirus {}
 
 impl AiVirus {
@@ -181,7 +217,26 @@ impl Ai for AiVirus {
                 owner.dna.raw.clone(),
             ));
         }
-        Box::new(ActPass::default())
+
+        // if there is no target to infect, try a random walk instead
+        if state.rng.flip_with_prob(0.1) {
+            if let Some(t) = objects
+                .get_vector()
+                .iter()
+                .flatten()
+                .filter(|obj| owner.pos.is_adjacent(&obj.pos) && !objects.is_pos_occupied(&obj.pos))
+                // .filter_map(|o| o.as_ref())
+                .collect::<Vec<&Object>>()
+                .choose(&mut state.rng)
+            {
+                let mut action = Box::new(ActMove::new());
+                action.set_target(Target::from_pos(&owner.pos, &t.pos));
+                return action;
+            }
+        }
+
+        // if nothing else sticks, just pass
+        return Box::new(ActPass::default());
     }
 }
 
