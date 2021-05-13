@@ -35,7 +35,6 @@ impl WorldGen for OrganicsWorldGenerator {
                     .get_tile_at(x as usize, y as usize)
                     .replace(Tile::empty(x, y, innit_env().debug_mode));
                 self.player_start = (x, y);
-                // println!("#1 flipped {}, {}", x, y);
             }
         }
 

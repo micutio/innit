@@ -50,7 +50,6 @@ impl GameObjects {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                     .replace(Tile::wall(x, y, innit_env().debug_mode));
-                println!("new tile at {},{}", x, y);
             }
         }
     }

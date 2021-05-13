@@ -120,11 +120,6 @@ impl Action for ActDropItem {
                     || action.get_level() != self.get_level()
             });
 
-            println!("inventory:");
-            for item in &owner.inventory.items {
-                println!("{}", item);
-            }
-
             ActionResult::Success {
                 callback: ObjectFeedback::NoFeedback,
             }
