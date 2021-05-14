@@ -507,6 +507,10 @@ impl Object {
                 )
                 .to_string(),
             ),
+            (
+                "sense range:".to_string(),
+                self.sensors.sensing_range.to_string(),
+            ),
             ("receptors:".to_string(), receptor_match),
         ];
         ToolTip::new(header, attributes)
