@@ -19,9 +19,9 @@ impl InfoBox {
     pub fn new(title: String, lines: Vec<String>) -> Self {
         let box_width: i32 = usize::max(
             title.len() + 5,
-            lines.iter().map(|l| l.len()).max().unwrap(),
+            lines.iter().map(|l| l.len()).max().unwrap() + 1,
         ) as i32;
-        let box_height = lines.len() as i32 + 1;
+        let box_height = lines.len() as i32 + 2;
         let x1 = (SCREEN_WIDTH / 2) - (box_width / 2);
         let y1 = (SCREEN_HEIGHT / 2) - (box_height / 2);
         let x2 = x1 + box_width;

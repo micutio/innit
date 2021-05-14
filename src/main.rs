@@ -55,11 +55,12 @@ pub fn main() -> rltk::BError {
 
     // build engine and launch the game
     use rltk::RltkBuilder;
-    let font = "fonts/rex_paint_10x10.png";
+    // let font = "fonts/rex_paint_10x10.png";
+    let font = "fonts/rex_paint_8x8.png";
     let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap()
         .with_advanced_input(true)
-        .with_font(font, 10, 10)
+        .with_font(font, 8, 8)
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles
         .with_title("Innit alpha v0.0.4")

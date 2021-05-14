@@ -99,7 +99,7 @@ impl GameObjects {
                 );
             }
             None => {
-                debug!("setting player object {:?}", object);
+                trace!("setting player object {:?}", object);
                 self.obj_vec[PLAYER].replace(object);
             }
         }
