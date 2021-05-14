@@ -37,9 +37,23 @@ pub trait MessageLog {
 }
 
 impl MessageLog for Log {
-    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass) {
-        self.messages.push((message.into(), class));
-        self.is_changed = true;
+    /// Push a message into the log under two conditions:
+    /// - either the log is empty
+    /// - or the last message is not identical to the new message
+    fn add<T: Into<String>>(&mut self, msg: T, class: MsgClass) {
+        if self.messages.is_empty() {
+            self.messages.push((msg.into(), class));
+            self.is_changed = true;
+            return;
+        }
+
+        if let Some(recent_msg) = self.messages.last() {
+            let msg_str = msg.into();
+            if !recent_msg.0.eq(&msg_str) {
+                self.messages.push((msg_str, class));
+                self.is_changed = true;
+            }
+        }
     }
 }
 
@@ -151,8 +165,13 @@ impl GameState {
                     if active_object.physics.is_visible && next_action.get_identifier().ne("pass") {
                         debug!("next action: {}", next_action.get_identifier());
                     }
-                    active_object.processors.energy -= next_action.get_energy_cost();
-                    self.process_action(objects, &mut active_object, next_action)
+                    if next_action.get_energy_cost() > active_object.processors.energy_storage {
+                        self.log.add("You don't have enough energy for that!", MsgClass::Info);
+                        ObjectFeedback::NoFeedback
+                    } else {
+                        active_object.processors.energy -= next_action.get_energy_cost();
+                        self.process_action(objects, &mut active_object, next_action)
+                    }
                 } else {
                     panic!("How can an object 'has_next_action' but NOT have an action?");
                     // ObjectProcResult::NoFeedback
