@@ -9,7 +9,6 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
-use crate::entity::action::Target;
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
@@ -18,6 +17,7 @@ use crate::{
     core::game_state::{GameState, MsgClass},
     ui::palette,
 };
+use crate::{entity::action::Target, util::text_to_width};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -627,7 +627,7 @@ fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
         };
         bg_flag = !bg_flag;
 
-        let msg_lines = format_message(msg, layout.width());
+        let msg_lines = text_to_width(msg, layout.width());
         let msg_end_y = layout.y1 + y;
         let msg_start_y: i32 = msg_end_y - msg_lines.len() as i32 + 1;
         let msg_area_start_y: i32 = i32::max(layout.y1, msg_end_y - msg_lines.len() as i32 + 1);
@@ -651,28 +651,6 @@ fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
 
         y -= msg_lines.len() as i32;
     }
-}
-
-fn format_message(text: &str, line_width: i32) -> Vec<String> {
-    let mut lines: Vec<String> = Vec::new();
-    let mut current_line: Vec<&str> = Vec::new();
-    let mut current_width = 0;
-    for word in text.split(' ') {
-        current_width += word.len() + 1;
-        if current_width <= line_width as usize + 1 {
-            current_line.push(word);
-        } else {
-            lines.push(current_line.join(" "));
-            current_line.clear();
-            current_line.push(word);
-            current_width = word.len() + 1;
-        }
-    }
-
-    if !current_line.is_empty() {
-        lines.push(current_line.join(" "));
-    }
-    lines
 }
 
 fn render_ui_items(hud: &Hud, draw_batch: &mut DrawBatch) {

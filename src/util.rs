@@ -53,3 +53,32 @@ pub fn _gray_to_binary32(mut x: u8) -> u8 {
 //         (&mut second_slice[0], &mut first_slice[second_index])
 //     }
 // }
+
+/// Format text to fit within the given line width. Whenever the given width is reached or exceeded
+/// a new line will be created. Returns a list of lines with a width <= `line_width`
+///
+/// # Arguments
+///
+/// * `text` - text to be formatted
+/// * `line_width` - maximum length of a line of text.
+pub fn text_to_width(text: &str, line_width: i32) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    let mut current_line: Vec<&str> = Vec::new();
+    let mut current_width = 0;
+    for word in text.split(' ') {
+        current_width += word.len() + 1;
+        if current_width <= line_width as usize + 1 {
+            current_line.push(word);
+        } else {
+            lines.push(current_line.join(" "));
+            current_line.clear();
+            current_line.push(word);
+            current_width = word.len() + 1;
+        }
+    }
+
+    if !current_line.is_empty() {
+        lines.push(current_line.join(" "));
+    }
+    lines
+}

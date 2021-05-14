@@ -1,4 +1,5 @@
 pub mod character;
+pub mod controls;
 
 use crate::{
     game::{SCREEN_HEIGHT, SCREEN_WIDTH},
@@ -6,7 +7,7 @@ use crate::{
 };
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 
-/// Non-click-away-able window menu.
+/// Simple info box. Can be exited by clicking outside or pressing `Esc`
 #[derive(Clone, Debug)]
 pub struct InfoBox {
     title: String,

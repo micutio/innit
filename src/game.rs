@@ -1,7 +1,6 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
@@ -25,6 +24,10 @@ use crate::{
 use crate::{core::world::world_gen::WorldGen, entity::action::inventory::ActDropItem};
 use crate::{
     core::world::world_gen_organic::OrganicsWorldGenerator, entity::action::hereditary::ActPass,
+};
+use crate::{
+    entity::action::{Action, Target, TargetCategory},
+    ui::dialog::controls::controls_screen,
 };
 use core::fmt;
 use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
@@ -589,6 +592,7 @@ pub fn handle_meta_actions(
                 RunState::CheckInput
             }
         }
+        UiAction::Help => RunState::InfoBox(controls_screen()),
     }
 }
 

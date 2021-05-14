@@ -27,6 +27,7 @@ pub enum UiAction {
     ChooseQuick1Action,
     ChooseQuick2Action,
     GenomeEditor,
+    Help,
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +68,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::Right, false, false) => PlayInput(PrimaryAction(East)),
         (VirtualKeyCode::Space, false, false) => PlayInput(PassTurn),
         (VirtualKeyCode::Escape, false, false) => MetaInput(ExitGameLoop),
+        (VirtualKeyCode::F1, false, false) => MetaInput(Help),
         _ => Undefined,
     }
 }
