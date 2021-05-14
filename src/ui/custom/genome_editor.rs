@@ -131,7 +131,7 @@ impl GenomeEditor {
         let mut func_width: i32 = edit_functions.iter().map(|item| item.layout.width()).sum();
         func_width += edit_functions.len() as i32 * 2 + 2;
         let total_width = func_width.max(dna.simplified.len() as i32 + 2);
-        let total_height = 12;
+        let total_height = 16;
         let layout = Rect::with_size(
             (SCREEN_WIDTH / 2) - (total_width / 2),
             (SCREEN_HEIGHT / 2) - (total_height / 2),
@@ -422,6 +422,25 @@ impl GenomeEditor {
                 }
             }
         }
+
+        // draw controls info
+        let info_x = self.layout.x1 + 1;
+        let info_y = self.layout.y2 - 3;
+        draw_batch.print_color(
+            Point::new(info_x, info_y),
+            "↑/↓ - flip between functions/DNA",
+            ColorPair::new(fg_hud, bg_hud),
+        );
+        draw_batch.print_color(
+            Point::new(info_x, info_y + 1),
+            "←/→ - choose function/gene",
+            ColorPair::new(fg_hud, bg_hud),
+        );
+        draw_batch.print_color(
+            Point::new(info_x, info_y + 2),
+            "return - use function",
+            ColorPair::new(fg_hud, bg_hud),
+        );
 
         draw_batch.submit(6000).unwrap();
     }
