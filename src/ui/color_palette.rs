@@ -1,77 +1,109 @@
 pub struct ColorPalette {
-    // background colors
-    pub bg_world: (u8, u8, u8),
-    pub bg_dna: (u8, u8, u8),
-    pub bg_hud: (u8, u8, u8),
-    pub bg_hud_selected: (u8, u8, u8),
-    pub bg_hud_content: (u8, u8, u8),
-    pub bg_hud_disabled: (u8, u8, u8),
-    pub bg_hud_log1: (u8, u8, u8),
-    pub bg_hud_log2: (u8, u8, u8),
-    pub bg_wall_fov_true: (u8, u8, u8),
-    pub bg_wall_fov_false: (u8, u8, u8),
-    pub bg_ground_fov_true: (u8, u8, u8),
-    pub bg_ground_fov_false: (u8, u8, u8),
-    pub bg_bar: (u8, u8, u8),
+    // base color palette
+    /// Main color, used as base for the UI and the world, probably.
+    pub col_main: (u8, u8, u8),
+    /// Main complementary color
+    pub col_comp: (u8, u8, u8),
+    /// Accent color 1
+    pub col_acc1: (u8, u8, u8),
+    /// Accent color 2
+    pub col_acc2: (u8, u8, u8),
+    /// Accent color 3
+    pub col_acc3: (u8, u8, u8),
 
-    // foreground colors
-    pub fg_hud: (u8, u8, u8),
-    pub fg_hud_border: (u8, u8, u8),
-    pub fg_hud_highlight: (u8, u8, u8),
-    pub fg_wall_fov_true: (u8, u8, u8),
-    pub fg_wall_fov_false: (u8, u8, u8),
-    pub fg_ground_fov_true: (u8, u8, u8),
-    pub fg_ground_fov_false: (u8, u8, u8),
+    // hud colors - background
+    pub hud_bg: (u8, u8, u8),
+    pub hud_bg_bar: (u8, u8, u8),
+    pub hud_bg_dna: (u8, u8, u8),
+    pub hud_bg_content: (u8, u8, u8),
+    pub hud_bg_active: (u8, u8, u8),
+    pub hud_bg_log1: (u8, u8, u8),
+    pub hud_bg_log2: (u8, u8, u8),
 
-    pub cyan: (u8, u8, u8),
-    pub magenta: (u8, u8, u8),
-    pub yellow: (u8, u8, u8),
-    pub white: (u8, u8, u8),
-    pub player: (u8, u8, u8),
-    pub msg_alert: (u8, u8, u8),
-    pub msg_info: (u8, u8, u8),
-    pub msg_action: (u8, u8, u8),
-    pub msg_story: (u8, u8, u8),
+    // hud colors - foreground
+    pub hud_fg: (u8, u8, u8),
+    pub hud_fg_border: (u8, u8, u8),
+    pub hud_fg_highlight: (u8, u8, u8),
+    pub hud_fg_inactive: (u8, u8, u8),
+    pub hud_fg_dna_processor: (u8, u8, u8),
+    pub hud_fg_dna_actuator: (u8, u8, u8),
+    pub hud_fg_dna_sensor: (u8, u8, u8),
+    pub hud_fg_bar_health: (u8, u8, u8),
+    pub hud_fg_bar_energy: (u8, u8, u8),
+    pub hud_fg_msg_alert: (u8, u8, u8),
+    pub hud_fg_msg_info: (u8, u8, u8),
+    pub hud_fg_msg_action: (u8, u8, u8),
+    pub hud_fg_msg_story: (u8, u8, u8),
 
-    pub virus: (u8, u8, u8),
-    pub bacteria: (u8, u8, u8),
-    pub plasmid: (u8, u8, u8),
+    // world colors
+    pub world_bg: (u8, u8, u8),
+    pub world_bg_wall_fov_true: (u8, u8, u8),
+    pub world_bg_wall_fov_false: (u8, u8, u8),
+    pub world_bg_ground_fov_true: (u8, u8, u8),
+    pub world_bg_ground_fov_false: (u8, u8, u8),
+    pub world_fg_wall_fov_true: (u8, u8, u8),
+    pub world_fg_wall_fov_false: (u8, u8, u8),
+    pub world_fg_ground_fov_true: (u8, u8, u8),
+    pub world_fg_ground_fov_false: (u8, u8, u8),
+
+    // entity colors
+    pub entity_player: (u8, u8, u8),
+    pub entity_plasmid: (u8, u8, u8),
+    pub entity_virus: (u8, u8, u8),
+    pub entity_bacteria: (u8, u8, u8),
 }
 
-pub const PALETTE_DARK: ColorPalette = ColorPalette {
-    bg_world: (0, 0, 0),
-    bg_hud: (144, 48, 90),
-    bg_dna: (104, 8, 50),
-    bg_hud_selected: (90, 48, 144),
-    bg_hud_content: (125, 28, 124),
-    bg_hud_disabled: (125, 125, 125),
-    bg_hud_log1: (154, 58, 100),
-    bg_hud_log2: (135, 38, 80),
-    bg_wall_fov_true: (176, 52, 96),
-    bg_wall_fov_false: (30, 30, 30),
-    bg_ground_fov_true: (124, 8, 59),
-    bg_ground_fov_false: (20, 20, 20),
-    bg_bar: (100, 100, 100),
+pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
+    // base color palette
+    /// Main color, used as base for the UI and the world, probably.
+    col_main: (124, 8, 59),
+    /// Main complementary color
+    col_comp: (9, 124, 172),
+    /// Accent color 1
+    col_acc1: (167, 223, 204),
+    /// Accent color 2
+    col_acc2: (182, 191, 118),
+    /// Accent color 3
+    col_acc3: (220, 98, 42),
 
-    fg_hud: (220, 220, 220),
-    fg_hud_border: (72, 143, 181),
-    fg_hud_highlight: (72, 143, 181),
-    fg_wall_fov_true: (218, 85, 135),
-    fg_wall_fov_false: (30, 30, 30),
-    fg_ground_fov_true: (144, 48, 90),
-    fg_ground_fov_false: (20, 20, 20),
+    // hud colors - background
+    hud_bg: (124, 8, 59),
+    hud_bg_bar: (99, 99, 99),
+    hud_bg_content: (82, 59, 99),
+    hud_bg_dna: (105, 7, 50),
+    hud_bg_active: (145, 9, 68),
+    hud_bg_log1: (124, 8, 59),
+    hud_bg_log2: (145, 9, 68),
 
-    cyan: (0, 150, 150),
-    magenta: (180, 0, 220),
-    yellow: (180, 170, 0),
-    white: (250, 250, 250),
-    player: (170, 170, 170),
-    msg_alert: (255, 100, 100),
-    msg_info: (255, 255, 255),
-    msg_action: (100, 100, 255),
-    msg_story: (100, 180, 255),
+    // hud colors - foreground
+    hud_fg: (196, 196, 196),
+    hud_fg_border: (9, 124, 172),
+    hud_fg_highlight: (9, 124, 172),
+    hud_fg_inactive: (99, 99, 99),
+    hud_fg_dna_actuator: (240, 50, 30),
+    hud_fg_dna_processor: (97, 83, 144),
+    hud_fg_dna_sensor: (124, 182, 52),
+    hud_fg_bar_health: (240, 50, 30),
+    hud_fg_bar_energy: (220, 184, 68),
+    hud_fg_msg_alert: (255, 100, 100),
+    hud_fg_msg_info: (255, 255, 255),
+    hud_fg_msg_action: (100, 100, 255),
+    hud_fg_msg_story: (100, 180, 255),
 
-    virus: (100, 255, 150),
-    bacteria: (80, 235, 120),
-    plasmid: (50, 50, 250),
+    // world colors
+    world_bg: (0, 0, 0),
+    world_bg_wall_fov_true: (176, 52, 96),
+    world_bg_wall_fov_false: (30, 30, 30),
+    world_bg_ground_fov_true: (124, 8, 59),
+    world_bg_ground_fov_false: (20, 20, 20),
+    world_fg_wall_fov_true: (218, 85, 135),
+    world_fg_wall_fov_false: (30, 30, 30),
+    world_fg_ground_fov_true: (144, 48, 90),
+    world_fg_ground_fov_false: (20, 20, 20),
+
+    // entity colors
+    entity_player: (170, 170, 170),
+    entity_plasmid: (50, 50, 250),
+    entity_virus: (100, 255, 150),
+    entity_bacteria: (80, 235, 120),
 };

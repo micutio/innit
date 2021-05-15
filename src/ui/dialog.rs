@@ -21,7 +21,7 @@ impl InfoBox {
             title.len() + 5,
             lines.iter().map(|l| l.len()).max().unwrap() + 1,
         ) as i32;
-        let box_height = lines.len() as i32 + 2;
+        let box_height = lines.len() as i32 + 1;
         let x1 = (SCREEN_WIDTH / 2) - (box_width / 2);
         let y1 = (SCREEN_HEIGHT / 2) - (box_height / 2);
         let x2 = x1 + box_width;
@@ -35,16 +35,12 @@ impl InfoBox {
 
     fn render(&self) {
         let mut draw_batch = DrawBatch::new();
-        let fg_hud_border = palette().fg_hud_border;
-        let fg_hud = palette().fg_hud;
-        let bg_hud = palette().bg_hud;
+        let fg_hud_border = palette().hud_fg_border;
+        let fg_hud = palette().hud_fg;
+        let bg_hud = palette().hud_bg;
         // draw box
-        draw_batch.fill_region(
-            self.layout,
-            ColorPair::new(fg_hud_border, bg_hud),
-            to_cp437(' '),
-        );
-        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_hud, bg_hud));
+        draw_batch.fill_region(self.layout, ColorPair::new(fg_hud, bg_hud), to_cp437(' '));
+        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_hud_border, bg_hud));
 
         // draw title
         let title_pos = Point::new(self.layout.x1 + 2, self.layout.y1);

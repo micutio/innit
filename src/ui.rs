@@ -13,7 +13,7 @@ use std::sync::{Mutex, MutexGuard};
 use crate::{
     core::position::Position,
     ui::{
-        color_palette::{ColorPalette, PALETTE_DARK},
+        color_palette::{ColorPalette, PALETTE_DEFAULT},
         particle::{Particle, ParticleSystem},
     },
 };
@@ -40,7 +40,7 @@ pub fn particles<'a>() -> MutexGuard<'a, ParticleSystem> {
 }
 
 lazy_static! {
-    static ref COLOR_PALETTE: Mutex<ColorPalette> = Mutex::new(PALETTE_DARK);
+    static ref COLOR_PALETTE: Mutex<ColorPalette> = Mutex::new(PALETTE_DEFAULT);
 }
 
 pub fn palette<'a>() -> MutexGuard<'a, ColorPalette> {

@@ -85,14 +85,14 @@ fn update_visual(
     dist_map: &mut Vec<f32>,
 ) {
     // go through all tiles and set their background color
-    let bwft: RGB = palette().bg_wall_fov_true.into();
-    let bwff: RGB = palette().bg_wall_fov_false.into();
-    let bgft: RGB = palette().bg_ground_fov_true.into();
-    let bgff: RGB = palette().bg_ground_fov_false.into();
-    let fwft: RGB = palette().fg_wall_fov_true.into();
-    let fwff: RGB = palette().fg_wall_fov_false.into();
-    let fgft: RGB = palette().fg_ground_fov_true.into();
-    let fgff: RGB = palette().fg_ground_fov_false.into();
+    let bwft: RGB = palette().world_bg_wall_fov_true.into();
+    let bwff: RGB = palette().world_bg_wall_fov_false.into();
+    let bgft: RGB = palette().world_bg_ground_fov_true.into();
+    let bgff: RGB = palette().world_bg_ground_fov_false.into();
+    let fwft: RGB = palette().world_fg_wall_fov_true.into();
+    let fwff: RGB = palette().world_fg_wall_fov_false.into();
+    let fgft: RGB = palette().world_fg_ground_fov_true.into();
+    let fgff: RGB = palette().world_fg_ground_fov_false.into();
 
     let wall = object.physics.is_blocking_sight;
 

@@ -3,7 +3,6 @@ use crate::ui::dialog::InfoBox;
 pub fn controls_screen() -> InfoBox {
     let title: String = "Controls".to_string();
     let lines = vec![
-        "".to_string(),
         "Actions".to_string(),
         "↑, ↓, →, ←, left mouse   primary action".to_string(),
         "W, A, S, D               secondary action".to_string(),

@@ -51,8 +51,8 @@ impl Action for ActPass {
     ) -> ActionResult {
         // play a little particle effect
         // TODO: improve color handling
-        let fg = palette().yellow;
-        let bg = palette().bg_ground_fov_true;
+        let fg = palette().hud_fg_dna_sensor;
+        let bg = palette().world_bg_ground_fov_true;
         if owner.physics.is_visible {
             register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         }
@@ -189,7 +189,7 @@ impl Action for ActMetabolise {
             register_particle(
                 owner.pos,
                 (50, 255, 50),
-                palette().bg_ground_fov_true,
+                palette().world_bg_ground_fov_true,
                 owner.visual.glyph,
                 150.0,
             )
@@ -278,7 +278,7 @@ impl Action for ActAttack {
                     register_particle(
                         t.pos,
                         (200, 10, 10),
-                        palette().bg_ground_fov_true,
+                        palette().world_bg_ground_fov_true,
                         'x',
                         250.0,
                     )
@@ -711,7 +711,7 @@ impl Action for ActProduceVirion {
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
                         .living(true)
-                        .visualize("virus", 'v', palette().virus)
+                        .visualize("virus", 'v', palette().entity_virus)
                         .physical(true, false, false)
                         .genome(0.75, state.gene_library.decode_dna(DnaType::Rna, dna))
                         .control(Controller::Npc(Box::new(AiVirus {}))),
@@ -742,7 +742,7 @@ impl Action for ActProduceVirion {
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
                                 .living(true)
-                                .visualize("virus", 'v', palette().virus)
+                                .visualize("virus", 'v', palette().entity_virus)
                                 .physical(true, false, false)
                                 .genome(
                                     0.75,

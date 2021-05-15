@@ -93,8 +93,8 @@ impl HudItem {
 fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
     let button_len = SIDE_PANEL_WIDTH / 2;
     let button_x = hud_layout.x1 + 3;
-    let fg_col = palette().fg_hud;
-    let bg_col = palette().bg_hud_content;
+    let fg_col = palette().hud_fg;
+    let bg_col = palette().hud_bg;
     let col_pair = ColorPair::new(fg_col, bg_col);
     let items = vec![
         UiItem::new(
@@ -272,9 +272,9 @@ impl Hud {
             .enumerate()
         {
             let col: (u8, u8, u8) = match g_trait.trait_family {
-                TraitFamily::Sensing => palette().cyan,
-                TraitFamily::Processing => palette().magenta,
-                TraitFamily::Actuating => palette().yellow,
+                TraitFamily::Sensing => palette().hud_fg_dna_processor,
+                TraitFamily::Processing => palette().hud_fg_dna_actuator,
+                TraitFamily::Actuating => palette().hud_fg_dna_sensor,
                 TraitFamily::Junk => (100, 100, 100), // TODO
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
@@ -290,6 +290,7 @@ impl Hud {
                 ("group:".to_string(), g_trait.trait_family.to_string()),
             ]);
 
+            let bg_item = palette().hud_bg;
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 c,
@@ -300,7 +301,7 @@ impl Hud {
                     1,
                     1,
                 ),
-                ColorPair::new(col, palette().bg_dna),
+                ColorPair::new(col, bg_item),
             ));
         }
 
@@ -312,9 +313,9 @@ impl Hud {
             .enumerate()
         {
             let col: (u8, u8, u8) = match g_trait.trait_family {
-                TraitFamily::Sensing => palette().cyan,
-                TraitFamily::Processing => palette().magenta,
-                TraitFamily::Actuating => palette().yellow,
+                TraitFamily::Sensing => palette().hud_fg_dna_processor,
+                TraitFamily::Processing => palette().hud_fg_dna_actuator,
+                TraitFamily::Actuating => palette().hud_fg_dna_sensor,
                 TraitFamily::Junk => (100, 100, 100), // TODO
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
@@ -330,7 +331,7 @@ impl Hud {
                 ("group:".to_string(), g_trait.trait_family.to_string()),
             ]);
 
-            let bg_dna = palette().bg_dna;
+            let bg_dna = palette().hud_bg_dna;
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 c,
@@ -360,7 +361,7 @@ impl Hud {
                 self.inv_area.width() - 3,
                 1,
             );
-            let bg_hud_content = palette().bg_hud_content;
+            let bg_col = palette().hud_bg;
 
             let item_tooltip = if let Some(item) = &obj.item {
                 ToolTip::new(
@@ -376,7 +377,7 @@ impl Hud {
                 format!("{} {}", obj.visual.glyph, name_fitted),
                 item_tooltip,
                 use_layout,
-                ColorPair::new(obj.visual.fg_color, bg_hud_content),
+                ColorPair::new(obj.visual.fg_color, bg_col),
             ));
 
             let drop_layout = Rect::with_size(
@@ -385,13 +386,13 @@ impl Hud {
                 2,
                 1,
             );
-            let magenta = palette().magenta;
+            let magenta = palette().hud_fg_bar_health;
             self.items.push(UiItem::new(
                 HudItem::DropInventory { idx },
                 " x",
                 ToolTip::header_only(format!("drop {}", &obj.visual.name)),
                 drop_layout,
-                ColorPair::new(magenta, bg_hud_content),
+                ColorPair::new(magenta, bg_col),
             ));
         }
     }
@@ -400,8 +401,8 @@ impl Hud {
 pub fn render_gui(state: &GameState, hud: &mut Hud, _ctx: &mut Rltk, player: &Object) {
     hud.update_ui_items(player);
     let mut draw_batch = DrawBatch::new();
-    let fg_hud = palette().fg_hud;
-    let bg_hud = palette().bg_hud;
+    let fg_hud = palette().hud_fg;
+    let bg_hud = palette().hud_bg;
 
     // fill side panel background
     draw_batch.fill_region(
@@ -422,8 +423,8 @@ pub fn render_gui(state: &GameState, hud: &mut Hud, _ctx: &mut Rltk, player: &Ob
 }
 
 fn render_dna_region(draw_batch: &mut DrawBatch) {
-    let fg_hud = palette().fg_hud;
-    let bg_dna = palette().bg_dna;
+    let fg_hud = palette().hud_fg;
+    let bg_dna = palette().hud_bg_dna;
     draw_batch.fill_region(
         Rect::with_size(SCREEN_WIDTH - 1, 0, 0, SCREEN_HEIGHT - 1),
         ColorPair::new(bg_dna, bg_dna),
@@ -442,12 +443,12 @@ fn render_dna_region(draw_batch: &mut DrawBatch) {
 }
 
 fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
-    let fg_hud = palette().fg_hud;
-    let bg_bar = palette().bg_bar;
-    let bg_hud = palette().bg_hud;
-    let bg_hud_content = palette().bg_hud_content;
-    let magenta = palette().magenta;
-    let yellow = palette().yellow;
+    let fg_hud = palette().hud_fg;
+    let bg_bar = palette().hud_bg_bar;
+    let bg_hud = palette().hud_bg;
+    let bg_hud_content = palette().hud_bg_content;
+    let health = palette().hud_fg_bar_health;
+    let energy = palette().hud_fg_bar_energy;
     // draw headers for bars
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
@@ -463,7 +464,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         17,
         player.actuators.hp,
         player.actuators.max_hp,
-        ColorPair::new(magenta, bg_hud_content),
+        ColorPair::new(health, bg_hud_content),
     );
     draw_batch.print_centered_at(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 2),
@@ -475,7 +476,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         17,
         player.processors.energy,
         player.processors.energy_storage,
-        ColorPair::new(yellow, bg_bar),
+        ColorPair::new(energy, bg_bar),
     );
 
     draw_batch.print_centered_at(
@@ -488,36 +489,42 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
 }
 
 fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBatch) {
-    let fg_hud = palette().fg_hud;
-    let fg_hud_highlight = palette().fg_hud_highlight;
-    let bg_hud = palette().bg_hud;
+    let action_header_bg = palette().hud_bg_dna;
+    let action_bg = palette().hud_bg;
+    let action_fg = palette().hud_fg;
+    let action_fg_hl = palette().hud_fg_highlight;
+
     // draw action header
+    draw_batch.fill_region(
+        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 5, SIDE_PANEL_WIDTH, 0),
+        ColorPair::new(action_fg, action_header_bg),
+        to_cp437(' '),
+    );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
         "Actions",
-        ColorPair::new(fg_hud, bg_hud),
+        ColorPair::new(action_fg, action_header_bg),
     );
-
     // draw buttons
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
         "P",
-        ColorPair::new(fg_hud_highlight, bg_hud),
+        ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
         "S",
-        ColorPair::new(fg_hud_highlight, bg_hud),
+        ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
         "Q",
-        ColorPair::new(fg_hud_highlight, bg_hud),
+        ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
         "E",
-        ColorPair::new(fg_hud_highlight, bg_hud),
+        ColorPair::new(action_fg_hl, action_bg),
     );
 
     // update action button texts
@@ -560,23 +567,23 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
 }
 
 fn render_inventory(hud: &Hud, player: &Object, layout: Rect, draw_batch: &mut DrawBatch) {
-    let fg_hud = palette().fg_hud;
-    let bg_hud = palette().bg_hud;
-    let bg_hud_content = palette().bg_hud_content;
+    let fg_inv = palette().hud_fg;
+    let bg_inv_header = palette().hud_bg_dna;
+
     draw_batch.fill_region(
-        layout,
-        ColorPair::new(fg_hud, bg_hud_content),
+        Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        ColorPair::new(fg_inv, bg_inv_header),
         to_cp437(' '),
     );
 
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
+        Point::new(layout.x1, layout.y1 - 1),
         format!(
             "Inventory [{}/{}]",
             player.inventory.items.len(),
             player.actuators.volume
         ),
-        ColorPair::new(fg_hud, bg_hud),
+        ColorPair::new(fg_inv, bg_inv_header),
     );
 
     hud.items
@@ -588,68 +595,64 @@ fn render_inventory(hud: &Hud, player: &Object, layout: Rect, draw_batch: &mut D
 }
 
 fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
-    let fg_hud = palette().fg_hud;
-    let bg_hud = palette().bg_hud;
-    let bg_hud_content = palette().bg_hud_content;
+    let fg_log = palette().hud_fg;
+    let bg_log_header = palette().hud_bg_dna;
+
     draw_batch.fill_region(
-        layout,
-        ColorPair::new(fg_hud, bg_hud_content),
+        Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        ColorPair::new(fg_log, bg_log_header),
         to_cp437(' '),
     );
 
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 24),
+        Point::new(layout.x1, layout.y1 - 1),
         "Log",
-        ColorPair::new(fg_hud, bg_hud),
+        ColorPair::new(fg_log, bg_log_header),
     );
 
-    // print game messages, one line at a time
-    let mut y = layout.height();
+    // convert messages into log text lines (str, fg_col, bg_col)
     let mut bg_flag: bool = modulus(state.log.messages.len(), 2) == 0;
-    for (ref msg, class) in &mut state.log.messages.iter().rev() {
-        if y < 0 {
-            break;
-        }
-
-        // set message color depending in message class
+    let mut log_lines: Vec<(String, (u8, u8, u8), (u8, u8, u8))> = Vec::new();
+    for (msg, class) in &state.log.messages {
+        let lines = text_to_width(&msg, layout.width());
         let fg_color = match class {
-            MsgClass::Alert => palette().msg_alert,
-            MsgClass::Info => palette().msg_info,
-            MsgClass::Action => palette().msg_action,
-            MsgClass::Story => palette().msg_story,
+            MsgClass::Alert => palette().hud_fg_msg_alert,
+            MsgClass::Info => palette().hud_fg_msg_info,
+            MsgClass::Action => palette().hud_fg_msg_action,
+            MsgClass::Story => palette().hud_fg_msg_story,
         };
-
-        // set alternating background color to make the log more readable
         let bg_color = if bg_flag {
-            palette().bg_hud_log1
+            palette().hud_bg_log1
         } else {
-            palette().bg_hud_log2
+            palette().hud_bg_log2
         };
         bg_flag = !bg_flag;
+        for l in lines {
+            log_lines.push((l, fg_color, bg_color));
+        }
+    }
 
-        let msg_lines = text_to_width(msg, layout.width());
-        let msg_end_y = layout.y1 + y;
-        let msg_start_y: i32 = msg_end_y - msg_lines.len() as i32 + 1;
-        let msg_area_start_y: i32 = i32::max(layout.y1, msg_end_y - msg_lines.len() as i32 + 1);
+    // print game messages, one line at a time
+    let visible_log = if log_lines.len() as i32 <= layout.height() {
+        &log_lines
+    } else {
+        let start: usize = log_lines.len() - layout.height() as usize - 1;
+        &log_lines[start..]
+    };
 
-        // message background
+    let mut y = layout.y1;
+    for l in visible_log {
         draw_batch.fill_region(
-            Rect::with_exact(layout.x1, msg_area_start_y, layout.x2, msg_end_y),
-            ColorPair::new(bg_color, bg_color),
+            Rect::with_exact(layout.x1, y, layout.x2, y),
+            ColorPair::new(l.1, l.2),
             to_cp437(' '),
         );
-
-        for (idx, line) in msg_lines.iter().enumerate() {
-            if (msg_start_y + idx as i32) >= layout.y1 {
-                draw_batch.print_color(
-                    Point::new(layout.x1, msg_start_y + idx as i32),
-                    line,
-                    ColorPair::new(fg_color, bg_color),
-                );
-            }
-        }
-
-        y -= msg_lines.len() as i32;
+        draw_batch.print_color(
+            Point::new(layout.x1, y as i32),
+            &l.0,
+            ColorPair::new(l.1, l.2),
+        );
+        y += 1;
     }
 }
 
@@ -711,6 +714,11 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         hud.last_mouse.y - (hud.last_mouse.y + y_direction + max_height - SCREEN_HEIGHT)
     };
 
+    // define tooltip colors
+    let fg_tt_border = palette().hud_fg_border;
+    let fg_tt = palette().hud_fg;
+    let bg_tt = palette().hud_bg;
+
     for tooltip in &hud.tooltips {
         if tooltip.header.is_none() && tooltip.attributes.is_empty() {
             continue;
@@ -718,43 +726,39 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         // (+2) for borders and (-1) for starting from 0, equals (+1)
         let tt_width = tooltip.content_width() + 1;
         let tt_height = tooltip.content_height() + 1;
-        let fg_hud = palette().fg_hud;
-        let bg_hud_selected = palette().bg_hud_selected;
 
         draw_batch.fill_region(
             Rect::with_size(next_x, next_y, tt_width, tt_height),
-            ColorPair::new(fg_hud, bg_hud_selected),
+            ColorPair::new(fg_tt, bg_tt),
             to_cp437(' '),
         );
         draw_batch.draw_hollow_box(
             Rect::with_size(next_x, next_y, tt_width, tt_height),
-            ColorPair::new(fg_hud, bg_hud_selected),
+            ColorPair::new(fg_tt_border, bg_tt),
         );
         let mut top_offset: i32 = 1;
         if tooltip.header.is_some() {
             top_offset = 3;
-            let fg_hud = palette().fg_hud;
-            let bg_hud_selected = palette().bg_hud_selected;
 
             if !tooltip.attributes.is_empty() {
                 draw_batch.print_color(
                     Point::new(next_x, next_y + 2),
                     // to_cp437('─'),
                     "├",
-                    ColorPair::new(fg_hud, bg_hud_selected),
+                    ColorPair::new(fg_tt_border, bg_tt),
                 );
                 draw_batch.print_color(
                     Point::new(next_x + tt_width, next_y + 2),
                     // to_cp437('─'),
                     "┤",
-                    ColorPair::new(fg_hud, bg_hud_selected),
+                    ColorPair::new(fg_tt_border, bg_tt),
                 );
                 for x in (next_x + 1)..(next_x + tt_width) {
                     draw_batch.print_color(
                         Point::new(x, next_y + 2),
                         // to_cp437('─'),
                         "─",
-                        ColorPair::new(fg_hud, bg_hud_selected),
+                        ColorPair::new(fg_tt_border, bg_tt),
                     );
                 }
             }
@@ -762,7 +766,7 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
             draw_batch.print_color_centered_at(
                 Point::new(next_x + (tt_width / 2), next_y + 1),
                 tooltip.header.as_ref().unwrap(),
-                ColorPair::new(fg_hud, bg_hud_selected),
+                ColorPair::new(fg_tt, bg_tt),
             );
         }
 
@@ -770,12 +774,12 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
             draw_batch.print_color(
                 Point::new(next_x + 1, next_y + idx as i32 + top_offset),
                 s1,
-                ColorPair::new(fg_hud, bg_hud_selected),
+                ColorPair::new(fg_tt, bg_tt),
             );
             draw_batch.print_color_right(
                 Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
                 s2,
-                ColorPair::new(fg_hud, bg_hud_selected),
+                ColorPair::new(fg_tt, bg_tt),
             );
         }
 

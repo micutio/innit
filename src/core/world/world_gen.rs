@@ -67,7 +67,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Virus => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("virus", 'v', palette().virus)
+            .visualize("virus", 'v', palette().entity_virus)
             .physical(true, false, false)
             // TODO: Pull genome create out of here. It's not the same for every NPC.
             .genome(
@@ -80,7 +80,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Bacteria => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("bacteria", 'b', palette().bacteria)
+            .visualize("bacteria", 'b', palette().entity_bacteria)
             .physical(true, false, false)
             .genome(
                 0.9,
@@ -92,7 +92,7 @@ pub fn new_monster(state: &mut GameState, monster: Monster, x: i32, y: i32, _lev
         Monster::Plasmid => Object::new()
             .position(x, y)
             .living(true)
-            .visualize("Plasmid", 'p', palette().plasmid)
+            .visualize("Plasmid", 'p', palette().entity_plasmid)
             .physical(false, false, false)
             .inventory_item(InventoryItem::new(
                 "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
