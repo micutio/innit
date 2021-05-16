@@ -174,8 +174,8 @@ impl GenomeEditor {
                     TraitFamily::Sensing => cyan,
                     TraitFamily::Processing => magenta,
                     TraitFamily::Actuating => yellow,
-                    TraitFamily::Junk => (100, 100, 100), // TODO: coloring
-                    TraitFamily::Ltr => (255, 255, 255),  // TODO: coloring
+                    TraitFamily::Junk(_) => (100, 100, 100), // TODO: coloring
+                    TraitFamily::Ltr => (255, 255, 255),     // TODO: coloring
                 };
                 let item = GeneItem::new(Rect::with_size(x, y, 1, 1), idx, col);
                 x += 1;
@@ -283,7 +283,7 @@ impl GenomeEditor {
             );
             draw_batch.print_color(
                 Point::new(item.layout.x1 + 1, item.layout.y1),
-                item.idx.to_string(),
+                (item.idx + 1).to_string(),
                 ColorPair::new(fg_col, bg_col),
             );
             draw_batch.print_color(
@@ -443,10 +443,8 @@ impl GenomeEditor {
 
                 if let Some(item) = self.gene_items.get(self.selected_gene) {
                     if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                        let gene_bits: Vec<u8> = game_state.gene_library.dna_from_traits(
-                            &mut game_state.rng,
-                            &[g_trait.trait_name.to_string()],
-                        );
+                        let gene_bits: Vec<u8> =
+                            game_state.gene_library.g_trait_refs_to_dna(&[g_trait]);
                         let gene_str: String = gene_bits
                             .iter()
                             .map(|b| format!("{:08b}", b))
@@ -703,19 +701,18 @@ impl GenomeEditor {
                     self.selected_gene = usize::max(0, self.selected_gene - 1);
                     self.decrease_charge();
                     self.regenerate_dna(game_state);
+                    self.state = ChooseFunction;
                 }
                 FlipBit => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                            let mut gene_bits: Vec<u8> = game_state.gene_library.dna_from_traits(
-                                &mut game_state.rng,
-                                &[g_trait.trait_name.to_string()],
-                            );
+                            let mut gene_bits: Vec<u8> =
+                                game_state.gene_library.g_trait_refs_to_dna(&[g_trait]);
                             let random_bit = game_state.rng.gen_range(0..gene_bits.len());
                             gene_bits[random_bit] ^= game_state.rng.random_bit();
                             let new_dna: Dna = game_state
                                 .gene_library
-                                .decode_dna(self.player_dna.dna_type, &gene_bits)
+                                .dna_to_traits(self.player_dna.dna_type, &gene_bits)
                                 .3;
                             if let Some(new_repr) = new_dna.simplified.get(0) {
                                 self.player_dna.simplified[self.selected_gene] = new_repr.clone();
@@ -773,18 +770,12 @@ impl GenomeEditor {
 
     /// Re-build the player dna from the current simplified representation.
     fn regenerate_dna(&mut self, game_state: &mut GameState) {
-        let simplified: Vec<String> = self
-            .player_dna
-            .simplified
-            .iter()
-            .map(|g| g.trait_name.clone())
-            .collect();
         let bit_vec = game_state
             .gene_library
-            .dna_from_traits(&mut game_state.rng, &simplified);
+            .g_traits_to_dna(self.player_dna.simplified.as_slice());
         let new_dna = game_state
             .gene_library
-            .decode_dna(self.player_dna.dna_type, &bit_vec);
+            .dna_to_traits(self.player_dna.dna_type, &bit_vec);
         self.player_dna = new_dna.3;
         self.gene_items = GenomeEditor::build_gene_items(
             &self.player_dna,

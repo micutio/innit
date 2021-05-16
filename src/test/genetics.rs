@@ -45,7 +45,7 @@ fn test_dna_encoding() {
         volume: 1,
     };
 
-    let (_s, _p, _a, _) = gene_lib.decode_dna(DnaType::Nucleus, &dna);
+    let (_s, _p, _a, _) = gene_lib.dna_to_traits(DnaType::Nucleus, &dna);
 
     assert_eq!(s.sensing_range, _s.sensing_range);
     assert_eq!(s.actions.len(), _s.actions.len());
@@ -83,8 +83,10 @@ fn test_dna_encoding() {
 fn test_dna_de_encoding() {
     let mut state = GameState::new(0);
     let raw_dna = state.gene_library.new_dna(&mut state.rng, false, 10);
-    let (_, _, _, d) = state.gene_library.decode_dna(DnaType::Nucleus, &raw_dna);
+    let (_, _, _, d) = state.gene_library.dna_to_traits(DnaType::Nucleus, &raw_dna);
     let traits: Vec<String> = d.simplified.iter().map(|t| t.trait_name.clone()).collect();
-    let raw_dna_2 = state.gene_library.dna_from_traits(&mut state.rng, &traits);
+    let raw_dna_2 = state
+        .gene_library
+        .trait_strs_to_dna(&mut state.rng, &traits);
     assert_eq!(raw_dna, raw_dna_2);
 }

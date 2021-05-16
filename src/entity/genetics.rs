@@ -53,7 +53,7 @@ pub enum TraitFamily {
     Processing,
     Actuating,
     Ltr,
-    Junk,
+    Junk(u8), // junk must keep track of it's gene // TODO: Write why
 }
 
 impl Display for TraitFamily {
@@ -62,8 +62,8 @@ impl Display for TraitFamily {
             TraitFamily::Sensing => write!(f, "Sense"),
             TraitFamily::Processing => write!(f, "Process"),
             TraitFamily::Actuating => write!(f, "Actuate"),
-            TraitFamily::Ltr => write!(f, "none"),
-            TraitFamily::Junk => write!(f, "none"),
+            TraitFamily::Ltr => write!(f, "Ltr"),
+            TraitFamily::Junk(_) => write!(f, "Junk"),
         }
     }
 }
@@ -113,10 +113,10 @@ impl GeneticTrait {
         }
     }
 
-    fn junk() -> Self {
+    fn junk(value: u8) -> Self {
         GeneticTrait {
             trait_name: "Junk".to_string(),
-            trait_family: TraitFamily::Junk,
+            trait_family: TraitFamily::Junk(value),
             attribute: TraitAttribute::None,
             action: None,
             position: 0,
@@ -214,8 +214,8 @@ impl Processors {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Receptor {
-    GenericReceptor,
+pub struct Receptor {
+    pub typ: u32,
 }
 
 /// Actuators can actually be concrete body parts e.g., organelles, spikes
@@ -390,9 +390,69 @@ impl GeneLibrary {
     }
 
     // TODO: Take care of the case where `traits` contains junk, literally.
-    pub fn dna_from_traits(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
+    /// Encode genetic traits into binary DNA code.
+    pub fn g_traits_to_dna(&self, traits: &[GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
-        // randomly grab a trait and add trait id, length and random attribute value
+        for t in traits {
+            // push 0x00 first as the genome start symbol
+            dna.push(0);
+            // add length
+            dna.push(1);
+            if let Some(gray) = self.trait_to_gray.get(&t.trait_name) {
+                dna.push(*gray);
+            } else {
+                if let TraitFamily::Junk(value) = t.trait_family {
+                    dna.push(value);
+                    // Don't do random anymore
+                    // let defined_range = self.trait_to_gray.len() as u8;
+                    // dna.push(rng.gen_range(defined_range..=255));
+                } else {
+                    panic!(
+                        "unknown genetic trait: {} , {}",
+                        t.trait_name, t.trait_family
+                    );
+                }
+            }
+            //
+            // // add random attribute value
+            // dna.push(game_rng.gen_range(0, 16) as u8);
+        }
+        // debug!("new dna generated: {:?}", dna);
+        dna
+    }
+
+    pub fn g_trait_refs_to_dna(&self, traits: &[&GeneticTrait]) -> Vec<u8> {
+        let mut dna: Vec<u8> = Vec::new();
+        for t in traits {
+            // push 0x00 first as the genome start symbol
+            dna.push(0);
+            // add length
+            dna.push(1);
+            if let Some(gray) = self.trait_to_gray.get(&t.trait_name) {
+                dna.push(*gray);
+            } else {
+                if let TraitFamily::Junk(value) = t.trait_family {
+                    dna.push(value);
+                    // Don't do random anymore
+                    // let defined_range = self.trait_to_gray.len() as u8;
+                    // dna.push(rng.gen_range(defined_range..=255));
+                } else {
+                    panic!(
+                        "unknown genetic trait: {} , {}",
+                        t.trait_name, t.trait_family
+                    );
+                }
+            }
+            //
+            // // add random attribute value
+            // dna.push(game_rng.gen_range(0, 16) as u8);
+        }
+        // debug!("new dna generated: {:?}", dna);
+        dna
+    }
+
+    pub fn trait_strs_to_dna(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
+        let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
             dna.push(0);
@@ -403,6 +463,7 @@ impl GeneLibrary {
             } else {
                 let defined_range = self.trait_to_gray.len() as u8;
                 dna.push(rng.gen_range(defined_range..=255));
+                panic!("unknown genetic trait: {}", t);
             }
             //
             // // add random attribute value
@@ -412,7 +473,8 @@ impl GeneLibrary {
         dna
     }
 
-    pub fn decode_dna(
+    /// Decode DNA from binary representation into genetic trait objects
+    pub fn dna_to_traits(
         &self,
         dna_type: DnaType,
         raw_dna: &[u8],
@@ -444,7 +506,7 @@ impl GeneLibrary {
         avg_genome_len: usize,
     ) -> (Sensors, Processors, Actuators, Dna) {
         let dna = self.new_dna(rng, has_ltr, avg_genome_len);
-        let (s, p, a, mut d) = self.decode_dna(dna_type, &dna);
+        let (s, p, a, mut d) = self.dna_to_traits(dna_type, &dna);
         d.raw = dna;
         (s, p, a, d)
     }
@@ -492,13 +554,13 @@ impl GeneLibrary {
                     let mut this_trait = genetic_trait.clone();
                     this_trait.position = position;
                     trait_builder.add_action(&this_trait);
-                    trait_builder.add_attribute(this_trait.attribute);
+                    trait_builder.add_attribute(&this_trait);
                     trait_builder.record_trait(this_trait);
                 } else {
                     error!("no trait for id {}", trait_name);
                 }
             } else {
-                trait_builder.record_trait(GeneticTrait::junk());
+                trait_builder.record_trait(GeneticTrait::junk(dna[i]));
             }
         }
 
@@ -539,8 +601,8 @@ impl TraitBuilder {
         }
     }
 
-    pub fn add_attribute(&mut self, attr: TraitAttribute) {
-        match attr {
+    pub fn add_attribute(&mut self, g_trait: &GeneticTrait) {
+        match g_trait.attribute {
             TraitAttribute::SensingRange => {
                 self.sensors.sensing_range += 1;
             }
@@ -558,7 +620,9 @@ impl TraitBuilder {
                 self.processors.energy_storage += 1;
             }
             TraitAttribute::Receptor => {
-                self.processors.receptors.push(Receptor::GenericReceptor);
+                self.processors.receptors.push(Receptor {
+                    typ: g_trait.position,
+                });
             }
             TraitAttribute::None => {}
         }
@@ -590,7 +654,7 @@ impl TraitBuilder {
                     .or_insert(0) += 1;
             }
             TraitFamily::Ltr => {}
-            TraitFamily::Junk => {}
+            TraitFamily::Junk(_) => {}
         }
     }
 

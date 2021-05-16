@@ -81,7 +81,7 @@ pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
     hud_fg_highlight: (9, 124, 172),
     hud_fg_inactive: (99, 99, 99),
     hud_fg_dna_actuator: (240, 50, 30),
-    hud_fg_dna_processor: (97, 83, 144),
+    hud_fg_dna_processor: (97, 83, 224),
     hud_fg_dna_sensor: (124, 182, 52),
     hud_fg_bar_health: (240, 50, 30),
     hud_fg_bar_energy: (220, 184, 68),
@@ -91,15 +91,15 @@ pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
     hud_fg_msg_story: (100, 180, 255),
 
     // world colors
-    world_bg: (29, 29, 29),
+    world_bg: (39, 39, 39),
     world_bg_wall_fov_true: (176, 52, 96),
-    world_bg_wall_fov_false: (29, 29, 29),
+    world_bg_wall_fov_false: (39, 39, 39),
     world_bg_ground_fov_true: (124, 8, 59),
-    world_bg_ground_fov_false: (29, 29, 29),
+    world_bg_ground_fov_false: (39, 39, 39),
     world_fg_wall_fov_true: (218, 85, 135),
-    world_fg_wall_fov_false: (39, 39, 39),
+    world_fg_wall_fov_false: (49, 49, 49),
     world_fg_ground_fov_true: (144, 48, 90),
-    world_fg_ground_fov_false: (39, 39, 39),
+    world_fg_ground_fov_false: (49, 49, 49),
 
     // entity colors
     entity_player: (170, 170, 170),

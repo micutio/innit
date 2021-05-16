@@ -465,11 +465,12 @@ impl Object {
         complete_dna.append(&mut combined);
         let (s, p, a, d) = state
             .gene_library
-            .decode_dna(self.dna.dna_type, &complete_dna);
+            .dna_to_traits(self.dna.dna_type, &complete_dna);
         self.change_genome(s, p, a, d);
     }
 
     pub fn generate_tooltip(&self, other: &Object) -> ToolTip {
+        // tiles don't need a header
         if self.tile.is_some() {
             return if !self.physics.is_blocking {
                 ToolTip::no_header(vec![])
@@ -478,11 +479,12 @@ impl Object {
             };
         }
 
+        // show whether both objects have matching receptors
         let receptor_match = if self
             .processors
             .receptors
             .iter()
-            .any(|a| other.processors.receptors.contains(a))
+            .any(|e1| other.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
         {
             "match".to_string()
         } else {

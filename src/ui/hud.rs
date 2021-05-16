@@ -275,7 +275,7 @@ impl Hud {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk => (100, 100, 100), // TODO
+                TraitFamily::Junk(_) => (59, 59, 59), // TODO
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
 
@@ -316,7 +316,7 @@ impl Hud {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk => (100, 100, 100), // TODO
+                TraitFamily::Junk(_) => (59, 59, 59), // TODO
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
 

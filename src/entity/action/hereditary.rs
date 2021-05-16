@@ -53,6 +53,7 @@ impl Action for ActPass {
         // TODO: improve color handling
         let fg = palette().hud_fg_dna_sensor;
         let bg = palette().world_bg_ground_fov_true;
+        // Disable particle effect for now. It's a bit spammy.
         if owner.physics.is_visible {
             register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         }
@@ -584,59 +585,77 @@ impl Action for ActInjectRetrovirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        let feedback: ObjectFeedback =
-            if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
-                // check whether the virus can attach to the object and whether the object is an actual
-                // cell and not a plasmid or another virus
-                // if yes, replace the control and force the cell to produce viruses
-                let msg_feedback = if target
-                    .processors
-                    .receptors
-                    .iter()
-                    .any(|e| owner.processors.receptors.contains(e))
-                    && (target.dna.dna_type != DnaType::Nucleus
-                        || target.dna.dna_type == DnaType::Nucleoid)
-                {
-                    let mut new_dna = target.dna.raw.clone();
-                    new_dna.append(&mut owner.dna.raw.clone());
-                    let (s, p, a, d) = state
-                        .gene_library
-                        .decode_dna(target.dna.dna_type, new_dna.as_ref());
-                    target.change_genome(s, p, a, d);
+        if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
+            // check whether the virus can attach to the object
+            // cell and not a plasmid or another virus
+            // if yes, replace the control and force the cell to produce viruses
 
-                    // The virus becomes an empty shell after successfully transmitting its dna.
-                    owner.dna.raw.clear();
-                    // The virus 'dies' symbolically.
-                    owner.alive = false;
-                    // Funny, because it's still debated as to whether viruses are alive to begin.
-                    // TODO: Handle other death effects, such as change of blocking, symbol and color.
+            if target.dna.dna_type == DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid {
+                // FAIL: target is not an actual cell, merely another virus or plasmid
+                if owner.physics.is_visible {
+                    state.log.add(
+                        format!(
+                            "A virus has tried to infect {} but it is not a cell!",
+                            target.visual.name
+                        ),
+                        MsgClass::Info,
+                    );
+                    // play a little particle effect
+                    let fg = palette().col_acc3;
+                    let bg = palette().world_bg_ground_fov_true;
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                }
+            } else if owner.processors.receptors.is_empty() {
+                // this virus must have receptors
+                if owner.physics.is_visible {
+                    state.log.add(
+                        format!(
+                            "A virus has tried to infect {} but cannot find matching receptor!",
+                            target.visual.name
+                        ),
+                        MsgClass::Info,
+                    );
+                    // play a little particle effect
+                    let fg = palette().col_acc3;
+                    let bg = palette().world_bg_ground_fov_true;
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                }
+            } else if target
+                .processors
+                .receptors
+                .iter()
+                .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
+            {
+                // target and  owner must have matching receptor
+                let mut new_dna = target.dna.raw.clone();
+                new_dna.append(&mut owner.dna.raw.clone());
+                let (s, p, a, d) = state
+                    .gene_library
+                    .dna_to_traits(target.dna.dna_type, new_dna.as_ref());
+                target.change_genome(s, p, a, d);
 
-                    if owner.physics.is_visible {
-                        state.log.add(
-                            format!("A virus has infected {}!", target.visual.name),
-                            MsgClass::Alert,
-                        )
-                    }
-                    ObjectFeedback::NoFeedback
-                } else {
-                    if owner.physics.is_visible {
-                        state.log.add(
-                            format!(
-                                "A virus has tried to infect {} but cannot find matching receptor!",
-                                target.visual.name
-                            ),
-                            MsgClass::Alert,
-                        )
-                    }
-                    ObjectFeedback::NoFeedback
-                };
-                objects.replace(index, target);
-                msg_feedback
-            } else {
-                ObjectFeedback::NoFeedback
-            };
+                // The virus becomes an empty shell after successfully transmitting its dna.
+                owner.dna.raw.clear();
+                // The virus 'dies' symbolically...
+                owner.alive = false;
+                // ..because it's still debated as to whether viruses are alive to begin with.
+                if owner.physics.is_visible {
+                    state.log.add(
+                        format!("A virus has infected {}!", target.visual.name),
+                        MsgClass::Alert,
+                    );
+                    // play a little particle effect
+                    let fg = palette().hud_fg_bar_health;
+                    let bg = palette().world_bg_ground_fov_true;
+                    register_particle(owner.pos.into(), fg, bg, target.visual.glyph, 350.0);
+                }
+            }
+            objects.replace(index, target);
+        }
 
-        ActionResult::Success { callback: feedback }
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
+        }
     }
 
     /// NOP, because this action can only be self-targeted.
@@ -713,7 +732,7 @@ impl Action for ActProduceVirion {
                         .living(true)
                         .visualize("virus", 'v', palette().entity_virus)
                         .physical(true, false, false)
-                        .genome(0.75, state.gene_library.decode_dna(DnaType::Rna, dna))
+                        .genome(0.75, state.gene_library.dna_to_traits(DnaType::Rna, dna))
                         .control(Controller::Npc(Box::new(AiVirus {}))),
                 );
             }
@@ -731,13 +750,8 @@ impl Action for ActProduceVirion {
                     .rposition(|x| x.trait_family == TraitFamily::Ltr);
                 if let (Some(a), Some(b)) = (p0, p1) {
                     if a != b {
-                        let dna_sequence: Vec<String> = owner.dna.simplified[a..=b]
-                            .iter()
-                            .map(|x| x.trait_name.clone())
-                            .collect();
-                        let dna_from_seq = state
-                            .gene_library
-                            .dna_from_traits(&mut state.rng, &dna_sequence);
+                        let dna_from_seq =
+                            state.gene_library.g_traits_to_dna(&owner.dna.simplified);
                         owner.inventory.items.push(
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
@@ -746,7 +760,9 @@ impl Action for ActProduceVirion {
                                 .physical(true, false, false)
                                 .genome(
                                     0.75,
-                                    state.gene_library.decode_dna(DnaType::Rna, &dna_from_seq),
+                                    state
+                                        .gene_library
+                                        .dna_to_traits(DnaType::Rna, &dna_from_seq),
                                 )
                                 .control(Controller::Npc(Box::new(AiVirus {}))), // TODO: Separate Ai for retroviruses?
                         );
