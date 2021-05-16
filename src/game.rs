@@ -290,15 +290,6 @@ impl Rltk_GameState for Game {
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
-                let fg = palette().hud_fg_dna_sensor;
-                let bg = palette().hud_bg;
-                ctx.print_color_centered_at(
-                    SCREEN_WIDTH / 2,
-                    SCREEN_HEIGHT - 2,
-                    fg,
-                    bg,
-                    "by Michael Wagner",
-                );
                 match instance.display(ctx) {
                     Some(option) => {
                         MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)

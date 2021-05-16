@@ -5,10 +5,17 @@ use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
-use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
+use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
 
 pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     let mut draw_batch = DrawBatch::new();
+    let world_col = palette().world_bg;
+    draw_batch.fill_region(
+        Rect::with_size(0, 0, WORLD_WIDTH, WORLD_HEIGHT),
+        ColorPair::new(world_col, world_col),
+        to_cp437(' '),
+    );
+
     update_visibility(objects);
 
     let mut to_draw: Vec<&Object> = objects
