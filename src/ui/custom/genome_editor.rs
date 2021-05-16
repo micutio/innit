@@ -763,6 +763,8 @@ impl GenomeEditor {
                     .iter_mut()
                     .filter(|f| f.state != GenomeEditingState::Done)
                     .for_each(|f| f.is_enabled = false);
+                // set selected function to the last one; "Done" which is now the only one possible.
+                self.selected_function = self.edit_functions.len() - 1;
             }
         } else {
             panic!("attempting to decrease plasmid changes below zero!");
