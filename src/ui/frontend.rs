@@ -1,13 +1,15 @@
 use crate::core::innit_env;
 use crate::core::position::Position;
-use crate::core::world::world_gen::is_explored;
+use crate::core::world::is_explored;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::util::timer::{time_from, Timer};
 use crate::{core::game_objects::GameObjects, ui::palette};
 use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
 
 pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
+    let mut timer = Timer::new("render world");
     let mut draw_batch = DrawBatch::new();
     let world_col = palette().world_bg;
     draw_batch.fill_region(
@@ -46,6 +48,9 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     }
 
     // TODO: Render particles here.
+
+    let elapsed = timer.stop_silent();
+    warn!("render world in {}", time_from(elapsed));
 
     draw_batch.submit(0).unwrap()
 }

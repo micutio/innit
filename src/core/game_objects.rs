@@ -1,6 +1,6 @@
 use crate::core::innit_env;
 use crate::core::position::Position;
-use crate::core::world::world_gen::Tile;
+use crate::core::world::Tile;
 use crate::entity::genetics::{DnaType, GeneLibrary, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;

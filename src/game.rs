@@ -1,12 +1,20 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
+use crate::core::world::WorldGen;
+use crate::entity::action::hereditary::ActPass;
+use crate::entity::action::inventory::ActDropItem;
+use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
+use crate::ui::dialog::controls::controls_screen;
 use crate::ui::dialog::InfoBox;
 use crate::ui::frontend::render_world;
 use crate::ui::game_input::{read_input, PlayerInput, UiAction};
@@ -15,20 +23,10 @@ use crate::ui::menu::choose_action_menu::{choose_action_menu, ActionCategory, Ac
 use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
 use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
 use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::palette;
+use crate::ui::particles;
 use crate::ui::rex_assets::RexAssets;
-use crate::{core::game_objects::GameObjects, ui::palette};
-use crate::{
-    core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback},
-    ui::particles,
-};
-use crate::{core::world::world_gen::WorldGen, entity::action::inventory::ActDropItem};
-use crate::{
-    core::world::world_gen_organic::OrganicsWorldGenerator, entity::action::hereditary::ActPass,
-};
-use crate::{
-    entity::action::{Action, Target, TargetCategory},
-    ui::dialog::controls::controls_screen,
-};
+use crate::util::timer::{time_from, Timer};
 use core::fmt;
 use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
 use std::error::Error;
@@ -95,6 +93,8 @@ pub struct Game {
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
     mouse_workaround: bool,
+    /// Keep track of the time to warn if the game runs too slow.
+    slowest_tick: u128,
 }
 
 impl Game {
@@ -111,6 +111,7 @@ impl Game {
             is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
             mouse_workaround: false,
+            slowest_tick: 0,
         }
     }
 
@@ -231,6 +232,7 @@ impl Rltk_GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
+        let mut timer = Timer::new("game loop");
         // mouse workaround
         if ctx.left_click {
             if self.mouse_workaround {
@@ -242,10 +244,14 @@ impl Rltk_GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
+            println!(
+                "{}, {}, {}",
+                self.re_render, self.hud.require_refresh, self.state.log.is_changed
+            );
             ctx.set_active_console(HUD_CON);
             ctx.cls();
 
-            if self.re_render {
+            if self.re_render || self.hud.require_refresh {
                 ctx.set_active_console(WORLD_CON);
                 ctx.cls();
                 render_world(&mut self.objects, ctx);
@@ -260,6 +266,7 @@ impl Rltk_GameState for Game {
             self.objects.replace(self.state.player_idx, player);
 
             // switch off any triggers
+            self.re_render = false;
             self.state.log.is_changed = false;
             self.hud.require_refresh = false
         }
@@ -458,12 +465,23 @@ impl Rltk_GameState for Game {
         };
         self.run_state.replace(new_run_state);
 
-        ctx.set_active_console(WORLD_CON);
-        ctx.print(1, 1, &format!("FPS: {}", ctx.fps));
-        // ctx.set_active_console(HUD_CON);
-        // ctx.print(0, 0, "");
-        rltk::render_draw_buffer(ctx).unwrap();
-        // debug!("current state: {:#?}", self.run_state);
+        ctx.set_active_console(HUD_CON);
+        ctx.print_color(
+            1,
+            1,
+            (255, 255, 255),
+            (0, 0, 0),
+            &format!("FPS: {}", ctx.fps),
+        );
+
+        // keep time and emit warning if a tick takes longer than half a second
+        let tick_elapsed = timer.stop_silent();
+        if tick_elapsed > 500_000_000 {
+            warn!("game loop took {}", time_from(tick_elapsed));
+        }
+        self.slowest_tick = self.slowest_tick.max(tick_elapsed);
+
+        rltk::render_draw_buffer(ctx).unwrap()
     }
 }
 

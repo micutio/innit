@@ -1,5 +1,5 @@
 use crate::core::position::Position;
-use crate::core::world::world_gen::Tile;
+use crate::core::world::Tile;
 use crate::entity::action::*;
 use crate::entity::control::*;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
