@@ -13,10 +13,12 @@ extern crate serde_json;
 mod core;
 mod entity;
 mod game;
+mod raws;
 mod test;
 mod ui;
 mod util;
 
+use crate::core::world::spawn::Spawn;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::{core::game_env::GameEnv, game::Game};
 use std::env;
@@ -52,6 +54,11 @@ pub fn main() -> rltk::BError {
             env.set_rng_seeding(true);
         }
     }
+
+    let spawn_str: String = serde_json::to_string(&Spawn::example()).unwrap();
+    println!("{}", spawn_str);
+
+    raws::load_raws();
 
     // build engine and launch the game
     use rltk::RltkBuilder;

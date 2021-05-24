@@ -51,10 +51,3 @@ impl Tile {
 pub fn is_explored(tile: &Tile) -> Option<&bool> {
     Some(&tile.is_explored)
 }
-
-#[derive(Clone, Copy)]
-pub enum Monster {
-    Bacteria,
-    Virus,
-    Plasmid,
-}

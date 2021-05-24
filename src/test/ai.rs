@@ -8,7 +8,7 @@ use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActMove
 #[test]
 fn test_random_ai() {
     use crate::core::world::spawn::new_monster;
-    use crate::core::world::Monster;
+    use crate::core::world::spawn::Monster;
     use crate::entity::player::PLAYER;
 
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();

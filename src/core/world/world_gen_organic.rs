@@ -1,7 +1,7 @@
-use crate::core::game_state::{from_dungeon_level, GameState, Transition};
+use crate::core::game_state::GameState;
 use crate::core::position::Position;
-use crate::core::world::spawn::new_monster;
-use crate::core::world::{Monster, Tile, WorldGen};
+use crate::core::world::spawn::{from_dungeon_level, new_monster, Monster, Transition};
+use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::game_rng::{GameRng, RngExtended};
@@ -60,15 +60,15 @@ impl WorldGen for OrganicsWorldGenerator {
         }
 
         // world gen done, now insert objects
-        place_objects(
-            state,
-            objects,
-            level,
-            Transition {
-                level: 6,
-                value: 500,
-            },
-        );
+        // place_objects(
+        //     state,
+        //     objects,
+        //     level,
+        //     Transition {
+        //         level: 6,
+        //         value: 500,
+        //     },
+        // );
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -104,69 +104,69 @@ fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, 
     rng.flip_with_prob(access_count / 16.0)
 }
 
-fn place_objects(
-    state: &mut GameState,
-    objects: &mut GameObjects,
-    level: u32,
-    transition: Transition,
-) {
-    use rand::distributions::WeightedIndex;
-    use rand::prelude::*;
+// fn place_objects(
+//     state: &mut GameState,
+//     objects: &mut GameObjects,
+//     level: u32,
+//     transition: Transition,
+// ) {
+//     use rand::distributions::WeightedIndex;
+//     use rand::prelude::*;
 
-    // TODO: Pull spawn tables out of here and pass as parameters in make_world().
-    let max_monsters = from_dungeon_level(
-        &[
-            Transition {
-                level: 1,
-                value: 200,
-            },
-            Transition {
-                level: 4,
-                value: 300,
-            },
-            transition,
-        ],
-        level,
-    );
+//     // TODO: Pull spawn tables out of here and pass as parameters in make_world().
+//     let max_monsters = from_dungeon_level(
+//         &[
+//             Transition {
+//                 level: 1,
+//                 value: 200,
+//             },
+//             Transition {
+//                 level: 4,
+//                 value: 300,
+//             },
+//             transition,
+//         ],
+//         level,
+//     );
 
-    // monster random table
-    let bacteria_chance = from_dungeon_level(
-        &[
-            Transition {
-                level: 3,
-                value: 15,
-            },
-            Transition {
-                level: 5,
-                value: 30,
-            },
-            Transition {
-                level: 7,
-                value: 60,
-            },
-        ],
-        level,
-    );
+//     // monster random table
+//     let bacteria_chance = from_dungeon_level(
+//         &[
+//             Transition {
+//                 level: 3,
+//                 value: 15,
+//             },
+//             Transition {
+//                 level: 5,
+//                 value: 30,
+//             },
+//             Transition {
+//                 level: 7,
+//                 value: 60,
+//             },
+//         ],
+//         level,
+//     );
 
-    let monster_chances = [
-        (Monster::Virus, 60),
-        (Monster::Bacteria, bacteria_chance),
-        (Monster::Plasmid, 40),
-    ];
-    let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
+//     let monster_chances = [
+//         (Monster::Virus, 60),
+//         (Monster::Bacteria, bacteria_chance),
+//         (Monster::Plasmid, 40),
+//     ];
+//     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
-    // choose random number of monsters
-    let num_monsters = state.rng.gen_range(0..max_monsters);
-    for _ in 0..num_monsters {
-        // choose random spot for this monster
-        let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
-        let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
+//     // choose random number of monsters
+//     let num_monsters = state.rng.gen_range(0..max_monsters);
+//     for _ in 0..num_monsters {
+//         // choose random spot for this monster
+//         let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
+//         let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
 
-        if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
-            let mut monster = new_monster(state, monster_type, x, y, level);
-            monster.alive = true;
-            objects.push(monster);
-        }
-    }
-}
+//         if !objects.is_pos_occupied(&Position::new(x, y)) {
+//             let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
+//             let mut monster = new_monster(state, monster_type, x, y, level);
+//             monster.alive = true;
+//             objects.push(monster);
+//         }
+//     }
+// }

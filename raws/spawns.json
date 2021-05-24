@@ -1,0 +1,98 @@
+[
+    {
+        "npc": "Virus",
+        "glyph": "v",
+        "dna_type": "Rna",
+        "stability": 0.75,
+        "spawn_transitions": [
+            {
+                "level": 1,
+                "value": 34
+            },
+            {
+                "level": 3,
+                "value": 21
+            }
+        ],
+        "dna_transitions": [
+            {
+                "level": 1,
+                "value": {
+                    "Random": {
+                        "genome_len": 13
+                    }
+                }
+            },
+            {
+                "level": 6,
+                "value": {
+                    "Distributed": {
+                        "s_rate": 20,
+                        "p_rate": 45,
+                        "a_rate": 35
+                    }
+                }
+            },
+            {
+                "level": 8,
+                "value": {
+                    "Defined": {
+                        "traits": [
+                            "foo",
+                            "bar",
+                            "baz"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "npc": "Virus",
+        "glyph": "v",
+        "dna_type": "Rna",
+        "stability": 0.75,
+        "spawn_transitions": [
+            {
+                "level": 1,
+                "value": 34
+            },
+            {
+                "level": 3,
+                "value": 21
+            }
+        ],
+        "dna_transitions": [
+            {
+                "level": 1,
+                "value": {
+                    "Random": {
+                        "genome_len": 13
+                    }
+                }
+            },
+            {
+                "level": 6,
+                "value": {
+                    "Distributed": {
+                        "s_rate": 20,
+                        "p_rate": 45,
+                        "a_rate": 35
+                    }
+                }
+            },
+            {
+                "level": 8,
+                "value": {
+                    "Defined": {
+                        "traits": [
+                            "foo",
+                            "bar",
+                            "baz"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+]
