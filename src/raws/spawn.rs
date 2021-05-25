@@ -26,11 +26,14 @@ pub struct Transition<T> {
 pub struct Spawn {
     pub npc: String,
     pub glyph: char,
+    // TODO: physics
     // TODO: color
+    // TODO: item
     // TODO: Controller
     pub dna_type: DnaType,
     pub stability: f64,
     pub spawn_transitions: Vec<Transition<u32>>,
+    // TODO: dna length
     pub dna_transitions: Vec<Transition<DnaTemplate>>,
 }
 
