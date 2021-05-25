@@ -1,7 +1,6 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 
-pub mod spawn;
 pub mod world_gen_organic;
 pub mod world_gen_rogue;
 

@@ -1,9 +1,11 @@
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
-use crate::core::world::spawn::{from_dungeon_level, new_monster, Monster, Transition};
 use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
+use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::raws::spawn::{from_dungeon_level, Spawn};
+use crate::ui::palette;
 use rand::Rng;
 use std::{cmp, thread, time};
 
@@ -55,7 +57,8 @@ impl WorldGen for RogueWorldGenerator {
                 create_room(objects, new_room);
 
                 // add some content to the room
-                place_objects(state, objects, new_room, level);
+                // TODO: fix
+                // place_objects(state, objects, new_room, level);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -123,57 +126,43 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(state: &mut GameState, objects: &mut GameObjects, room: Rect, level: u32) {
+fn place_objects(state: &mut GameState, objects: &mut GameObjects, level: u32, spawns: Vec<Spawn>) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
     // TODO: Pull spawn tables out of here and pass as parameters in make_world().
-    let max_monsters = from_dungeon_level(
-        &[
-            Transition { level: 1, value: 2 },
-            Transition { level: 4, value: 3 },
-            Transition { level: 6, value: 5 },
-        ],
-        level,
-    );
+    // TODO: Set monster number per level via transitions.
+    let max_monsters = 100;
 
-    // monster random table
-    let bacteria_chance = from_dungeon_level(
-        &[
-            Transition {
-                level: 3,
-                value: 15,
-            },
-            Transition {
-                level: 5,
-                value: 30,
-            },
-            Transition {
-                level: 7,
-                value: 60,
-            },
-        ],
-        level,
-    );
+    let monster_chances: Vec<(&String, u32)> = spawns
+        .iter()
+        .map(|s| (&s.npc, from_dungeon_level(&s.spawn_transitions, level)))
+        .collect();
 
-    let monster_chances = [("virus", 80), ("bacteria", bacteria_chance)];
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
-    let num_monsters = state.rng.gen_range(0..max_monsters + 1);
+    let num_monsters = state.rng.gen_range(0..max_monsters);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        let x = state.rng.gen_range(room.x1 + 1..room.x2);
-        let y = state.rng.gen_range(room.y1 + 1..room.y2);
+        let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
+        let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let mut monster = match monster_chances[monster_dist.sample(&mut state.rng)].0 {
-                "virus" => new_monster(state, Monster::Virus, x, y, level),
-                "bacteria" => new_monster(state, Monster::Bacteria, x, y, level),
-                _ => unreachable!(),
-            };
-
-            monster.alive = true;
+            let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
+            let mut monster = Object::new()
+                .position(x, y)
+                .living(true)
+                .visualize("Virus", 'v', palette().entity_virus)
+                .physical(true, false, false)
+                // .genome(
+                //     0.75,
+                //     state
+                //         .gene_library
+                //         .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+                // )
+                // .control(Controller::Npc(Box::new(AiVirus::new())));
+                ;
             objects.push(monster);
         }
     }

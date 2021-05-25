@@ -18,8 +18,8 @@ mod test;
 mod ui;
 mod util;
 
-use crate::core::world::spawn::Spawn;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::raws::spawn::Spawn;
 use crate::{core::game_env::GameEnv, game::Game};
 use std::env;
 

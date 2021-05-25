@@ -1,4 +1,4 @@
-mod spawn;
+pub(crate) mod spawn;
 
 use spawn::Spawn;
 
@@ -15,5 +15,5 @@ pub fn load_raws() {
         .unwrap();
     let raw_string =
         std::str::from_utf8(&raw_data).expect("Unable to convert to a valid UTF-8 string.");
-    let domain: Spawn = serde_json::from_str(&raw_string).expect("Unable to parse JSON");
+    let domain: Vec<Spawn> = serde_json::from_str(&raw_string).expect("Unable to parse JSON");
 }
