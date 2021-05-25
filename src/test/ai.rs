@@ -1,16 +1,17 @@
 use crate::core::game_state::GameState;
 use crate::core::innit_env;
 use crate::core::world::Tile;
-use crate::entity::ai::AiVirus;
 use crate::entity::control::Controller;
-use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors, GENE_LEN};
-use crate::entity::object::Object;
-use crate::ui::palette;
+use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActMove};
 
 #[test]
 fn test_random_ai() {
+    use crate::entity::ai::AiVirus;
+    use crate::entity::genetics::{DnaType, GENE_LEN};
+    use crate::entity::object::Object;
     use crate::entity::player::PLAYER;
+    use crate::ui::palette;
 
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
 

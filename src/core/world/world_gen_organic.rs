@@ -2,7 +2,6 @@ use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
-use crate::entity::control::Controller;
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::spawn::{from_dungeon_level, Spawn};

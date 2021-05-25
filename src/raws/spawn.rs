@@ -26,6 +26,8 @@ pub struct Transition<T> {
 pub struct Spawn {
     pub npc: String,
     pub glyph: char,
+    // TODO: color
+    // TODO: Controller
     pub dna_type: DnaType,
     pub stability: f64,
     pub spawn_transitions: Vec<Transition<u32>>,
@@ -110,61 +112,6 @@ impl Spawn {
         ]
     }
 }
-
-// pub(crate) fn new_monster(
-//     state: &mut GameState,
-//     monster: Monster,
-//     x: i32,
-//     y: i32,
-//     _level: u32,
-// ) -> Object {
-//     // append LTR markers
-//     match monster {
-//         Monster::Virus => Object::new()
-//             .position(x, y)
-//             .living(true)
-//             .visualize("Virus", 'v', palette().entity_virus)
-//             .physical(true, false, false)
-//             // TODO: Pull genome create out of here. It's not the same for every NPC.
-//             .genome(
-//                 0.75,
-//                 state
-//                     .gene_library
-//                     .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
-//             )
-//             .control(Controller::Npc(Box::new(AiVirus::new()))),
-//         Monster::Bacteria => Object::new()
-//             .position(x, y)
-//             .living(true)
-//             .visualize("Bacteria", 'b', palette().entity_bacteria)
-//             .physical(true, false, false)
-//             .genome(
-//                 0.9,
-//                 state
-//                     .gene_library
-//                     .new_genetics(&mut state.rng, DnaType::Nucleoid, false, GENE_LEN),
-//             )
-//             .control(Controller::Npc(Box::new(AiRandom::new()))),
-//         Monster::Plasmid => Object::new()
-//             .position(x, y)
-//             .living(true)
-//             .visualize("Plasmid", 'p', palette().entity_plasmid)
-//             .physical(false, false, false)
-//             .inventory_item(InventoryItem::new(
-//                 "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
-//                 Some(Box::new(ActEditGenome::new())),
-//             ))
-//             .genome(
-//                 1.0,
-//                 state.gene_library.new_genetics(
-//                     &mut state.rng,
-//                     DnaType::Plasmid,
-//                     false,
-//                     _level as usize,
-//                 ),
-//             ),
-//     }
-// }
 
 /// Return a value that depends on dungeon level.
 /// The table specifies what value occurs after each level, default is 0.

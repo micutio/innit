@@ -179,7 +179,7 @@ impl Ai for AiRandomWalk {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AiVirus {}
+pub struct AiVirus;
 
 impl AiVirus {
     pub fn new() -> Self {
