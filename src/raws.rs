@@ -1,3 +1,4 @@
+pub(crate) mod object_template;
 pub(crate) mod spawn;
 
 use spawn::Spawn;

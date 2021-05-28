@@ -64,7 +64,7 @@ impl Visual {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,

@@ -9,13 +9,6 @@ use crate::entity::genetics::DnaType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-pub enum DnaTemplate {
-    Random { genome_len: u8 },
-    Distributed { s_rate: u8, p_rate: u8, a_rate: u8 },
-    Defined { traits: Vec<String> },
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 pub struct Transition<T> {
     pub level: u32,
     pub value: T,
@@ -34,7 +27,7 @@ pub struct Spawn {
     pub stability: f64,
     pub spawn_transitions: Vec<Transition<u32>>,
     // TODO: dna length
-    pub dna_transitions: Vec<Transition<DnaTemplate>>,
+    // pub dna_transitions: Vec<Transition<DnaTemplate>>,
 }
 
 impl Spawn {
@@ -55,26 +48,26 @@ impl Spawn {
                         value: 21,
                     },
                 ],
-                dna_transitions: vec![
-                    Transition {
-                        level: 1,
-                        value: DnaTemplate::Random { genome_len: 13 },
-                    },
-                    Transition {
-                        level: 6,
-                        value: DnaTemplate::Distributed {
-                            s_rate: 20,
-                            p_rate: 45,
-                            a_rate: 35,
-                        },
-                    },
-                    Transition {
-                        level: 8,
-                        value: DnaTemplate::Defined {
-                            traits: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
-                        },
-                    },
-                ],
+                // dna_transitions: vec![
+                //     Transition {
+                //         level: 1,
+                //         value: DnaTemplate::Random { genome_len: 13 },
+                //     },
+                //     Transition {
+                //         level: 6,
+                //         value: DnaTemplate::Distributed {
+                //             s_rate: 20,
+                //             p_rate: 45,
+                //             a_rate: 35,
+                //         },
+                //     },
+                //     Transition {
+                //         level: 8,
+                //         value: DnaTemplate::Defined {
+                //             traits: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+                //         },
+                //     },
+                // ],
             },
             Spawn {
                 npc: "Virus".to_string(),
@@ -91,26 +84,26 @@ impl Spawn {
                         value: 21,
                     },
                 ],
-                dna_transitions: vec![
-                    Transition {
-                        level: 1,
-                        value: DnaTemplate::Random { genome_len: 13 },
-                    },
-                    Transition {
-                        level: 6,
-                        value: DnaTemplate::Distributed {
-                            s_rate: 20,
-                            p_rate: 45,
-                            a_rate: 35,
-                        },
-                    },
-                    Transition {
-                        level: 8,
-                        value: DnaTemplate::Defined {
-                            traits: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
-                        },
-                    },
-                ],
+                // dna_transitions: vec![
+                //     Transition {
+                //         level: 1,
+                //         value: DnaTemplate::Random { genome_len: 13 },
+                //     },
+                //     Transition {
+                //         level: 6,
+                //         value: DnaTemplate::Distributed {
+                //             s_rate: 20,
+                //             p_rate: 45,
+                //             a_rate: 35,
+                //         },
+                //     },
+                //     Transition {
+                //         level: 8,
+                //         value: DnaTemplate::Defined {
+                //             traits: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+                //         },
+                //     },
+                // ],
             },
         ]
     }
