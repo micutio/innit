@@ -12,7 +12,7 @@ pub fn load_raws() {
     let raw_data = rltk::embedding::EMBED
         .lock()
         // .unwrap()
-        .get_resource("../../raws/spawns.json".to_string())
+        .get_resource("../raws/spawns.json".to_string())
         .unwrap();
     let raw_string =
         std::str::from_utf8(&raw_data).expect("Unable to convert to a valid UTF-8 string.");

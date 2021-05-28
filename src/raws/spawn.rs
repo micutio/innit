@@ -5,7 +5,6 @@
 //! - after choosing monster concrete DNA or template is used to initialise objects
 //! - object is placed in the world
 
-use crate::entity::genetics::DnaType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -18,15 +17,7 @@ pub struct Transition<T> {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Spawn {
     pub npc: String,
-    pub glyph: char,
-    // TODO: physics
-    // TODO: color
-    // TODO: item
-    // TODO: Controller
-    pub dna_type: DnaType,
-    pub stability: f64,
     pub spawn_transitions: Vec<Transition<u32>>,
-    // TODO: dna length
     // pub dna_transitions: Vec<Transition<DnaTemplate>>,
 }
 
@@ -35,9 +26,6 @@ impl Spawn {
         vec![
             Spawn {
                 npc: "Virus".to_string(),
-                glyph: 'v',
-                dna_type: DnaType::Rna,
-                stability: 0.75,
                 spawn_transitions: vec![
                     Transition {
                         level: 1,
@@ -71,9 +59,6 @@ impl Spawn {
             },
             Spawn {
                 npc: "Virus".to_string(),
-                glyph: 'v',
-                dna_type: DnaType::Rna,
-                stability: 0.75,
                 spawn_transitions: vec![
                     Transition {
                         level: 1,

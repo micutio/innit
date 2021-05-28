@@ -1,0 +1,26 @@
+[
+    {
+        "npc": "Virus",
+        "glyph": "v",
+        "physics": {
+            "is_blocking": true,
+            "is_blocking_sight": true,
+            "is_always_visible": false,
+            "is_visible": false
+        },
+        "color": [
+            90,
+            255,
+            0
+        ],
+        "item": null,
+        "controller": "AI_VIRUS",
+        "dna_type": "Rna",
+        "dna_template": {
+            "Random": {
+                "genome_len": 10
+            }
+        },
+        "stability": 0.75
+    }
+]
