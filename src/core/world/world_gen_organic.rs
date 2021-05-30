@@ -2,10 +2,19 @@ use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
+use crate::entity::ai::AiPassive;
+use crate::entity::ai::AiRandom;
+use crate::entity::ai::AiRandomWalk;
+use crate::entity::ai::AiVirus;
+use crate::entity::control::Controller;
+use crate::entity::genetics::DnaType;
+use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
+use crate::entity::player::PlayerCtrl;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::raws::object_template::DnaTemplate;
+use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
-use crate::ui::palette;
 use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
 
@@ -28,7 +37,14 @@ impl OrganicsWorldGenerator {
 impl WorldGen for OrganicsWorldGenerator {
     // TODO: Use the `level` parameter to scale object properties in some way.
     // Idea: use level to scale length of dna of generated entities
-    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32) {
+    fn make_world(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        spawns: &[Spawn],
+        object_templates: &[ObjectTemplate],
+        level: u32,
+    ) {
         // step 1: generate foundation pattern
         let mid_x = WORLD_WIDTH / 2;
         let mid_y = WORLD_HEIGHT / 2;
@@ -62,15 +78,7 @@ impl WorldGen for OrganicsWorldGenerator {
         }
 
         // world gen done, now insert objects
-        // place_objects(
-        //     state,
-        //     objects,
-        //     level,
-        //     Transition {
-        //         level: 6,
-        //         value: 500,
-        //     },
-        // );
+        place_objects(state, objects, spawns, object_templates, level);
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -106,7 +114,13 @@ fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, 
     rng.flip_with_prob(access_count / 16.0)
 }
 
-fn place_objects(state: &mut GameState, objects: &mut GameObjects, level: u32, spawns: Vec<Spawn>) {
+fn place_objects(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    spawns: &[Spawn],
+    object_templates: &[ObjectTemplate],
+    level: u32,
+) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
@@ -125,25 +139,74 @@ fn place_objects(state: &mut GameState, objects: &mut GameObjects, level: u32, s
     let num_monsters = state.rng.gen_range(0..max_monsters);
     for _ in 0..num_monsters {
         // choose random spot for this monster
+        // TODO: Make sure coordinates are accessible
         let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
         let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
-            let mut monster = Object::new()
-                .position(x, y)
-                .living(true)
-                .visualize("Virus", 'v', palette().entity_virus)
-                .physical(true, false, false)
-                // .genome(
-                //     0.75,
-                //     state
-                //         .gene_library
-                //         .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
-                // )
-                // .control(Controller::Npc(Box::new(AiVirus::new())));
-                ;
-            objects.push(monster);
+            let npc_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
+            // TODO: maybe build an object factory around all this to make it re-usable.
+            if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
+                let controller: Controller = match template.controller.as_str() {
+                    "player" => Controller::Player(PlayerCtrl::new()),
+                    "ai_passive" => Controller::Npc(Box::new(AiPassive)),
+                    "ai_random" => Controller::Npc(Box::new(AiRandom::new())),
+                    "ai_random_walk" => Controller::Npc(Box::new(AiRandomWalk)),
+                    "ai_virus" => Controller::Npc(Box::new(AiVirus::new())),
+                    s => {
+                        error! {"Unknown controller type '{}'", s};
+                        // Controller::Npc(Box::new(AiPassive))
+                        continue;
+                    }
+                };
+
+                let raw_dna = match &template.dna_template {
+                    DnaTemplate::Random { genome_len } => state.gene_library.new_dna(
+                        &mut state.rng,
+                        template.dna_type == DnaType::Rna,
+                        *genome_len,
+                    ),
+                    DnaTemplate::Distributed {
+                        s_rate,
+                        p_rate,
+                        a_rate,
+                        genome_len,
+                    } => state.gene_library.dna_from_distribution(
+                        &mut state.rng,
+                        &[*s_rate, *p_rate, *a_rate],
+                        &[
+                            TraitFamily::Sensing,
+                            TraitFamily::Processing,
+                            TraitFamily::Actuating,
+                        ],
+                        template.dna_type == DnaType::Rna,
+                        *genome_len,
+                    ),
+                    DnaTemplate::Defined { traits } => state
+                        .gene_library
+                        .trait_strs_to_dna(&mut state.rng, &traits),
+                };
+
+                let monster = Object::new()
+                    .position(x, y)
+                    .living(true)
+                    .visualize("Virus", template.glyph, template.color)
+                    .physical(
+                        template.physics.is_blocking,
+                        template.physics.is_blocking_sight,
+                        template.physics.is_always_visible,
+                    )
+                    .control(controller)
+                    .genome(
+                        template.stability,
+                        state
+                            .gene_library
+                            .dna_to_traits(template.dna_type, &raw_dna),
+                    );
+                objects.push(monster);
+            } else {
+                error!("No object template found for NPC type '{}'", npc_type);
+            }
         }
     }
 }

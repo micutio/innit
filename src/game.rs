@@ -12,6 +12,7 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+use crate::raws::{load_object_templates, load_spawns};
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
 use crate::ui::dialog::controls::controls_screen;
@@ -85,6 +86,8 @@ impl Display for RunState {
 pub struct Game {
     state: GameState,
     objects: GameObjects,
+    // spawns: Vec<Spawn>,
+    // object_templates: Vec<ObjectTemplate>,
     run_state: Option<RunState>,
     hud: Hud,
     re_render: bool,
@@ -105,6 +108,8 @@ impl Game {
         Game {
             state,
             objects,
+            // spawns: load_spawns(),
+            // object_templates: load_object_templates(),
             run_state: Some(RunState::MainMenu(main_menu())),
             hud: Hud::new(),
             re_render: false,
@@ -130,14 +135,18 @@ impl Game {
         let level = 1;
         let mut state = GameState::new(level);
 
-        // create blank game world
+        // initialise game object vector
         let mut objects = GameObjects::new();
         objects.blank_world();
+
+        // load spawn and object templates from raw files
+        let spawns = load_spawns();
+        let object_templates = load_object_templates();
 
         // generate world terrain
         // let mut world_generator = RogueWorldGenerator::new();
         let mut world_generator = OrganicsWorldGenerator::new();
-        world_generator.make_world(&mut state, &mut objects, level);
+        world_generator.make_world(&mut state, &mut objects, &spawns, &object_templates, level);
         // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
         objects.set_tile_dna(
             &mut state.rng,

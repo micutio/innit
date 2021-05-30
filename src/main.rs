@@ -19,8 +19,8 @@ mod ui;
 mod util;
 
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
-use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::Spawn;
+// use crate::raws::object_template::ObjectTemplate;
+// use crate::raws::spawn::Spawn;
 use crate::{core::game_env::GameEnv, game::Game};
 use std::env;
 
@@ -56,13 +56,11 @@ pub fn main() -> rltk::BError {
         }
     }
 
-    let spawn_str: String = serde_json::to_string(&Spawn::example()).unwrap();
-    println!("{}", spawn_str);
+    // let spawn_str: String = serde_json::to_string(&Spawn::example()).unwrap();
+    // println!("{}", spawn_str);
 
-    let obj_str: String = serde_json::to_string(&ObjectTemplate::example()).unwrap();
-    println!("{}", obj_str);
-
-    raws::load_raws();
+    // let obj_str: String = serde_json::to_string(&ObjectTemplate::example()).unwrap();
+    // println!("{}", obj_str);
 
     // build engine and launch the game
     use rltk::RltkBuilder;

@@ -20,13 +20,13 @@ pub struct ObjectTemplate {
 #[derive(Serialize, Deserialize, Clone)]
 pub enum DnaTemplate {
     Random {
-        genome_len: u16,
+        genome_len: usize,
     },
     Distributed {
         s_rate: u8,
         p_rate: u8,
         a_rate: u8,
-        genome_len: u16,
+        genome_len: usize,
     },
     Defined {
         traits: Vec<String>,

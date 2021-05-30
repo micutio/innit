@@ -4,6 +4,7 @@ use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::ui::palette;
 use rand::Rng;
@@ -32,7 +33,14 @@ impl RogueWorldGenerator {
 }
 
 impl WorldGen for RogueWorldGenerator {
-    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32) {
+    fn make_world(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        spawns: &[Spawn],
+        object_templates: &[ObjectTemplate],
+        level: u32,
+    ) {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
@@ -126,7 +134,13 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     }
 }
 
-fn place_objects(state: &mut GameState, objects: &mut GameObjects, level: u32, spawns: Vec<Spawn>) {
+fn place_objects(
+    state: &mut GameState,
+    objects: &mut GameObjects,
+    spawns: &[Spawn],
+    object_templates: &[ObjectTemplate],
+    level: u32,
+) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
