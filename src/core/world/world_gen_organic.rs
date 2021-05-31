@@ -2,6 +2,7 @@ use crate::core::game_state::GameState;
 use crate::core::position::Position;
 use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
+use crate::entity::action::action_from_string;
 use crate::entity::ai::AiPassive;
 use crate::entity::ai::AiRandom;
 use crate::entity::ai::AiRandomWalk;
@@ -9,6 +10,7 @@ use crate::entity::ai::AiVirus;
 use crate::entity::control::Controller;
 use crate::entity::genetics::DnaType;
 use crate::entity::genetics::TraitFamily;
+use crate::entity::object::InventoryItem;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
@@ -149,10 +151,10 @@ fn place_objects(
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
                 let controller: Controller = match template.controller.as_str() {
                     "player" => Controller::Player(PlayerCtrl::new()),
-                    "ai_passive" => Controller::Npc(Box::new(AiPassive)),
-                    "ai_random" => Controller::Npc(Box::new(AiRandom::new())),
-                    "ai_random_walk" => Controller::Npc(Box::new(AiRandomWalk)),
-                    "ai_virus" => Controller::Npc(Box::new(AiVirus::new())),
+                    "AiPassive" => Controller::Npc(Box::new(AiPassive)),
+                    "AiRandom" => Controller::Npc(Box::new(AiRandom::new())),
+                    "AiRandomWalk" => Controller::Npc(Box::new(AiRandomWalk)),
+                    "AiVirus" => Controller::Npc(Box::new(AiVirus::new())),
                     s => {
                         error! {"Unknown controller type '{}'", s};
                         // Controller::Npc(Box::new(AiPassive))
@@ -187,10 +189,27 @@ fn place_objects(
                         .trait_strs_to_dna(&mut state.rng, &traits),
                 };
 
-                let monster = Object::new()
+                let inventory_item = if let Some(item) = &template.item {
+                    let action_instance = if item.action.is_empty() {
+                        None
+                    } else {
+                        match action_from_string(item.action.as_ref()) {
+                            Ok(action) => Some(action.clone()),
+                            Err(msg) => {
+                                error!("error getting action from string: {}", msg);
+                                continue;
+                            }
+                        }
+                    };
+                    Some(InventoryItem::new(&item.name, action_instance))
+                } else {
+                    None
+                };
+
+                let new_npc = Object::new()
                     .position(x, y)
                     .living(true)
-                    .visualize("Virus", template.glyph, template.color)
+                    .visualize(template.npc.as_str(), template.glyph, template.color)
                     .physical(
                         template.physics.is_blocking,
                         template.physics.is_blocking_sight,
@@ -202,8 +221,10 @@ fn place_objects(
                         state
                             .gene_library
                             .dna_to_traits(template.dna_type, &raw_dna),
-                    );
-                objects.push(monster);
+                    )
+                    .itemize(inventory_item);
+
+                objects.push(new_npc);
             } else {
                 error!("No object template found for NPC type '{}'", npc_type);
             }

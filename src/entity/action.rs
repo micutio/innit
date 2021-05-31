@@ -9,6 +9,7 @@ pub(crate) mod inventory;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, ObjectFeedback};
 use crate::core::position::Position;
+use crate::entity::action::hereditary::*;
 use crate::entity::object::Object;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -113,5 +114,16 @@ where
 impl Clone for Box<dyn Action> {
     fn clone(&self) -> Self {
         self.clone_action()
+    }
+}
+
+pub fn action_from_string(action_descriptor: &str) -> Result<Box<dyn Action>, String> {
+    match action_descriptor {
+        "ActPass" => Ok(Box::new(ActPass::default())),
+        "ActMove" => Ok(Box::new(ActMove::new())),
+        "ActMetabolise" => Ok(Box::new(ActMetabolise::new())),
+        "ActAttack" => Ok(Box::new(ActAttack::new())),
+        "ActEditGenome" => Ok(Box::new(ActEditGenome::new())),
+        _ => Err(format!("cannot find action for {}", action_descriptor)),
     }
 }

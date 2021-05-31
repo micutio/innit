@@ -199,8 +199,8 @@ impl Object {
     }
 
     /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
-    pub fn itemize(mut self, item: InventoryItem) -> Object {
-        self.item = Some(item);
+    pub fn itemize(mut self, item: Option<InventoryItem>) -> Object {
+        self.item = item;
         self
     }
 

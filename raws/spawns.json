@@ -4,20 +4,20 @@
         "spawn_transitions": [
             {
                 "level": 1,
-                "value": 34
+                "value": 60
             },
             {
                 "level": 3,
-                "value": 21
+                "value": 79
             }
         ]
     },
     {
-        "npc": "Virus",
+        "npc": "Plasmid",
         "spawn_transitions": [
             {
                 "level": 1,
-                "value": 34
+                "value": 40
             },
             {
                 "level": 3,

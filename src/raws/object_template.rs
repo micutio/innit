@@ -35,8 +35,8 @@ pub enum DnaTemplate {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InvItem {
-    name: String,
-    action: String,
+    pub name: String,
+    pub action: String,
 }
 
 impl ObjectTemplate {
