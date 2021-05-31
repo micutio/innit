@@ -5,10 +5,11 @@ use spawn::Spawn;
 
 use crate::raws::object_template::ObjectTemplate;
 
-rltk::embedded_resource!(RAW_FILE, "../raws/spawns.json");
+rltk::embedded_resource!(SPAWN_RAW, "../raws/spawns.json");
+rltk::embedded_resource!(OBJECT_RAW, "../raws/objects.json");
 
 pub fn load_spawns() -> Vec<Spawn> {
-    rltk::link_resource!(RAW_FILE, "../raws/spawns.json");
+    rltk::link_resource!(SPAWN_RAW, "../raws/spawns.json");
 
     // Retrieve the raw data as an array of u8 (8-bit unsigned chars)
     let raw_data = rltk::embedding::EMBED
@@ -22,7 +23,7 @@ pub fn load_spawns() -> Vec<Spawn> {
 }
 
 pub fn load_object_templates() -> Vec<ObjectTemplate> {
-    rltk::link_resource!(RAW_FILE, "../raws/objects.json");
+    rltk::link_resource!(OBJECT_RAW, "../raws/objects.json");
 
     // Retrieve the raw data as an array of u8 (8-bit unsigned chars)
     let raw_data = rltk::embedding::EMBED

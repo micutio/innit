@@ -253,10 +253,10 @@ impl Rltk_GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
-            println!(
-                "{}, {}, {}",
-                self.re_render, self.hud.require_refresh, self.state.log.is_changed
-            );
+            // println!(
+            //     "{}, {}, {}",
+            //     self.re_render, self.hud.require_refresh, self.state.log.is_changed
+            // );
             ctx.set_active_console(HUD_CON);
             ctx.cls();
 
