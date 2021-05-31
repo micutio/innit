@@ -198,6 +198,11 @@ impl Object {
         self
     }
 
+    pub fn control_opt(mut self, controller: Option<Controller>) -> Object {
+        self.control = controller;
+        self
+    }
+
     /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
     pub fn itemize(mut self, item: Option<InventoryItem>) -> Object {
         self.item = item;

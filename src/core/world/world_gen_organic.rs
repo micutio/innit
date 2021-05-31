@@ -149,17 +149,21 @@ fn place_objects(
             let npc_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
             // TODO: maybe build an object factory around all this to make it re-usable.
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
-                let controller: Controller = match template.controller.as_str() {
-                    "player" => Controller::Player(PlayerCtrl::new()),
-                    "AiPassive" => Controller::Npc(Box::new(AiPassive)),
-                    "AiRandom" => Controller::Npc(Box::new(AiRandom::new())),
-                    "AiRandomWalk" => Controller::Npc(Box::new(AiRandomWalk)),
-                    "AiVirus" => Controller::Npc(Box::new(AiVirus::new())),
-                    s => {
-                        error! {"Unknown controller type '{}'", s};
-                        // Controller::Npc(Box::new(AiPassive))
-                        continue;
+                let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
+                    match ctrl.as_str() {
+                        "player" => Some(Controller::Player(PlayerCtrl::new())),
+                        "AiPassive" => Some(Controller::Npc(Box::new(AiPassive))),
+                        "AiRandom" => Some(Controller::Npc(Box::new(AiRandom::new()))),
+                        "AiRandomWalk" => Some(Controller::Npc(Box::new(AiRandomWalk))),
+                        "AiVirus" => Some(Controller::Npc(Box::new(AiVirus::new()))),
+                        s => {
+                            error! {"Unknown controller type '{}'", s};
+                            // Controller::Npc(Box::new(AiPassive))
+                            continue;
+                        }
                     }
+                } else {
+                    None
                 };
 
                 let raw_dna = match &template.dna_template {
@@ -215,7 +219,7 @@ fn place_objects(
                         template.physics.is_blocking_sight,
                         template.physics.is_always_visible,
                     )
-                    .control(controller)
+                    .control_opt(controller)
                     .genome(
                         template.stability,
                         state

@@ -294,7 +294,7 @@ impl Rltk_GameState for Game {
         }
         // TODO: Use constants for z_order!
         draw_batch.submit(10000).unwrap();
-        particles().update(ctx);
+        self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
         new_run_state = match new_run_state {
