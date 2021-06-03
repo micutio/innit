@@ -41,7 +41,7 @@
             "name": "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
             "action": "ActEditGenome"
         },
-        "controller": "AiPassive",
+        "controller": null,
         "dna_type": "Plasmid",
         "dna_template": {
             "Random": {
