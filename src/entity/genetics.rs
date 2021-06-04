@@ -38,7 +38,11 @@ use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 use core::fmt;
-use rand::Rng;
+use rand::{
+    distributions::WeightedIndex,
+    prelude::{Distribution, SliceRandom},
+    Rng,
+};
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::HashMap;
@@ -470,6 +474,44 @@ impl GeneLibrary {
             // dna.push(game_rng.gen_range(0, 16) as u8);
         }
         // debug!("new dna generated: {:?}", dna);
+        dna
+    }
+
+    pub fn dna_from_distribution(
+        &self,
+        rng: &mut GameRng,
+        weights: &[u8],
+        choices: &[TraitFamily],
+        has_ltr: bool,
+        genome_len: usize,
+    ) -> Vec<u8> {
+        let mut dna: Vec<u8> = Vec::new();
+        let mut start_idx = 0;
+        let mut end_idx = genome_len;
+        if has_ltr {
+            start_idx = 1;
+            dna.push(*self.trait_to_gray.get("LTR marker").unwrap());
+            end_idx = genome_len - 1;
+        }
+        let gene_dist: WeightedIndex<u8> = WeightedIndex::new(weights).unwrap();
+        let mut traits_map: HashMap<TraitFamily, Vec<&GeneticTrait>> = HashMap::new();
+        choices.iter().for_each(|x| {
+            traits_map.insert(
+                *x,
+                self.trait_vec
+                    .iter()
+                    .filter(|t| t.trait_family == *x)
+                    .collect(),
+            );
+        });
+        for _ in start_idx..end_idx {
+            let chosen_trait = choices[gene_dist.sample(rng)];
+            let gene = traits_map.get(&chosen_trait).unwrap().choose(rng).unwrap();
+            dna.push(*self.trait_to_gray.get(&gene.trait_name).unwrap());
+        }
+        if has_ltr {
+            dna.push(*self.trait_to_gray.get("LTR marker").unwrap());
+        }
         dna
     }
 

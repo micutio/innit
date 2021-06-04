@@ -7,9 +7,11 @@ use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActMove
 
 #[test]
 fn test_random_ai() {
-    use crate::core::world::spawn::new_monster;
-    use crate::core::world::Monster;
+    use crate::entity::ai::AiVirus;
+    use crate::entity::genetics::{DnaType, GENE_LEN};
+    use crate::entity::object::Object;
     use crate::entity::player::PLAYER;
+    use crate::ui::palette;
 
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
 
@@ -27,11 +29,47 @@ fn test_random_ai() {
     }
 
     // Set up monsters
-    let virus_north = new_monster(&mut state, Monster::Virus, p_x, p_y - 1, 0);
+    let virus_north = Object::new()
+        .position(p_x, p_y - 1)
+        .living(true)
+        .visualize("Virus", 'v', palette().entity_virus)
+        .physical(true, false, false)
+        // TODO: Pull genome create out of here. It's not the same for every NPC.
+        .genome(
+            0.75,
+            state
+                .gene_library
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+        )
+        .control(Controller::Npc(Box::new(AiVirus::new())));
 
-    let virus_east = new_monster(&mut state, Monster::Virus, p_x + 1, p_y, 0);
+    let virus_east = Object::new()
+        .position(p_x + 1, p_y)
+        .living(true)
+        .visualize("Virus", 'v', palette().entity_virus)
+        .physical(true, false, false)
+        // TODO: Pull genome create out of here. It's not the same for every NPC.
+        .genome(
+            0.75,
+            state
+                .gene_library
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+        )
+        .control(Controller::Npc(Box::new(AiVirus::new())));
 
-    let virus_south = new_monster(&mut state, Monster::Virus, p_x, p_y + 1, 0);
+    let virus_south = Object::new()
+        .position(p_x, p_y + 1)
+        .living(true)
+        .visualize("Virus", 'v', palette().entity_virus)
+        .physical(true, false, false)
+        // TODO: Pull genome create out of here. It's not the same for every NPC.
+        .genome(
+            0.75,
+            state
+                .gene_library
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+        )
+        .control(Controller::Npc(Box::new(AiVirus::new())));
 
     objects.push(virus_north);
     objects.push(virus_east);
@@ -49,7 +87,19 @@ fn test_random_ai() {
         panic!();
     }
 
-    let virus_west = new_monster(&mut state, Monster::Virus, p_x - 1, p_y, 0);
+    let virus_west = Object::new()
+        .position(p_x - 1, p_y)
+        .living(true)
+        .visualize("Virus", 'v', palette().entity_virus)
+        .physical(true, false, false)
+        // TODO: Pull genome create out of here. It's not the same for every NPC.
+        .genome(
+            0.75,
+            state
+                .gene_library
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+        )
+        .control(Controller::Npc(Box::new(AiVirus::new())));
 
     objects.push(virus_west);
 

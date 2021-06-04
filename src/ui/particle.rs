@@ -43,11 +43,14 @@ impl ParticleSystem {
     }
 
     /// Advance the particle lifetimes and cull all those that have expired.
-    pub fn update(&mut self, ctx: &Rltk) {
+    /// Returns true if some particles expired in this call.
+    pub fn update(&mut self, ctx: &Rltk) -> bool {
+        let start_size: usize = self.particles.len();
         self.particles
             .iter_mut()
             .for_each(|p| p.lifetime -= ctx.frame_time_ms);
 
         self.particles.retain(|p| p.lifetime > 0.0);
+        self.particles.len() < start_size
     }
 }

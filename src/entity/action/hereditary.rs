@@ -802,6 +802,7 @@ impl Action for ActProduceVirion {
     }
 }
 
+// TODO: editing genomes is not really hereditary but provided by plasmids
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActEditGenome {
     lvl: i32,

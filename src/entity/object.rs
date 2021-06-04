@@ -64,7 +64,7 @@ impl Visual {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,
@@ -198,9 +198,14 @@ impl Object {
         self
     }
 
+    pub fn control_opt(mut self, controller: Option<Controller>) -> Object {
+        self.control = controller;
+        self
+    }
+
     /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
-    pub fn itemize(mut self, item: InventoryItem) -> Object {
-        self.item = Some(item);
+    pub fn itemize(mut self, item: Option<InventoryItem>) -> Object {
+        self.item = item;
         self
     }
 

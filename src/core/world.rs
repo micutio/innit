@@ -1,19 +1,27 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 
-pub mod spawn;
 pub mod world_gen_organic;
 pub mod world_gen_rogue;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::object::Object;
+use crate::raws::object_template::ObjectTemplate;
+use crate::raws::spawn::Spawn;
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
-    fn make_world(&mut self, state: &mut GameState, objects: &mut GameObjects, level: u32);
+    fn make_world(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        spawns: &[Spawn],
+        object_templates: &[ObjectTemplate],
+        level: u32,
+    );
 
     fn get_player_start_pos(&self) -> (i32, i32);
 }
@@ -50,11 +58,4 @@ impl Tile {
 /// For use in lambdas.
 pub fn is_explored(tile: &Tile) -> Option<&bool> {
     Some(&tile.is_explored)
-}
-
-#[derive(Clone, Copy)]
-pub enum Monster {
-    Bacteria,
-    Virus,
-    Plasmid,
 }

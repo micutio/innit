@@ -318,21 +318,3 @@ impl GameState {
         }
     }
 }
-
-// NOTE: All functions below are hot candidates for a rewrite because they might not fit into the
-//       new command pattern system.
-
-pub struct Transition {
-    pub level: u32,
-    pub value: u32,
-}
-
-/// Return a value that depends on dungeon level.
-/// The table specifies what value occurs after each level, default is 0.
-pub fn from_dungeon_level(table: &[Transition], level: u32) -> u32 {
-    table
-        .iter()
-        .rev()
-        .find(|transition| level >= transition.level)
-        .map_or(0, |transition| transition.value)
-}

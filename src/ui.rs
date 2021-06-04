@@ -10,13 +10,9 @@ pub mod rex_assets;
 
 use std::sync::{Mutex, MutexGuard};
 
-use crate::{
-    core::position::Position,
-    ui::{
-        color_palette::{ColorPalette, PALETTE_DEFAULT},
-        particle::{Particle, ParticleSystem},
-    },
-};
+use crate::core::position::Position;
+use crate::ui::color_palette::{ColorPalette, PALETTE_DEFAULT};
+use crate::ui::particle::{Particle, ParticleSystem};
 
 lazy_static! {
     static ref PARTICLE_SYS: Mutex<ParticleSystem> = Mutex::new(ParticleSystem::new());
