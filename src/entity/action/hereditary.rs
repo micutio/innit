@@ -853,3 +853,96 @@ impl Action for ActEditGenome {
         "Manipulate Genome".to_string()
     }
 }
+
+/// Ability for a cell to trigger its own killswitch. It can also trigger someone else's killswitch
+/// provided that cell also has a killswitch and a matching receptor.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ActKillSwitch {
+    target: Target,
+    lvl: i32,
+}
+
+impl ActKillSwitch {
+    pub fn new() -> Self {
+        ActKillSwitch {
+            target: Target::Center,
+            lvl: 0,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Action for ActKillSwitch {
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        match self.target {
+            Target::Center => {
+                owner.die(state, objects);
+                let callback = if owner.physics.is_visible {
+                    ObjectFeedback::Render
+                } else {
+                    ObjectFeedback::NoFeedback
+                };
+                ActionResult::Success { callback }
+            }
+            _ => {
+                let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+                if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos)
+                {
+                    // TODO: must also contain matching receptor
+                    if target
+                        .dna
+                        .simplified
+                        .iter()
+                        .any(|d| d.trait_name == "Kill Switch")
+                    {
+                        target.die(state, objects);
+                    }
+                    let callback = if !target.alive && target.physics.is_visible {
+                        ObjectFeedback::Render
+                    } else {
+                        ObjectFeedback::NoFeedback
+                    };
+
+                    objects.replace(index, target);
+
+                    ActionResult::Success { callback }
+                } else {
+                    ActionResult::Failure
+                }
+            }
+        }
+    }
+
+    fn set_target(&mut self, t: Target) {
+        self.target = t;
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::Any
+    }
+
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
+    fn get_identifier(&self) -> String {
+        "Killswitch".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        format!("killswitch {:?}", self.target)
+    }
+}
