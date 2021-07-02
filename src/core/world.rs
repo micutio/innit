@@ -7,6 +7,7 @@ pub mod world_gen_rogue;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::object::Object;
+use crate::game::RunState;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::Spawn;
 use serde::{Deserialize, Serialize};
@@ -21,7 +22,7 @@ pub trait WorldGen {
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
         level: u32,
-    );
+    ) -> RunState;
 
     fn get_player_start_pos(&self) -> (i32, i32);
 }

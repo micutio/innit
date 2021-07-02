@@ -13,10 +13,11 @@ use crate::entity::genetics::TraitFamily;
 use crate::entity::object::InventoryItem;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
+use crate::ui::menu::main_menu::main_menu;
 use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
 
@@ -46,7 +47,7 @@ impl WorldGen for OrganicsWorldGenerator {
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
         level: u32,
-    ) {
+    ) -> RunState {
         // step 1: generate foundation pattern
         let mid_x = WORLD_WIDTH / 2;
         let mid_y = WORLD_HEIGHT / 2;
@@ -81,6 +82,7 @@ impl WorldGen for OrganicsWorldGenerator {
 
         // world gen done, now insert objects
         place_objects(state, objects, spawns, object_templates, level);
+        RunState::Ticking
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
