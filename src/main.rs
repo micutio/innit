@@ -18,11 +18,12 @@ mod test;
 mod ui;
 mod util;
 
+use crate::core::innit_env;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::raws::object_template::ObjectTemplate;
 // use crate::raws::object_template::ObjectTemplate;
 // use crate::raws::spawn::Spawn;
-use crate::{core::game_env::GameEnv, game::Game};
+use crate::game::Game;
 use std::env;
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
@@ -43,17 +44,16 @@ pub fn main() -> rltk::BError {
 
     // init logger
     pretty_env_logger::init();
-    let mut env: GameEnv = GameEnv::new();
 
     // parse program arguments
     let args: Vec<String> = env::args().collect();
     println!("args: {:?}", args);
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
-            env.set_debug_mode(true);
+            innit_env().set_debug_mode(true);
         }
         if arg.eq("-s") || arg.eq("--seeding") {
-            env.set_rng_seeding(true);
+            innit_env().set_rng_seeding(true);
         }
     }
 
@@ -66,19 +66,21 @@ pub fn main() -> rltk::BError {
     // build engine and launch the game
     use rltk::RltkBuilder;
     // let font = "fonts/rex_paint_10x10.png";
-    let font = "fonts/rex_paint_8x8.png";
-    let mut context = RltkBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .unwrap()
+    // let font = "fonts/rex_paint_8x8.png";
+    let font = "fonts/rogueyun_16x16_soft.png";
+    let mut context = RltkBuilder::new()
+        .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .with_font(font, 16, 16)
         .with_advanced_input(true)
-        .with_font(font, 8, 8)
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font)
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles
         .with_title("Innit alpha v0.0.4")
-        .with_vsync(false)
         .with_fps_cap(60.0)
+        // .with_vsync(false)
         .with_automatic_console_resize(false)
         .build()?;
 
-    context.set_active_font(1, false);
+    context.set_active_font(0, false);
     rltk::main_loop(context, Game::new())
 }

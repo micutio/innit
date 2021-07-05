@@ -21,7 +21,6 @@ pub trait WorldGen {
         objects: &mut GameObjects,
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
-        level: u32,
     ) -> RunState;
 
     fn get_player_start_pos(&self) -> (i32, i32);

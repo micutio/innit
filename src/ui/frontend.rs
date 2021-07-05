@@ -9,9 +9,11 @@ use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
 
 pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
+    // time rendering method for profiling purposes
     let mut timer = Timer::new("render world");
     let mut draw_batch = DrawBatch::new();
     let world_col = palette().world_bg;
+
     draw_batch.fill_region(
         Rect::with_size(0, 0, WORLD_WIDTH, WORLD_HEIGHT),
         ColorPair::new(world_col, world_col),
@@ -47,8 +49,6 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
         );
     }
 
-    // TODO: Render particles here.
-
     let elapsed = timer.stop_silent();
     warn!("render world in {}", time_from(elapsed));
 
@@ -56,6 +56,25 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
 }
 
 fn update_visibility(objects: &mut GameObjects) {
+    // in debug mode everything is visible
+    if innit_env().debug_mode {
+        let bwft = palette().world_bg_wall_fov_true;
+        let bgft = palette().world_bg_ground_fov_true;
+        let fwft = palette().world_fg_wall_fov_true;
+        let fgft = palette().world_fg_ground_fov_true;
+        objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
+            o.physics.is_visible = true;
+            if o.physics.is_blocking_sight {
+                o.visual.fg_color = fwft;
+                o.visual.bg_color = bwft;
+            } else {
+                o.visual.fg_color = fgft;
+                o.visual.bg_color = bgft;
+            }
+        });
+        return;
+    }
+
     let player_positions: Vec<(Position, i32)> = objects
         .get_vector()
         .iter()

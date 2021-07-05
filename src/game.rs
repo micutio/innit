@@ -12,6 +12,8 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+use crate::raws::object_template::ObjectTemplate;
+use crate::raws::spawn::Spawn;
 use crate::raws::{load_object_templates, load_spawns};
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
@@ -87,6 +89,12 @@ pub struct Game {
     state: GameState,
     objects: GameObjects,
     run_state: Option<RunState>,
+    // world generation state start
+    spawns: Vec<Spawn>,
+    object_templates: Vec<ObjectTemplate>,
+    // world_generator = RogueWorldGenerator::new();
+    world_generator: OrganicsWorldGenerator,
+    // world generation state end
     hud: Hud,
     re_render: bool,
     rex_assets: RexAssets,
@@ -99,7 +107,7 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let state = GameState::new(0);
+        let state = GameState::new(1);
         let objects = GameObjects::new();
 
         Game {
@@ -108,6 +116,11 @@ impl Game {
             // spawns: load_spawns(),
             // object_templates: load_object_templates(),
             run_state: Some(RunState::MainMenu(main_menu())),
+            spawns: load_spawns(),
+            object_templates: load_object_templates(),
+
+            // let mut world_generator : RogueWorldGenerator::new(),
+            world_generator: OrganicsWorldGenerator::new(),
             hud: Hud::new(),
             re_render: false,
             rex_assets: RexAssets::new(),
@@ -128,31 +141,29 @@ impl Game {
     /// Create a new game by instantiating the game engine, game state and object vector.
     fn new_game() -> (GameState, GameObjects) {
         // create game state holding game-relevant information
-        let level = 1;
-        let state = GameState::new(level);
+        let state = GameState::new(1);
 
         // initialise game object vector
         let mut objects = GameObjects::new();
         objects.blank_world();
 
+        // prepare world generation
+        // load spawn and object templates from raw files
+        // let spawns = load_spawns();
+        // let object_templates = load_object_templates();
+
+        // // let mut world_generator = RogueWorldGenerator::new();
+        // let mut world_generator = OrganicsWorldGenerator::new();
+
         (state, objects)
     }
 
     fn world_gen(&mut self) -> RunState {
-        // load spawn and object templates from raw files
-        let spawns = load_spawns();
-        let object_templates = load_object_templates();
-
-        // generate world terrain
-        // let mut world_generator = RogueWorldGenerator::new();
-        let mut world_generator = OrganicsWorldGenerator::new();
-        let level = self.state.dungeon_level;
-        let new_runstate = world_generator.make_world(
+        let new_runstate = self.world_generator.make_world(
             &mut self.state,
             &mut self.objects,
-            &spawns,
-            &object_templates,
-            level,
+            &self.spawns,
+            &self.object_templates,
         );
 
         match new_runstate {
@@ -174,7 +185,7 @@ impl Game {
                 );
 
                 // create object representing the player
-                let (new_x, new_y) = world_generator.get_player_start_pos();
+                let (new_x, new_y) = self.world_generator.get_player_start_pos();
                 let player = Object::new()
                     .position(new_x, new_y)
                     .living(true)

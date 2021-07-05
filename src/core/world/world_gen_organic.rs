@@ -17,7 +17,6 @@ use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
-use crate::ui::menu::main_menu::main_menu;
 use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
 
@@ -27,12 +26,26 @@ const CA_CYCLES: i32 = 45;
 /// vessels, branching fractal-like lungs, spongy tissue and more.
 pub struct OrganicsWorldGenerator {
     player_start: (i32, i32),
+    requires_foundation: bool,
+    ca_cycle_count: i32,
+    ca_x: i32,
+    ca_y: i32,
+    ca_end_x: i32,
+    ca_end_y: i32,
+    changed_tiles: HashSet<(i32, i32)>,
 }
 
 impl OrganicsWorldGenerator {
     pub fn new() -> Self {
         OrganicsWorldGenerator {
             player_start: (0, 0),
+            requires_foundation: true,
+            ca_cycle_count: 0,
+            ca_x: 2,
+            ca_y: 2,
+            ca_end_x: WORLD_WIDTH - 2,
+            ca_end_y: WORLD_HEIGHT - 2,
+            changed_tiles: HashSet::new(),
         }
     }
 }
@@ -46,42 +59,50 @@ impl WorldGen for OrganicsWorldGenerator {
         objects: &mut GameObjects,
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
-        level: u32,
     ) -> RunState {
         // step 1: generate foundation pattern
-        let mid_x = WORLD_WIDTH / 2;
-        let mid_y = WORLD_HEIGHT / 2;
-        for y in mid_y - 2..mid_y + 2 {
-            for x in mid_x - 2..mid_x + 2 {
-                objects
-                    .get_tile_at(x as usize, y as usize)
-                    .replace(Tile::empty(x, y, innit_env().debug_mode));
-                self.player_start = (x, y);
-            }
-        }
-
-        let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
-        // step 2: use cellular automaton to fill in and smooth out
-        for _ in 0..CA_CYCLES {
-            for y in 2..WORLD_HEIGHT - 2 {
-                for x in 2..WORLD_WIDTH - 2 {
-                    // note whether a cell has changed
-                    if update_from_neighbours(objects, &mut state.rng, x, y) {
-                        changed_tiles.insert((x, y));
-                    }
+        if self.requires_foundation {
+            let mid_x = WORLD_WIDTH / 2;
+            let mid_y = WORLD_HEIGHT / 2;
+            for y in mid_y - 2..mid_y + 2 {
+                for x in mid_x - 2..mid_x + 2 {
+                    objects
+                        .get_tile_at(x as usize, y as usize)
+                        .replace(Tile::empty(x, y, innit_env().debug_mode));
+                    self.player_start = (x, y);
                 }
             }
+        }
+        self.requires_foundation = false;
+
+        // step 2: use cellular automaton to fill in and smooth out
+        while self.ca_cycle_count < CA_CYCLES {
+            while self.ca_y <= self.ca_end_y {
+                while self.ca_x <= self.ca_end_x {
+                    // note whether a cell has changed
+                    if update_from_neighbours(objects, &mut state.rng, self.ca_x, self.ca_y) {
+                        self.changed_tiles.insert((self.ca_x, self.ca_y));
+                    }
+                    self.ca_x += 1;
+                }
+                self.ca_x = 2;
+                self.ca_y += 1;
+            }
+            self.ca_y = 2;
             // perform actual update
-            for (j, k) in &changed_tiles {
+            for (j, k) in &self.changed_tiles {
                 objects
                     .get_tile_at(*j as usize, *k as usize)
                     .replace(Tile::empty(*j, *k, innit_env().debug_mode));
             }
-            changed_tiles.clear();
+            self.ca_cycle_count += 1;
+            self.changed_tiles.clear();
+            info!("CA cycle {0}", self.ca_cycle_count);
+            return RunState::WorldGen;
         }
 
         // world gen done, now insert objects
-        place_objects(state, objects, spawns, object_templates, level);
+        place_objects(state, objects, spawns, object_templates);
         RunState::Ticking
     }
 
@@ -123,7 +144,6 @@ fn place_objects(
     objects: &mut GameObjects,
     spawns: &[Spawn],
     object_templates: &[ObjectTemplate],
-    level: u32,
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -134,7 +154,12 @@ fn place_objects(
 
     let monster_chances: Vec<(&String, u32)> = spawns
         .iter()
-        .map(|s| (&s.npc, from_dungeon_level(&s.spawn_transitions, level)))
+        .map(|s| {
+            (
+                &s.npc,
+                from_dungeon_level(&s.spawn_transitions, state.dungeon_level),
+            )
+        })
         .collect();
 
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
