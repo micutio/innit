@@ -3,6 +3,7 @@
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::innit_env;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::core::world::WorldGen;
 use crate::entity::action::hereditary::ActPass;
@@ -362,6 +363,7 @@ impl Rltk_GameState for Game {
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
+                    self.re_render = true;
                     ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
                 }
                 None => RunState::ChooseActionMenu(instance.clone()),
@@ -472,13 +474,15 @@ impl Rltk_GameState for Game {
             },
             RunState::InfoBox(infobox) => match infobox.display(ctx) {
                 Some(infobox) => RunState::InfoBox(infobox),
-                None => RunState::Ticking,
+                None => {
+                    self.re_render = true;
+                    RunState::Ticking
+                }
             },
             RunState::NewGame => {
                 // start new game
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
-                self.re_render = true;
                 RunState::WorldGen
             }
             RunState::LoadGame => {
@@ -492,7 +496,12 @@ impl Rltk_GameState for Game {
                     Err(_e) => RunState::MainMenu(main_menu()),
                 }
             }
-            RunState::WorldGen => self.world_gen(),
+            RunState::WorldGen => {
+                if innit_env().debug_mode {
+                    self.re_render = true;
+                }
+                self.world_gen()
+            }
         };
         self.run_state.replace(new_run_state);
 

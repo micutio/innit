@@ -67,20 +67,22 @@ pub fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     // let font = "fonts/rex_paint_10x10.png";
     // let font = "fonts/rex_paint_8x8.png";
-    let font = "fonts/rogueyun_16x16_soft.png";
-    let mut context = RltkBuilder::new()
+    // let font_rex = "fonts/rex_paint_10x10.png";
+    let font_yun = "fonts/rogueyun_16x16_soft.png";
+    let context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .with_font(font, 16, 16)
+        // .with_font(font_rex, 10, 10)
+        .with_font(font_yun, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun)
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun) // particles
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_vsync(false)
-        .with_automatic_console_resize(false)
+        // .with_automatic_console_resize(false)
         .build()?;
 
-    context.set_active_font(0, false);
+    // context.set_active_font(0, true);
     rltk::main_loop(context, Game::new())
 }

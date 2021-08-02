@@ -20,7 +20,7 @@ use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::util::game_rng::{GameRng, RngExtended};
 use std::collections::HashSet;
 
-const CA_CYCLES: i32 = 45;
+const CA_CYCLES: i32 = 65;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -98,7 +98,9 @@ impl WorldGen for OrganicsWorldGenerator {
             self.ca_cycle_count += 1;
             self.changed_tiles.clear();
             info!("CA cycle {0}", self.ca_cycle_count);
-            return RunState::WorldGen;
+            if innit_env().debug_mode {
+                return RunState::WorldGen;
+            }
         }
 
         // world gen done, now insert objects

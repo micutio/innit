@@ -64,12 +64,14 @@ fn update_visibility(objects: &mut GameObjects) {
         let fgft = palette().world_fg_ground_fov_true;
         objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
             o.physics.is_visible = true;
-            if o.physics.is_blocking_sight {
-                o.visual.fg_color = fwft;
-                o.visual.bg_color = bwft;
-            } else {
-                o.visual.fg_color = fgft;
-                o.visual.bg_color = bgft;
+            if o.tile.is_some() {
+                if o.physics.is_blocking_sight {
+                    o.visual.fg_color = fwft;
+                    o.visual.bg_color = bwft;
+                } else {
+                    o.visual.fg_color = fgft;
+                    o.visual.bg_color = bgft;
+                }
             }
         });
         return;
