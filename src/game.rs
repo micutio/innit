@@ -483,6 +483,7 @@ impl Rltk_GameState for Game {
                 // start new game
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
+                self.world_generator = OrganicsWorldGenerator::new();
                 RunState::WorldGen
             }
             RunState::LoadGame => {
