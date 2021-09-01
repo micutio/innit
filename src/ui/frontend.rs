@@ -5,7 +5,6 @@ use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::timer::{time_from, Timer};
 use crate::{core::game_objects::GameObjects, ui::palette};
-use num::Float;
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
 
 pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
@@ -66,7 +65,7 @@ fn update_visibility(objects: &mut GameObjects) {
 
     // set all objects invisible by default
     let mut dist_map: Vec<f32> =
-        vec![f32::max_value(); (WORLD_HEIGHT * WORLD_WIDTH) as usize + WORLD_WIDTH as usize];
+        vec![f32::MAX; (WORLD_HEIGHT * WORLD_WIDTH) as usize + WORLD_WIDTH as usize];
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;

@@ -9,14 +9,11 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
+use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
-use crate::util::modulus;
-use crate::{
-    core::game_state::{GameState, MsgClass},
-    ui::palette,
-};
+use crate::ui::palette;
 use crate::{entity::action::Target, util::text_to_width};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
@@ -279,11 +276,7 @@ impl Hud {
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
 
-            let c: char = if modulus(h_offset, 2) == 0 {
-                '►'
-            } else {
-                '◄'
-            };
+            let c: char = if h_offset % 2 == 0 { '►' } else { '◄' };
 
             let tooltip = ToolTip::no_header(vec![
                 ("trait:".to_string(), g_trait.trait_name.clone()),
@@ -320,11 +313,7 @@ impl Hud {
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
 
-            let c: char = if modulus(v_offset, 2) == 0 {
-                '▼'
-            } else {
-                '▲'
-            };
+            let c: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
 
             let tooltip = ToolTip::no_header(vec![
                 ("trait:".to_string(), g_trait.trait_name.clone()),
@@ -611,7 +600,7 @@ fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
     );
 
     // convert messages into log text lines (str, fg_col, bg_col)
-    let mut bg_flag: bool = modulus(state.log.messages.len(), 2) == 0;
+    let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
     let mut log_lines: Vec<(String, (u8, u8, u8), (u8, u8, u8))> = Vec::new();
     for (msg, class) in &state.log.messages {
         let lines = text_to_width(&msg, layout.width());
