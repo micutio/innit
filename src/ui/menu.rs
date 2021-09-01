@@ -5,7 +5,6 @@ pub mod main_menu;
 use crate::core::game_state::GameState;
 use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::hud::{ToolTip, UiItem};
-use crate::util::modulus;
 use crate::{core::game_objects::GameObjects, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
@@ -91,12 +90,10 @@ impl<T: MenuItem> Menu<T> {
         if let Some(key) = ctx.key {
             match key {
                 VirtualKeyCode::Up => {
-                    self.selection =
-                        modulus(self.selection as i32 - 1, self.items.len() as i32) as usize;
+                    self.selection = (self.selection as i32 - 1) as usize % self.items.len();
                 }
                 VirtualKeyCode::Down => {
-                    self.selection =
-                        modulus(self.selection as i32 + 1, self.items.len() as i32) as usize;
+                    self.selection = (self.selection as i32 + 1) as usize % self.items.len();
                 }
                 VirtualKeyCode::Return => {
                     // return process_item(game, ctx, &self.items[self.selection].item_enum);

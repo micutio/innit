@@ -3,15 +3,6 @@
 pub mod game_rng;
 pub mod timer;
 
-extern crate num;
-use self::num::Num;
-
-/// Modulus function.
-/// In Rust the `%` operator is the remainder, not modulus.
-pub fn modulus<T: Num + PartialOrd + Copy>(a: T, b: T) -> T {
-    ((a % b) + b) % b
-}
-
 pub fn generate_gray_code(n: u8) -> Vec<u8> {
     let base: u8 = 2;
     let code_len: u8 = base.pow(u32::from(n));

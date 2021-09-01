@@ -2,8 +2,6 @@
 
 use std::time::Instant;
 
-use crate::util::modulus;
-
 pub struct Timer {
     start_t: Instant,
     is_running: bool,
@@ -19,7 +17,7 @@ impl Timer {
         }
     }
 
-    pub fn lap(&mut self) {
+    pub fn _lap(&mut self) {
         self.summary("currently", self.start_t.elapsed().as_nanos());
     }
 
@@ -40,13 +38,13 @@ impl Timer {
     }
 
     fn summary(&self, verb: &str, mut elapsed: u128) {
-        let nanos = modulus(elapsed, 1000);
+        let nanos = elapsed % 1000;
         elapsed /= 1000;
-        let micros = modulus(elapsed, 1000);
+        let micros = elapsed % 1000;
         elapsed /= 1000;
-        let millis = modulus(elapsed, 1000);
+        let millis = elapsed % 1000;
         elapsed /= 1000;
-        let secs = modulus(elapsed, 1000);
+        let secs = elapsed % 1000;
         info!(
             "{} {} in {}:{}:{}:{}",
             self.msg, verb, secs, millis, micros, nanos
@@ -63,12 +61,12 @@ impl Drop for Timer {
 }
 
 pub fn time_from(mut t: u128) -> String {
-    let nanos = modulus(t, 1000);
+    let nanos = t % 1000;
     t /= 1000;
-    let micros = modulus(t, 1000);
+    let micros = t % 1000;
     t /= 1000;
-    let millis = modulus(t, 1000);
+    let millis = t % 1000;
     t /= 1000;
-    let secs = modulus(t, 1000);
+    let secs = t % 1000;
     format!("{}:{}:{}:{}", secs, millis, micros, nanos)
 }

@@ -7,7 +7,6 @@ use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
 use crate::util::game_rng::RngExtended;
-use crate::util::modulus;
 use crate::{core::game_state::GameState, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 use std::ops::Add;
@@ -294,11 +293,7 @@ impl GenomeEditor {
         }
 
         for item in &self.gene_items {
-            let c: char = if modulus(item.gene_idx, 2) == 0 {
-                '►'
-            } else {
-                '◄'
-            };
+            let c: char = if item.gene_idx % 2 == 0 { '►' } else { '◄' };
 
             let bg_color = if item.gene_idx == self.selected_gene {
                 hud_fg_hl
