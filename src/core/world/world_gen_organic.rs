@@ -18,6 +18,8 @@ use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::util::game_rng::{GameRng, RngExtended};
+
+use casim::ca::{von_neuman, Simulation};
 use std::collections::HashSet;
 
 const CA_CYCLES: i32 = 65;
@@ -113,6 +115,35 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
+fn make_ca(
+) -> Simulation<bool, dyn FnMut(&mut bool, &[&bool]), dyn Fn(i32, i32, i32, i32) -> Vec<(i32, i32)>>
+{
+    let trans_fn = |cell: &mut bool, neighs: &[&bool]| {
+        let mut trues: i32 = 0;
+        let mut falses: i32 = 0;
+        for n in neighs {
+            if **n {
+                trues += 1;
+            } else {
+                falses += 1;
+            }
+        }
+
+        if trues >= falses {
+            *cell = true;
+        }
+        if falses > trues {
+            *cell = false;
+        }
+    };
+
+    let cells = vec![false, true, false, true, false, true, false, true, false];
+
+    assert!(cells.len() == 9);
+
+    let i = Simulation::from_cells(3, 3, trans_fn, von_neuman, cells);
+}
+
 fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, y: i32) -> bool {
     let directions = [
         // (-1, -1),
@@ -150,7 +181,6 @@ fn place_objects(
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
-    // TODO: Pull spawn tables out of here and pass as parameters in make_world().
     // TODO: Set monster number per level via transitions.
     let max_monsters = 100;
 

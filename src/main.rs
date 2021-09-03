@@ -2,6 +2,7 @@
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
+extern crate casim;
 extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
@@ -19,11 +20,9 @@ mod ui;
 mod util;
 
 use crate::core::innit_env;
+use crate::game::Game;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::raws::object_template::ObjectTemplate;
-// use crate::raws::object_template::ObjectTemplate;
-// use crate::raws::spawn::Spawn;
-use crate::game::Game;
 use std::env;
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.

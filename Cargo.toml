@@ -6,6 +6,7 @@ license = "MIT License"
 edition = "2018"
 
 [dependencies]
+casim = { git = "https://github.com/micutio/casim", branch = "main" }
 dirs = "3.0.1"
 cpuprofiler = "0.0.4"
 lazy_static = "1.4.0"

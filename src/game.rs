@@ -5,7 +5,6 @@ use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::innit_env;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::core::world::WorldGen;
 use crate::entity::action::hereditary::ActPass;
 use crate::entity::action::inventory::ActDropItem;
 use crate::entity::action::{Action, Target, TargetCategory};
