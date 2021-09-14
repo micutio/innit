@@ -49,7 +49,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     }
 
     let elapsed = timer.stop_silent();
-    warn!("render world in {}", time_from(elapsed));
+    info!("render world in {}", time_from(elapsed));
 
     draw_batch.submit(0).unwrap()
 }

@@ -1,6 +1,6 @@
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
-use crate::core::world::{Tile, WorldGen};
+use crate::core::world::WorldGen;
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::action::action_from_string;
 use crate::entity::ai::AiPassive;
@@ -19,8 +19,7 @@ use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::util::game_rng::{GameRng, RngExtended};
 
-use casim::ca::{von_neuman, Simulation};
-use std::collections::HashSet;
+use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
 
 const CA_CYCLES: i32 = 65;
 
@@ -28,26 +27,16 @@ const CA_CYCLES: i32 = 65;
 /// vessels, branching fractal-like lungs, spongy tissue and more.
 pub struct OrganicsWorldGenerator {
     player_start: (i32, i32),
-    requires_foundation: bool,
     ca_cycle_count: i32,
-    ca_x: i32,
-    ca_y: i32,
-    ca_end_x: i32,
-    ca_end_y: i32,
-    changed_tiles: HashSet<(i32, i32)>,
+    ca: Option<Simulation<bool>>,
 }
 
 impl OrganicsWorldGenerator {
     pub fn new() -> Self {
         OrganicsWorldGenerator {
             player_start: (0, 0),
-            requires_foundation: true,
             ca_cycle_count: 0,
-            ca_x: 2,
-            ca_y: 2,
-            ca_end_x: WORLD_WIDTH - 2,
-            ca_end_y: WORLD_HEIGHT - 2,
-            changed_tiles: HashSet::new(),
+            ca: None,
         }
     }
 }
@@ -62,44 +51,32 @@ impl WorldGen for OrganicsWorldGenerator {
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
     ) -> RunState {
-        // step 1: generate foundation pattern
-        if self.requires_foundation {
-            let mid_x = WORLD_WIDTH / 2;
-            let mid_y = WORLD_HEIGHT / 2;
-            for y in mid_y - 2..mid_y + 2 {
-                for x in mid_x - 2..mid_x + 2 {
-                    objects
-                        .get_tile_at(x as usize, y as usize)
-                        .replace(Tile::empty(x, y, innit_env().debug_mode));
-                    self.player_start = (x, y);
-                }
-            }
+        // step 1: create ca, if not already there
+        if self.ca.is_none() {
+            self.ca = Some(make_ca());
+            self.player_start = (WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
         }
-        self.requires_foundation = false;
 
         // step 2: use cellular automaton to fill in and smooth out
         while self.ca_cycle_count < CA_CYCLES {
-            while self.ca_y <= self.ca_end_y {
-                while self.ca_x <= self.ca_end_x {
-                    // note whether a cell has changed
-                    if update_from_neighbours(objects, &mut state.rng, self.ca_x, self.ca_y) {
-                        self.changed_tiles.insert((self.ca_x, self.ca_y));
+            info!("CA cycle {0}", self.ca_cycle_count);
+            if let Some(ca) = &mut self.ca {
+                ca.step();
+                // update positions assigned with `true` to floor tiles
+                for (idx, cell) in ca.cells().into_iter().enumerate() {
+                    if *cell {
+                        if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
+                            if tile.physics.is_blocking {
+                                tile.physics.is_blocking = false;
+                                tile.physics.is_blocking_sight = false;
+                                tile.visual.glyph = '·';
+                                tile.visual.name = "empty tile".into();
+                            }
+                        }
                     }
-                    self.ca_x += 1;
                 }
-                self.ca_x = 2;
-                self.ca_y += 1;
-            }
-            self.ca_y = 2;
-            // perform actual update
-            for (j, k) in &self.changed_tiles {
-                objects
-                    .get_tile_at(*j as usize, *k as usize)
-                    .replace(Tile::empty(*j, *k, innit_env().debug_mode));
             }
             self.ca_cycle_count += 1;
-            self.changed_tiles.clear();
-            info!("CA cycle {0}", self.ca_cycle_count);
             if innit_env().debug_mode {
                 return RunState::WorldGen;
             }
@@ -115,61 +92,33 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
-fn make_ca(
-) -> Simulation<bool, dyn FnMut(&mut bool, &[&bool]), dyn Fn(i32, i32, i32, i32) -> Vec<(i32, i32)>>
-{
-    let trans_fn = |cell: &mut bool, neighs: &[&bool]| {
-        let mut trues: i32 = 0;
-        let mut falses: i32 = 0;
-        for n in neighs {
-            if **n {
-                trues += 1;
-            } else {
-                falses += 1;
-            }
-        }
+/// Create a cellular automaton from the tiles of the game world.
+fn make_ca() -> Simulation<bool> {
+    let mut rng = GameRng::new_from_u64_seed(0);
+    let trans_fn = move |cell: &mut bool, neigh_it: Neighborhood<bool>| {
+        let t_count = neigh_it.into_iter().filter(|n| **n).count();
 
-        if trues >= falses {
+        if rng.flip_with_prob(t_count as f64 / 8.0) {
             *cell = true;
-        }
-        if falses > trues {
-            *cell = false;
         }
     };
 
-    let cells = vec![false, true, false, true, false, true, false, true, false];
-
-    assert!(cells.len() == 9);
-
-    let i = Simulation::from_cells(3, 3, trans_fn, von_neuman, cells);
-}
-
-fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, y: i32) -> bool {
-    let directions = [
-        // (-1, -1),
-        (-1, 0, 4.0),
-        // (-1, 1),
-        (0, -1, 1.0),
-        (0, 1, 1.0),
-        // (1, -1),
-        (1, 0, 4.0),
-        // (1, 1),
-    ];
-
-    let mut access_count: f64 = 0.0;
-    for (i, j, weight) in directions.iter() {
-        let nx = x + i;
-        let ny = y + j;
-        if nx >= 2 && nx <= (WORLD_WIDTH - 2) && ny >= 2 && ny <= (WORLD_HEIGHT - 2) {
-            if let Some(neighbour_tile) = &mut objects.get_tile_at(nx as usize, ny as usize) {
-                if !neighbour_tile.physics.is_blocking {
-                    access_count += weight;
-                }
-            }
+    let mut cells = vec![false; (WORLD_WIDTH * WORLD_HEIGHT) as usize];
+    let mid_x = WORLD_WIDTH / 2;
+    let mid_y = WORLD_HEIGHT / 2;
+    for y in mid_y - 2..mid_y + 2 {
+        for x in mid_x - 2..mid_x + 2 {
+            cells[coord_to_idx(WORLD_WIDTH, x, y)] = true;
         }
     }
 
-    rng.flip_with_prob(access_count / 16.0)
+    Simulation::from_cells(
+        WORLD_WIDTH,
+        WORLD_HEIGHT,
+        trans_fn,
+        VON_NEUMAN_NEIGHBORHOOD,
+        cells,
+    )
 }
 
 fn place_objects(
