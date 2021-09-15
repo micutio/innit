@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
+    /// Populate the world with tiles, objects and the player.
+    /// Returns a runstate, which would be either `Runstate::Ticking` or `Runstate::WorldGen` to
+    /// allow for intermediate visualisation of the world generation process.
     fn make_world(
         &mut self,
         state: &mut GameState,
@@ -23,6 +26,7 @@ pub trait WorldGen {
         object_templates: &[ObjectTemplate],
     ) -> RunState;
 
+    /// Returns the position of where the player was placed.
     fn get_player_start_pos(&self) -> (i32, i32);
 }
 
