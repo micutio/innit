@@ -1,8 +1,8 @@
+extern crate casim;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
-extern crate casim;
 extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
@@ -53,6 +53,9 @@ pub fn main() -> rltk::BError {
         }
         if arg.eq("-s") || arg.eq("--seeding") {
             innit_env().set_rng_seeding(true);
+        }
+        if arg.eq("--spectate") {
+            innit_env().set_spectating(true);
         }
     }
 

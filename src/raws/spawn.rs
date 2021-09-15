@@ -22,7 +22,7 @@ pub struct Spawn {
 }
 
 impl Spawn {
-    pub fn example() -> Vec<Self> {
+    pub fn _example() -> Vec<Self> {
         vec![
             Spawn {
                 npc: "Virus".to_string(),

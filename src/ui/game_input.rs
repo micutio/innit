@@ -85,25 +85,26 @@ fn get_names_under_mouse(
     mouse: Position,
 ) -> Vec<ToolTip> {
     let mut tooltips: Vec<ToolTip> = vec![];
-    let player = objects.extract_by_index(state.player_idx).unwrap();
+    if let Some(player) = objects.extract_by_index(state.player_idx) {
+        if player.pos.eq(&mouse) {
+            // tooltips.push(ToolTip::header_only("You".to_string()));
+            tooltips.push(player.generate_tooltip(&player));
+        }
 
-    if player.pos.eq(&mouse) {
-        // tooltips.push(ToolTip::header_only("You".to_string()));
-        tooltips.push(player.generate_tooltip(&player));
+        tooltips.append(
+            &mut objects
+                .get_vector()
+                .iter()
+                .flatten()
+                .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
+                //                              vvvvv---- replace function with `key-value`-list generating function.
+                .map(|o| o.generate_tooltip(&player))
+                .collect::<Vec<_>>(),
+        );
+
+        objects.replace(state.player_idx, player);
     }
 
-    tooltips.append(
-        &mut objects
-            .get_vector()
-            .iter()
-            .flatten()
-            .filter(|o| o.pos.eq(&mouse) && o.physics.is_visible)
-            //                              vvvvv---- replace function with `key-value`-list generating function.
-            .map(|o| o.generate_tooltip(&player))
-            .collect::<Vec<_>>(),
-    );
-
-    objects.replace(state.player_idx, player);
     tooltips
 }
 

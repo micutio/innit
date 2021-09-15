@@ -30,7 +30,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
             o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-                || (o.tile.is_some() && innit_env().debug_mode)
+                || (o.tile.is_some() && innit_env().is_debug_mode)
         })
         .collect();
 
@@ -56,7 +56,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
 
 fn update_visibility(objects: &mut GameObjects) {
     // in debug mode everything is visible
-    if innit_env().debug_mode {
+    if innit_env().is_debug_mode {
         let bwft = palette().world_bg_wall_fov_true;
         let bgft = palette().world_bg_ground_fov_true;
         let fwft = palette().world_fg_wall_fov_true;

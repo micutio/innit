@@ -598,7 +598,7 @@ impl GeneLibrary {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                 {
-                    trace!("found genetic trait {}", genetic_trait.trait_name);
+                    // trace!("found genetic trait {}", genetic_trait.trait_name);
                     let mut this_trait = genetic_trait.clone();
                     this_trait.position = position;
                     trait_builder.add_action(&this_trait);

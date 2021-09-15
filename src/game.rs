@@ -185,41 +185,43 @@ impl Game {
                     &self.state.gene_library,
                 );
 
-                // create object representing the player
-                let (new_x, new_y) = self.world_generator.get_player_start_pos();
-                let player = Object::new()
-                    .position(new_x, new_y)
-                    .living(true)
-                    .visualize("You", '@', (255, 255, 255))
-                    .physical(true, false, true)
-                    .control(Controller::Player(PlayerCtrl::new()))
-                    .genome(
-                        0.99,
-                        self.state.gene_library.new_genetics(
-                            &mut self.state.rng,
-                            DnaType::Nucleus,
-                            false,
-                            GENE_LEN,
-                        ),
+                if !innit_env().is_spectating {
+                    // create object representing the player
+                    let (new_x, new_y) = self.world_generator.get_player_start_pos();
+                    let player = Object::new()
+                        .position(new_x, new_y)
+                        .living(true)
+                        .visualize("You", '@', (255, 255, 255))
+                        .physical(true, false, true)
+                        .control(Controller::Player(PlayerCtrl::new()))
+                        .genome(
+                            0.99,
+                            self.state.gene_library.new_genetics(
+                                &mut self.state.rng,
+                                DnaType::Nucleus,
+                                false,
+                                GENE_LEN,
+                            ),
+                        );
+
+                    trace!("created player object {}", player);
+                    trace!("player sensors: {:?}", player.sensors);
+                    trace!("player processors: {:?}", player.processors);
+                    trace!("player actuators: {:?}", player.actuators);
+                    trace!("player dna: {:?}", player.dna);
+                    trace!(
+                        "player default action: {:?}",
+                        player.get_primary_action(Target::Center).to_text()
                     );
 
-                trace!("created player object {}", player);
-                trace!("player sensors: {:?}", player.sensors);
-                trace!("player processors: {:?}", player.processors);
-                trace!("player actuators: {:?}", player.actuators);
-                trace!("player dna: {:?}", player.dna);
-                trace!(
-                    "player default action: {:?}",
-                    player.get_primary_action(Target::Center).to_text()
-                );
+                    self.objects.set_player(player);
 
-                self.objects.set_player(player);
-
-                // a warm welcoming message
-                self.state.log.add(
-                    "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-                    MsgClass::Story,
-                );
+                    // a warm welcoming message
+                    self.state.log.add(
+                        "Welcome microbe! You're innit now. Beware of bacteria and viruses",
+                        MsgClass::Story,
+                    );
+                }
             }
         }
 
@@ -385,8 +387,12 @@ impl Rltk_GameState for Game {
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
                     ObjectFeedback::Render => {
-                        self.re_render = true;
-                        RunState::Ticking
+                        if innit_env().is_spectating {
+                            RunState::CheckInput
+                        } else {
+                            self.re_render = true;
+                            RunState::Ticking
+                        }
                     }
                     ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
@@ -458,7 +464,15 @@ impl Rltk_GameState for Game {
                             RunState::Ticking
                         }
                     }
-                    PlayerInput::Undefined => RunState::CheckInput,
+                    PlayerInput::Undefined => {
+                        // if we're only spectating then go back to ticking, otherwise keep
+                        // checking for input
+                        if innit_env().is_spectating {
+                            RunState::Ticking
+                        } else {
+                            RunState::CheckInput
+                        }
+                    }
                 }
             }
             RunState::GenomeEditing(genome_editor) => match genome_editor.state {
@@ -498,7 +512,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::WorldGen => {
-                if innit_env().debug_mode {
+                if innit_env().is_debug_mode {
                     self.re_render = true;
                 }
                 self.world_gen()

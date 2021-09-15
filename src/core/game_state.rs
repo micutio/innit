@@ -84,7 +84,7 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if innit_env().use_fixed_seed {
+        let rng_seed = if innit_env().is_using_fixed_seed {
             0
         } else {
             rand::thread_rng().next_u64()
@@ -274,16 +274,16 @@ impl GameState {
 
             // finally increase object index and turn counter
             self.obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
-            if self.obj_idx == PLAYER {
+            if self.obj_idx == 0 {
                 self.turn += 1;
             }
 
             // return the result of our action
             process_result
         } else {
-            panic!("no object at index {}", self.obj_idx);
+            // panic!("no object at index {}", self.obj_idx);
             // objects.get_vector_mut().remove(self.obj_idx);
-            // ObjectFeedback::NoAction
+            ObjectFeedback::Render
         }
     }
 

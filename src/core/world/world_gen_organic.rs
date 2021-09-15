@@ -1,5 +1,4 @@
 use crate::core::game_state::GameState;
-use crate::core::position::Position;
 use crate::core::world::WorldGen;
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::action::action_from_string;
@@ -77,7 +76,7 @@ impl WorldGen for OrganicsWorldGenerator {
                 }
             }
             self.ca_cycle_count += 1;
-            if innit_env().debug_mode {
+            if innit_env().is_debug_mode {
                 return RunState::WorldGen;
             }
         }
@@ -131,7 +130,7 @@ fn place_objects(
     use rand::prelude::*;
 
     // TODO: Set monster number per level via transitions.
-    let max_monsters = 100;
+    let max_monsters = 50;
 
     let monster_chances: Vec<(&String, u32)> = spawns
         .iter()
@@ -149,11 +148,14 @@ fn place_objects(
     let num_monsters = state.rng.gen_range(0..max_monsters);
     for _ in 0..num_monsters {
         // choose random spot for this monster
-        // TODO: Make sure coordinates are accessible
-        let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
-        let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
+        let tile = objects
+            .get_tiles()
+            .iter()
+            .flatten()
+            .filter(|t| !t.physics.is_blocking)
+            .choose(&mut state.rng);
 
-        if !objects.is_pos_occupied(&Position::new(x, y)) {
+        if let Some(t) = tile {
             let npc_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
             // TODO: maybe build an object factory around all this to make it re-usable.
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
@@ -219,7 +221,7 @@ fn place_objects(
                 };
 
                 let new_npc = Object::new()
-                    .position(x, y)
+                    .position(t.pos.x, t.pos.y)
                     .living(true)
                     .visualize(template.npc.as_str(), template.glyph, template.color)
                     .physical(

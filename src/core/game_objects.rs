@@ -49,7 +49,7 @@ impl GameObjects {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y, innit_env().debug_mode));
+                    .replace(Tile::wall(x, y, innit_env().is_debug_mode));
             }
         }
     }
