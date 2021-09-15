@@ -7,6 +7,7 @@ pub mod world_gen_rogue;
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
 use crate::entity::object::Object;
+use crate::game::RunState;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::Spawn;
 use serde::{Deserialize, Serialize};
@@ -14,15 +15,18 @@ use serde::{Deserialize, Serialize};
 /// The world generation trait only requests to implement a method that
 /// manipulated the world tiles provided in the GameObject struct.
 pub trait WorldGen {
+    /// Populate the world with tiles, objects and the player.
+    /// Returns a runstate, which would be either `Runstate::Ticking` or `Runstate::WorldGen` to
+    /// allow for intermediate visualisation of the world generation process.
     fn make_world(
         &mut self,
         state: &mut GameState,
         objects: &mut GameObjects,
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
-        level: u32,
-    );
+    ) -> RunState;
 
+    /// Returns the position of where the player was placed.
     fn get_player_start_pos(&self) -> (i32, i32);
 }
 

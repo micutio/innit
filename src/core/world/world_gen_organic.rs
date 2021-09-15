@@ -1,6 +1,6 @@
 use crate::core::game_state::GameState;
 use crate::core::position::Position;
-use crate::core::world::{Tile, WorldGen};
+use crate::core::world::WorldGen;
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::action::action_from_string;
 use crate::entity::ai::AiPassive;
@@ -13,25 +13,30 @@ use crate::entity::genetics::TraitFamily;
 use crate::entity::object::InventoryItem;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::util::game_rng::{GameRng, RngExtended};
-use std::collections::HashSet;
 
-const CA_CYCLES: i32 = 45;
+use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
+
+const CA_CYCLES: i32 = 65;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
 pub struct OrganicsWorldGenerator {
     player_start: (i32, i32),
+    ca_cycle_count: i32,
+    ca: Option<Simulation<bool>>,
 }
 
 impl OrganicsWorldGenerator {
     pub fn new() -> Self {
         OrganicsWorldGenerator {
             player_start: (0, 0),
+            ca_cycle_count: 0,
+            ca: None,
         }
     }
 }
@@ -45,42 +50,41 @@ impl WorldGen for OrganicsWorldGenerator {
         objects: &mut GameObjects,
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
-        level: u32,
-    ) {
-        // step 1: generate foundation pattern
-        let mid_x = WORLD_WIDTH / 2;
-        let mid_y = WORLD_HEIGHT / 2;
-        for y in mid_y - 2..mid_y + 2 {
-            for x in mid_x - 2..mid_x + 2 {
-                objects
-                    .get_tile_at(x as usize, y as usize)
-                    .replace(Tile::empty(x, y, innit_env().debug_mode));
-                self.player_start = (x, y);
-            }
+    ) -> RunState {
+        // step 1: create ca, if not already there
+        if self.ca.is_none() {
+            self.ca = Some(make_ca());
+            self.player_start = (WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
         }
 
-        let mut changed_tiles: HashSet<(i32, i32)> = HashSet::new();
         // step 2: use cellular automaton to fill in and smooth out
-        for _ in 0..CA_CYCLES {
-            for y in 2..WORLD_HEIGHT - 2 {
-                for x in 2..WORLD_WIDTH - 2 {
-                    // note whether a cell has changed
-                    if update_from_neighbours(objects, &mut state.rng, x, y) {
-                        changed_tiles.insert((x, y));
+        while self.ca_cycle_count < CA_CYCLES {
+            info!("CA cycle {0}", self.ca_cycle_count);
+            if let Some(ca) = &mut self.ca {
+                ca.step();
+                // update positions assigned with `true` to floor tiles
+                for (idx, cell) in ca.cells().into_iter().enumerate() {
+                    if *cell {
+                        if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
+                            if tile.physics.is_blocking {
+                                tile.physics.is_blocking = false;
+                                tile.physics.is_blocking_sight = false;
+                                tile.visual.glyph = '·';
+                                tile.visual.name = "empty tile".into();
+                            }
+                        }
                     }
                 }
             }
-            // perform actual update
-            for (j, k) in &changed_tiles {
-                objects
-                    .get_tile_at(*j as usize, *k as usize)
-                    .replace(Tile::empty(*j, *k, innit_env().debug_mode));
+            self.ca_cycle_count += 1;
+            if innit_env().debug_mode {
+                return RunState::WorldGen;
             }
-            changed_tiles.clear();
         }
 
         // world gen done, now insert objects
-        place_objects(state, objects, spawns, object_templates, level);
+        place_objects(state, objects, spawns, object_templates);
+        RunState::Ticking
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -88,32 +92,33 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
-fn update_from_neighbours(objects: &mut GameObjects, rng: &mut GameRng, x: i32, y: i32) -> bool {
-    let directions = [
-        // (-1, -1),
-        (-1, 0, 4.0),
-        // (-1, 1),
-        (0, -1, 1.0),
-        (0, 1, 1.0),
-        // (1, -1),
-        (1, 0, 4.0),
-        // (1, 1),
-    ];
+/// Create a cellular automaton from the tiles of the game world.
+fn make_ca() -> Simulation<bool> {
+    let mut rng = GameRng::new_from_u64_seed(0);
+    let trans_fn = move |cell: &mut bool, neigh_it: Neighborhood<bool>| {
+        let t_count = neigh_it.into_iter().filter(|n| **n).count();
 
-    let mut access_count: f64 = 0.0;
-    for (i, j, weight) in directions.iter() {
-        let nx = x + i;
-        let ny = y + j;
-        if nx >= 2 && nx <= (WORLD_WIDTH - 2) && ny >= 2 && ny <= (WORLD_HEIGHT - 2) {
-            if let Some(neighbour_tile) = &mut objects.get_tile_at(nx as usize, ny as usize) {
-                if !neighbour_tile.physics.is_blocking {
-                    access_count += weight;
-                }
-            }
+        if rng.flip_with_prob(t_count as f64 / 8.0) {
+            *cell = true;
+        }
+    };
+
+    let mut cells = vec![false; (WORLD_WIDTH * WORLD_HEIGHT) as usize];
+    let mid_x = WORLD_WIDTH / 2;
+    let mid_y = WORLD_HEIGHT / 2;
+    for y in mid_y - 2..mid_y + 2 {
+        for x in mid_x - 2..mid_x + 2 {
+            cells[coord_to_idx(WORLD_WIDTH, x, y)] = true;
         }
     }
 
-    rng.flip_with_prob(access_count / 16.0)
+    Simulation::from_cells(
+        WORLD_WIDTH,
+        WORLD_HEIGHT,
+        trans_fn,
+        VON_NEUMAN_NEIGHBORHOOD,
+        cells,
+    )
 }
 
 fn place_objects(
@@ -121,18 +126,21 @@ fn place_objects(
     objects: &mut GameObjects,
     spawns: &[Spawn],
     object_templates: &[ObjectTemplate],
-    level: u32,
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
-    // TODO: Pull spawn tables out of here and pass as parameters in make_world().
     // TODO: Set monster number per level via transitions.
     let max_monsters = 100;
 
     let monster_chances: Vec<(&String, u32)> = spawns
         .iter()
-        .map(|s| (&s.npc, from_dungeon_level(&s.spawn_transitions, level)))
+        .map(|s| {
+            (
+                &s.npc,
+                from_dungeon_level(&s.spawn_transitions, state.dungeon_level),
+            )
+        })
         .collect();
 
     let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();

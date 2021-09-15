@@ -21,7 +21,6 @@ pub enum PlayerInput {
 pub enum UiAction {
     ExitGameLoop,
     CharacterScreen,
-    ToggleDarkLightMode,
     ChoosePrimaryAction,
     ChooseSecondaryAction,
     ChooseQuick1Action,
@@ -55,7 +54,6 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
         (VirtualKeyCode::E, true, false) => MetaInput(ChooseQuick2Action),
         (VirtualKeyCode::G, false, false) => MetaInput(GenomeEditor),
-        (VirtualKeyCode::L, false, false) => MetaInput(ToggleDarkLightMode),
         (VirtualKeyCode::P, true, false) => MetaInput(ChoosePrimaryAction),
         (VirtualKeyCode::Q, false, false) => PlayInput(Quick1Action),
         (VirtualKeyCode::Q, true, false) => MetaInput(ChooseQuick1Action),

@@ -3,9 +3,10 @@ use crate::core::position::Position;
 use crate::core::world::{Tile, WorldGen};
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::object::Object;
-use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::{from_dungeon_level, Spawn};
+use crate::raws::spawn::Spawn;
+use crate::ui::menu::main_menu::main_menu;
 use crate::ui::palette;
 use rand::Rng;
 use std::{cmp, thread, time};
@@ -39,8 +40,7 @@ impl WorldGen for RogueWorldGenerator {
         objects: &mut GameObjects,
         spawns: &[Spawn],
         object_templates: &[ObjectTemplate],
-        level: u32,
-    ) {
+    ) -> RunState {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
@@ -66,7 +66,7 @@ impl WorldGen for RogueWorldGenerator {
 
                 // add some content to the room
                 // TODO: fix
-                // place_objects(state, objects, new_room, level);
+                place_objects(state, objects, spawns, object_templates);
 
                 let (new_x, new_y) = new_room.center();
                 if self.rooms.is_empty() {
@@ -101,6 +101,7 @@ impl WorldGen for RogueWorldGenerator {
                 thread::sleep(ten_millis);
             }
         }
+        RunState::MainMenu(main_menu())
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -137,23 +138,22 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
 fn place_objects(
     state: &mut GameState,
     objects: &mut GameObjects,
-    spawns: &[Spawn],
-    object_templates: &[ObjectTemplate],
-    level: u32,
+    _spawns: &[Spawn],
+    _object_templates: &[ObjectTemplate],
 ) {
-    use rand::distributions::WeightedIndex;
+    // use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
     // TODO: Pull spawn tables out of here and pass as parameters in make_world().
     // TODO: Set monster number per level via transitions.
     let max_monsters = 100;
 
-    let monster_chances: Vec<(&String, u32)> = spawns
-        .iter()
-        .map(|s| (&s.npc, from_dungeon_level(&s.spawn_transitions, level)))
-        .collect();
+    // let monster_chances: Vec<(&String, u32)> = spawns
+    //     .iter()
+    //     .map(|s| (&s.npc, from_dungeon_level(&s.spawn_transitions, level)))
+    //     .collect();
 
-    let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
+    // let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
     // choose random number of monsters
     let num_monsters = state.rng.gen_range(0..max_monsters);
@@ -163,8 +163,8 @@ fn place_objects(
         let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&Position::new(x, y)) {
-            let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
-            let mut monster = Object::new()
+            // let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
+            let monster = Object::new()
                 .position(x, y)
                 .living(true)
                 .visualize("Virus", 'v', palette().entity_virus)

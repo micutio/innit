@@ -3,6 +3,7 @@
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::innit_env;
 use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
 use crate::core::world::WorldGen;
 use crate::entity::action::hereditary::ActPass;
@@ -12,6 +13,8 @@ use crate::entity::control::Controller;
 use crate::entity::genetics::{DnaType, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+use crate::raws::object_template::ObjectTemplate;
+use crate::raws::spawn::Spawn;
 use crate::raws::{load_object_templates, load_spawns};
 use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
 use crate::ui::dialog::character::character_screen;
@@ -63,7 +66,7 @@ pub enum RunState {
     GenomeEditing(GenomeEditor),
     Ticking,
     CheckInput,
-    ToggleDarkLightMode,
+    WorldGen,
 }
 
 impl Display for RunState {
@@ -78,7 +81,7 @@ impl Display for RunState {
             RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
             RunState::Ticking => write!(f, "Ticking"),
             RunState::CheckInput => write!(f, "CheckInput"),
-            RunState::ToggleDarkLightMode => write!(f, "ToggleDarkLightMode"),
+            RunState::WorldGen => write!(f, "WorldGen"),
         }
     }
 }
@@ -86,12 +89,15 @@ impl Display for RunState {
 pub struct Game {
     state: GameState,
     objects: GameObjects,
-    // spawns: Vec<Spawn>,
-    // object_templates: Vec<ObjectTemplate>,
     run_state: Option<RunState>,
+    // world generation state start
+    spawns: Vec<Spawn>,
+    object_templates: Vec<ObjectTemplate>,
+    // world_generator = RogueWorldGenerator::new();
+    world_generator: OrganicsWorldGenerator,
+    // world generation state end
     hud: Hud,
     re_render: bool,
-    is_dark_color_palette: bool,
     rex_assets: RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
@@ -102,7 +108,7 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let state = GameState::new(0);
+        let state = GameState::new(1);
         let objects = GameObjects::new();
 
         Game {
@@ -111,9 +117,13 @@ impl Game {
             // spawns: load_spawns(),
             // object_templates: load_object_templates(),
             run_state: Some(RunState::MainMenu(main_menu())),
+            spawns: load_spawns(),
+            object_templates: load_object_templates(),
+
+            // let mut world_generator : RogueWorldGenerator::new(),
+            world_generator: OrganicsWorldGenerator::new(),
             hud: Hud::new(),
             re_render: false,
-            is_dark_color_palette: true,
             rex_assets: RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
@@ -132,69 +142,88 @@ impl Game {
     /// Create a new game by instantiating the game engine, game state and object vector.
     fn new_game() -> (GameState, GameObjects) {
         // create game state holding game-relevant information
-        let level = 1;
-        let mut state = GameState::new(level);
+        let state = GameState::new(1);
 
         // initialise game object vector
         let mut objects = GameObjects::new();
         objects.blank_world();
 
+        // prepare world generation
         // load spawn and object templates from raw files
-        let spawns = load_spawns();
-        let object_templates = load_object_templates();
+        // let spawns = load_spawns();
+        // let object_templates = load_object_templates();
 
-        // generate world terrain
-        // let mut world_generator = RogueWorldGenerator::new();
-        let mut world_generator = OrganicsWorldGenerator::new();
-        world_generator.make_world(&mut state, &mut objects, &spawns, &object_templates, level);
-        // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
-        objects.set_tile_dna(
-            &mut state.rng,
-            vec![
-                "Cell Membrane".to_string(),
-                "Cell Membrane".to_string(),
-                "Cell Membrane".to_string(),
-                "Energy Store".to_string(),
-                "Energy Store".to_string(),
-                "Receptor".to_string(),
-            ],
-            &state.gene_library,
-        );
-
-        // create object representing the player
-        let (new_x, new_y) = world_generator.get_player_start_pos();
-        let player = Object::new()
-            .position(new_x, new_y)
-            .living(true)
-            .visualize("You", '@', (255, 255, 255))
-            .physical(true, false, true)
-            .control(Controller::Player(PlayerCtrl::new()))
-            .genome(
-                0.99,
-                state
-                    .gene_library
-                    .new_genetics(&mut state.rng, DnaType::Nucleus, false, GENE_LEN),
-            );
-
-        trace!("created player object {}", player);
-        trace!("player sensors: {:?}", player.sensors);
-        trace!("player processors: {:?}", player.processors);
-        trace!("player actuators: {:?}", player.actuators);
-        trace!("player dna: {:?}", player.dna);
-        trace!(
-            "player default action: {:?}",
-            player.get_primary_action(Target::Center).to_text()
-        );
-
-        objects.set_player(player);
-
-        // a warm welcoming message
-        state.log.add(
-            "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-            MsgClass::Story,
-        );
+        // // let mut world_generator = RogueWorldGenerator::new();
+        // let mut world_generator = OrganicsWorldGenerator::new();
 
         (state, objects)
+    }
+
+    fn world_gen(&mut self) -> RunState {
+        let new_runstate = self.world_generator.make_world(
+            &mut self.state,
+            &mut self.objects,
+            &self.spawns,
+            &self.object_templates,
+        );
+
+        match new_runstate {
+            RunState::WorldGen => {}
+            _ => {
+                // world gen is now done
+                // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
+                self.objects.set_tile_dna(
+                    &mut self.state.rng,
+                    vec![
+                        "Cell Membrane".to_string(),
+                        "Cell Membrane".to_string(),
+                        "Cell Membrane".to_string(),
+                        "Energy Store".to_string(),
+                        "Energy Store".to_string(),
+                        "Receptor".to_string(),
+                    ],
+                    &self.state.gene_library,
+                );
+
+                // create object representing the player
+                let (new_x, new_y) = self.world_generator.get_player_start_pos();
+                let player = Object::new()
+                    .position(new_x, new_y)
+                    .living(true)
+                    .visualize("You", '@', (255, 255, 255))
+                    .physical(true, false, true)
+                    .control(Controller::Player(PlayerCtrl::new()))
+                    .genome(
+                        0.99,
+                        self.state.gene_library.new_genetics(
+                            &mut self.state.rng,
+                            DnaType::Nucleus,
+                            false,
+                            GENE_LEN,
+                        ),
+                    );
+
+                trace!("created player object {}", player);
+                trace!("player sensors: {:?}", player.sensors);
+                trace!("player processors: {:?}", player.processors);
+                trace!("player actuators: {:?}", player.actuators);
+                trace!("player dna: {:?}", player.dna);
+                trace!(
+                    "player default action: {:?}",
+                    player.get_primary_action(Target::Center).to_text()
+                );
+
+                self.objects.set_player(player);
+
+                // a warm welcoming message
+                self.state.log.add(
+                    "Welcome microbe! You're innit now. Beware of bacteria and viruses",
+                    MsgClass::Story,
+                );
+            }
+        }
+
+        new_runstate
     }
 }
 
@@ -267,12 +296,10 @@ impl Rltk_GameState for Game {
             }
 
             ctx.set_active_console(HUD_CON);
-            let player = self
-                .objects
-                .extract_by_index(self.state.player_idx)
-                .unwrap();
-            render_gui(&self.state, &mut self.hud, ctx, &player);
-            self.objects.replace(self.state.player_idx, player);
+            if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
+                render_gui(&self.state, &mut self.hud, ctx, &player);
+                self.objects.replace(self.state.player_idx, player);
+            }
 
             // switch off any triggers
             self.re_render = false;
@@ -336,6 +363,7 @@ impl Rltk_GameState for Game {
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
+                    self.re_render = true;
                     ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
                 }
                 None => RunState::ChooseActionMenu(instance.clone()),
@@ -446,19 +474,17 @@ impl Rltk_GameState for Game {
             },
             RunState::InfoBox(infobox) => match infobox.display(ctx) {
                 Some(infobox) => RunState::InfoBox(infobox),
-                None => RunState::Ticking,
+                None => {
+                    self.re_render = true;
+                    RunState::Ticking
+                }
             },
-            RunState::ToggleDarkLightMode => {
-                self.is_dark_color_palette = !self.is_dark_color_palette;
-                self.re_render = true;
-                RunState::Ticking
-            }
             RunState::NewGame => {
                 // start new game
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
-                self.re_render = true;
-                RunState::Ticking
+                self.world_generator = OrganicsWorldGenerator::new();
+                RunState::WorldGen
             }
             RunState::LoadGame => {
                 // load game from file
@@ -470,6 +496,12 @@ impl Rltk_GameState for Game {
                     }
                     Err(_e) => RunState::MainMenu(main_menu()),
                 }
+            }
+            RunState::WorldGen => {
+                if innit_env().debug_mode {
+                    self.re_render = true;
+                }
+                self.world_gen()
             }
         };
         self.run_state.replace(new_run_state);
@@ -506,11 +538,6 @@ pub fn handle_meta_actions(
             let result = save_game(&state, &objects);
             result.unwrap();
             RunState::MainMenu(main_menu())
-        }
-        UiAction::ToggleDarkLightMode => {
-            // game.toggle_dark_light_mode();
-            // RunState::Ticking(true)
-            RunState::ToggleDarkLightMode
         }
         UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
         UiAction::ChoosePrimaryAction => {

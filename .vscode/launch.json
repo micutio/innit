@@ -13,7 +13,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "RUST_LOG": "innit=debug",
-                "RUST_BACKTRACE": "1",
+                "RUST_BACKTRACE": "full",
             },
             "stopOnEntry": false,
             "sourceLanguages": [
@@ -30,7 +30,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "RUST_LOG": "innit=trace",
-                "RUST_BACKTRACE": "1",
+                "RUST_BACKTRACE": "full",
             },
             "stopOnEntry": false,
             "sourceLanguages": [
@@ -51,7 +51,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "RUST_LOG": "innit=trace",
-                "RUST_BACKTRACE": "1",
+                "RUST_BACKTRACE": "full",
             },
             "sourceLanguages": [
                 "rust"
