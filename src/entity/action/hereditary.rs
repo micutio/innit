@@ -47,16 +47,15 @@ impl Action for ActPass {
         &self,
         _state: &mut GameState,
         _objects: &mut GameObjects,
-        owner: &mut Object,
+        _owner: &mut Object,
     ) -> ActionResult {
         // play a little particle effect
-        // TODO: improve color handling
-        let fg = palette().hud_fg_dna_sensor;
-        let bg = palette().world_bg_ground_fov_true;
+        // let fg = palette().hud_fg_dna_sensor;
+        // let bg = palette().world_bg_ground_fov_true;
         // Disable particle effect for now. It's a bit spammy.
-        if owner.physics.is_visible {
-            register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
-        }
+        // if owner.physics.is_visible {
+        //     register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
+        // }
 
         let callback = if self.override_redraw {
             ObjectFeedback::Render
@@ -473,7 +472,6 @@ impl Action for ActInjectRnaVirus {
                         MsgClass::Alert,
                     );
                 }
-                // TODO: Add forced production for retroviruses
                 let original_ai = target.control.take();
                 let overriding_ai =
                     Controller::Npc(Box::new(AiForceVirusProduction::new_duration(

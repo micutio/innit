@@ -57,7 +57,9 @@ pub enum TraitFamily {
     Processing,
     Actuating,
     Ltr,
-    Junk(u8), // junk must keep track of it's gene // TODO: Write why
+    Junk(u8),
+    // We want to be able to decode/encode genome and trait back and forth which requires junk to
+    // keep track of the gene that caused it because it's not unique.
 }
 
 impl Display for TraitFamily {
@@ -355,8 +357,6 @@ impl GeneLibrary {
         }
     }
 
-    // TODO: Add parameters to control distribution of sense, process and actuate!
-    // TODO: Use above parameters for NPC definitions, readable from datafiles!
     pub fn new_dna(&self, rng: &mut GameRng, has_ltr: bool, avg_genome_len: usize) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
 
@@ -399,7 +399,6 @@ impl GeneLibrary {
         dna
     }
 
-    // TODO: Take care of the case where `traits` contains junk, literally.
     /// Encode genetic traits into binary DNA code.
     pub fn g_traits_to_dna(&self, traits: &[GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();

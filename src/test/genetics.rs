@@ -49,7 +49,7 @@ fn test_dna_encoding() {
 
     assert_eq!(s.sensing_range, _s.sensing_range);
     assert_eq!(s.actions.len(), _s.actions.len());
-    // NOTE: Find a better way of comparing action vectors for equality.
+    // TODO: Find a better way of comparing action vectors for equality.
     // let s_match_errors = s
     //     .actions
     //     .iter()

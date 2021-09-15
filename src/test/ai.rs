@@ -34,7 +34,6 @@ fn test_random_ai() {
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
-        // TODO: Pull genome create out of here. It's not the same for every NPC.
         .genome(
             0.75,
             state
@@ -48,7 +47,6 @@ fn test_random_ai() {
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
-        // TODO: Pull genome create out of here. It's not the same for every NPC.
         .genome(
             0.75,
             state
@@ -62,7 +60,6 @@ fn test_random_ai() {
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
-        // TODO: Pull genome create out of here. It's not the same for every NPC.
         .genome(
             0.75,
             state
@@ -92,7 +89,6 @@ fn test_random_ai() {
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
-        // TODO: Pull genome create out of here. It's not the same for every NPC.
         .genome(
             0.75,
             state

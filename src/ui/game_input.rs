@@ -108,6 +108,8 @@ fn get_names_under_mouse(
     tooltips
 }
 
+/// Check whether the user has given inputs either via mouse or keyboard. Also update any input-
+/// dependent UI elements, like hover-tooltips etc.
 pub fn read_input(
     state: &mut GameState,
     objects: &mut GameObjects,
@@ -121,7 +123,7 @@ pub fn read_input(
         _ => (),
     });
 
-    // 1) check if key has been pressed
+    // 1) check whether key has been pressed
     let ctrl = input.key_pressed_set().contains(&VirtualKeyCode::LControl)
         || input.key_pressed_set().contains(&VirtualKeyCode::RControl);
     let shift = input.key_pressed_set().contains(&VirtualKeyCode::LShift)
@@ -140,7 +142,7 @@ pub fn read_input(
         get_names_under_mouse(state, objects, mouse),
     );
 
-    // 3) if mouse is over world
+    // 3) if mouse is hovering over world
     if mouse.x < WORLD_WIDTH {
         // 3b) check whether a mouse button has been pressed for player action
         if is_clicked {
@@ -157,7 +159,7 @@ pub fn read_input(
         }
         PlayerInput::Undefined
     } else {
-        // 4) is mouse is over sidebar
+        // 4) is mouse is hovering over sidebar
         // 4a) update hovered button
         if let Some(item) = hud
             .items
