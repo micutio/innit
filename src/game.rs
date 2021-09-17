@@ -181,6 +181,7 @@ impl Game {
                         "Energy Store".to_string(),
                         "Energy Store".to_string(),
                         "Receptor".to_string(),
+                        "Mitosis".to_string(),
                     ],
                     &self.state.gene_library,
                 );

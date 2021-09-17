@@ -5,7 +5,7 @@ use crate::entity::action::{hereditary::ActPass, Action};
 use serde::{Deserialize, Serialize};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PlayerCtrl {
     pub primary_action: Box<dyn Action>,
     pub secondary_action: Box<dyn Action>,

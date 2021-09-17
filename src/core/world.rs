@@ -38,7 +38,7 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn empty(x: i32, y: i32, is_visible: bool) -> Object {
+    pub fn floor(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position(x, y)
             .living(true)

@@ -234,6 +234,13 @@ impl GameObjects {
         &self.obj_vec[start..end]
     }
 
+    /// Return a Vec slice with all tiles in the world.
+    pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
+        let start: usize = 1;
+        let end: usize = WORLD_HEIGHT as usize * WORLD_WIDTH as usize;
+        &mut self.obj_vec[start..end]
+    }
+
     /// Return a Vec slice with all objects that are not tiles in the world.
     pub fn get_non_tiles(&self) -> &[Option<Object>] {
         let start: usize = WORLD_HEIGHT as usize * WORLD_WIDTH as usize;

@@ -1,22 +1,16 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::{
-    core::{
-        game_objects::GameObjects,
-        game_state::{GameState, MessageLog, MsgClass, ObjectFeedback},
-        position::Position,
-    },
-    entity::{
-        action::{Action, ActionResult, Target, TargetCategory},
-        ai::AiForceVirusProduction,
-        ai::AiVirus,
-        control::Controller,
-        genetics::DnaType,
-        genetics::TraitFamily,
-        object::Object,
-    },
-    ui::{palette, register_particle},
-};
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::position::Position;
+use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
+use crate::entity::ai::{AiForceVirusProduction, AiVirus};
+use crate::entity::control::Controller;
+use crate::entity::genetics::DnaType;
+use crate::entity::genetics::TraitFamily;
+use crate::entity::object::Object;
+use crate::entity::player::PlayerCtrl;
+use crate::ui::{palette, register_particle};
 use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
@@ -942,5 +936,134 @@ impl Action for ActKillSwitch {
 
     fn to_text(&self) -> String {
         format!("killswitch {:?}", self.target)
+    }
+}
+
+/// Reproduction of a cell by duplicating the genome and creating a quasi identical object, can be
+/// affected by mutation. The target here can be any empty tile to place the child object.
+/// In case of a tile cell replicating, it will replace the empty tile with a wall tile instead.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ActMitosis {
+    target: Target,
+    lvl: i32,
+}
+
+impl ActMitosis {
+    pub fn new() -> Self {
+        ActMitosis {
+            target: Target::Center,
+            lvl: 0,
+        }
+    }
+}
+
+#[typetag::serde]
+impl Action for ActMitosis {
+    fn perform(
+        &self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> ActionResult {
+        // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of
+        // this one's (mutated) genome.
+        let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+        // let valid_target: Option<&mut Object> =
+
+        let child_obj = match objects
+            .get_tiles_mut()
+            .iter_mut()
+            .flatten()
+            .find(|o| !o.physics.is_blocking && o.pos.is_equal(&target_pos))
+        {
+            Some(t) => {
+                if owner.tile.is_some() && owner.physics.is_blocking {
+                    println!("tile {} performing mitosis", owner.visual.name);
+                    // turn into wall
+                    t.physics.is_blocking = true;
+                    t.physics.is_blocking_sight = true;
+                    t.visual.glyph = '◘';
+                    // insert (mutated) genome
+                    t.set_dna(owner.dna.clone());
+
+                    // return prematurely because we don't need to insert anything new into the
+                    // object vector
+                    return ActionResult::Success {
+                        callback: ObjectFeedback::NoFeedback,
+                    };
+                } else {
+                    // create a new object
+                    let child_ctrl = match &owner.control {
+                        Some(ctrl) => match ctrl {
+                            Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),
+                            Controller::Player(_) => Some(Controller::Player(PlayerCtrl::new())),
+                        },
+                        None => None,
+                    };
+                    let mut child = Object::new()
+                        .position(t.pos.x, t.pos.y)
+                        .living(true)
+                        .visualize(t.visual.name.as_str(), t.visual.glyph, t.visual.fg_color)
+                        .genome(
+                            owner.gene_stability,
+                            state
+                                .gene_library
+                                .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
+                        )
+                        .control_opt(child_ctrl)
+                        .living(true);
+                    child.physics.is_visible = t.physics.is_visible;
+                    Some(child)
+                }
+            }
+            None => None,
+        };
+
+        // finally place the 'child' cell into the world
+        if let Some(child) = child_obj {
+            let callback = if child.physics.is_visible {
+                ObjectFeedback::Render
+            } else {
+                ObjectFeedback::NoFeedback
+            };
+            objects.push(child);
+
+            ActionResult::Success { callback }
+        } else {
+            if owner.physics.is_visible {
+                state
+                    .log
+                    .add("No place available to generate offspring", MsgClass::Info);
+            }
+            ActionResult::Failure
+        }
+    }
+
+    fn set_target(&mut self, t: Target) {
+        self.target = t;
+    }
+
+    fn set_level(&mut self, lvl: i32) {
+        self.lvl = lvl;
+    }
+
+    fn get_target_category(&self) -> TargetCategory {
+        TargetCategory::EmptyObject
+    }
+
+    fn get_level(&self) -> i32 {
+        self.lvl
+    }
+
+    fn get_identifier(&self) -> String {
+        "mitosis".to_string()
+    }
+
+    fn get_energy_cost(&self) -> i32 {
+        self.lvl
+    }
+
+    fn to_text(&self) -> String {
+        format!("mitosis into {:?}", self.target)
     }
 }

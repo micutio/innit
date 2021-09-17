@@ -130,19 +130,19 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
     // make tiles near the player walkable
     objects
         .get_tile_at(p_x as usize, p_y as usize)
-        .replace(Tile::empty(p_x, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y, innit_env().is_debug_mode));
     objects
         .get_tile_at((p_x + 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x + 1, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x + 1, p_y, innit_env().is_debug_mode));
     objects
         .get_tile_at((p_x - 1) as usize, p_y as usize)
-        .replace(Tile::empty(p_x - 1, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x - 1, p_y, innit_env().is_debug_mode));
     objects
         .get_tile_at(p_x as usize, (p_y - 1) as usize)
-        .replace(Tile::empty(p_x, p_y - 1, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y - 1, innit_env().is_debug_mode));
     objects
         .get_tile_at(p_x as usize, (p_y + 1) as usize)
-        .replace(Tile::empty(p_x, p_y + 1, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y + 1, innit_env().is_debug_mode));
 
     let player = Object::new()
         .position(p_x, p_y)

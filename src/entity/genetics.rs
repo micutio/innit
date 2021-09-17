@@ -29,11 +29,11 @@
 // Should attributes be fix on trait level or full-on generic as list of attribute objects?
 // How to best model synergies and anti-synergies across traits?
 
-use crate::entity::action::{
-    hereditary::{ActAttack, ActKillSwitch, ActMetabolise, ActMove},
-    inventory::ActPickUpItem,
-    Action,
+use crate::entity::action::hereditary::{
+    ActAttack, ActKillSwitch, ActMetabolise, ActMitosis, ActMove,
 };
+use crate::entity::action::inventory::ActPickUpItem;
+use crate::entity::action::Action;
 use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
@@ -145,6 +145,12 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             Actuating,
             TraitAttribute::None,
             Some(Box::new(ActAttack::new())),
+        ),
+        GeneticTrait::new(
+            "Mitosis",
+            TraitFamily::Actuating,
+            TraitAttribute::None,
+            Some(Box::new(ActMitosis::new())),
         ),
         GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),

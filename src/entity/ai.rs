@@ -240,7 +240,7 @@ impl Ai for AiVirus {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AiForceVirusProduction {
     original_ai: Option<Controller>,
     turns_active: Option<i32>,
