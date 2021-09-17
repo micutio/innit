@@ -16,10 +16,10 @@ fn test_dna_encoding() {
     let dna = vec![
         0x00,
         0x01,
-        gray_code[4], // sensing range
+        gray_code[5], // sensing range
         0x00,
         0x01,
-        gray_code[5], // enzyme
+        gray_code[6], // enzyme
         0x00,
         0x01,
         gray_code[1], // move action
