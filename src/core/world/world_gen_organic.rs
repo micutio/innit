@@ -16,9 +16,9 @@ use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
-use crate::util::game_rng::{GameRng, RngExtended};
 
 use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
+use rand::Rng;
 
 const CA_CYCLES: i32 = 65;
 
@@ -27,7 +27,7 @@ const CA_CYCLES: i32 = 65;
 pub struct OrganicsWorldGenerator {
     player_start: (i32, i32),
     ca_cycle_count: i32,
-    ca: Option<Simulation<bool>>,
+    ca: Option<Simulation<f64>>,
 }
 
 impl OrganicsWorldGenerator {
@@ -52,7 +52,7 @@ impl WorldGen for OrganicsWorldGenerator {
     ) -> RunState {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
-            self.ca = Some(make_ca());
+            self.ca = Some(make_ca(state));
             self.player_start = (WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
         }
 
@@ -63,14 +63,20 @@ impl WorldGen for OrganicsWorldGenerator {
                 ca.step();
                 // update positions assigned with `true` to floor tiles
                 for (idx, cell) in ca.cells().into_iter().enumerate() {
-                    if *cell {
-                        if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
-                            if tile.physics.is_blocking {
-                                tile.physics.is_blocking = false;
-                                tile.physics.is_blocking_sight = false;
-                                tile.visual.glyph = '·';
-                                tile.visual.name = "empty tile".into();
-                            }
+                    if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
+                        if let Some(t) = &mut tile.tile {
+                            t.growth_protein = *cell;
+                        }
+                        if *cell < 0.5 {
+                            tile.physics.is_blocking = false;
+                            tile.physics.is_blocking_sight = false;
+                            tile.visual.glyph = '·';
+                            tile.visual.name = "empty tile".into();
+                        } else {
+                            tile.physics.is_blocking = true;
+                            tile.physics.is_blocking_sight = true;
+                            tile.visual.glyph = '◘';
+                            tile.visual.name = "wall tile".into();
                         }
                     }
                 }
@@ -92,22 +98,28 @@ impl WorldGen for OrganicsWorldGenerator {
 }
 
 /// Create a cellular automaton from the tiles of the game world.
-fn make_ca() -> Simulation<bool> {
-    let mut rng = GameRng::new_from_u64_seed(0);
-    let trans_fn = move |cell: &mut bool, neigh_it: Neighborhood<bool>| {
-        let t_count = neigh_it.into_iter().filter(|n| **n).count();
+fn make_ca(state: &mut GameState) -> Simulation<f64> {
+    let trans_fn = move |cell: &mut f64, neigh_it: Neighborhood<f64>| {
+        let mut count = 0.0;
+        let mut value = 0.0;
+        neigh_it.into_iter().for_each(|f| {
+            count += 1.0;
+            value += f
+        });
 
-        if rng.flip_with_prob(t_count as f64 / 8.0) {
-            *cell = true;
-        }
+        *cell = value / count;
     };
 
-    let mut cells = vec![false; (WORLD_WIDTH * WORLD_HEIGHT) as usize];
+    // let mut cells = vec![1.0; (WORLD_WIDTH * WORLD_HEIGHT) as usize];
+    let mut cells: Vec<f64> = (0..WORLD_WIDTH * WORLD_HEIGHT)
+        .into_iter()
+        .map(|_| state.rng.gen_range(0.8..1.0))
+        .collect();
     let mid_x = WORLD_WIDTH / 2;
     let mid_y = WORLD_HEIGHT / 2;
     for y in mid_y - 2..mid_y + 2 {
         for x in mid_x - 2..mid_x + 2 {
-            cells[coord_to_idx(WORLD_WIDTH, x, y)] = true;
+            cells[coord_to_idx(WORLD_WIDTH, x, y)] = 0.0;
         }
     }
 
