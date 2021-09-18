@@ -4,17 +4,13 @@
 
 // internal imports
 
+use crate::core::game_objects::GameObjects;
+use crate::core::game_state::GameState;
+use crate::entity::action::hereditary::{ActInjectRnaVirus, ActMove, ActPass, ActProduceVirion};
+use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
-use crate::{
-    core::game_objects::GameObjects,
-    entity::action::hereditary::{ActInjectRnaVirus, ActPass},
-};
-use crate::{core::game_state::GameState, entity::action::hereditary::ActProduceVirion};
-use crate::{
-    entity::action::{hereditary::ActMove, Action, Target, TargetCategory},
-    util::game_rng::RngExtended,
-};
+use crate::util::game_rng::RngExtended;
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -291,5 +287,54 @@ impl Ai for AiForceVirusProduction {
             }
         }
         Box::new(ActProduceVirion::new(self.rna.clone()))
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AiTile;
+
+#[typetag::serde]
+impl Ai for AiTile {
+    fn act(
+        &mut self,
+        state: &mut GameState,
+        objects: &mut GameObjects,
+        owner: &mut Object,
+    ) -> Box<dyn Action> {
+        // If the object doesn't have any action, return a pass.
+        if owner.actuators.actions.is_empty()
+            && owner.processors.actions.is_empty()
+            && owner.sensors.actions.is_empty()
+        {
+            return Box::new(ActPass::default());
+        }
+
+        // If the tile can perform mitosis, check whether a neighboring cell is available and also
+        // contains a high enough concentration of growth gradient.
+        if let Some(mitosis_action) = owner
+            .actuators
+            .actions
+            .iter()
+            .find(|a| a.get_identifier().eq("mitosis"))
+        {
+            let target_cell: Option<&Object> = objects.get_tiles().iter().flatten().find(|obj| {
+                if let Some(tile) = &obj.tile {
+                    owner.pos.is_adjacent(&obj.pos)
+                        && (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
+                        && state.rng.flip_with_prob(tile.growth_protein)
+                } else {
+                    false
+                }
+            });
+            if let Some(target) = target_cell {
+                let mut mitosis = mitosis_action.clone_action();
+                mitosis.set_target(Target::from_pos(&owner.pos, &target.pos));
+                mitosis
+            } else {
+                Box::new(ActPass::default())
+            }
+        } else {
+            Box::new(ActPass::default())
+        }
     }
 }

@@ -187,8 +187,12 @@ impl Object {
     }
 
     /// Transform the object into a tile. Part of the builder pattern.
+    /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
     pub fn tile_explored(mut self, is_explored: bool) -> Object {
-        self.tile = Some(Tile { is_explored });
+        self.tile = Some(Tile {
+            is_explored,
+            growth_protein: 0.0,
+        });
         self
     }
 

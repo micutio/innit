@@ -6,6 +6,8 @@ pub mod world_gen_rogue;
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
+use crate::entity::ai::AiTile;
+use crate::entity::control::Controller;
 use crate::entity::object::Object;
 use crate::game::RunState;
 use crate::raws::object_template::ObjectTemplate;
@@ -35,6 +37,7 @@ pub trait WorldGen {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub is_explored: bool,
+    pub growth_protein: f64,
 }
 
 impl Tile {
@@ -45,7 +48,7 @@ impl Tile {
             .visualize("empty tile", '·', (255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
-        // .control(Controller::Npc(Box::new(AiPassive::new())))
+            .control(Controller::Npc(Box::new(AiTile)))
     }
 
     pub fn wall(x: i32, y: i32, is_visible: bool) -> Object {
@@ -55,7 +58,7 @@ impl Tile {
             .visualize("wall tile", '◘', (255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
-        // .control(Controller::Npc(Box::new(AiPassive::new())))
+            .control(Controller::Npc(Box::new(AiTile)))
     }
 }
 
