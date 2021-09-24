@@ -191,7 +191,7 @@ impl Object {
     pub fn tile_explored(mut self, is_explored: bool) -> Object {
         self.tile = Some(Tile {
             is_explored,
-            growth_protein: 0.0,
+            morphogen: 0.0,
         });
         self
     }

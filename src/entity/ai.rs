@@ -321,7 +321,7 @@ impl Ai for AiTile {
                 if let Some(tile) = &obj.tile {
                     owner.pos.is_adjacent(&obj.pos)
                         && (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
-                        && state.rng.flip_with_prob(tile.growth_protein)
+                        && state.rng.flip_with_prob(tile.morphogen)
                 } else {
                     false
                 }

@@ -37,7 +37,7 @@ pub trait WorldGen {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub is_explored: bool,
-    pub growth_protein: f64,
+    pub morphogen: f64, // growth protein that controls where walls can 'grow'
 }
 
 impl Tile {
