@@ -22,8 +22,10 @@ use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD}
 use rand::Rng;
 
 const CA_CYCLES: i32 = 500;
-const GROWTH_PROTEIN_CUTOFF: f64 = 0.1;
-const BASE_ELEVATION: f64 = 500.0;
+const GROWTH_PROTEIN_CUTOFF: f64 = 0.2;
+const BASE_ELEVATION: f64 = 100.0;
+const SOIL_HARDNESS: f64 = 0.8;
+const RAINFALL_PROB: f64 = 0.05;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -69,13 +71,13 @@ impl WorldGen for OrganicsWorldGenerator {
                     if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
                         if let Some(t) = &mut tile.tile {
                             t.growth_protein = f64::max(cell.elevation / BASE_ELEVATION, 0.0);
-                            if (t.growth_protein < GROWTH_PROTEIN_CUTOFF) {
-                                println!(
-                                    "growth protein: {}, true elevation: {}",
-                                    t.growth_protein,
-                                    cell.elevation / BASE_ELEVATION
-                                );
-                            }
+                            // if (t.growth_protein < GROWTH_PROTEIN_CUTOFF) {
+                            //     println!(
+                            //         "growth protein: {}, true elevation: {}",
+                            //         t.growth_protein,
+                            //         cell.elevation / BASE_ELEVATION
+                            //     );
+                            // }
 
                             if t.growth_protein < GROWTH_PROTEIN_CUTOFF {
                                 tile.physics.is_blocking = false;
@@ -123,7 +125,7 @@ fn make_ca(state: &mut GameState) -> Simulation<ErosionCell> {
     let mid_y = WORLD_HEIGHT / 2;
     let min_elevation = BASE_ELEVATION * 0.75;
     let max_elevation = BASE_ELEVATION;
-    let dist_to_max =
+    let max_dist =
         f64::sqrt((WORLD_WIDTH * WORLD_WIDTH) as f64 + (WORLD_HEIGHT * WORLD_HEIGHT) as f64);
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
@@ -131,25 +133,28 @@ fn make_ca(state: &mut GameState) -> Simulation<ErosionCell> {
             if i32::abs(mid_y - y) < 1 && i32::abs(mid_x - x) < 1 {
                 // turn center cells into drains
                 cells[idx].is_drain = true;
-                cells[idx].elevation = -100_000_000.0;
+                cells[idx].water_lvl = 0.0;
+                cells[idx].elevation = -1_000_000.0;
             } else {
                 // all other cells are getting semi-random elevation
                 let dist_to_mid = f64::sqrt(
                     f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0),
                 );
-                let adjusted_max_elev = dist_to_mid * 2.0;
-                let adjusted_min_elev = dist_to_mid;
-                // cells[idx].elevation = state.rng.gen_range(adjusted_min_elev..adjusted_max_elev);
-                cells[idx].elevation = state.rng.gen_range(min_elevation..max_elevation);
-                cells[idx].is_drain = false;
+                let adjusted_max_elev = ((dist_to_mid + max_dist / 2.0) / max_dist) * max_elevation;
+                let adjusted_min_elev = ((dist_to_mid + max_dist / 2.0) / max_dist) * min_elevation;
+                cells[idx].elevation = state.rng.gen_range(adjusted_min_elev..adjusted_max_elev);
+                // cells[idx].elevation = state.rng.gen_range(min_elevation..max_elevation);
+                // cells[idx].elevation = state.rng.gen_range(0.0..max_elevation);
                 // cells[idx].elevation = 100.0;
-                println!(
-                    "({},{}) elevation {} from {:?}",
-                    x,
-                    y,
-                    cells[idx].elevation,
-                    adjusted_min_elev..adjusted_max_elev
-                );
+                cells[idx].is_drain = false;
+                cells[idx].water_lvl = 0.0;
+                // println!(
+                //     "({},{}) elevation {} from {:?}",
+                //     x,
+                //     y,
+                //     cells[idx].elevation,
+                //     adjusted_min_elev..adjusted_max_elev
+                // );
             }
         }
     }
@@ -157,9 +162,6 @@ fn make_ca(state: &mut GameState) -> Simulation<ErosionCell> {
     // define transition function
     let mut rng = GameRng::new_from_u64_seed(0);
     let trans_fn = move |cell: &mut ErosionCell, neigh_it: Neighborhood<ErosionCell>| {
-        // let t_count = neigh_it.into_iter().filter(|n| **n).count();
-        const SOIL_HARDNESS: f64 = 0.99;
-        const RAINFALL_PROB: f64 = 0.1;
         if !cell.is_drain {
             // add rain
             if rng.flip_with_prob(RAINFALL_PROB) {
@@ -170,29 +172,49 @@ fn make_ca(state: &mut GameState) -> Simulation<ErosionCell> {
         if !cell.is_drain && cell.water_lvl > 0.0 {
             // perform flow
             // 1. find neighbour with minimal elevation
-            if let Some(target) = neigh_it.min_by_key(|n| (n.elevation + n.water_lvl) as i32) {
-                let mut flow_amount =
-                    0.5 * (cell.elevation + cell.water_lvl - target.elevation - target.water_lvl);
-                if flow_amount > 0.0 {
-                    // first erode
-                    let erosion = flow_amount * (1.0 - SOIL_HARDNESS);
-                    cell.elevation -= erosion;
-                    // now erosion has changed the amount of flow needed to equalise the water level
-                    // recalculate flow amount
-                    flow_amount = 0.5
-                        * (cell.elevation + cell.water_lvl - target.elevation - target.water_lvl)
-                            as f64;
-                    cell.water_lvl -= flow_amount;
+            let cell_lvl = cell.elevation + cell.water_lvl;
+            let mut avg_water_lvl = cell_lvl;
+            let mut min_neighbor = None;
+            for neighbor in neigh_it {
+                let neigh_lvl = neighbor.elevation + neighbor.water_lvl;
+                avg_water_lvl += neigh_lvl;
+                if neigh_lvl < cell_lvl {
+                    min_neighbor = Some(neighbor.clone());
+                }
+            }
+            // if let Some(target) = neigh_it.min_by_key(|n| (n.elevation + n.water_lvl) as i32) {
+            if let Some(target) = min_neighbor {
+                if target.elevation + target.water_lvl < cell.elevation + cell.water_lvl {
+                    // found a neighbor with lowest water level
+                    // water and eroded soil flows from this cell to the neighbor
+                    let mut flow_amount = 0.5
+                        * (cell.elevation + cell.water_lvl - target.elevation - target.water_lvl);
+                    if flow_amount > 0.0 {
+                        // first erode
+                        let erosion = flow_amount * (1.0 - SOIL_HARDNESS);
+                        cell.elevation -= erosion;
+                        // now erosion has changed the amount of flow needed to equalise the water level
+                        // recalculate flow amount
+                        flow_amount = 0.5
+                            * (cell.elevation + cell.water_lvl
+                                - target.elevation
+                                - target.water_lvl);
+                        cell.water_lvl -= flow_amount;
+                    }
                 } else {
-                    // this cell is the lowest cell
-                    let erosion = -flow_amount * (1.0 - SOIL_HARDNESS);
-                    // now erosion has changed the amount of flow needed to equalise the water level
-                    // recalculate flow amount
-                    flow_amount = 0.5
-                        * ((target.elevation - erosion) + target.water_lvl
-                            - cell.elevation
-                            - cell.water_lvl);
-                    cell.water_lvl += flow_amount;
+                    // this cell is even lower than the lowest neighbor
+                    // water and eroded soil flows from the neighbor towards this cell
+                    let mut flow_amount = 0.5 * (avg_water_lvl - cell.elevation - cell.water_lvl);
+                    if flow_amount > 0.0 {
+                        // // erode the neighbor, hypothetically
+                        // let erosion = flow_amount * (1.0 - SOIL_HARDNESS);
+                        // // recalculate flow amount
+                        // flow_amount = 0.5
+                        //     * ((target.elevation - erosion) + target.water_lvl
+                        //         - cell.elevation
+                        //         - cell.water_lvl);
+                        cell.water_lvl += flow_amount;
+                    }
                 }
             }
         }
