@@ -1,5 +1,3 @@
-use std::char::MAX;
-
 use crate::core::game_state::GameState;
 use crate::core::world::WorldGen;
 use crate::core::{game_objects::GameObjects, innit_env};
@@ -23,12 +21,7 @@ use crate::util::game_rng::{GameRng, RngExtended};
 use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
 use rand::Rng;
 
-const CA_CYCLES: i32 = 200;
-const MORPHOGEN_CUTOFF: f64 = 0.5;
-const MAX_STATE: i32 = 200;
-const K1: i32 = 3;
-const K2: i32 = 1;
-const G: i32 = 80;
+const CA_CYCLES: i32 = 40;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -73,13 +66,13 @@ impl WorldGen for OrganicsWorldGenerator {
                 for (idx, cell) in ca.cells().into_iter().enumerate() {
                     if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
                         if let Some(t) = &mut tile.tile {
-                            println!(
-                                "cell state: {} -> growth protein: {}",
-                                t.morphogen, cell.state
-                            );
-                            t.morphogen = cell.state as f64 / MAX_STATE as f64;
+                            // println!(
+                            //     "cell state: {} -> growth protein: {}",
+                            //     t.morphogen, cell.state
+                            // );
+                            t.morphogen = cell.morphogen;
                             // if t.morphogen < MORPHOGEN_CUTOFF {
-                            if t.morphogen < 0.2 || t.morphogen > 0.8 {
+                            if cell.state {
                                 tile.physics.is_blocking = false;
                                 tile.physics.is_blocking_sight = false;
                                 tile.visual.glyph = '·';
@@ -112,7 +105,8 @@ impl WorldGen for OrganicsWorldGenerator {
 
 #[derive(Clone, Debug, Default)]
 struct CaCell {
-    pub state: i32,
+    pub state: bool,
+    pub morphogen: f64,
 }
 
 /// Create a cellular automaton from the tiles of the game world.
@@ -121,52 +115,40 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
     let mut cells = vec![CaCell::default(); (WORLD_WIDTH * WORLD_HEIGHT) as usize];
     let mid_x = WORLD_WIDTH / 2;
     let mid_y = WORLD_HEIGHT / 2;
-    // let max_dist =
-    //     f64::sqrt((WORLD_WIDTH * WORLD_WIDTH) as f64 + (WORLD_HEIGHT * WORLD_HEIGHT) as f64);
+    let max_dist =
+        f64::sqrt((WORLD_WIDTH * WORLD_WIDTH) as f64 + (WORLD_HEIGHT * WORLD_HEIGHT) as f64);
     for y in 0..WORLD_HEIGHT {
         for x in 0..WORLD_WIDTH {
             let idx = coord_to_idx(WORLD_WIDTH, x, y);
             let dist_to_mid =
-                f64::sqrt(f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0))
-                    + 1.0;
-
-            if i32::abs(mid_y - y) < 1 && i32::abs(mid_x - x) < 1 {
-                // turn center cells into drains
-                cells[idx].state = state.rng.gen_range(0..=MAX_STATE);
-            } else {
-                // all other cells are getting semi-random elevation
-
-                cells[idx].state = state.rng.gen_range(0..=MAX_STATE);
-            }
+                f64::sqrt(f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0));
+            let morphogen = 1.0 - f64::min((dist_to_mid * 2.0) / max_dist, 0.01);
+            let cell = &mut cells[idx];
+            cell.morphogen = state.rng.gen_range(0.0..morphogen);
+            cell.state = false;
         }
     }
 
-    // define transition function
-    // let mut rng = GameRng::new_from_u64_seed(0);
-    let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
-        if cell.state == MAX_STATE {
-            cell.state = 0;
-        } else {
-            let mut a = 0;
-            let mut b = 0;
-            let mut sum_states = 0;
-            for neighbor in neigh_it {
-                sum_states += neighbor.state;
-                if neighbor.state > 0 && neighbor.state < MAX_STATE {
-                    a += 1;
-                }
-                if neighbor.state == MAX_STATE {
-                    b += 1;
-                }
-            }
+    let mid_idx = coord_to_idx(WORLD_WIDTH, mid_x, mid_y);
+    cells[mid_idx].state = true;
+    cells[mid_idx].morphogen = 1.0;
 
-            if cell.state == 0 {
-                cell.state = (a as f64 / K1 as f64) as i32 + (b as f64 / K2 as f64) as i32;
-            } else {
-                let s = cell.state + sum_states;
-                cell.state = (s as f64 / (a + b + 1) as f64) as i32 + G;
+    // define transition function
+    let mut rng = GameRng::new_from_u64_seed(0);
+    let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
+        let mut true_count = 0;
+        let mut neigh_count = 0;
+        for n in neigh_it {
+            neigh_count += 1;
+            if n.state {
+                true_count += 1;
             }
-            cell.state = i32::min(cell.state, MAX_STATE);
+        }
+        if neigh_count == 4 && ((true_count > 0) && rng.flip_with_prob(cell.morphogen))
+            || true_count == 4
+        {
+            cell.state = true;
+            cell.morphogen = 1.0;
         }
     };
 
