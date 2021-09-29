@@ -19,9 +19,8 @@ use crate::raws::spawn::{from_dungeon_level, Spawn};
 use crate::util::game_rng::{GameRng, RngExtended};
 
 use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
-use rand::Rng;
 
-const CA_CYCLES: i32 = 50;
+const CA_CYCLES: i32 = 150;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking blood
 /// vessels, branching fractal-like lungs, spongy tissue and more.
@@ -64,10 +63,10 @@ impl WorldGen for OrganicsWorldGenerator {
                 ca.step();
                 // update positions assigned with `true` to floor tiles
                 for (idx, cell) in ca.cells().into_iter().enumerate() {
-                    if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx) {
+                    if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx + 1) {
                         if let Some(t) = &mut tile.tile {
-                            // t.morphogen = cell.morphogen;
-                            if let CellState::EMPTY = cell.state {
+                            t.morphogen = cell.morphogen;
+                            if t.morphogen > 0.3 {
                                 tile.physics.is_blocking = false;
                                 tile.physics.is_blocking_sight = false;
                                 tile.visual.glyph = '·';
@@ -103,6 +102,7 @@ enum CellState {
     EMPTY,
     GREEN,
     BURNING,
+    BURNT,
 }
 
 impl Default for CellState {
@@ -115,6 +115,7 @@ impl Default for CellState {
 struct CaCell {
     state: CellState,
     burn_count: i32,
+    morphogen: f64,
 }
 
 /// Create a cellular automaton from the tiles of the game world.
@@ -137,13 +138,15 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
             let dist_to_y_border = i32::min(y, WORLD_HEIGHT - y);
             let min_dist_border = i32::min(dist_to_x_border, dist_to_y_border);
 
-            let morphogen = f64::max((min_dist_border * 2) as f64 / max_dist, 0.001);
-            if state.rng.flip_with_prob(morphogen) {
+            let morphogen = (((min_dist_border * 2) as f64 / max_dist) * 0.20) + 0.50;
+            let morph_clamped = f64::min(f64::max(morphogen, 0.01), 1.0);
+            if state.rng.flip_with_prob(morph_clamped) {
                 cell.state = CellState::GREEN;
             } else {
                 cell.state = CellState::EMPTY;
             }
             cell.burn_count = 5;
+            cell.morphogen = 0.0;
         }
     }
 
@@ -155,12 +158,20 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
     let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
         let mut is_fire_near = false;
         let mut neigh_count = 0;
+        let mut neigh_morphogen = 0.0;
         for n in neigh_it {
             neigh_count += 1;
+            neigh_morphogen += n.morphogen;
             if let CellState::BURNING = n.state {
                 is_fire_near = true;
             }
         }
+        if neigh_count < 4 {
+            cell.state = CellState::EMPTY;
+            return;
+        }
+
+        // propagate fire
         match cell.state {
             CellState::GREEN => {
                 if neigh_count == 4 && is_fire_near {
@@ -170,11 +181,17 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
             CellState::BURNING => {
                 cell.burn_count -= 1;
                 if cell.burn_count <= 0 {
-                    cell.state = CellState::EMPTY
+                    cell.state = CellState::BURNT;
+                    cell.morphogen = 1.0;
                 }
             }
             _ => {}
         }
+
+        // propagate morphogen
+        let avg_morphogen = neigh_morphogen / neigh_count as f64;
+        let diffusion = 0.05 * (avg_morphogen - cell.morphogen);
+        cell.morphogen += diffusion;
     };
 
     Simulation::from_cells(
