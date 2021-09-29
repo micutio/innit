@@ -283,6 +283,12 @@ impl GameState {
         } else {
             // panic!("no object at index {}", self.obj_idx);
             // objects.get_vector_mut().remove(self.obj_idx);
+
+            // increase object index and turn counter
+            self.obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
+            if self.obj_idx == 0 {
+                self.turn += 1;
+            }
             ObjectFeedback::Render
         }
     }

@@ -16,7 +16,7 @@ use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::raws::object_template::DnaTemplate;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::{from_dungeon_level, Spawn};
-use crate::util::game_rng::{GameRng, RngExtended};
+use crate::util::game_rng::RngExtended;
 
 use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
 
@@ -41,7 +41,6 @@ impl OrganicsWorldGenerator {
 }
 
 impl WorldGen for OrganicsWorldGenerator {
-    // TODO: Use the `level` parameter to scale object properties in some way.
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
@@ -212,10 +211,10 @@ fn place_objects(
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
-    // TODO: Set monster number per level via transitions.
-    let max_monsters = 50;
+    // TODO: Set npc number per level via transitions.
+    let npc_upper_limit = 50;
 
-    let monster_chances: Vec<(&String, u32)> = spawns
+    let npc_chances: Vec<(&String, u32)> = spawns
         .iter()
         .map(|s| {
             (
@@ -225,12 +224,12 @@ fn place_objects(
         })
         .collect();
 
-    let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
+    let npc_dist = WeightedIndex::new(npc_chances.iter().map(|item| item.1)).unwrap();
 
-    // choose random number of monsters
-    let num_monsters = state.rng.gen_range(0..max_monsters);
-    for _ in 0..num_monsters {
-        // choose random spot for this monster
+    // choose random number of npcs
+    let npc_count = state.rng.gen_range(0..npc_upper_limit);
+    for _ in 0..npc_count {
+        // choose random spot for this npc
         let tile = objects
             .get_tiles()
             .iter()
@@ -239,8 +238,7 @@ fn place_objects(
             .choose(&mut state.rng);
 
         if let Some(t) = tile {
-            let npc_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
-            // TODO: maybe build an object factory around all this to make it re-usable.
+            let npc_type = npc_chances[npc_dist.sample(&mut state.rng)].0;
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
                 let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
                     match ctrl.as_str() {

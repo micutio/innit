@@ -388,12 +388,12 @@ impl Rltk_GameState for Game {
                 match feedback {
                     ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
                     ObjectFeedback::Render => {
-                        if innit_env().is_spectating {
-                            RunState::CheckInput
-                        } else {
-                            self.re_render = true;
-                            RunState::Ticking
-                        }
+                        // if innit_env().is_spectating {
+                        //     RunState::CheckInput
+                        // } else {
+                        self.re_render = true;
+                        RunState::Ticking
+                        // }
                     }
                     ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
@@ -411,7 +411,8 @@ impl Rltk_GameState for Game {
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
-                            && self.state.player_energy_full(&self.objects)
+                            && (self.state.player_energy_full(&self.objects)
+                                || innit_env().is_spectating)
                         {
                             RunState::CheckInput
                         } else {

@@ -2,6 +2,7 @@
 
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
 use crate::entity::ai::{AiForceVirusProduction, AiVirus};
@@ -978,7 +979,6 @@ impl Action for ActMitosis {
         {
             Some(t) => {
                 if owner.tile.is_some() && owner.physics.is_blocking {
-                    println!("tile {} performing mitosis", owner.visual.name);
                     // turn into wall
                     t.physics.is_blocking = true;
                     t.physics.is_blocking_sight = true;
@@ -1021,7 +1021,7 @@ impl Action for ActMitosis {
 
         // finally place the 'child' cell into the world
         if let Some(child) = child_obj {
-            let callback = if child.physics.is_visible {
+            let callback = if child.physics.is_visible && !innit_env().is_debug_mode {
                 ObjectFeedback::Render
             } else {
                 ObjectFeedback::NoFeedback

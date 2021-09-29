@@ -144,9 +144,8 @@ fn place_objects(
     // use rand::distributions::WeightedIndex;
     use rand::prelude::*;
 
-    // TODO: Pull spawn tables out of here and pass as parameters in make_world().
     // TODO: Set monster number per level via transitions.
-    let max_monsters = 100;
+    let npc_count = 100;
 
     // let monster_chances: Vec<(&String, u32)> = spawns
     //     .iter()
@@ -155,9 +154,9 @@ fn place_objects(
 
     // let monster_dist = WeightedIndex::new(monster_chances.iter().map(|item| item.1)).unwrap();
 
-    // choose random number of monsters
-    let num_monsters = state.rng.gen_range(0..max_monsters);
-    for _ in 0..num_monsters {
+    // choose random number of npc
+    let num_npc = state.rng.gen_range(0..npc_count);
+    for _ in 0..num_npc {
         // choose random spot for this monster
         let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
         let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);

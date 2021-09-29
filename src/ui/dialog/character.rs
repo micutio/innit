@@ -18,6 +18,8 @@ pub fn character_screen(state: &GameState, objects: &GameObjects) -> InfoBox {
         ];
         InfoBox::new(title, lines)
     } else {
-        panic!("No player");
+        let title: String = "Information".to_string();
+        let lines = vec![format!("Turn:        {}", state.turn)];
+        InfoBox::new(title, lines)
     }
 }
