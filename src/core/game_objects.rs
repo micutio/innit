@@ -35,9 +35,9 @@ impl GameObjects {
         }
     }
 
-    pub fn get_tile_at(&mut self, x: usize, y: usize) -> &mut Option<Object> {
+    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
         // offset by one because player is the first object
-        &mut self.obj_vec[(y * (WORLD_WIDTH as usize) + x) + 1]
+        &mut self.obj_vec[(y as usize * (WORLD_WIDTH as usize) + x as usize) + 1]
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
@@ -308,4 +308,17 @@ impl Algorithm2D for GameObjects {
     fn dimensions(&self) -> Point {
         Point::new(WORLD_WIDTH, WORLD_HEIGHT)
     }
+}
+
+/// Convert a Point (x/y) to an array index.
+fn _coord_to_index(x: i32, y: i32) -> usize {
+    (y as usize * (WORLD_WIDTH as usize) + x as usize) + (1 as usize)
+}
+
+/// Convert an array index to a point. Defaults to an index based on an array
+fn _index_to_coord(idx: usize) -> (i32, i32) {
+    (
+        (idx - 1) as i32 % WORLD_WIDTH,
+        (idx - 1) as i32 / WORLD_WIDTH,
+    )
 }

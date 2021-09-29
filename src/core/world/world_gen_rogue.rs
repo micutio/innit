@@ -113,7 +113,7 @@ fn create_room(objects: &mut GameObjects, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
-                .get_tile_at(x as usize, y as usize)
+                .get_tile_at(x, y)
                 .replace(Tile::floor(x, y, innit_env().is_debug_mode));
         }
     }
@@ -122,7 +122,7 @@ fn create_room(objects: &mut GameObjects, room: Rect) {
 fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
-            .get_tile_at(x as usize, y as usize)
+            .get_tile_at(x, y)
             .replace(Tile::floor(x, y, innit_env().is_debug_mode));
     }
 }
@@ -130,7 +130,7 @@ fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
 fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
-            .get_tile_at(x as usize, y as usize)
+            .get_tile_at(x, y)
             .replace(Tile::floor(x, y, innit_env().is_debug_mode));
     }
 }

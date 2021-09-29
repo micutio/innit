@@ -971,14 +971,9 @@ impl Action for ActMitosis {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
         // let valid_target: Option<&mut Object> =
 
-        let child_obj = match objects
-            .get_tiles_mut()
-            .iter_mut()
-            .flatten()
-            .find(|o| !o.physics.is_blocking && o.pos.is_equal(&target_pos))
-        {
+        let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
             Some(t) => {
-                if owner.tile.is_some() && owner.physics.is_blocking {
+                if !t.physics.is_blocking && owner.tile.is_some() && owner.physics.is_blocking {
                     // turn into wall
                     t.physics.is_blocking = true;
                     t.physics.is_blocking_sight = true;
