@@ -323,8 +323,7 @@ impl Ai for AiTile {
                 .flatten()
                 .find(|obj| {
                     if let Some(tile) = &obj.tile {
-                        owner.pos.is_adjacent(&obj.pos)
-                            && (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
+                        (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
                             && state.rng.flip_with_prob(tile.morphogen)
                     } else {
                         false

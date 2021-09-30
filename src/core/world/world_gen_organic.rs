@@ -2,10 +2,10 @@ use crate::core::game_state::GameState;
 use crate::core::world::WorldGen;
 use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::action::action_from_string;
-use crate::entity::ai::AiPassive;
 use crate::entity::ai::AiRandom;
 use crate::entity::ai::AiRandomWalk;
 use crate::entity::ai::AiVirus;
+use crate::entity::ai::{AiPassive, AiTile};
 use crate::entity::control::Controller;
 use crate::entity::genetics::DnaType;
 use crate::entity::genetics::TraitFamily;
@@ -70,11 +70,13 @@ impl WorldGen for OrganicsWorldGenerator {
                                 tile.physics.is_blocking_sight = false;
                                 tile.visual.glyph = '·';
                                 tile.visual.name = "empty tile".into();
+                                tile.control = None;
                             } else {
                                 tile.physics.is_blocking = true;
                                 tile.physics.is_blocking_sight = true;
                                 tile.visual.glyph = '◘';
                                 tile.visual.name = "wall tile".into();
+                                tile.control = Some(Controller::Npc(Box::new(AiTile)));
                             }
                         }
                     }
