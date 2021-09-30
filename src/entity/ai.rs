@@ -317,15 +317,19 @@ impl Ai for AiTile {
             .iter()
             .find(|a| a.get_identifier().eq("mitosis"))
         {
-            let target_cell: Option<&Object> = objects.get_tiles().iter().flatten().find(|obj| {
-                if let Some(tile) = &obj.tile {
-                    owner.pos.is_adjacent(&obj.pos)
-                        && (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
-                        && state.rng.flip_with_prob(tile.morphogen)
-                } else {
-                    false
-                }
-            });
+            let target_cell = objects
+                .get_neighborhood_tiles(owner.pos)
+                .into_iter()
+                .flatten()
+                .find(|obj| {
+                    if let Some(tile) = &obj.tile {
+                        owner.pos.is_adjacent(&obj.pos)
+                            && (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
+                            && state.rng.flip_with_prob(tile.morphogen)
+                    } else {
+                        false
+                    }
+                });
             if let Some(target) = target_cell {
                 let mut mitosis = mitosis_action.clone_action();
                 mitosis.set_target(Target::from_pos(&owner.pos, &target.pos));

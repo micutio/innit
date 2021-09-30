@@ -234,6 +234,10 @@ impl GameObjects {
         &self.obj_vec[start..end]
     }
 
+    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
+        Neighborhood::new(pos, self.get_vector())
+    }
+
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
         let start: usize = 1;
@@ -310,14 +314,59 @@ impl Algorithm2D for GameObjects {
     }
 }
 
+static VON_NEUMAN_NEIGHBORHOOD: &'static [(i32, i32); 4] = &[(-1, 0), (0, -1), (1, 0), (0, 1)];
+
+pub struct Neighborhood<'a> {
+    count: usize,
+    cell_pos: Position,
+    bounds: &'a [(i32, i32)],
+    buffer: &'a [Option<Object>],
+}
+
+impl<'a> Neighborhood<'a> {
+    fn new(cell_pos: Position, buffer: &'a [Option<Object>]) -> Self {
+        Neighborhood {
+            count: 0,
+            cell_pos,
+            bounds: VON_NEUMAN_NEIGHBORHOOD,
+            buffer,
+        }
+    }
+}
+
+// Implement `Iterator` for `Neighborhood`.
+// The `Iterator` trait only requires a method to be defined for the `next` element.
+impl<'a> Iterator for Neighborhood<'a> {
+    // We can refer to this type using Self::Item
+    type Item = &'a Option<Object>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.count == self.bounds.len() {
+            None
+        } else {
+            while self.count < self.bounds.len() {
+                let x = self.bounds[self.count].0 + self.cell_pos.x;
+                let y = self.bounds[self.count].1 + self.cell_pos.y;
+
+                self.count += 1;
+
+                if x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT {
+                    return Some(&self.buffer[position_to_index(x, y)]);
+                }
+            }
+            None
+        }
+    }
+}
+
 /// Convert a Point (x/y) to an array index.
-fn _coord_to_index(x: i32, y: i32) -> usize {
+fn position_to_index(x: i32, y: i32) -> usize {
     (y as usize * (WORLD_WIDTH as usize) + x as usize) + (1 as usize)
 }
 
 /// Convert an array index to a point. Defaults to an index based on an array
-fn _index_to_coord(idx: usize) -> (i32, i32) {
-    (
+fn _index_to_position(idx: usize) -> Position {
+    Position::new(
         (idx - 1) as i32 % WORLD_WIDTH,
         (idx - 1) as i32 / WORLD_WIDTH,
     )
