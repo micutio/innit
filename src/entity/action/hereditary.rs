@@ -5,7 +5,7 @@ use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
-use crate::entity::ai::{AiForceVirusProduction, AiVirus};
+use crate::entity::ai::{AiForceVirusProduction, AiTile, AiVirus};
 use crate::entity::control::Controller;
 use crate::entity::genetics::DnaType;
 use crate::entity::genetics::TraitFamily;
@@ -978,6 +978,7 @@ impl Action for ActMitosis {
                     t.physics.is_blocking = true;
                     t.physics.is_blocking_sight = true;
                     t.visual.glyph = '◘';
+                    t.control = Some(Controller::Npc(Box::new(AiTile)));
                     // insert (mutated) genome
                     t.set_dna(owner.dna.clone());
 
