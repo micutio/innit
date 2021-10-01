@@ -142,11 +142,11 @@ impl Game {
     /// Create a new game by instantiating the game engine, game state and object vector.
     fn new_game() -> (GameState, GameObjects) {
         // create game state holding game-relevant information
-        let state = GameState::new(1);
+        let mut state = GameState::new(1);
 
         // initialise game object vector
         let mut objects = GameObjects::new();
-        objects.blank_world();
+        objects.blank_world(&mut state.rng);
 
         // prepare world generation
         // load spawn and object templates from raw files

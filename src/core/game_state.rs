@@ -244,8 +244,12 @@ impl GameState {
             // }
 
             // check whether object is still alive
-            if active_object.actuators.hp == 0 {
+            if active_object.actuators.hp == 0
+                || active_object.actuators.life_elapsed >= active_object.actuators.life_expectancy
+            {
                 active_object.die(self, objects);
+            } else {
+                active_object.actuators.life_elapsed += 1;
             }
 
             // return object back to objects vector, if still alive

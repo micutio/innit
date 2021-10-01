@@ -119,11 +119,11 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
 
     // create game state holding game-relevant information
     let level = 1;
-    let state = GameState::new(level);
+    let mut state = GameState::new(level);
 
     // create blank game world
     let mut objects = GameObjects::new();
-    objects.blank_world();
+    objects.blank_world(&mut state.rng);
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 
@@ -159,6 +159,8 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                     max_hp: 1,
                     hp: 1,
                     volume: 1,
+                    life_expectancy: 100,
+                    life_elapsed: 0,
                 },
                 Dna::default(),
             ),

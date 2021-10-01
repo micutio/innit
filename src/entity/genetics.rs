@@ -250,6 +250,9 @@ pub struct Actuators {
     pub max_hp: i32,
     pub hp: i32,
     pub volume: i32,
+    // TODO: add age field and age-related traits
+    pub life_expectancy: i32, // total life time, given in turns
+    pub life_elapsed: i32,    // life time already past, given in turns
 }
 
 impl Actuators {
@@ -259,6 +262,8 @@ impl Actuators {
             max_hp: 1,
             hp: 1,
             volume: 5,
+            life_expectancy: 100,
+            life_elapsed: 0,
         }
     }
 }
