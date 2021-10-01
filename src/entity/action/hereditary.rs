@@ -989,8 +989,8 @@ impl Action for ActMitosis {
                         t.control = Some(Controller::Npc(Box::new(AiTile)));
                         // insert (mutated) genome
                         t.set_dna(owner.dna.clone());
+                        t.reread_dna(state);
                         t.actuators.life_elapsed = 0;
-
                         // return prematurely because we don't need to insert anything new into the
                         // object vector
                         return ActionResult::Success {
@@ -1001,7 +1001,6 @@ impl Action for ActMitosis {
                     }
                 } else {
                     // create a new object
-                    println!("mitosis for {}", owner.visual.name);
                     let child_ctrl = match &owner.control {
                         Some(ctrl) => match ctrl {
                             Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),
