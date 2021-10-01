@@ -309,35 +309,52 @@ impl Ai for AiTile {
             return Box::new(ActPass::default());
         }
 
-        // If the tile can perform mitosis, check whether a neighboring cell is available and also
-        // contains a high enough concentration of growth gradient.
-        if let Some(mitosis_action) = owner
-            .actuators
-            .actions
-            .iter()
-            .find(|a| a.get_identifier().eq("mitosis"))
-        {
-            let target_cell = objects
-                .get_neighborhood_tiles(owner.pos)
-                .into_iter()
-                .flatten()
-                .find(|obj| {
-                    if let Some(tile) = &obj.tile {
-                        (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
-                            && state.rng.flip_with_prob(tile.morphogen)
-                    } else {
-                        false
-                    }
-                });
-            if let Some(target) = target_cell {
-                let mut mitosis = mitosis_action.clone_action();
-                mitosis.set_target(Target::from_pos(&owner.pos, &target.pos));
-                mitosis
+        if owner.actuators.life_elapsed >= owner.actuators.life_expectancy {
+            if let Some(killswitch) = owner
+                .processors
+                .actions
+                .iter()
+                .find(|a| a.get_identifier().eq("killswitch"))
+            {
+                debug!("tile reached end of life!");
+                let mut killswitch_action = killswitch.clone_action();
+                killswitch_action.set_target(Target::Center);
+                killswitch_action
             } else {
+                debug!("Cannot find killswitch!");
                 Box::new(ActPass::default())
             }
         } else {
-            Box::new(ActPass::default())
+            if let Some(mitosis_action) = owner
+                .actuators
+                .actions
+                .iter()
+                .find(|a| a.get_identifier().eq("mitosis"))
+            {
+                // If the tile can perform mitosis, check whether a neighboring cell is available and
+                // also contains a high enough concentration of growth gradient.
+                let target_cell = objects
+                    .get_neighborhood_tiles(owner.pos)
+                    .into_iter()
+                    .flatten()
+                    .find(|obj| {
+                        if let Some(tile) = &obj.tile {
+                            (!obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos))
+                                && state.rng.flip_with_prob(tile.morphogen)
+                        } else {
+                            false
+                        }
+                    });
+                if let Some(target) = target_cell {
+                    let mut mitosis = mitosis_action.clone_action();
+                    mitosis.set_target(Target::from_pos(&owner.pos, &target.pos));
+                    mitosis
+                } else {
+                    Box::new(ActPass::default())
+                }
+            } else {
+                Box::new(ActPass::default())
+            }
         }
     }
 }

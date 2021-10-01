@@ -27,10 +27,10 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
         .flatten()
         .filter(|o| {
             // Is there a better way than using `and_then`?
-            o.physics.is_visible
+            innit_env().is_debug_mode
+                || o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
-                || (o.tile.is_some() && innit_env().is_debug_mode)
         })
         .collect();
 
@@ -62,7 +62,7 @@ fn update_visibility(objects: &mut GameObjects) {
         let fwft = palette().world_fg_wall_fov_true;
         let fgft = palette().world_fg_ground_fov_true;
         objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
-            o.physics.is_visible = true;
+            // o.physics.is_visible = true;
             if o.tile.is_some() {
                 if o.physics.is_blocking_sight {
                     o.visual.fg_color = fwft;
@@ -156,7 +156,7 @@ fn update_visual(
         if object.physics.is_visible {
             tile.is_explored = true;
         }
-        if tile.is_explored {
+        if tile.is_explored || innit_env().is_debug_mode {
             // show explored tiles only (any visible tile is explored already)
             object.visual.fg_color = (
                 (tile_color_fg.r * 255.0) as u8,

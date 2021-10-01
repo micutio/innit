@@ -1,10 +1,10 @@
-use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::core::world::Tile;
 use crate::entity::genetics::{DnaType, GeneLibrary, GENE_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::rand::Rng;
 use crate::util::game_rng::GameRng;
 use rltk::{Algorithm2D, BaseMap, Point};
 use serde::{Deserialize, Serialize};
@@ -41,7 +41,7 @@ impl GameObjects {
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
-    pub fn blank_world(&mut self, rng: &mut GameRng) {
+    pub fn blank_world(&mut self) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
@@ -49,7 +49,7 @@ impl GameObjects {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y, innit_env().is_debug_mode, rng));
+                    .replace(Tile::wall(x, y, false));
             }
         }
     }
@@ -85,6 +85,11 @@ impl GameObjects {
                         &gene_library.trait_strs_to_dna(rng, &traits),
                     );
                     tile.change_genome(sensors, processors, actuators, dna);
+                    tile.actuators.life_elapsed = rng.gen_range(0..tile.actuators.life_expectancy);
+                    println!(
+                        "TILE AGE: {}/{}",
+                        tile.actuators.life_elapsed, tile.actuators.life_expectancy
+                    );
                 }
             }
         }

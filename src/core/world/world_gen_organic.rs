@@ -64,8 +64,9 @@ impl WorldGen for OrganicsWorldGenerator {
                 for (idx, cell) in ca.cells().into_iter().enumerate() {
                     if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx + 1) {
                         if let Some(t) = &mut tile.tile {
+                            // TODO: Create constants for morphogen cutoffs and min morphogens
                             t.morphogen = cell.morphogen;
-                            if t.morphogen > 0.3 {
+                            if t.morphogen < 0.3 {
                                 tile.physics.is_blocking = false;
                                 tile.physics.is_blocking_sight = false;
                                 tile.visual.glyph = '·';
@@ -147,7 +148,7 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
                 cell.state = CellState::EMPTY;
             }
             cell.burn_count = 5;
-            cell.morphogen = 0.0;
+            cell.morphogen = 1.0;
         }
     }
 
@@ -183,16 +184,20 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
                 cell.burn_count -= 1;
                 if cell.burn_count <= 0 {
                     cell.state = CellState::BURNT;
-                    cell.morphogen = 1.0;
+                    cell.morphogen = 0.0;
                 }
             }
             _ => {}
         }
 
-        // propagate morphogen
-        let avg_morphogen = neigh_morphogen / neigh_count as f64;
-        let diffusion = 0.05 * (avg_morphogen - cell.morphogen);
-        cell.morphogen += diffusion;
+        if let CellState::BURNT = cell.state {
+            cell.morphogen = 0.0
+        } else {
+            // propagate morphogen
+            let avg_morphogen = neigh_morphogen / neigh_count as f64;
+            let diffusion = 0.05 * (avg_morphogen - cell.morphogen);
+            cell.morphogen += diffusion;
+        }
     };
 
     Simulation::from_cells(

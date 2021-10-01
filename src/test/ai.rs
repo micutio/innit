@@ -119,11 +119,11 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
 
     // create game state holding game-relevant information
     let level = 1;
-    let mut state = GameState::new(level);
+    let state = GameState::new(level);
 
     // create blank game world
     let mut objects = GameObjects::new();
-    objects.blank_world(&mut state.rng);
+    objects.blank_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 

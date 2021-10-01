@@ -38,11 +38,9 @@ use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
 use core::fmt;
-use rand::{
-    distributions::WeightedIndex,
-    prelude::{Distribution, SliceRandom},
-    Rng,
-};
+use rand::distributions::WeightedIndex;
+use rand::prelude::{Distribution, SliceRandom};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::HashMap;
@@ -83,6 +81,7 @@ pub enum TraitAttribute {
     Storage,
     // TODO: Determine receptor kind by position on DNA
     Receptor,
+    LifeExpectancy,
     None,
 }
 
@@ -154,6 +153,12 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         ),
         GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
+        GeneticTrait::new(
+            "Life Expectancy",
+            Actuating,
+            TraitAttribute::LifeExpectancy,
+            None,
+        ),
         GeneticTrait::new(
             "Optical Sensor",
             Sensing,
@@ -262,7 +267,7 @@ impl Actuators {
             max_hp: 1,
             hp: 1,
             volume: 5,
-            life_expectancy: 100,
+            life_expectancy: 45,
             life_elapsed: 0,
         }
     }
@@ -681,6 +686,9 @@ impl TraitBuilder {
                 self.processors.receptors.push(Receptor {
                     typ: g_trait.position,
                 });
+            }
+            TraitAttribute::LifeExpectancy => {
+                self.actuators.life_expectancy += 50;
             }
             TraitAttribute::None => {}
         }

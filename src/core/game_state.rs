@@ -163,7 +163,7 @@ impl GameState {
                 } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
                     // use up energy before action
                     if active_object.physics.is_visible && next_action.get_identifier().ne("pass") {
-                        debug!("next action: {}", next_action.get_identifier());
+                        trace!("next action: {}", next_action.get_identifier());
                     }
                     if next_action.get_energy_cost() > active_object.processors.energy_storage {
                         self.log.add("You don't have enough energy for that!", MsgClass::Info);
@@ -245,10 +245,16 @@ impl GameState {
 
             // check whether object is still alive
             if active_object.actuators.hp == 0
-                || active_object.actuators.life_elapsed >= active_object.actuators.life_expectancy
+            // || active_object.actuators.life_elapsed >= active_object.actuators.life_expectancy
             {
                 active_object.die(self, objects);
             } else {
+                // println!(
+                //     "{} life: {}/{}",
+                //     active_object.visual.name,
+                //     active_object.actuators.life_elapsed,
+                //     active_object.actuators.life_expectancy
+                // );
                 active_object.actuators.life_elapsed += 1;
             }
 

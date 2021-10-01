@@ -874,14 +874,20 @@ impl Action for ActKillSwitch {
     ) -> ActionResult {
         match self.target {
             Target::Center => {
-                owner.die(state, objects);
-                let callback = if owner.physics.is_visible {
-                    ObjectFeedback::Render
+                // let's only allow to kill ourself if we reached close to the end of our life span
+                if owner.actuators.life_elapsed >= owner.actuators.life_expectancy {
+                    owner.die(state, objects);
+                    let callback = if owner.physics.is_visible {
+                        ObjectFeedback::Render
+                    } else {
+                        ObjectFeedback::NoFeedback
+                    };
+                    ActionResult::Success { callback }
                 } else {
-                    ObjectFeedback::NoFeedback
-                };
-                ActionResult::Success { callback }
+                    ActionResult::Failure
+                }
             }
+
             _ => {
                 let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
                 if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos)
@@ -928,7 +934,7 @@ impl Action for ActKillSwitch {
     }
 
     fn get_identifier(&self) -> String {
-        "Killswitch".to_string()
+        "killswitch".to_string()
     }
 
     fn get_energy_cost(&self) -> i32 {
@@ -973,22 +979,29 @@ impl Action for ActMitosis {
 
         let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
             Some(t) => {
-                if !t.physics.is_blocking && owner.tile.is_some() && owner.physics.is_blocking {
-                    // turn into wall
-                    t.physics.is_blocking = true;
-                    t.physics.is_blocking_sight = true;
-                    t.visual.glyph = '◘';
-                    t.control = Some(Controller::Npc(Box::new(AiTile)));
-                    // insert (mutated) genome
-                    t.set_dna(owner.dna.clone());
+                if owner.tile.is_some() && owner.physics.is_blocking {
+                    if !t.physics.is_blocking {
+                        // turn into wall
+                        t.physics.is_blocking = true;
+                        t.physics.is_blocking_sight = true;
+                        t.visual.glyph = '◘';
+                        t.visual.name = "wall tile".into();
+                        t.control = Some(Controller::Npc(Box::new(AiTile)));
+                        // insert (mutated) genome
+                        t.set_dna(owner.dna.clone());
+                        t.actuators.life_elapsed = 0;
 
-                    // return prematurely because we don't need to insert anything new into the
-                    // object vector
-                    return ActionResult::Success {
-                        callback: ObjectFeedback::NoFeedback,
-                    };
+                        // return prematurely because we don't need to insert anything new into the
+                        // object vector
+                        return ActionResult::Success {
+                            callback: ObjectFeedback::NoFeedback,
+                        };
+                    } else {
+                        None
+                    }
                 } else {
                     // create a new object
+                    println!("mitosis for {}", owner.visual.name);
                     let child_ctrl = match &owner.control {
                         Some(ctrl) => match ctrl {
                             Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),

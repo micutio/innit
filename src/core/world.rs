@@ -12,8 +12,6 @@ use crate::entity::object::Object;
 use crate::game::RunState;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::Spawn;
-use crate::util::game_rng::GameRng;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -50,20 +48,16 @@ impl Tile {
             .visualize("empty tile", '·', (255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
-            .control(Controller::Npc(Box::new(AiTile)))
     }
 
-    pub fn wall(x: i32, y: i32, is_visible: bool, rng: &mut GameRng) -> Object {
-        let mut wall_obj = Object::new()
+    pub fn wall(x: i32, y: i32, is_visible: bool) -> Object {
+        Object::new()
             .position(x, y)
             .living(true)
             .visualize("wall tile", '◘', (255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
-            .control(Controller::Npc(Box::new(AiTile)));
-        // randomise the lifetime a bit to not have all walls die at the same time
-        wall_obj.actuators.life_elapsed = rng.gen_range(0..wall_obj.actuators.life_expectancy);
-        wall_obj
+            .control(Controller::Npc(Box::new(AiTile)))
     }
 }
 

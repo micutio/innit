@@ -142,11 +142,11 @@ impl Game {
     /// Create a new game by instantiating the game engine, game state and object vector.
     fn new_game() -> (GameState, GameObjects) {
         // create game state holding game-relevant information
-        let mut state = GameState::new(1);
+        let state = GameState::new(1);
 
         // initialise game object vector
         let mut objects = GameObjects::new();
-        objects.blank_world(&mut state.rng);
+        objects.blank_world();
 
         // prepare world generation
         // load spawn and object templates from raw files
@@ -182,6 +182,7 @@ impl Game {
                         "Energy Store".to_string(),
                         "Receptor".to_string(),
                         "Mitosis".to_string(),
+                        "Kill Switch".to_string(),
                     ],
                     &self.state.gene_library,
                 );

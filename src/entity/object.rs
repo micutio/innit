@@ -215,15 +215,24 @@ impl Object {
 
     /// Perform necessary actions when object dies.
     pub fn die(&mut self, _state: &mut GameState, objects: &mut GameObjects) {
-        self.alive = false;
-        // empty inventory into this objects' current position
-        for mut o in self.inventory.items.drain(..) {
-            o.pos.set(self.pos.x, self.pos.y);
-            objects.push(o);
-        }
-        // take this object out of the world
-        if self.is_player() {
-            self.visual.name = "your remains".to_string();
+        if let Some(_) = self.tile {
+            // if this object is a tile, just revert it to a floor tile
+            self.physics.is_blocking = false;
+            self.physics.is_blocking_sight = false;
+            self.visual.glyph = '·';
+            self.visual.name = "empty tile".into();
+            self.control = None;
+        } else {
+            self.alive = false;
+            // empty inventory into this objects' current position
+            for mut o in self.inventory.items.drain(..) {
+                o.pos.set(self.pos.x, self.pos.y);
+                objects.push(o);
+            }
+            // take this object out of the world
+            if self.is_player() {
+                self.visual.name = "your remains".to_string();
+            }
         }
     }
 
