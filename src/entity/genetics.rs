@@ -22,12 +22,12 @@
 //! a previous gene. The genes should be small and encoding the presence of a quality. Attributes or
 //! versatility is then controlled by the cumulative occurrence of a gene.
 //! Basically: the more often a gene occurs, the stronger its trait will be.
-// TODO: Things to think about:
-// How to handle synergies/anti-synergies?
-// How to calculate energy cost per action?
-// Can behavior be encoded in the genome too i.e., fight or flight?
-// Should attributes be fix on trait level or full-on generic as list of attribute objects?
-// How to best model synergies and anti-synergies across traits?
+//! Things to think about:
+//! - How to handle synergies/anti-synergies?
+//! - How to calculate energy cost per action?
+//! - Can behavior be encoded in the genome too i.e., fight or flight?
+//! - Should attributes be fix on trait level or full-on generic as list of attribute objects?
+//! - How to best model synergies and anti-synergies across traits?
 
 use crate::entity::action::hereditary::{
     ActAttack, ActKillSwitch, ActMetabolise, ActMitosis, ActMove,
@@ -79,7 +79,6 @@ pub enum TraitAttribute {
     Volume,
     Metabolism,
     Storage,
-    // TODO: Determine receptor kind by position on DNA
     Receptor,
     LifeExpectancy,
     None,
@@ -255,7 +254,6 @@ pub struct Actuators {
     pub max_hp: i32,
     pub hp: i32,
     pub volume: i32,
-    // TODO: add age field and age-related traits
     pub life_expectancy: i32, // total life time, given in turns
     pub life_elapsed: i32,    // life time already past, given in turns
 }
@@ -346,8 +344,6 @@ pub struct GeneLibrary {
 
 impl GeneLibrary {
     pub fn new() -> Self {
-        // TODO: Introduce constant N for total number of traits to assert gray code vector length.
-
         let trait_vec: Vec<GeneticTrait> = create_trait_list();
         let trait_count = trait_vec.len();
         let gray_code = generate_gray_code(4);

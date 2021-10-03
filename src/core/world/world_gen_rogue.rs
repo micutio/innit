@@ -65,7 +65,6 @@ impl WorldGen for RogueWorldGenerator {
                 create_room(objects, new_room);
 
                 // add some content to the room
-                // TODO: fix
                 place_objects(state, objects, spawns, object_templates);
 
                 let (new_x, new_y) = new_room.center();

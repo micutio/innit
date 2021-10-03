@@ -264,7 +264,7 @@ impl GameState {
 
                 // if the dead object is a player then keep it in the world,
                 // otherwise remove it.
-                // TODO: Think about keeping dead material around.
+                // NOTE: Maybe keep dead material around for scavenging.
                 if active_obj.is_player() {
                     objects[self.obj_idx].replace(active_obj);
                 } else {

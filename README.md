@@ -20,7 +20,7 @@ A long-term goal, would be to create an educational experience as well. Many of 
 
 - [x] A robust and flexible game engine, designed for procedurally generated content
 - [x] DNA as basis of player character, NPCs and the cells of the game world itself
-- [ ] Horizontal and vertical transfer of genome
+- [x] Horizontal and vertical transfer of genome
 - [ ] Random mutation and adaptation
 - [ ] A living game world, that responds to the game events with immune reactions, fever and more
 

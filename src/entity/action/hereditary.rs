@@ -279,7 +279,6 @@ impl Action for ActAttack {
                     )
                 }
                 ActionResult::Success {
-                    // TODO: Add particle to emphasise something happened!
                     callback: ObjectFeedback::NoFeedback,
                 }
             }
@@ -373,7 +372,6 @@ impl Action for ActAttack {
 //                     MsgClass::Info,
 //                 );
 //                 ActionResult::Success {
-//                     // TODO: Add particle to emphasise something happened!
 //                     callback: ObjectFeedback::NoFeedback,
 //                 }
 //             }
@@ -481,7 +479,6 @@ impl Action for ActInjectRnaVirus {
                 // The virus 'dies' symbolically.
                 owner.alive = false;
                 // Funny, because it's still debated as to whether viruses are alive to begin.
-                // TODO: Handle other death effects, such as change of blocking, symbol and color.
 
                 true
             } else {
@@ -795,7 +792,6 @@ impl Action for ActProduceVirion {
     }
 }
 
-// TODO: editing genomes is not really hereditary but provided by plasmids
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActEditGenome {
     lvl: i32,
