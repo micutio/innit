@@ -885,18 +885,25 @@ impl Action for ActKillSwitch {
             }
 
             _ => {
-                let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-                if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos)
-                {
-                    // TODO: must also contain matching receptor
-                    if target
+                let t_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+                if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&t_pos) {
+                    // kill switches of other cells can only be activated if they have both
+                    // a) the killswitch gene
+                    // b) a matching receptor that the owner can use to connect to the target
+                    let has_killswitch = target
                         .dna
                         .simplified
                         .iter()
-                        .any(|d| d.trait_name == "Kill Switch")
-                    {
+                        .any(|d| d.trait_name == "Kill Switch");
+                    let has_matching_receptor = target
+                        .processors
+                        .receptors
+                        .iter()
+                        .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
+                    if has_killswitch && has_matching_receptor {
                         target.die(state, objects);
                     }
+
                     let callback = if !target.alive && target.physics.is_visible {
                         ObjectFeedback::Render
                     } else {
