@@ -117,7 +117,7 @@ impl GameState {
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectFeedback {
         // unpack object to process its next action
-        if let Some(mut active_object) = objects.extract_by_index(self.obj_idx) {
+        if let Some(mut active_obj) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
             // 1. turn preparation
             // 2. turn action
@@ -126,20 +126,20 @@ impl GameState {
             trace!(
                 "{} | {}'s turn now @energy {}/{}",
                 self.obj_idx,
-                active_object.visual.name,
-                active_object.processors.energy,
-                active_object.processors.energy_storage
+                active_obj.visual.name,
+                active_obj.processors.energy,
+                active_obj.processors.energy_storage
             );
             // }
 
-            if active_object.is_player() {
+            if active_obj.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.player_idx = self.obj_idx;
                 // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
-                if !active_object.has_next_action()
-                    && active_object.processors.energy == active_object.processors.energy_storage
+                if !active_obj.has_next_action()
+                    && active_obj.processors.energy == active_obj.processors.energy_storage
                 {
-                    objects.replace(self.obj_idx, active_object);
+                    objects.replace(self.obj_idx, active_obj);
                     return ObjectFeedback::NoAction;
                 }
             }
@@ -150,33 +150,33 @@ impl GameState {
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
             let mut process_result =
                 // If not enough energy available try to metabolise.
-                if active_object.control.is_none() {
+                if active_obj.control.is_none() {
                     ObjectFeedback::NoFeedback
-                } else if active_object.processors.energy < active_object.processors.energy_storage {
+                } else if active_obj.processors.energy < active_obj.processors.energy_storage {
                     // replenish energy
-                    active_object.metabolize();
+                    active_obj.metabolize();
                     if self.is_players_turn() {
                         ObjectFeedback::Render
                     } else {
                         ObjectFeedback::NoFeedback
                     }
-                } else if let Some(next_action) = active_object.extract_next_action(self, objects) {
+                } else if let Some(next_action) = active_obj.extract_next_action(self, objects) {
                     // use up energy before action
-                    if active_object.physics.is_visible && next_action.get_identifier().ne("pass") {
+                    if active_obj.physics.is_visible && next_action.get_identifier().ne("pass") {
                         trace!("next action: {}", next_action.get_identifier());
                     }
-                    if next_action.get_energy_cost() > active_object.processors.energy_storage {
+                    if next_action.get_energy_cost() > active_obj.processors.energy_storage {
                         self.log.add("You don't have enough energy for that!", MsgClass::Info);
                         ObjectFeedback::NoFeedback
                     } else {
-                        active_object.processors.energy -= next_action.get_energy_cost();
-                        self.process_action(objects, &mut active_object, next_action)
+                        active_obj.processors.energy -= next_action.get_energy_cost();
+                        self.process_action(objects, &mut active_obj, next_action)
                     }
                 } else {
                     panic!("How can an object 'has_next_action' but NOT have an action?");
                     // ObjectProcResult::NoFeedback
                 };
-            if !active_object.physics.is_visible && !active_object.physics.is_always_visible {
+            if !active_obj.physics.is_visible && !active_obj.physics.is_always_visible {
                 // process_result.clear();
                 process_result = ObjectFeedback::NoFeedback;
             }
@@ -184,9 +184,9 @@ impl GameState {
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
             // Apply recurring effects so that the player can factor this into the next action.
 
-            if active_object.inventory.items.len() as i32 > active_object.actuators.volume {
-                active_object.actuators.hp -= 1;
-                if active_object.is_player() {
+            if active_obj.inventory.items.len() as i32 > active_obj.actuators.volume {
+                active_obj.actuators.hp -= 1;
+                if active_obj.is_player() {
                     self.log
                         .add("You're overloaded! Taking damage...", MsgClass::Alert);
                 }
@@ -244,10 +244,8 @@ impl GameState {
             // }
 
             // check whether object is still alive
-            if active_object.actuators.hp == 0
-            // || active_object.actuators.life_elapsed >= active_object.actuators.life_expectancy
-            {
-                active_object.die(self, objects);
+            if active_obj.actuators.hp == 0 {
+                active_obj.die(self, objects);
             } else {
                 // println!(
                 //     "{} life: {}/{}",
@@ -255,22 +253,20 @@ impl GameState {
                 //     active_object.actuators.life_elapsed,
                 //     active_object.actuators.life_expectancy
                 // );
-                active_object.actuators.life_elapsed += 1;
+                active_obj.actuators.life_elapsed += 1;
             }
 
             // return object back to objects vector, if still alive
-            if !active_object.alive && active_object.physics.is_visible {
-                self.log.add(
-                    format!("{} died!", active_object.visual.name),
-                    MsgClass::Alert,
-                );
-                debug!("{} died!", active_object.visual.name);
+            if !active_obj.alive && active_obj.physics.is_visible {
+                self.log
+                    .add(format!("{} died!", active_obj.visual.name), MsgClass::Alert);
+                debug!("{} died!", active_obj.visual.name);
 
                 // if the dead object is a player then keep it in the world,
                 // otherwise remove it.
                 // TODO: Think about keeping dead material around.
-                if active_object.is_player() {
-                    objects[self.obj_idx].replace(active_object);
+                if active_obj.is_player() {
+                    objects[self.obj_idx].replace(active_obj);
                 } else {
                     objects.get_vector_mut().remove(self.obj_idx);
                 }
@@ -279,7 +275,7 @@ impl GameState {
                     process_result = ObjectFeedback::GameOver;
                 }
             } else {
-                objects[self.obj_idx].replace(active_object);
+                objects[self.obj_idx].replace(active_obj);
             }
 
             // finally increase object index and turn counter

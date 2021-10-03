@@ -975,7 +975,6 @@ impl Action for ActMitosis {
         // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of
         // this one's (mutated) genome.
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        // let valid_target: Option<&mut Object> =
 
         let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
             Some(t) => {

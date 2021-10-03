@@ -22,8 +22,10 @@ use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD}
 
 const CA_CYCLES: i32 = 150;
 
-/// The organics world generator attempts to create organ-like environments e.g., long snaking blood
-/// vessels, branching fractal-like lungs, spongy tissue and more.
+/// The organics world generator attempts to create organ-like environments e.g., long snaking
+/// blood vessels, branching fractal-like lungs, spongy tissue and more.
+// TODO: Rename into world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
+//       once we have more than one CA variant.
 pub struct OrganicsWorldGenerator {
     player_start: (i32, i32),
     ca_cycle_count: i32,
@@ -99,6 +101,23 @@ impl WorldGen for OrganicsWorldGenerator {
     }
 }
 
+/// Cell type for the cellular automaton that's used to generate the world.
+/// The cellular automaton is based on forest fire mechanics.
+/// The cell state is either forested (`GREEN`) or empty. Fire will only propagate between green
+/// areas. The final shape of the world is then determined by the 'burnt' areas which reduce the
+/// morphogen values of the affected cell and their neighborhood.
+/// The attribute **morphogen** is a gradient between burnt and untouched cells. It ranges from 0.0
+/// (burnt) to 1.0 (untouched) and determines whether a cell is to be populated by a wall tile upon
+/// world creation.
+/// The morphogen also allows the world shape to slightly fluctuate over time by introducing a tiny
+/// random component in the process of dying and regenerating world cells.
+#[derive(Clone, Debug, Default)]
+struct CaCell {
+    state: CellState,
+    burn_count: i32,
+    morphogen: f64,
+}
+
 #[derive(Clone, Debug)]
 enum CellState {
     EMPTY,
@@ -111,13 +130,6 @@ impl Default for CellState {
     fn default() -> Self {
         Self::EMPTY
     }
-}
-
-#[derive(Clone, Debug, Default)]
-struct CaCell {
-    state: CellState,
-    burn_count: i32,
-    morphogen: f64,
 }
 
 /// Create a cellular automaton from the tiles of the game world.
@@ -155,8 +167,9 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
     let mid_idx = coord_to_idx(WORLD_WIDTH, mid_x, mid_y);
     cells[mid_idx].state = CellState::BURNING;
 
-    // define transition function
-    // let mut rng = GameRng::new_from_u64_seed(0);
+    // transition function
+    // 1. propagate fire between burning and green cells
+    // 2. slowly diffuse morphogen if there is a gradient between the cell and its neighbors
     let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
         let mut is_fire_near = false;
         let mut neigh_count = 0;
@@ -190,6 +203,8 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
             _ => {}
         }
 
+        // burnt cells always have zero mophogen content, this is to maintain the shape of the
+        // generated world
         if let CellState::BURNT = cell.state {
             cell.morphogen = 0.0
         } else {
@@ -247,6 +262,7 @@ fn place_objects(
         if let Some(t) = tile {
             let npc_type = npc_chances[npc_dist.sample(&mut state.rng)].0;
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
+                // assign controller
                 let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
                     match ctrl.as_str() {
                         "player" => Some(Controller::Player(PlayerCtrl::new())),
@@ -264,6 +280,7 @@ fn place_objects(
                     None
                 };
 
+                // generate DNA, either probabilistically or from a template
                 let raw_dna = match &template.dna_template {
                     DnaTemplate::Random { genome_len } => state.gene_library.new_dna(
                         &mut state.rng,
@@ -291,6 +308,7 @@ fn place_objects(
                         .trait_strs_to_dna(&mut state.rng, &traits),
                 };
 
+                // populate inventory if present
                 let inventory_item = if let Some(item) = &template.item {
                     let action_instance = if item.action.is_empty() {
                         None
@@ -308,6 +326,7 @@ fn place_objects(
                     None
                 };
 
+                // finally cobble everything together and insert the new object into the world
                 let new_npc = Object::new()
                     .position(t.pos.x, t.pos.y)
                     .living(true)
