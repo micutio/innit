@@ -3,7 +3,7 @@ name = "innit"
 version = "0.0.4"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
