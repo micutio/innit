@@ -693,7 +693,11 @@ impl GenomeEditor {
                 }
                 Cut => {
                     self.player_dna.simplified.remove(self.selected_gene);
-                    self.selected_gene = usize::max(0, self.selected_gene - 1);
+                    self.selected_gene = if self.selected_gene == 0 {
+                        0
+                    } else {
+                        self.selected_gene - 1
+                    };
                     self.decrease_charge();
                     self.regenerate_dna(game_state);
                     self.state = ChooseFunction;
