@@ -978,73 +978,75 @@ impl Action for ActMitosis {
         // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of
         // this one's (mutated) genome.
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+        let is_pos_available = !objects.is_pos_occupied(&target_pos);
 
-        let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
-            Some(t) => {
-                if owner.tile.is_some() && owner.physics.is_blocking {
-                    if !t.physics.is_blocking {
-                        // turn into wall
-                        t.physics.is_blocking = true;
-                        t.physics.is_blocking_sight = true;
-                        t.visual.glyph = '◘';
-                        t.visual.name = "wall tile".into();
-                        t.control = Some(Controller::Npc(Box::new(AiTile)));
-                        // insert (mutated) genome
-                        t.set_dna(owner.dna.clone());
-                        t.reread_dna(state);
-                        t.processors.life_elapsed = 0;
-                        // return prematurely because we don't need to insert anything new into the
-                        // object vector
-                        return ActionResult::Success {
-                            callback: ObjectFeedback::NoFeedback,
-                        };
+        if is_pos_available {
+            let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
+                Some(t) => {
+                    if owner.tile.is_some() && owner.physics.is_blocking {
+                        if !t.physics.is_blocking {
+                            // turn into wall
+                            t.physics.is_blocking = true;
+                            t.physics.is_blocking_sight = true;
+                            t.visual.glyph = '◘';
+                            t.visual.name = "wall tile".into();
+                            t.control = Some(Controller::Npc(Box::new(AiTile)));
+                            // insert (mutated) genome
+                            t.set_dna(owner.dna.clone());
+                            t.reread_dna(state);
+                            t.processors.life_elapsed = 0;
+                            // return prematurely because we don't need to insert anything new into the
+                            // object vector
+                            return ActionResult::Success {
+                                callback: ObjectFeedback::NoFeedback,
+                            };
+                        } else {
+                            None
+                        }
                     } else {
-                        None
+                        // create a new object
+                        let child_ctrl = match &owner.control {
+                            Some(ctrl) => match ctrl {
+                                Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),
+                                Controller::Player(_) => {
+                                    Some(Controller::Player(PlayerCtrl::new()))
+                                }
+                            },
+                            None => None,
+                        };
+                        let mut child = Object::new()
+                            .position(t.pos.x, t.pos.y)
+                            .living(true)
+                            .visualize(t.visual.name.as_str(), t.visual.glyph, t.visual.fg_color)
+                            .genome(
+                                owner.gene_stability,
+                                state
+                                    .gene_library
+                                    .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
+                            )
+                            .control_opt(child_ctrl)
+                            .living(true);
+                        child.physics.is_visible = t.physics.is_visible;
+                        Some(child)
                     }
-                } else {
-                    // create a new object
-                    let child_ctrl = match &owner.control {
-                        Some(ctrl) => match ctrl {
-                            Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),
-                            Controller::Player(_) => Some(Controller::Player(PlayerCtrl::new())),
-                        },
-                        None => None,
-                    };
-                    let mut child = Object::new()
-                        .position(t.pos.x, t.pos.y)
-                        .living(true)
-                        .visualize(t.visual.name.as_str(), t.visual.glyph, t.visual.fg_color)
-                        .genome(
-                            owner.gene_stability,
-                            state
-                                .gene_library
-                                .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
-                        )
-                        .control_opt(child_ctrl)
-                        .living(true);
-                    child.physics.is_visible = t.physics.is_visible;
-                    Some(child)
                 }
-            }
-            None => None,
-        };
-
-        // finally place the 'child' cell into the world
-        if let Some(child) = child_obj {
-            let callback = if child.physics.is_visible && !innit_env().is_debug_mode {
-                ObjectFeedback::Render
-            } else {
-                ObjectFeedback::NoFeedback
+                None => None,
             };
-            objects.push(child);
 
-            ActionResult::Success { callback }
-        } else {
-            if owner.physics.is_visible {
-                state
-                    .log
-                    .add("No place available to generate offspring", MsgClass::Info);
+            // finally place the 'child' cell into the world
+            if let Some(child) = child_obj {
+                let callback = if child.physics.is_visible && !innit_env().is_debug_mode {
+                    ObjectFeedback::Render
+                } else {
+                    ObjectFeedback::NoFeedback
+                };
+                objects.push(child);
+
+                ActionResult::Success { callback }
+            } else {
+                ActionResult::Failure
             }
+        } else {
             ActionResult::Failure
         }
     }
