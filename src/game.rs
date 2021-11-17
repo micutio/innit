@@ -183,6 +183,9 @@ impl Game {
                         "Receptor".to_string(),
                         "Binary Fission".to_string(),
                         "Kill Switch".to_string(),
+                        "Life Expectancy".to_string(),
+                        "Life Expectancy".to_string(),
+                        "Life Expectancy".to_string(),
                     ],
                     &self.state.gene_library,
                 );
