@@ -9,6 +9,8 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
+use std::thread::current;
+
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
@@ -225,8 +227,8 @@ impl Hud {
         let x2 = x1 + SIDE_PANEL_WIDTH;
         let y2 = SIDE_PANEL_HEIGHT - 1;
         let layout = Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 12, SCREEN_WIDTH - 2, 22);
-        let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 25, SCREEN_WIDTH - 2, 58);
+        let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13, SCREEN_WIDTH - 2, 23);
+        let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 58);
         Hud {
             layout,
             inv_area,
@@ -438,16 +440,19 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let bg_hud_content = palette().hud_bg_content;
     let health = palette().hud_fg_bar_health;
     let energy = palette().hud_fg_bar_energy;
+    let lifetime = palette().hud_fg_bar_lifetime;
+
     // draw headers for bars
     draw_batch.print_color(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
-        '♥',
+        '+',
         ColorPair::new(fg_hud, bg_hud),
     );
-
     draw_batch.print(Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 3), '√');
+    draw_batch.print(Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 4), '♥');
 
     // draw bars
+    // - health bar
     draw_batch.bar_horizontal(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 2),
         17,
@@ -459,7 +464,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
     );
-
+    // - energy bar
     draw_batch.bar_horizontal(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 3),
         17,
@@ -475,6 +480,39 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
             player.processors.energy, player.processors.energy_storage
         ),
     );
+    // - lifetime bar
+    let has_finite_life = player
+        .processors
+        .actions
+        .iter()
+        .any(|f| f.get_identifier().contains("killswitch"));
+    let current_life = if has_finite_life {
+        player.processors.life_elapsed
+    } else {
+        1
+    };
+    let max_life = if has_finite_life {
+        player.processors.life_expectancy
+    } else {
+        1
+    };
+    draw_batch.bar_horizontal(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 4),
+        17,
+        current_life,
+        max_life,
+        ColorPair::new(lifetime, bg_bar),
+    );
+
+    let life_indicator = if has_finite_life {
+        format!("{}/{}", current_life, max_life)
+    } else {
+        "∞".into()
+    };
+    draw_batch.print_centered_at(
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 4),
+        life_indicator,
+    );
 }
 
 fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBatch) {
@@ -485,33 +523,33 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
 
     // draw action header
     draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 5, SIDE_PANEL_WIDTH, 0),
+        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 6, SIDE_PANEL_WIDTH, 0),
         ColorPair::new(action_fg, action_header_bg),
         to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 5),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
         "Actions",
         ColorPair::new(action_fg, action_header_bg),
     );
     // draw buttons
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
         "P",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
         "S",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 10),
         "Q",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
         "E",
         ColorPair::new(action_fg_hl, action_bg),
     );
