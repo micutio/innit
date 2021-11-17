@@ -35,6 +35,8 @@ fn test_dna_encoding() {
         metabolism: 1,
         energy_storage: 1,
         energy: 0,
+        life_expectancy: 100,
+        life_elapsed: 0,
         receptors: Vec::new(),
     };
 
@@ -43,8 +45,6 @@ fn test_dna_encoding() {
         max_hp: 1,
         hp: 1,
         volume: 1,
-        life_expectancy: 100,
-        life_elapsed: 0,
     };
 
     let (_s, _p, _a, _) = gene_lib.dna_to_traits(DnaType::Nucleus, &dna);

@@ -85,10 +85,11 @@ impl GameObjects {
                         &gene_library.trait_strs_to_dna(rng, &traits),
                     );
                     tile.change_genome(sensors, processors, actuators, dna);
-                    tile.actuators.life_elapsed = rng.gen_range(0..tile.actuators.life_expectancy);
+                    tile.processors.life_elapsed =
+                        rng.gen_range(0..tile.processors.life_expectancy);
                     println!(
                         "TILE AGE: {}/{}",
-                        tile.actuators.life_elapsed, tile.actuators.life_expectancy
+                        tile.processors.life_elapsed, tile.processors.life_expectancy
                     );
                 }
             }

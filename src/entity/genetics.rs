@@ -154,7 +154,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
         GeneticTrait::new(
             "Life Expectancy",
-            Actuating,
+            Processing,
             TraitAttribute::LifeExpectancy,
             None,
         ),
@@ -220,6 +220,8 @@ pub struct Processors {
     pub metabolism: i32,     // energy production per turn
     pub energy_storage: i32, // maximum energy store
     pub energy: i32,
+    pub life_expectancy: i32, // total life time, given in turns
+    pub life_elapsed: i32,    // life time already past, given in turns
     pub receptors: Vec<Receptor>,
 }
 
@@ -230,6 +232,8 @@ impl Processors {
             metabolism: 1,
             energy_storage: 1,
             energy: 0,
+            life_expectancy: 45,
+            life_elapsed: 0,
             receptors: Vec::new(),
         }
     }
@@ -254,8 +258,6 @@ pub struct Actuators {
     pub max_hp: i32,
     pub hp: i32,
     pub volume: i32,
-    pub life_expectancy: i32, // total life time, given in turns
-    pub life_elapsed: i32,    // life time already past, given in turns
 }
 
 impl Actuators {
@@ -265,8 +267,6 @@ impl Actuators {
             max_hp: 1,
             hp: 1,
             volume: 5,
-            life_expectancy: 45,
-            life_elapsed: 0,
         }
     }
 }
@@ -684,7 +684,7 @@ impl TraitBuilder {
                 });
             }
             TraitAttribute::LifeExpectancy => {
-                self.actuators.life_expectancy += 50;
+                self.processors.life_expectancy += 50;
             }
             TraitAttribute::None => {}
         }

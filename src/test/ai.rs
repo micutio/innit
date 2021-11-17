@@ -159,8 +159,6 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                     max_hp: 1,
                     hp: 1,
                     volume: 1,
-                    life_expectancy: 100,
-                    life_elapsed: 0,
                 },
                 Dna::default(),
             ),

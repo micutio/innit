@@ -309,7 +309,7 @@ impl Ai for AiTile {
             return Box::new(ActPass::default());
         }
 
-        if owner.actuators.life_elapsed >= owner.actuators.life_expectancy {
+        if owner.processors.life_elapsed >= owner.processors.life_expectancy {
             if let Some(killswitch) = owner
                 .processors
                 .actions

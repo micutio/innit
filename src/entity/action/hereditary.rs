@@ -871,7 +871,7 @@ impl Action for ActKillSwitch {
         match self.target {
             Target::Center => {
                 // let's only allow to kill ourself if we reached close to the end of our life span
-                if owner.actuators.life_elapsed >= owner.actuators.life_expectancy {
+                if owner.processors.life_elapsed >= owner.processors.life_expectancy {
                     owner.die(state, objects);
                     let callback = if owner.physics.is_visible {
                         ObjectFeedback::Render
@@ -992,7 +992,7 @@ impl Action for ActMitosis {
                         // insert (mutated) genome
                         t.set_dna(owner.dna.clone());
                         t.reread_dna(state);
-                        t.actuators.life_elapsed = 0;
+                        t.processors.life_elapsed = 0;
                         // return prematurely because we don't need to insert anything new into the
                         // object vector
                         return ActionResult::Success {
