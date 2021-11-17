@@ -59,7 +59,6 @@ impl WorldGen for OrganicsWorldGenerator {
 
         // step 2: use cellular automaton to fill in and smooth out
         while self.ca_cycle_count < CA_CYCLES {
-            info!("CA cycle {0}", self.ca_cycle_count);
             if let Some(ca) = &mut self.ca {
                 ca.step();
                 // update positions assigned with `true` to floor tiles

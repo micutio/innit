@@ -179,7 +179,10 @@ impl Action for ActMetabolise {
         _objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
-        owner.processors.energy += self.lvl;
+        owner.processors.energy = i32::min(
+            owner.processors.energy + self.lvl,
+            owner.processors.energy_storage,
+        );
         if owner.physics.is_visible {
             register_particle(
                 owner.pos,
