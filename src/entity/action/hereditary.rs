@@ -956,14 +956,14 @@ impl Action for ActKillSwitch {
 /// affected by mutation. The target here can be any empty tile to place the child object.
 /// In case of a tile cell replicating, it will replace the empty tile with a wall tile instead.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActMitosis {
+pub struct ActBinaryFission {
     target: Target,
     lvl: i32,
 }
 
-impl ActMitosis {
+impl ActBinaryFission {
     pub fn new() -> Self {
-        ActMitosis {
+        ActBinaryFission {
             target: Target::Center,
             lvl: 0,
         }
@@ -971,7 +971,7 @@ impl ActMitosis {
 }
 
 #[typetag::serde]
-impl Action for ActMitosis {
+impl Action for ActBinaryFission {
     fn perform(
         &self,
         state: &mut GameState,
@@ -1071,7 +1071,7 @@ impl Action for ActMitosis {
     }
 
     fn get_identifier(&self) -> String {
-        "mitosis".to_string()
+        "bin. fission".to_string()
     }
 
     fn get_energy_cost(&self) -> i32 {
@@ -1079,6 +1079,6 @@ impl Action for ActMitosis {
     }
 
     fn to_text(&self) -> String {
-        format!("mitosis into {:?}", self.target)
+        format!("binary fission into {:?}", self.target)
     }
 }

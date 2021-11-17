@@ -321,13 +321,13 @@ impl Ai for AiTile {
                 return killswitch_action;
             }
         } else {
-            if let Some(mitosis_action) = owner
+            if let Some(fission_action) = owner
                 .actuators
                 .actions
                 .iter()
-                .find(|a| a.get_identifier().eq("mitosis"))
+                .find(|a| a.get_identifier().eq("bin. fission"))
             {
-                // If the tile can perform mitosis, check whether a neighboring cell is available
+                // If the tile can perform fission, check whether a neighboring cell is available
                 // and also contains a high enough concentration of growth gradient.
 
                 let target_cell = objects
@@ -345,9 +345,9 @@ impl Ai for AiTile {
                 if let Some(target) = target_cell {
                     if let Some(target_tile) = &target.tile {
                         if state.rng.flip_with_prob(target_tile.morphogen / 2.0) {
-                            let mut mitosis = mitosis_action.clone_action();
-                            mitosis.set_target(Target::from_pos(&owner.pos, &target.pos));
-                            return mitosis;
+                            let mut fission = fission_action.clone_action();
+                            fission.set_target(Target::from_pos(&owner.pos, &target.pos));
+                            return fission;
                         }
                     }
                 }

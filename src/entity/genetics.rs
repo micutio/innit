@@ -30,7 +30,7 @@
 //! - How to best model synergies and anti-synergies across traits?
 
 use crate::entity::action::hereditary::{
-    ActAttack, ActKillSwitch, ActMetabolise, ActMitosis, ActMove,
+    ActAttack, ActBinaryFission, ActKillSwitch, ActMetabolise, ActMove,
 };
 use crate::entity::action::inventory::ActPickUpItem;
 use crate::entity::action::Action;
@@ -145,10 +145,10 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             Some(Box::new(ActAttack::new())),
         ),
         GeneticTrait::new(
-            "Mitosis",
+            "Binary Fission",
             TraitFamily::Actuating,
             TraitAttribute::None,
-            Some(Box::new(ActMitosis::new())),
+            Some(Box::new(ActBinaryFission::new())),
         ),
         GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
