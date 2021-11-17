@@ -19,6 +19,7 @@ pub struct ColorPalette {
     pub hud_bg_active: (u8, u8, u8),
     pub hud_bg_log1: (u8, u8, u8),
     pub hud_bg_log2: (u8, u8, u8),
+    pub hud_bg_tooltip: (u8, u8, u8),
 
     // hud colors - foreground
     pub hud_fg: (u8, u8, u8),
@@ -75,6 +76,7 @@ pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
     hud_bg_active: (145, 9, 68),
     hud_bg_log1: (124, 8, 59),
     hud_bg_log2: (145, 9, 68),
+    hud_bg_tooltip: (42, 82, 99),
 
     // hud colors - foreground
     hud_fg: (196, 196, 196),

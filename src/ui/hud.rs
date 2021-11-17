@@ -742,7 +742,7 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
     // define tooltip colors
     let fg_tt_border = palette().hud_fg_border;
     let fg_tt = palette().hud_fg;
-    let bg_tt = palette().hud_bg;
+    let bg_tt = palette().hud_bg_tooltip;
 
     for tooltip in &hud.tooltips {
         if tooltip.header.is_none() && tooltip.attributes.is_empty() {
