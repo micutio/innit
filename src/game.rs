@@ -673,10 +673,14 @@ fn create_genome_manipulator(
     state: &mut GameState,
     objects: &mut GameObjects,
 ) -> Option<GenomeEditor> {
-    if let Some(ref mut player) = objects[state.player_idx] {
-        // NOTE: In the future editor features could be read from the plasmid.
-        let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
-        Some(genome_editor)
+    if innit_env().is_debug_mode {
+        if let Some(ref mut player) = objects[state.player_idx] {
+            // NOTE: In the future editor features could be read from the plasmid.
+            let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
+            Some(genome_editor)
+        } else {
+            None
+        }
     } else {
         None
     }
