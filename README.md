@@ -35,15 +35,27 @@ Innit is still at the outset of development. The basic game engine is, apart fro
 ![innit title image](screenshots/innit_main_alpha-0.0.4.png)
 ![innit ui sample](screenshots/ui/ui-0.0.4.png)
 
-### Running the game from source
+### Building and running the game
 
-#### Linux
+The desktop version of Innit is built and run like any other rust program, using cargo:
 
-Run the following commands in the command line.
+#### Building
 
 ```bash
-cargo build
+cargo build --release
 ```
+
+#### Running the game
+
+```bash
+cargo run innit
+```
+
+#### Additional command line arguments
+
+- `-d | --debug`: runs the game in debug mode, with full vision of the world and world generation
+- `-s | --seeding`: prompts the game to use a fixed random seed
+- `--spectate`: runs the game without a player character, best used together with debug mode
 
 ## Known Issues
 
