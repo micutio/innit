@@ -9,8 +9,6 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
-use std::thread::current;
-
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
@@ -100,28 +98,28 @@ fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
             HudItem::PrimaryAction,
             "",
             ToolTip::header_only("select new primary action"),
-            Rect::with_size(button_x, 6, button_len, 1),
+            Rect::with_size(button_x, 7, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::SecondaryAction,
             "",
             ToolTip::header_only("select new secondary action"),
-            Rect::with_size(button_x, 7, button_len, 1),
+            Rect::with_size(button_x, 8, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::Quick1Action,
             "",
             ToolTip::header_only("select new quick action"),
-            Rect::with_size(button_x, 8, button_len, 1),
+            Rect::with_size(button_x, 9, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::Quick2Action,
             "",
             ToolTip::header_only("select new quick action"),
-            Rect::with_size(button_x, 9, button_len, 1),
+            Rect::with_size(button_x, 10, button_len, 1),
             col_pair,
         ),
     ];
@@ -528,28 +526,28 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
         to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
         "Actions",
         ColorPair::new(action_fg, action_header_bg),
     );
     // draw buttons
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
         "P",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
         "S",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 10),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
         "Q",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 11),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 10),
         "E",
         ColorPair::new(action_fg_hl, action_bg),
     );
