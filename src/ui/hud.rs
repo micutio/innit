@@ -59,7 +59,8 @@ pub enum HudItem {
     SecondaryAction,
     Quick1Action,
     Quick2Action,
-    DnaItem,
+    DnaItem, // little dna pieces that line the top and right side of the hud
+    BarItem, // health, energy and lifetime bars
     UseInventory { idx: usize },
     DropInventory { idx: usize },
 }
@@ -93,7 +94,29 @@ fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
     let fg_col = palette().hud_fg;
     let bg_col = palette().hud_bg;
     let col_pair = ColorPair::new(fg_col, bg_col);
+    let bar_width = SIDE_PANEL_WIDTH - 3;
     let items = vec![
+        UiItem::new(
+            HudItem::BarItem,
+            "",
+            ToolTip::header_only("your health"),
+            Rect::with_size(button_x, 2, bar_width, 1),
+            col_pair,
+        ),
+        UiItem::new(
+            HudItem::BarItem,
+            "",
+            ToolTip::header_only("your energy"),
+            Rect::with_size(button_x, 3, bar_width, 1),
+            col_pair,
+        ),
+        UiItem::new(
+            HudItem::BarItem,
+            "",
+            ToolTip::header_only("your life time until regeneration"),
+            Rect::with_size(button_x, 4, bar_width, 1),
+            col_pair,
+        ),
         UiItem::new(
             HudItem::PrimaryAction,
             "",
@@ -440,39 +463,39 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let energy = palette().hud_fg_bar_energy;
     let lifetime = palette().hud_fg_bar_lifetime;
 
+    let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
+    let bar_x = SCREEN_WIDTH - SIDE_PANEL_WIDTH;
+    let bar_width = SIDE_PANEL_WIDTH - 3;
+
     // draw headers for bars
-    draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 2),
-        '+',
-        ColorPair::new(fg_hud, bg_hud),
-    );
-    draw_batch.print(Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 3), '√');
-    draw_batch.print(Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 4), '♥');
+    draw_batch.print_color(Point::new(bar_x, 2), '+', bar_icon_col);
+    draw_batch.print_color(Point::new(bar_x, 3), '√', bar_icon_col);
+    draw_batch.print_color(Point::new(bar_x, 4), '♥', bar_icon_col);
 
     // draw bars
     // - health bar
     draw_batch.bar_horizontal(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 2),
-        17,
+        Point::new(bar_x + 2, 2),
+        bar_width,
         player.actuators.hp,
         player.actuators.max_hp,
         ColorPair::new(health, bg_hud_content),
     );
     draw_batch.print_centered_at(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 2),
+        Point::new(bar_x + 10, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
     );
     // - energy bar
     draw_batch.bar_horizontal(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 3),
-        17,
+        Point::new(bar_x + 2, 3),
+        bar_width,
         player.processors.energy,
         player.processors.energy_storage,
         ColorPair::new(energy, bg_bar),
     );
 
     draw_batch.print_centered_at(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 3),
+        Point::new(bar_x + 10, 3),
         format!(
             "{}/{}",
             player.processors.energy, player.processors.energy_storage
@@ -496,7 +519,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     };
     draw_batch.bar_horizontal(
         Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 4),
-        17,
+        bar_width,
         current_life,
         max_life,
         ColorPair::new(lifetime, bg_bar),

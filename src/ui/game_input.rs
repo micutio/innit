@@ -172,7 +172,8 @@ pub fn read_input(
                     HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
                     HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
                     HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
-                    HudItem::DnaItem => PlayerInput::Undefined,
+                    HudItem::DnaItem => PlayerInput::Undefined, // no action when clicked
+                    HudItem::BarItem => PlayerInput::Undefined, // no action when clicked
                     HudItem::UseInventory { idx } => {
                         PlayerInput::PlayInput(PlayerAction::UseInventoryItem(idx))
                     }
