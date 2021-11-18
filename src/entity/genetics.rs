@@ -369,6 +369,7 @@ impl GeneLibrary {
         }
     }
 
+    /// Generate a new random binary DNA code from a given length and possibly with LTR markers.
     pub fn new_dna(&self, rng: &mut GameRng, has_ltr: bool, avg_genome_len: usize) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
 
@@ -411,7 +412,7 @@ impl GeneLibrary {
         dna
     }
 
-    /// Encode genetic traits into binary DNA code.
+    /// Encode a slice of genetic trait objects into binary DNA code.
     pub fn g_traits_to_dna(&self, traits: &[GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
@@ -442,6 +443,7 @@ impl GeneLibrary {
         dna
     }
 
+    /// Encode a slice of genetic trait object references into binary DNA code.
     pub fn g_trait_refs_to_dna(&self, traits: &[&GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
@@ -472,6 +474,7 @@ impl GeneLibrary {
         dna
     }
 
+    /// Encode a vector of genetic trait names into binary DNA code.
     pub fn trait_strs_to_dna(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
@@ -494,6 +497,7 @@ impl GeneLibrary {
         dna
     }
 
+    /// Generate a new binary DNA code from a given weighted distribution of trait families.
     pub fn dna_from_distribution(
         &self,
         rng: &mut GameRng,

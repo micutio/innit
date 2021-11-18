@@ -4,8 +4,8 @@ use crate::entity::action::*;
 use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
-use crate::util::game_rng::GameRng;
-use rand::RngCore;
+use crate::util::game_rng::{GameRng, RngExtended};
+use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -117,171 +117,57 @@ impl GameState {
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
     pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectFeedback {
         // unpack object to process its next action
-        if let Some(mut active_obj) = objects.extract_by_index(self.obj_idx) {
+        if let Some(mut actor) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
             // 1. turn preparation
             // 2. turn action
             // 3. turn conclusion
-            // if active_object.physics.is_visible {
+            // if actorect.physics.is_visible {
             trace!(
                 "{} | {}'s turn now @energy {}/{}",
                 self.obj_idx,
-                active_obj.visual.name,
-                active_obj.processors.energy,
-                active_obj.processors.energy_storage
+                actor.visual.name,
+                actor.processors.energy,
+                actor.processors.energy_storage
             );
             // }
 
-            if active_obj.is_player() {
+            // TURN PREPARATION ///////////////////////////////////////////////////////////////////
+            // check whether the object is ready to take the turn, i.e.: has an action queued up
+            if actor.is_player() {
                 // update player index just in case we have multiple player controlled objects
                 self.player_idx = self.obj_idx;
-                // abort the turn if the player has not decided on the next action and also cannot metabolize anymore
-                if !active_obj.has_next_action()
-                    && active_obj.processors.energy == active_obj.processors.energy_storage
-                {
-                    objects.replace(self.obj_idx, active_obj);
+                // abort the turn if the player has not decided on the next action and also cannot
+                // metabolize anymore
+                let can_rest = actor.processors.energy == actor.processors.energy_storage;
+                if !actor.has_next_action() && can_rest {
+                    objects.replace(self.obj_idx, actor);
                     return ObjectFeedback::NoAction;
                 }
             }
 
-            // TURN PREPARATION ///////////////////////////////////////////////////////////////////
-            // Innit doesn't have any action preparations as of yet.
-
             // TURN ACTION ////////////////////////////////////////////////////////////////////////
-            let mut process_result =
-                // If not enough energy available try to metabolise.
-                if active_obj.control.is_none() {
-                    ObjectFeedback::NoFeedback
-                } else if active_obj.processors.energy < active_obj.processors.energy_storage {
-                    // replenish energy
-                    active_obj.metabolize();
-                    if self.is_players_turn() {
-                        ObjectFeedback::Render
-                    } else {
-                        ObjectFeedback::NoFeedback
-                    }
-                } else if let Some(next_action) = active_obj.extract_next_action(self, objects) {
-                    // use up energy before action
-                    if active_obj.physics.is_visible && next_action.get_identifier().ne("pass") {
-                        trace!("next action: {}", next_action.get_identifier());
-                    }
-                    if next_action.get_energy_cost() > active_obj.processors.energy_storage {
-                        self.log.add("You don't have enough energy for that!", MsgClass::Info);
-                        ObjectFeedback::NoFeedback
-                    } else {
-                        active_obj.processors.energy -= next_action.get_energy_cost();
-                        self.process_action(objects, &mut active_obj, next_action)
-                    }
-                } else {
-                    panic!("How can an object 'has_next_action' but NOT have an action?");
-                    // ObjectProcResult::NoFeedback
-                };
-            if !active_obj.physics.is_visible && !active_obj.physics.is_always_visible {
-                // process_result.clear();
-                process_result = ObjectFeedback::NoFeedback;
-            }
+            let mut process_result = self.take_turn(objects, &mut actor);
 
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
-            // Apply recurring effects so that the player can factor this into the next action.
 
-            if active_obj.inventory.items.len() as i32 > active_obj.actuators.volume {
-                active_obj.actuators.hp -= 1;
-                if active_obj.is_player() {
-                    self.log
-                        .add("You're overloaded! Taking damage...", MsgClass::Alert);
-                }
-            }
+            // hide any visible effects if occurring outside of the player vision
+            // self.conclude_hide_invis_feedback(&mut actor, &mut process_result);
 
-            // Random mutation
-            // TODO: Perform random mutation when cells are procreating/multiplying, not just by chance every turn.
-            // if active_object.dna.raw.is_empty() {
-            //     println!("{} dna is empty!", active_object.visual.name);
-            // }
-            // if !active_object.dna.raw.is_empty()
-            //     && self.rng.flip_with_prob(1.0 - active_object.gene_stability)
-            // {
-            //     // mutate the object's genome by randomly flipping a bit
-            //     let random_gene = self.rng.gen_range(0, active_object.dna.raw.len());
-            //     let old_gene = active_object.dna.raw[random_gene];
-            //     debug!(
-            //         "{} flipping gene: 0b{:08b}",
-            //         active_object.visual.name, active_object.dna.raw[random_gene]
-            //     );
-            //     active_object.dna.raw[random_gene] ^= self.rng.random_bit();
-            //     debug!(
-            //         "{}            to: 0b{:08b}",
-            //         active_object.visual.name, active_object.dna.raw[random_gene]
-            //     );
-            //
-            //     // apply new genome to object
-            //     let (sensors, processors, actuators, dna) = self
-            //         .gene_library
-            //         .decode_dna(active_object.dna.dna_type, active_object.dna.raw.as_slice());
-            //     active_object.change_genome(sensors, processors, actuators, dna);
-            //
-            //     // TODO: Show mutation effect as diff between old and new genome!
-            //     if self.current_obj_index == self.current_player_index {
-            //         self.log.add(
-            //             format!("A mutation occurred in your genome {}", old_gene),
-            //             MsgClass::Alert,
-            //         );
-            //     } else if let Some(player) = &objects[self.current_player_index] {
-            //         debug!(
-            //             "sensing range: {}, dist: {}",
-            //             player.sensors.sensing_range as f32,
-            //             player.pos.distance(&active_object.pos)
-            //         );
-            //         if player.pos.distance(&active_object.pos)
-            //             <= player.sensors.sensing_range as f32
-            //         {
-            //             // don't record all tiles passing constantly
-            //             self.log.add(
-            //                 format!("{} mutated!", active_object.visual.name),
-            //                 MsgClass::Info,
-            //             );
-            //         }
-            //     }
-            // }
+            // check whether object is overloaded
+            self.conclude_overload(&mut actor);
+
+            // have a chance at random mutation
+            self.conclude_mutate(&mut actor);
 
             // check whether object is still alive
-            if active_obj.actuators.hp == 0 {
-                active_obj.die(self, objects);
-            } else {
-                active_obj.processors.life_elapsed += 1;
-                // the hud should be updated to show the new lifetime of the player unless already
-                // something render-worthy happened
-                if active_obj.is_player() && process_result != ObjectFeedback::Render {
-                    process_result = ObjectFeedback::UpdateHud;
-                }
-            }
+            self.conclude_ageing(objects, &mut actor, &mut process_result);
 
             // return object back to objects vector, if still alive
-            if !active_obj.alive && active_obj.physics.is_visible {
-                self.log
-                    .add(format!("{} died!", active_obj.visual.name), MsgClass::Alert);
-                debug!("{} died!", active_obj.visual.name);
-
-                // if the dead object is a player then keep it in the world,
-                // otherwise remove it.
-                // NOTE: Maybe keep dead material around for scavenging.
-                if active_obj.is_player() {
-                    objects[self.obj_idx].replace(active_obj);
-                } else {
-                    objects.get_vector_mut().remove(self.obj_idx);
-                }
-                // if the "main" player is dead, the game is over
-                if self.obj_idx == PLAYER {
-                    process_result = ObjectFeedback::GameOver;
-                }
-            } else {
-                objects[self.obj_idx].replace(active_obj);
-            }
+            self.conclude_recycle_obj(objects, actor, &mut process_result);
 
             // finally increase object index and turn counter
-            self.obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
-            if self.obj_idx == 0 {
-                self.turn += 1;
-            }
+            self.conclude_advance_turn(objects.get_obj_count());
 
             // return the result of our action
             process_result
@@ -290,11 +176,38 @@ impl GameState {
             // objects.get_vector_mut().remove(self.obj_idx);
 
             // increase object index and turn counter
-            self.obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
-            if self.obj_idx == 0 {
-                self.turn += 1;
-            }
+            self.conclude_advance_turn(objects.get_obj_count());
             ObjectFeedback::Render
+        }
+    }
+
+    fn take_turn(&mut self, objects: &mut GameObjects, actor: &mut Object) -> ObjectFeedback {
+        if actor.control.is_none() {
+            ObjectFeedback::NoFeedback
+        } else if actor.processors.energy < actor.processors.energy_storage {
+            // if not enough energy available try to replenish energy via metabolising
+            actor.metabolize();
+            if self.is_players_turn() {
+                ObjectFeedback::Render
+            } else {
+                ObjectFeedback::NoFeedback
+            }
+        } else if let Some(next_action) = actor.extract_next_action(self, objects) {
+            // use up energy before action
+            if actor.physics.is_visible && next_action.get_identifier().ne("pass") {
+                trace!("next action: {}", next_action.get_identifier());
+            }
+            if next_action.get_energy_cost() > actor.processors.energy_storage {
+                self.log
+                    .add("You don't have enough energy for that!", MsgClass::Info);
+                ObjectFeedback::NoFeedback
+            } else {
+                actor.processors.energy -= next_action.get_energy_cost();
+                self.process_action(objects, actor, next_action)
+            }
+        } else {
+            // TODO: Turn this into a proper error message and graceful shutdown.
+            panic!("How can an object 'has_next_action' but NOT have an action?");
         }
     }
 
@@ -326,6 +239,127 @@ impl GameState {
                     (ObjectFeedback::GenomeManipulator, _) => callback,
                 }
             }
+        }
+    }
+
+    // TODO: Determine whether this has any discernible effects.
+    // All invisible objects should already not emit any visible feedback.
+    fn _conclude_hide_invis_feedback(
+        &self,
+        actor: &mut Object,
+        process_result: &mut ObjectFeedback,
+    ) {
+        if !actor.physics.is_visible && !actor.physics.is_always_visible {
+            *process_result = ObjectFeedback::NoFeedback;
+        }
+    }
+
+    fn conclude_overload(&mut self, actor: &mut Object) {
+        if actor.inventory.items.len() as i32 > actor.actuators.volume {
+            actor.actuators.hp -= 1;
+            if actor.is_player() {
+                self.log
+                    .add("You're overloaded! Taking damage...", MsgClass::Alert);
+            }
+        }
+    }
+
+    fn conclude_mutate(&mut self, actor: &mut Object) {
+        if actor.tile.is_some() && !actor.physics.is_blocking {
+            // no need to mutate empty tiles
+            return;
+        }
+
+        if actor.dna.raw.is_empty() {
+            println!("{} dna is empty!", actor.visual.name);
+            return;
+        }
+
+        if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
+            // mutate the object's genome by randomly flipping a bit
+            let random_position = self.rng.gen_range(0..actor.dna.raw.len());
+            let old_gene = actor.dna.raw[random_position];
+            // ^ = bitwise exclusive or
+            let new_gene = old_gene ^ self.rng.random_bit();
+            // Replace the modified gene in the dna. The change will become effectual once the
+            // cell procreates or "reincarnates".
+            actor.dna.raw[random_position] = new_gene;
+            info!(
+                "{} flipping gene 0b{:08b} to 0b{:08b}",
+                actor.visual.name, old_gene, new_gene
+            );
+
+            // TODO: Show mutation effect as diff between old and new genome!
+            if actor.is_player() {
+                self.log.add(
+                    format!(
+                        "Gene {} mutated from 0b{:08b} to 0b{:08b}",
+                        random_position, old_gene, new_gene
+                    ),
+                    MsgClass::Alert,
+                );
+            } else if actor.physics.is_visible {
+                self.log.add(
+                    format!("Mutation occurred in {}!", actor.visual.name),
+                    MsgClass::Info,
+                );
+            }
+        }
+    }
+
+    fn conclude_ageing(
+        &mut self,
+        objects: &mut GameObjects,
+        actor: &mut Object,
+        process_result: &mut ObjectFeedback,
+    ) {
+        if actor.actuators.hp == 0 {
+            actor.die(self, objects);
+        } else {
+            actor.processors.life_elapsed += 1;
+            // the hud should be updated to show the new lifetime of the player unless already
+            // something render-worthy happened
+            if actor.is_player() {
+                *process_result = match process_result {
+                    ObjectFeedback::Render => ObjectFeedback::Render,
+                    _ => ObjectFeedback::UpdateHud,
+                }
+            }
+        }
+    }
+
+    fn conclude_recycle_obj(
+        &mut self,
+        objects: &mut GameObjects,
+        actor: Object,
+        process_result: &mut ObjectFeedback,
+    ) {
+        if !actor.alive && actor.physics.is_visible {
+            self.log
+                .add(format!("{} died!", actor.visual.name), MsgClass::Alert);
+            debug!("{} died!", actor.visual.name);
+
+            // if the dead object is a player then keep it in the world,
+            // otherwise remove it.
+            // NOTE: Maybe keep dead material around for scavenging.
+            if actor.is_player() {
+                objects[self.obj_idx].replace(actor);
+            } else {
+                objects.get_vector_mut().remove(self.obj_idx);
+            }
+            // if the "main" player is dead, the game is over
+            if self.obj_idx == PLAYER {
+                *process_result = ObjectFeedback::GameOver;
+            }
+        } else {
+            objects[self.obj_idx].replace(actor);
+        }
+    }
+
+    fn conclude_advance_turn(&mut self, obj_count: usize) {
+        self.obj_idx = (self.obj_idx + 1) % obj_count;
+        if self.obj_idx == 0 {
+            self.turn += 1;
         }
     }
 }
