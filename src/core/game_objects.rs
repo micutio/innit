@@ -54,7 +54,7 @@ impl GameObjects {
         }
     }
 
-    pub fn set_tile_dna_random(&mut self, rng: &mut GameRng, gene_library: &GeneLibrary) {
+    pub fn _set_tile_dna_random(&mut self, rng: &mut GameRng, gene_library: &GeneLibrary) {
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 // debug!("setting tile dna at ({}, {})", x, y);
