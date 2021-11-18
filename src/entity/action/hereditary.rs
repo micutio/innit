@@ -17,21 +17,19 @@ use serde::{Deserialize, Serialize};
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActPass {
-    override_redraw: bool,
+    force_redraw: bool,
 }
 
 impl ActPass {
     pub fn update() -> Self {
-        ActPass {
-            override_redraw: true,
-        }
+        ActPass { force_redraw: true }
     }
 }
 
 impl Default for ActPass {
     fn default() -> Self {
         ActPass {
-            override_redraw: false,
+            force_redraw: false,
         }
     }
 }
@@ -52,7 +50,7 @@ impl Action for ActPass {
         //     register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         // }
 
-        let callback = if self.override_redraw {
+        let callback = if self.force_redraw {
             ObjectFeedback::Render
         } else {
             ObjectFeedback::NoFeedback
@@ -121,11 +119,14 @@ impl Action for ActMove {
         }
         if !&objects.is_pos_blocked(&target_pos) {
             owner.pos.set(target_pos.x, target_pos.y);
-            ActionResult::Success {
-                callback: ObjectFeedback::Render,
-            }
+            let callback = if owner.physics.is_visible {
+                ObjectFeedback::Render
+            } else {
+                ObjectFeedback::NoFeedback
+            };
+            ActionResult::Success { callback }
         } else {
-            info!("object {} blocked!", owner.visual.name);
+            // object cannot move because it's blocked
             ActionResult::Failure // this might cause infinite loops of failure
         }
     }
@@ -264,15 +265,15 @@ impl Action for ActAttack {
                 // deal damage
                 t.actuators.hp -= self.lvl;
                 debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
-                state.log.add(
-                    format!(
-                        "{} attacked {} for {} damage",
-                        &owner.visual.name, &t.visual.name, self.lvl
-                    ),
-                    MsgClass::Info,
-                );
-                // show particle effect
-                if t.physics.is_visible {
+                if owner.physics.is_visible {
+                    state.log.add(
+                        format!(
+                            "{} attacked {} for {} damage",
+                            &owner.visual.name, &t.visual.name, self.lvl
+                        ),
+                        MsgClass::Info,
+                    );
+                    // show particle effect
                     register_particle(
                         t.pos,
                         (200, 10, 10),
@@ -281,6 +282,7 @@ impl Action for ActAttack {
                         250.0,
                     )
                 }
+
                 ActionResult::Success {
                     callback: ObjectFeedback::NoFeedback,
                 }
@@ -713,12 +715,12 @@ impl Action for ActProduceVirion {
             Some(dna) => {
                 debug!("#{} produces virion", owner.visual.name);
                 assert!(!dna.is_empty());
-                // if owner.physics.is_visible || owner.is_player() {
-                state.log.add(
-                    format!("{} is forced to produce virions", owner.visual.name),
-                    MsgClass::Alert,
-                );
-                // }
+                if owner.physics.is_visible || owner.is_player() {
+                    state.log.add(
+                        format!("{} is forced to produce virions", owner.visual.name),
+                        MsgClass::Alert,
+                    );
+                }
                 owner.inventory.items.push(
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
@@ -757,7 +759,8 @@ impl Action for ActProduceVirion {
                                         .gene_library
                                         .dna_to_traits(DnaType::Rna, &dna_from_seq),
                                 )
-                                .control(Controller::Npc(Box::new(AiVirus {}))), // TODO: Separate Ai for retroviruses?
+                                .control(Controller::Npc(Box::new(AiVirus {}))),
+                            // TODO: Separate Ai for retroviruses?
                         );
                     }
                 }
@@ -812,11 +815,14 @@ impl Action for ActEditGenome {
         &self,
         _state: &mut GameState,
         _objects: &mut GameObjects,
-        _owner: &mut Object,
+        owner: &mut Object,
     ) -> ActionResult {
-        ActionResult::Success {
-            callback: ObjectFeedback::GenomeManipulator,
-        }
+        let callback = if owner.is_player() {
+            ObjectFeedback::GenomeManipulator
+        } else {
+            ObjectFeedback::NoFeedback
+        };
+        ActionResult::Success { callback }
     }
 
     fn set_target(&mut self, _t: Target) {}
@@ -873,18 +879,13 @@ impl Action for ActKillSwitch {
     ) -> ActionResult {
         match self.target {
             Target::Center => {
-                // let's only allow to kill ourself if we reached close to the end of our life span
-                if owner.processors.life_elapsed >= owner.processors.life_expectancy {
-                    owner.die(state, objects);
-                    let callback = if owner.physics.is_visible {
-                        ObjectFeedback::Render
-                    } else {
-                        ObjectFeedback::NoFeedback
-                    };
-                    ActionResult::Success { callback }
+                owner.die(state, objects);
+                let callback = if owner.physics.is_visible {
+                    ObjectFeedback::Render
                 } else {
-                    ActionResult::Failure
-                }
+                    ObjectFeedback::NoFeedback
+                };
+                ActionResult::Success { callback }
             }
 
             _ => {
