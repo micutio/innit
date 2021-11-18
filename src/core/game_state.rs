@@ -152,7 +152,7 @@ impl GameState {
             // TURN CONCLUSION ////////////////////////////////////////////////////////////////////
 
             // hide any visible effects if occurring outside of the player vision
-            // self.conclude_hide_invis_feedback(&mut actor, &mut process_result);
+            self.conclude_hide_invis_feedback(&mut actor, &mut process_result);
 
             // check whether object is overloaded
             self.conclude_overload(&mut actor);
@@ -242,9 +242,9 @@ impl GameState {
         }
     }
 
-    // TODO: Determine whether this has any discernible effects.
+    // TODO: Fix actions to not require this method anymore.
     // All invisible objects should already not emit any visible feedback.
-    fn _conclude_hide_invis_feedback(
+    fn conclude_hide_invis_feedback(
         &self,
         actor: &mut Object,
         process_result: &mut ObjectFeedback,
