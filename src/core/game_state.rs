@@ -248,6 +248,11 @@ impl GameState {
                 active_obj.die(self, objects);
             } else {
                 active_obj.processors.life_elapsed += 1;
+                // the hud should be updated to show the new lifetime of the player unless already
+                // something render-worthy happened
+                if active_obj.is_player() && process_result != ObjectFeedback::Render {
+                    process_result = ObjectFeedback::UpdateHud;
+                }
             }
 
             // return object back to objects vector, if still alive
