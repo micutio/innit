@@ -30,6 +30,7 @@ use crate::core::innit_env;
 use crate::game::Game;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::raws::object_template::ObjectTemplate;
+use rltk::{BResult, BTerm, RltkBuilder};
 use std::env;
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
@@ -74,7 +75,18 @@ pub fn main() -> rltk::BError {
     println!("{}", obj_str);
 
     // build engine and launch the game
-    use rltk::RltkBuilder;
+
+    // let font = "fonts/rex_paint_10x10.png";
+    // let font = "fonts/rex_paint_8x8.png";
+    // let font_rex = "fonts/rex_paint_10x10.png";
+
+    // context.set_active_font(0, true);
+    rltk::main_loop(get_context()?, Game::new())
+}
+
+// #[cfg(target_arch = "wasm32")]
+#[cfg(not(target_arch = "wasm32"))]
+fn get_context() -> BResult<BTerm> {
     // let font = "fonts/rex_paint_10x10.png";
     // let font = "fonts/rex_paint_8x8.png";
     // let font_rex = "fonts/rex_paint_10x10.png";
@@ -91,8 +103,24 @@ pub fn main() -> rltk::BError {
         .with_fps_cap(60.0)
         // .with_vsync(false)
         // .with_automatic_console_resize(false)
-        .build()?;
+        .build();
+    context
+}
 
-    // context.set_active_font(0, true);
-    rltk::main_loop(context, Game::new())
+// #[cfg(not(target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
+fn get_context() -> BResult<BTerm> {
+    let font = "terminal8x8.png";
+    RltkBuilder::new()
+        .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .with_advanced_input(true)
+        .with_font(font, 8, 8)
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font)
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles
+        .with_title("Innit alpha v0.0.4")
+        .with_fps_cap(60.0)
+        // .with_vsync(false)
+        // .with_automatic_console_resize(false)
+        .build()
 }

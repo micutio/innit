@@ -5,10 +5,15 @@ authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
 edition = "2021"
 
+[features]
+stdweb = [ "instant/stdweb" ]
+wasm-bindgen = [ "instant/wasm-bindgen" ]
+
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
 
 cpuprofiler = "0.0.4"
+instant = "0.1"
 lazy_static = "1.4.0"
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
