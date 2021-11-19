@@ -3,6 +3,7 @@ use crate::core::game_state::GameState;
 use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 

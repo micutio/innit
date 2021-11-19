@@ -7,8 +7,10 @@ use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::rand::Rng;
 use crate::util::game_rng::GameRng;
 use rltk::{Algorithm2D, BaseMap, Point};
-use serde::{Deserialize, Serialize};
 use std::ops::{Index, IndexMut};
+
+#[cfg(not(target_arch = "wasm32"))]
+use serde::{Deserialize, Serialize};
 
 /// The game object struct contains all game objects, including
 /// * player character
@@ -16,7 +18,8 @@ use std::ops::{Index, IndexMut};
 /// * world tiles
 /// * items
 /// and offers methods to deal with them in an orderly fashion.
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Default, Debug)]
 pub struct GameObjects {
     num_world_tiles: usize,
     obj_vec: Vec<Option<Object>>,
