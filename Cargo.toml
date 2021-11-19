@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
-dirs = "4.0"
+
 cpuprofiler = "0.0.4"
 lazy_static = "1.4.0"
 log = "0.4.14"
@@ -21,6 +21,7 @@ serde_json = "1.0.64"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 typetag = "0.1.7"
+dirs = "4.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
