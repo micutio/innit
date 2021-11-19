@@ -1,3 +1,10 @@
+//! # Innit - An immune system roguelike
+//!
+//! Started following the [libtcod tutorial](https://tomassedovic.github.io/roguelike-tutorial),
+//! later ported to and heavily influenced by the [RLTK tutorial](https://bfnightly.bracketproductions.com/rustbook/)
+//!
+//! Michael Wagner 2018
+
 extern crate casim;
 #[macro_use]
 extern crate log;
@@ -27,6 +34,7 @@ use std::env;
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
+// Check [https://bfnightly.bracketproductions.com/rustbook/webbuild.html] for building as WASM.
 
 pub fn main() -> rltk::BError {
     println!(
