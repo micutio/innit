@@ -20,7 +20,7 @@ use std::fmt::Debug;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiPassive;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiPassive {
     fn act(
         &mut self,
@@ -42,7 +42,7 @@ impl AiRandom {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiRandom {
     fn act(
         &mut self,
@@ -144,7 +144,7 @@ impl Ai for AiRandom {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiRandomWalk;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiRandomWalk {
     fn act(
         &mut self,
@@ -183,7 +183,7 @@ impl AiVirus {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiVirus {
     fn act(
         &mut self,
@@ -268,7 +268,7 @@ impl AiForceVirusProduction {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiForceVirusProduction {
     fn act(
         &mut self,
@@ -293,7 +293,7 @@ impl Ai for AiForceVirusProduction {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AiTile;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiTile {
     fn act(
         &mut self,

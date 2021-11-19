@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActPickUpItem;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActPickUpItem {
     fn perform(
         &self,
@@ -95,7 +95,7 @@ impl ActDropItem {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActDropItem {
     fn perform(
         &self,
