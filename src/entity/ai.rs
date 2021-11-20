@@ -16,11 +16,13 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 /// As the name suggests this AI passes its turn forever.
-/// This might actually be replaced with [Object.control](crate::entity::object::Object) == None, which save some more CPU cycles.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+/// This might actually be replaced with [Object.control](crate::entity::object::Object) == None,
+/// which saves some more CPU cycles.
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
 pub struct AiPassive;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiPassive {
     fn act(
         &mut self,
@@ -33,7 +35,8 @@ impl Ai for AiPassive {
 }
 
 /// Each turn chooses a random valid action with a random valid target
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
 pub struct AiRandom;
 
 impl AiRandom {
@@ -42,7 +45,7 @@ impl AiRandom {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiRandom {
     fn act(
         &mut self,
@@ -144,7 +147,7 @@ impl Ai for AiRandom {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiRandomWalk;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiRandomWalk {
     fn act(
         &mut self,
@@ -183,7 +186,7 @@ impl AiVirus {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiVirus {
     fn act(
         &mut self,
@@ -236,7 +239,8 @@ impl Ai for AiVirus {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct AiForceVirusProduction {
     original_ai: Option<Controller>,
     turns_active: Option<i32>,
@@ -268,7 +272,7 @@ impl AiForceVirusProduction {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiForceVirusProduction {
     fn act(
         &mut self,
@@ -293,7 +297,7 @@ impl Ai for AiForceVirusProduction {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AiTile;
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Ai for AiTile {
     fn act(
         &mut self,

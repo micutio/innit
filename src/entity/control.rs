@@ -3,16 +3,18 @@ use crate::core::game_state::GameState;
 use crate::entity::action::Action;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub enum Controller {
     Npc(Box<dyn Ai>),
     Player(PlayerCtrl),
 }
 
-#[typetag::serde(tag = "type")]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde(tag = "type"))]
 pub trait Ai: AiClone + Debug {
     fn act(
         &mut self,

@@ -1,7 +1,10 @@
 use crate::entity::{action::Action, object::Object};
+
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)]
 pub struct Inventory {
     /// A list of items contained in this inventory.
     pub items: Vec<Object>,

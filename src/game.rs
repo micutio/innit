@@ -35,7 +35,9 @@ use core::fmt;
 use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs::{self, File};
+#[cfg(not(target_arch = "wasm32"))]
 use std::io::{Read, Write};
 
 // environment constraints
@@ -236,7 +238,8 @@ impl Game {
 
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
-pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
+#[cfg(not(target_arch = "wasm32"))]
+fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
     // TODO: Add proper UI error output if any of this fails!
     if let Some(mut save_file) = dirs::data_local_dir() {
         save_file.push("innit");
@@ -252,8 +255,16 @@ pub fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
     }
 }
 
+/// Dummy game loading function for building innit with WebAssembly.
+/// In this case loading is disabled and attempted use will simply redirect to the main menu.
+#[cfg(target_arch = "wasm32")]
+fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
+    Err("game loading not available in the web version".into())
+}
+
 /// Serialize and store GameState and Objects into a JSON file.
-pub fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
+#[cfg(not(target_arch = "wasm32"))]
+fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
     if let Some(mut env_data) = dirs::data_local_dir() {
         env_data.push("innit");
         fs::create_dir_all(&env_data)?;
@@ -269,6 +280,13 @@ pub fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn
         error!("CANNOT CREATE SAVE FILE!");
         Ok(())
     }
+}
+
+/// Dummy file for saving the game state.
+/// Attempted use will do nothing when built with WebAssembly.
+#[cfg(target_arch = "wasm32")]
+fn save_game(_state: &GameState, _objects: &GameObjects) -> Result<(), Box<dyn Error>> {
+    Err("game saving not available in the web version".into())
 }
 
 impl Rltk_GameState for Game {

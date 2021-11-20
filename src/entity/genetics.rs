@@ -92,7 +92,8 @@ pub enum TraitAttribute {
 ///      - traits need to know how often they appear in the genome
 ///      - attributes and actions need to know this too!
 ///
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
 pub struct GeneticTrait {
     pub trait_name: String,
     pub trait_family: TraitFamily,
@@ -192,7 +193,8 @@ fn create_trait_list() -> Vec<GeneticTrait> {
 ///   - accuracy of sensing [future feature]
 /// - functions:
 ///   - sense environment
-#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)] //, PartialEq)]
 pub struct Sensors {
     pub actions: Vec<Box<dyn Action>>,
     pub sensing_range: i32,
@@ -214,7 +216,8 @@ impl Sensors {
 ///   - setting of primary/secondary actions [player]
 ///   - decision making algorithm [player/ai]
 ///   - ai control [ai]
-#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)] //, PartialEq)]
 pub struct Processors {
     pub actions: Vec<Box<dyn Action>>,
     pub metabolism: i32,     // energy production per turn
@@ -252,7 +255,8 @@ pub struct Receptor {
 ///   - move
 ///   - attack
 ///   - defend
-#[derive(Debug, Serialize, Deserialize, Default)] //, PartialEq)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)] //, PartialEq)]
 pub struct Actuators {
     pub actions: Vec<Box<dyn Action>>,
     pub max_hp: i32,
@@ -301,7 +305,8 @@ impl Default for DnaType {
 /// For now objects hold DNA either contained in an organelle (Nucleus), free floating in the cell
 /// (Nucleoid) or in form of a ring structure that can be exchanged or picked up by certain other
 /// objects (Plasmid). This is indicated by the `dna_type`.
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone)]
 pub struct Dna {
     pub dna_type: DnaType,
     pub raw: Vec<u8>,
@@ -328,7 +333,8 @@ impl Dna {
 ///   - anti-synergies
 ///
 /// Actions can be chosen from a pool of predefined methods.
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)]
 pub struct GeneLibrary {
     /// Traits are now supposed to be generic, so enums are no longer the way to go.
     trait_vec: Vec<GeneticTrait>,

@@ -34,7 +34,7 @@ impl Default for ActPass {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActPass {
     fn perform(
         &self,
@@ -101,7 +101,7 @@ impl ActMove {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActMove {
     fn perform(
         &self,
@@ -172,7 +172,7 @@ impl ActMetabolise {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActMetabolise {
     fn perform(
         &self,
@@ -241,7 +241,7 @@ impl ActAttack {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActAttack {
     fn perform(
         &self,
@@ -345,7 +345,7 @@ impl Action for ActAttack {
 //     }
 // }
 //
-// #[typetag::serde]
+// #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 // impl Action for ActAttach {
 //     fn perform(
 //         &self,
@@ -434,7 +434,7 @@ impl ActInjectRnaVirus {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActInjectRnaVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna
@@ -569,7 +569,7 @@ impl ActInjectRetrovirus {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActInjectRetrovirus {
     // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
     //       cyclic activity
@@ -703,7 +703,7 @@ impl ActProduceVirion {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActProduceVirion {
     fn perform(
         &self,
@@ -809,7 +809,7 @@ impl ActEditGenome {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActEditGenome {
     fn perform(
         &self,
@@ -869,7 +869,7 @@ impl ActKillSwitch {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActKillSwitch {
     fn perform(
         &self,
@@ -971,7 +971,7 @@ impl ActBinaryFission {
     }
 }
 
-#[typetag::serde]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for ActBinaryFission {
     fn perform(
         &self,

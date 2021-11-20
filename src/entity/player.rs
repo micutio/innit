@@ -2,10 +2,13 @@
 //! This defines player actions, key bindings and more.
 
 use crate::entity::action::{hereditary::ActPass, Action};
+
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
 pub const PLAYER: usize = 0; // player object reference, index of the object vector
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
 pub struct PlayerCtrl {
     pub primary_action: Box<dyn Action>,
     pub secondary_action: Box<dyn Action>,

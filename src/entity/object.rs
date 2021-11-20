@@ -27,7 +27,8 @@ use std::fmt;
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
 /// influenced or amplified by certain attributes.
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default)]
 pub struct Object {
     // TODO: Add antigen-markers
     pub alive: bool,
@@ -83,7 +84,8 @@ impl Physics {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone)]
 pub struct InventoryItem {
     pub description: String,
     pub use_action: Option<Box<dyn Action>>,

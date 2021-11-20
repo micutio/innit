@@ -1,6 +1,6 @@
 //! A simple RAII-based timer for benchmarking function runtimes
 
-use std::time::Instant;
+use instant::Instant;
 
 pub struct Timer {
     start_t: Instant,

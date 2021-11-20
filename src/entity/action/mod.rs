@@ -74,7 +74,7 @@ pub enum ActionResult {
 
 /// Interface for all actions.
 /// They need to be `performable` and have a cost (even if it's 0).
-#[typetag::serde(tag = "type")]
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde(tag = "type"))]
 pub trait Action: ActionClone + Debug {
     fn perform(
         &self,
