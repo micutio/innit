@@ -573,8 +573,10 @@ pub fn handle_meta_actions(
     debug!("received action {:?}", action);
     match action {
         UiAction::ExitGameLoop => {
-            let result = save_game(&state, &objects);
-            result.unwrap();
+            match save_game(&state, &objects) {
+                Ok(()) => {}
+                Err(_e) => {} // TODO: Create some message visible in the main menu
+            }
             RunState::MainMenu(main_menu())
         }
         UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
