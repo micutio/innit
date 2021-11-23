@@ -314,11 +314,11 @@ impl Rltk_GameState for Game {
             ctx.set_active_console(HUD_CON);
             ctx.cls();
 
-            if self.re_render || self.hud.require_refresh {
-                ctx.set_active_console(WORLD_CON);
-                ctx.cls();
-                render_world(&mut self.objects, ctx);
-            }
+            // if self.re_render || self.hud.require_refresh {
+            ctx.set_active_console(WORLD_CON);
+            ctx.cls();
+            render_world(&mut self.objects, ctx);
+            // }
 
             ctx.set_active_console(HUD_CON);
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
