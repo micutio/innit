@@ -305,10 +305,9 @@ impl GameState {
             // the hud should be updated to show the new lifetime of the player unless already
             // something render-worthy happened
             if actor.is_player() {
-                *process_result = match process_result {
-                    ObjectFeedback::Render => ObjectFeedback::Render,
-                    _ => ObjectFeedback::UpdateHud,
-                }
+                if let ObjectFeedback::NoFeedback = process_result {
+                    *process_result = ObjectFeedback::UpdateHud
+                };
             }
         }
     }

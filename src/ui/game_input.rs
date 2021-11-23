@@ -1,5 +1,6 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::game_state::GameState;
+use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::entity::action::*;
 use crate::entity::control::Controller::Player;
@@ -53,7 +54,13 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::D, false, false) => PlayInput(SecondaryAction(East)),
         (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
         (VirtualKeyCode::E, true, false) => MetaInput(ChooseQuick2Action),
-        (VirtualKeyCode::G, false, false) => MetaInput(GenomeEditor),
+        (VirtualKeyCode::G, false, false) => {
+            if innit_env().is_debug_mode {
+                MetaInput(GenomeEditor)
+            } else {
+                Undefined
+            }
+        }
         (VirtualKeyCode::P, true, false) => MetaInput(ChoosePrimaryAction),
         (VirtualKeyCode::Q, false, false) => PlayInput(Quick1Action),
         (VirtualKeyCode::Q, true, false) => MetaInput(ChooseQuick1Action),
