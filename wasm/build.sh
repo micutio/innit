@@ -3,6 +3,10 @@
 # exit early on errors and unbound variables
 set -euo pipefail
 
+# install wasm target and bindgen
+# rustup target add wasm32-unknown-unknown
+# cargo install wasm-bindgen-cli
+
 # compile to wasm
 cargo build --release --target wasm32-unknown-unknown
 
