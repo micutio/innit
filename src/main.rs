@@ -84,21 +84,24 @@ pub fn main() -> rltk::BError {
     rltk::main_loop(get_context()?, Game::new())
 }
 
+rltk::embedded_resource!(YUN_FONT, "../resources/rogueyun_16x16_soft.png");
+
 // #[cfg(target_arch = "wasm32")]
 #[cfg(not(target_arch = "wasm32"))]
 fn get_context() -> BResult<BTerm> {
     // let font = "fonts/rex_paint_10x10.png";
     // let font = "fonts/rex_paint_8x8.png";
     // let font_rex = "fonts/rex_paint_10x10.png";
-    let font_yun = "fonts/rogueyun_16x16_soft.png";
+    rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
+    let yun_font = "rogueyun_16x16_soft.png";
     let context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
         // .with_font(font_rex, 10, 10)
-        .with_font(font_yun, 16, 16)
+        .with_font(yun_font, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_yun) // particles
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font)
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_vsync(false)
@@ -110,14 +113,16 @@ fn get_context() -> BResult<BTerm> {
 // #[cfg(not(target_arch = "wasm32"))]
 #[cfg(target_arch = "wasm32")]
 fn get_context() -> BResult<BTerm> {
-    let font = "terminal8x8.png";
+    rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
+    let yun_font = "rogueyun_16x16_soft.png";
     RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+        // .with_font(font_rex, 10, 10)
+        .with_font(yun_font, 16, 16)
         .with_advanced_input(true)
-        .with_font(font, 8, 8)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font)
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_vsync(false)
