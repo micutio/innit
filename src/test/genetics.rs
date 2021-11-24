@@ -1,4 +1,4 @@
-use crate::entity::genetics::DnaType;
+use crate::entity::genetics::{DnaType, GRAY_CODE_WIDTH};
 use crate::{
     core::game_state::GameState,
     entity::action::{hereditary::ActMove, inventory::ActPickUpItem},
@@ -10,7 +10,7 @@ fn test_dna_encoding() {
     use crate::util::generate_gray_code;
 
     // let rng = GameRng::from_seed(RNG_SEED);
-    let gray_code = generate_gray_code(4);
+    let gray_code = generate_gray_code(GRAY_CODE_WIDTH);
     let gene_lib = GeneLibrary::new();
     // encode a single example trait of each super trait
     let dna = vec![

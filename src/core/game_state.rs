@@ -1,7 +1,7 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::innit_env;
 use crate::entity::action::*;
-use crate::entity::genetics::GeneLibrary;
+use crate::entity::genetics::{GeneLibrary, GRAY_CODE_WIDTH};
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::util::game_rng::{GameRng, RngExtended};
@@ -262,24 +262,40 @@ impl GameState {
 
         if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
-            let random_position = self.rng.gen_range(0..actor.dna.raw.len());
-            let old_gene = actor.dna.raw[random_position];
+            let trait_count = actor.dna.raw.len() / GRAY_CODE_WIDTH as usize;
+            let trait_start = self.rng.gen_range(0..trait_count);
+            let trait_end = trait_start + GRAY_CODE_WIDTH as usize;
+            let gene = self.rng.gen_range(0..GRAY_CODE_WIDTH as usize);
+            let position = trait_start + gene;
+            let old_gene = actor.dna.raw[position];
+            let old_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
             // ^ = bitwise exclusive or
             let new_gene = old_gene ^ self.rng.random_bit();
             // Replace the modified gene in the dna. The change will become effectual once the
             // cell procreates or "reincarnates".
-            actor.dna.raw[random_position] = new_gene;
+            actor.dna.raw[position] = new_gene;
+            let new_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
             debug!(
-                "{} flipping gene 0b{:08b} to 0b{:08b}",
+                "{} flipping gene {:08b} to {:08b}",
                 actor.visual.name, old_gene, new_gene
             );
 
-            // TODO: Show mutation effect as diff between old and new genome!
             if actor.is_player() {
+                let gene_no = position / GRAY_CODE_WIDTH as usize;
+                let old_trait = &self
+                    .gene_library
+                    .dna_to_traits(actor.dna.dna_type, &old_trait)
+                    .3
+                    .simplified[0];
+                let new_trait = &self
+                    .gene_library
+                    .dna_to_traits(actor.dna.dna_type, &new_trait)
+                    .3
+                    .simplified[0];
                 self.log.add(
                     format!(
-                        "Gene {} mutated from 0b{:08b} to 0b{:08b}",
-                        random_position, old_gene, new_gene
+                        "Gene {} mutated from {} to {}",
+                        gene_no, old_trait.trait_name, new_trait.trait_name
                     ),
                     MsgClass::Alert,
                 );
