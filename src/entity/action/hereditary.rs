@@ -187,7 +187,7 @@ impl Action for ActMetabolise {
         if owner.physics.is_visible {
             register_particle(
                 owner.pos,
-                (50, 255, 50),
+                (50, 255, 50, 180),
                 palette().world_bg_ground_fov_true,
                 owner.visual.glyph,
                 150.0,
@@ -276,7 +276,7 @@ impl Action for ActAttack {
                     // show particle effect
                     register_particle(
                         t.pos,
-                        (200, 10, 10),
+                        (200, 10, 10, 180),
                         palette().world_bg_ground_fov_true,
                         'x',
                         250.0,

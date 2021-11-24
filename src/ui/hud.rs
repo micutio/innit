@@ -292,12 +292,12 @@ impl Hud {
             .take(horiz_display_count)
             .enumerate()
         {
-            let col: (u8, u8, u8) = match g_trait.trait_family {
+            let col: (u8, u8, u8, u8) = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk(_) => (59, 59, 59), // TODO
-                TraitFamily::Ltr => (255, 255, 255),  // TODO
+                TraitFamily::Junk(_) => (59, 59, 59, 255), // TODO
+                TraitFamily::Ltr => (255, 255, 255, 255),  // TODO
             };
             let dna_glyph: char = if h_offset % 2 == 0 { '►' } else { '◄' };
 
@@ -340,12 +340,12 @@ impl Hud {
             if v_offset >= SCREEN_HEIGHT as usize {
                 break;
             }
-            let col: (u8, u8, u8) = match g_trait.trait_family {
+            let col: (u8, u8, u8, u8) = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk(_) => (59, 59, 59), // TODO
-                TraitFamily::Ltr => (255, 255, 255),  // TODO
+                TraitFamily::Junk(_) => (59, 59, 59, 255), // TODO
+                TraitFamily::Ltr => (255, 255, 255, 255),  // TODO
             };
 
             let dna_glyph: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
@@ -681,7 +681,7 @@ fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
 
     // convert messages into log text lines (str, fg_col, bg_col)
     let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
-    let mut log_lines: Vec<(String, (u8, u8, u8), (u8, u8, u8))> = Vec::new();
+    let mut log_lines: Vec<(String, (u8, u8, u8, u8), (u8, u8, u8, u8))> = Vec::new();
     for (msg, class) in &state.log.messages {
         let lines = text_to_width(&msg, layout.width());
         let fg_color = match class {

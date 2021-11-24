@@ -6,8 +6,8 @@ use crate::core::position::Position;
 
 pub struct Particle {
     pub pos: Position,
-    pub col_fg: (u8, u8, u8),
-    pub col_bg: (u8, u8, u8),
+    pub col_fg: (u8, u8, u8, u8),
+    pub col_bg: (u8, u8, u8, u8),
     pub glyph: char,
     /// Lifetime of the particle, given in [ms]
     pub lifetime: f32,
@@ -16,8 +16,8 @@ pub struct Particle {
 impl Particle {
     pub(crate) fn new(
         pos: Position,
-        col_fg: (u8, u8, u8),
-        col_bg: (u8, u8, u8),
+        col_fg: (u8, u8, u8, u8),
+        col_bg: (u8, u8, u8, u8),
         glyph: char,
         lifetime: f32,
     ) -> Self {

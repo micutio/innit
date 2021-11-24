@@ -57,11 +57,11 @@ struct GeneItem {
     layout: Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color: (u8, u8, u8),
+    color: (u8, u8, u8, u8),
 }
 
 impl GeneItem {
-    fn new(layout: Rect, gene_idx: usize, color: (u8, u8, u8)) -> Self {
+    fn new(layout: Rect, gene_idx: usize, color: (u8, u8, u8, u8)) -> Self {
         GeneItem {
             layout,
             gene_idx,
@@ -169,12 +169,12 @@ impl GenomeEditor {
             .iter()
             .enumerate()
             .map(|(idx, i)| {
-                let col: (u8, u8, u8) = match i.trait_family {
+                let col: (u8, u8, u8, u8) = match i.trait_family {
                     TraitFamily::Sensing => cyan,
                     TraitFamily::Processing => magenta,
                     TraitFamily::Actuating => yellow,
-                    TraitFamily::Junk(_) => (100, 100, 100), // TODO: coloring
-                    TraitFamily::Ltr => (255, 255, 255),     // TODO: coloring
+                    TraitFamily::Junk(_) => (100, 100, 100, 255), // TODO: coloring
+                    TraitFamily::Ltr => (255, 255, 255, 255),     // TODO: coloring
                 };
                 let item = GeneItem::new(Rect::with_size(x, y, 1, 1), idx, col);
                 x += 1;

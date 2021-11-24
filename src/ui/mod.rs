@@ -20,8 +20,8 @@ lazy_static! {
 
 pub fn register_particle(
     pos: Position,
-    col_fg: (u8, u8, u8),
-    col_bg: (u8, u8, u8),
+    col_fg: (u8, u8, u8, u8),
+    col_bg: (u8, u8, u8, u8),
     glyph: char,
     lifetime: f32,
 ) {

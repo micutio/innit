@@ -45,7 +45,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("empty tile", '·', (255, 255, 255))
+            .visualize("empty tile", '·', (255, 255, 255, 255))
             .physical(false, false, is_visible)
             .tile_explored(is_visible)
     }
@@ -54,7 +54,7 @@ impl Tile {
         Object::new()
             .position(x, y)
             .living(true)
-            .visualize("wall tile", '◘', (255, 255, 255))
+            .visualize("wall tile", '◘', (255, 255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
             .control(Controller::Npc(Box::new(AiTile)))

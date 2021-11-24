@@ -51,8 +51,8 @@ pub struct Object {
 pub struct Visual {
     pub name: String,
     pub glyph: char,
-    pub fg_color: (u8, u8, u8),
-    pub bg_color: (u8, u8, u8),
+    pub fg_color: (u8, u8, u8, u8),
+    pub bg_color: (u8, u8, u8, u8),
 }
 
 impl Visual {
@@ -60,8 +60,8 @@ impl Visual {
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            fg_color: (255, 255, 255),
-            bg_color: (0, 0, 0),
+            fg_color: (255, 255, 255, 255),
+            bg_color: (0, 0, 0, 255),
         }
     }
 }
@@ -149,7 +149,7 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, fg_color: (u8, u8, u8)) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: (u8, u8, u8, u8)) -> Object {
         self.visual.name = name.into();
         self.visual.glyph = character;
         self.visual.fg_color = fg_color;

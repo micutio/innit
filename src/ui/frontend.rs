@@ -5,7 +5,7 @@ use crate::entity::object::Object;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::timer::{time_from, Timer};
 use crate::{core::game_objects::GameObjects, ui::palette};
-use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
+use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB, RGBA};
 
 pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     // time rendering method for profiling purposes
@@ -40,10 +40,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     for object in &to_draw {
         draw_batch.set(
             Point::new(object.pos.x, object.pos.y),
-            ColorPair::new::<RGB, RGB>(
-                object.visual.fg_color.into(),
-                object.visual.bg_color.into(),
-            ),
+            ColorPair::new(object.visual.fg_color, object.visual.bg_color),
             to_cp437(object.visual.glyph),
         );
     }
@@ -117,14 +114,14 @@ fn update_visual(
     dist_map: &mut Vec<f32>,
 ) {
     // go through all tiles and set their background color
-    let bwft: RGB = palette().world_bg_wall_fov_true.into();
-    let bwff: RGB = palette().world_bg_wall_fov_false.into();
-    let bgft: RGB = palette().world_bg_ground_fov_true.into();
-    let bgff: RGB = palette().world_bg_ground_fov_false.into();
-    let fwft: RGB = palette().world_fg_wall_fov_true.into();
-    let fwff: RGB = palette().world_fg_wall_fov_false.into();
-    let fgft: RGB = palette().world_fg_ground_fov_true.into();
-    let fgff: RGB = palette().world_fg_ground_fov_false.into();
+    let bwft = RGB::from(RGBA::from(palette().world_bg_wall_fov_true));
+    let bwff = RGB::from(RGBA::from(palette().world_bg_wall_fov_false));
+    let bgft = RGB::from(RGBA::from(palette().world_bg_ground_fov_true));
+    let bgff = RGB::from(RGBA::from(palette().world_bg_ground_fov_false));
+    let fwft = RGB::from(RGBA::from(palette().world_fg_wall_fov_true));
+    let fwff = RGB::from(RGBA::from(palette().world_fg_wall_fov_false));
+    let fgft = RGB::from(RGBA::from(palette().world_fg_ground_fov_true));
+    let fgff = RGB::from(RGBA::from(palette().world_fg_ground_fov_false));
 
     let wall = object.physics.is_blocking_sight;
 
@@ -162,11 +159,13 @@ fn update_visual(
                 (tile_color_fg.r * 255.0) as u8,
                 (tile_color_fg.g * 255.0) as u8,
                 (tile_color_fg.b * 255.0) as u8,
+                255 as u8,
             );
             object.visual.bg_color = (
                 (tile_color_bg.r * 255.0) as u8,
                 (tile_color_bg.g * 255.0) as u8,
                 (tile_color_bg.b * 255.0) as u8,
+                255 as u8,
             );
         }
     } else {
@@ -174,6 +173,7 @@ fn update_visual(
             (tile_color_bg.r * 255.0) as u8,
             (tile_color_bg.g * 255.0) as u8,
             (tile_color_bg.b * 255.0) as u8,
+            255 as u8,
         );
     }
 }
