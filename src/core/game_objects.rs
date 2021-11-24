@@ -66,7 +66,7 @@ impl GameObjects {
                 {
                     let (sensors, processors, actuators, dna) =
                         gene_library.new_genetics(rng, DnaType::Nucleus, false, GENE_LEN);
-                    tile.change_genome(sensors, processors, actuators, dna);
+                    tile.set_genome(sensors, processors, actuators, dna);
                 }
             }
         }
@@ -87,7 +87,7 @@ impl GameObjects {
                         DnaType::Nucleus,
                         &gene_library.trait_strs_to_dna(rng, &traits),
                     );
-                    tile.change_genome(sensors, processors, actuators, dna);
+                    tile.set_genome(sensors, processors, actuators, dna);
                     tile.processors.life_elapsed =
                         rng.gen_range(0..tile.processors.life_expectancy);
                     // println!(

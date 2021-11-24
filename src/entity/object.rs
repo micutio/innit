@@ -2,6 +2,7 @@ use crate::core::position::Position;
 use crate::core::world::Tile;
 use crate::entity::action::*;
 use crate::entity::control::*;
+use crate::entity::genetics::GeneticTrait;
 use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
 use crate::entity::inventory::Inventory;
 use crate::ui::hud::ToolTip;
@@ -176,7 +177,7 @@ impl Object {
         (sensors, processors, actuators, dna): (Sensors, Processors, Actuators, Dna),
     ) -> Object {
         self.gene_stability = stability;
-        self.change_genome(sensors, processors, actuators, dna);
+        self.set_genome(sensors, processors, actuators, dna);
 
         // debug!("default action: {:#?}", self.default_action);
         self
@@ -277,7 +278,7 @@ impl Object {
     }
 
     /// Set the object's current dna and resulting super traits.
-    pub fn change_genome(
+    pub fn set_genome(
         &mut self,
         sensors: Sensors,
         processors: Processors,
@@ -317,6 +318,13 @@ impl Object {
                 );
             }
         }
+    }
+
+    pub fn update_genome_from_dna(&mut self, state: &mut GameState) {
+        let (new_s, new_p, new_a, new_d) = state
+            .gene_library
+            .dna_to_traits(self.dna.dna_type, &self.dna.raw);
+        self.set_genome(new_s, new_p, new_a, new_d);
     }
 
     /// Determine and return the next action the object will take.
@@ -443,50 +451,63 @@ impl Object {
             .cloned()
     }
 
-    pub fn add_to_inventory(&mut self, state: &mut GameState, o: Object) {
-        let reread_dna = o.dna.dna_type == DnaType::Plasmid;
+    pub fn add_to_inventory(&mut self, o: Object) {
         let new_idx = self.inventory.items.len();
-
         // add item to inventory
         self.inventory.items.push(o);
         // add action to drop it
         self.inventory
             .inv_actions
             .push(Box::new(ActDropItem::new(new_idx as i32)));
-        if reread_dna {
-            self.reread_dna(state);
-        }
     }
 
-    pub fn remove_from_inventory(&mut self, state: &mut GameState, index: usize) -> Object {
-        let o = self.inventory.items.remove(index);
-        if o.dna.dna_type == DnaType::Plasmid {
-            self.reread_dna(state);
-        }
-        o
+    pub fn remove_from_inventory(&mut self, index: usize) -> Object {
+        self.inventory.items.remove(index)
     }
 
     pub fn set_dna(&mut self, new_dna: Dna) {
         self.dna = new_dna;
     }
 
-    /// Reset the sensor, processor and actuator properties and action from the combined dna of
-    /// this object and all the plasmid-dna it contains in the inventory
-    pub fn reread_dna(&mut self, state: &mut GameState) {
-        let mut combined: Vec<u8> = self
+    /// Retrieve the genetic traits and actions of this object's dna combined with those of all
+    /// plasmid-type items in the inventory
+    pub fn get_combined_dna(&self) -> Vec<(&Sensors, &Processors, &Actuators, &Dna)> {
+        let mut combined_dna = Vec::new();
+        // append own dna first
+        combined_dna.push((&self.sensors, &self.processors, &self.actuators, &self.dna));
+        let mut inventory_dna = self
             .inventory
             .items
             .iter()
             .filter(|o| o.dna.dna_type == DnaType::Plasmid)
-            .map(|o| o.dna.raw.clone())
-            .flatten()
-            .collect();
-        let mut complete_dna = self.dna.raw.clone();
-        complete_dna.append(&mut combined);
-        let (s, p, a, d) = state
-            .gene_library
-            .dna_to_traits(self.dna.dna_type, &complete_dna);
-        self.change_genome(s, p, a, d);
+            .map(|o| (&o.sensors, &o.processors, &o.actuators, &o.dna))
+            .collect::<Vec<(&Sensors, &Processors, &Actuators, &Dna)>>();
+        combined_dna.append(&mut inventory_dna);
+
+        combined_dna
+    }
+
+    /// Retrieve the genetic traits and actions of this object's dna combined with those of all
+    /// plasmid-type items in the inventory
+    pub fn get_combined_simplified_dna(&self) -> Vec<&GeneticTrait> {
+        let mut combined_dna = Vec::new();
+        self.dna
+            .simplified
+            .iter()
+            .for_each(|genetic_trait| combined_dna.push(genetic_trait));
+
+        self.inventory
+            .items
+            .iter()
+            .filter(|o| o.dna.dna_type == DnaType::Plasmid)
+            .for_each(|o| {
+                o.dna
+                    .simplified
+                    .iter()
+                    .for_each(|genetic_trait| combined_dna.push(genetic_trait));
+            });
+
+        combined_dna
     }
 
     pub fn generate_tooltip(&self, other: &Object) -> ToolTip {

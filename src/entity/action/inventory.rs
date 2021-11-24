@@ -30,7 +30,7 @@ impl Action for ActPickUpItem {
                         ),
                         MsgClass::Info,
                     );
-                    owner.add_to_inventory(state, target_obj);
+                    owner.add_to_inventory(target_obj);
 
                     // keep the object vector neat and tidy
                     objects.get_vector_mut().remove(index);
@@ -99,7 +99,7 @@ impl Action for ActDropItem {
     ) -> ActionResult {
         // make sure there is an item at slot [self.lvl]
         if owner.inventory.items.len() > self.lvl as usize {
-            let mut item: Object = owner.remove_from_inventory(state, self.lvl as usize);
+            let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
                 MsgClass::Info,

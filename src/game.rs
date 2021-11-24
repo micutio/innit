@@ -202,7 +202,7 @@ impl Game {
                         .physical(true, false, true)
                         .control(Controller::Player(PlayerCtrl::new()))
                         .genome(
-                            0.99,
+                            0.999,
                             self.state.gene_library.new_genetics(
                                 &mut self.state.rng,
                                 DnaType::Nucleus,

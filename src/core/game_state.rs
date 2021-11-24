@@ -269,7 +269,7 @@ impl GameState {
             // Replace the modified gene in the dna. The change will become effectual once the
             // cell procreates or "reincarnates".
             actor.dna.raw[random_position] = new_gene;
-            info!(
+            debug!(
                 "{} flipping gene 0b{:08b} to 0b{:08b}",
                 actor.visual.name, old_gene, new_gene
             );

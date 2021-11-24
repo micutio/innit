@@ -284,11 +284,12 @@ impl Hud {
                 && !i.item_enum.is_drop_inventory_item()
         });
 
-        for (h_offset, g_trait) in player
-            .dna
-            .simplified
+        let combined_simplified_dna = player.get_combined_simplified_dna();
+        let player_dna_length = player.dna.simplified.len();
+        let horiz_display_count = SIDE_PANEL_WIDTH as usize - 4;
+        for (h_offset, g_trait) in combined_simplified_dna
             .iter()
-            .take(SIDE_PANEL_WIDTH as usize - 4)
+            .take(horiz_display_count)
             .enumerate()
         {
             let col: (u8, u8, u8) = match g_trait.trait_family {
@@ -298,36 +299,47 @@ impl Hud {
                 TraitFamily::Junk(_) => (59, 59, 59), // TODO
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
+            let dna_glyph: char = if h_offset % 2 == 0 { '►' } else { '◄' };
 
-            let c: char = if h_offset % 2 == 0 { '►' } else { '◄' };
+            let is_from_plasmid = h_offset >= player_dna_length;
 
-            let tooltip = ToolTip::no_header(vec![
+            let mut tooltip_text = vec![
                 ("trait:".to_string(), g_trait.trait_name.clone()),
                 ("group:".to_string(), g_trait.trait_family.to_string()),
-            ]);
+            ];
+            if is_from_plasmid {
+                tooltip_text.push(("origin:".to_string(), "plasmid".to_string()));
+            }
 
-            let bg_item = palette().hud_bg;
+            let bg_color = if is_from_plasmid {
+                palette().hud_bg_tooltip
+            } else {
+                palette().hud_bg
+            };
+
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
-                c,
-                tooltip,
+                dna_glyph,
+                ToolTip::no_header(tooltip_text),
                 Rect::with_size(
                     SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32,
                     0,
                     1,
                     1,
                 ),
-                ColorPair::new(col, bg_item),
+                ColorPair::new(col, bg_color),
             ));
         }
 
-        for (v_offset, g_trait) in player
-            .dna
-            .simplified
+        for (v_offset, g_trait) in combined_simplified_dna
             .iter()
-            .skip(SIDE_PANEL_WIDTH as usize - 4)
+            .skip(horiz_display_count)
             .enumerate()
         {
+            // abort if we're running out of vertical rendering space
+            if v_offset >= SCREEN_HEIGHT as usize {
+                break;
+            }
             let col: (u8, u8, u8) = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
@@ -336,20 +348,29 @@ impl Hud {
                 TraitFamily::Ltr => (255, 255, 255),  // TODO
             };
 
-            let c: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
+            let dna_glyph: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
 
-            let tooltip = ToolTip::no_header(vec![
+            let is_from_plasmid = v_offset + horiz_display_count >= player_dna_length;
+
+            let mut tooltip_text = vec![
                 ("trait:".to_string(), g_trait.trait_name.clone()),
                 ("group:".to_string(), g_trait.trait_family.to_string()),
-            ]);
+            ];
+            if is_from_plasmid {
+                tooltip_text.push(("origin:".to_string(), "plasmid".to_string()));
+            }
 
-            let bg_dna = palette().hud_bg_dna;
+            let bg_color = if is_from_plasmid {
+                palette().hud_bg_tooltip
+            } else {
+                palette().hud_bg
+            };
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
-                c,
-                tooltip,
+                dna_glyph,
+                ToolTip::no_header(tooltip_text),
                 Rect::with_size(SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
-                ColorPair::new(col, bg_dna),
+                ColorPair::new(col, bg_color),
             ));
         }
 

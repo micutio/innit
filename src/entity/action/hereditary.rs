@@ -627,7 +627,7 @@ impl Action for ActInjectRetrovirus {
                 let (s, p, a, d) = state
                     .gene_library
                     .dna_to_traits(target.dna.dna_type, new_dna.as_ref());
-                target.change_genome(s, p, a, d);
+                target.set_genome(s, p, a, d);
 
                 // The virus becomes an empty shell after successfully transmitting its dna.
                 owner.dna.raw.clear();
@@ -997,7 +997,7 @@ impl Action for ActBinaryFission {
                             t.control = Some(Controller::Npc(Box::new(AiTile)));
                             // insert (mutated) genome
                             t.set_dna(owner.dna.clone());
-                            t.reread_dna(state);
+                            t.update_genome_from_dna(state);
                             t.processors.life_elapsed = 0;
                             // return prematurely because we don't need to insert anything new into the
                             // object vector

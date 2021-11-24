@@ -46,7 +46,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-pub const GENE_LEN: usize = 30;
+pub const GENE_LEN: usize = 15; // TODO: Replace with less generic constant.
 
 /// All traits belong to one of three major categories, called trait families.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Clone, Copy)]
