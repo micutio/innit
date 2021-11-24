@@ -53,7 +53,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::C, false, false) => MetaInput(CharacterScreen),
         (VirtualKeyCode::D, false, false) => PlayInput(SecondaryAction(East)),
         (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
-        (VirtualKeyCode::E, true, false) => MetaInput(ChooseQuick2Action),
+        (VirtualKeyCode::E, false, true) => MetaInput(ChooseQuick2Action),
         (VirtualKeyCode::G, false, false) => {
             if innit_env().is_debug_mode {
                 MetaInput(GenomeEditor)
@@ -61,11 +61,11 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
                 Undefined
             }
         }
-        (VirtualKeyCode::P, true, false) => MetaInput(ChoosePrimaryAction),
+        (VirtualKeyCode::P, false, true) => MetaInput(ChoosePrimaryAction),
         (VirtualKeyCode::Q, false, false) => PlayInput(Quick1Action),
-        (VirtualKeyCode::Q, true, false) => MetaInput(ChooseQuick1Action),
+        (VirtualKeyCode::Q, false, true) => MetaInput(ChooseQuick1Action),
         (VirtualKeyCode::S, false, false) => PlayInput(SecondaryAction(South)),
-        (VirtualKeyCode::S, true, false) => MetaInput(ChooseSecondaryAction),
+        (VirtualKeyCode::S, false, true) => MetaInput(ChooseSecondaryAction),
         (VirtualKeyCode::W, false, false) => PlayInput(SecondaryAction(North)),
         (VirtualKeyCode::Up, false, false) => PlayInput(PrimaryAction(North)),
         (VirtualKeyCode::Down, false, false) => PlayInput(PrimaryAction(South)),
