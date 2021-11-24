@@ -30,8 +30,10 @@ use crate::core::innit_env;
 use crate::game::Game;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::raws::object_template::ObjectTemplate;
-use rltk::{BResult, BTerm, RltkBuilder};
+use rltk::RltkBuilder;
 use std::env;
+
+rltk::embedded_resource!(YUN_FONT, "../resources/rogueyun_16x16_soft.png");
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
@@ -68,30 +70,11 @@ pub fn main() -> rltk::BError {
         }
     }
 
-    // let spawn_str: String = serde_json::to_string(&Spawn::example()).unwrap();
-    // println!("{}", spawn_str);
-
     let obj_str: String = serde_json::to_string(&ObjectTemplate::example()).unwrap();
     println!("{}", obj_str);
 
     // build engine and launch the game
 
-    // let font = "fonts/rex_paint_10x10.png";
-    // let font = "fonts/rex_paint_8x8.png";
-    // let font_rex = "fonts/rex_paint_10x10.png";
-
-    // context.set_active_font(0, true);
-    rltk::main_loop(get_context()?, Game::new())
-}
-
-rltk::embedded_resource!(YUN_FONT, "../resources/rogueyun_16x16_soft.png");
-
-// #[cfg(target_arch = "wasm32")]
-#[cfg(not(target_arch = "wasm32"))]
-fn get_context() -> BResult<BTerm> {
-    // let font = "fonts/rex_paint_10x10.png";
-    // let font = "fonts/rex_paint_8x8.png";
-    // let font_rex = "fonts/rex_paint_10x10.png";
     rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
     let yun_font = "rogueyun_16x16_soft.png";
     let context = RltkBuilder::new()
@@ -106,26 +89,8 @@ fn get_context() -> BResult<BTerm> {
         .with_fps_cap(60.0)
         // .with_vsync(false)
         // .with_automatic_console_resize(false)
-        .build();
-    context
-}
+        .build()?;
 
-// #[cfg(not(target_arch = "wasm32"))]
-#[cfg(target_arch = "wasm32")]
-fn get_context() -> BResult<BTerm> {
-    rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
-    let yun_font = "rogueyun_16x16_soft.png";
-    RltkBuilder::new()
-        .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        // .with_font(font_rex, 10, 10)
-        .with_font(yun_font, 16, 16)
-        .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font)
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles
-        .with_title("Innit alpha v0.0.4")
-        .with_fps_cap(60.0)
-        // .with_vsync(false)
-        // .with_automatic_console_resize(false)
-        .build()
+    // context.set_active_font(0, true);
+    rltk::main_loop(context, Game::new())
 }
