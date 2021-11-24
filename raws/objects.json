@@ -11,7 +11,8 @@
         "color": [
             90,
             255,
-            0
+            0,
+            255
         ],
         "item": null,
         "controller": "AiVirus",
@@ -35,6 +36,7 @@
         "color": [
             0,
             90,
+            255,
             255
         ],
         "item": {

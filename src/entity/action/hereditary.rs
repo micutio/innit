@@ -885,6 +885,12 @@ impl Action for ActKillSwitch {
                 } else {
                     ObjectFeedback::NoFeedback
                 };
+                // play a little particle effect
+                if owner.physics.is_visible {
+                    let fg = (255, 10, 90, 180);
+                    let bg = (0, 0, 0, 0);
+                    register_particle(owner.pos.into(), fg, bg, '☼', 500.0);
+                }
                 ActionResult::Success { callback }
             }
 
@@ -906,6 +912,11 @@ impl Action for ActKillSwitch {
                         .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
                     if has_killswitch && has_matching_receptor {
                         target.die(state, objects);
+                        if target.physics.is_visible {
+                            let fg = (255, 10, 90, 180);
+                            let bg = (0, 0, 0, 0);
+                            register_particle(target.pos.into(), fg, bg, '☼', 500.0);
+                        }
                     }
 
                     let callback = if !target.alive && target.physics.is_visible {
@@ -999,8 +1010,16 @@ impl Action for ActBinaryFission {
                             t.set_dna(owner.dna.clone());
                             t.update_genome_from_dna(state);
                             t.processors.life_elapsed = 0;
-                            // return prematurely because we don't need to insert anything new into the
-                            // object vector
+
+                            // play a little particle effect
+                            if t.physics.is_visible {
+                                let fg = (10, 255, 180, 180);
+                                let bg = (0, 0, 0, 0);
+                                register_particle(t.pos.into(), fg, bg, '◙', 500.0);
+                            }
+
+                            // return prematurely because we don't need to insert anything new into
+                            // the object vector
                             return ActionResult::Success {
                                 callback: ObjectFeedback::NoFeedback,
                             };
@@ -1021,7 +1040,11 @@ impl Action for ActBinaryFission {
                         let mut child = Object::new()
                             .position(t.pos.x, t.pos.y)
                             .living(true)
-                            .visualize(t.visual.name.as_str(), t.visual.glyph, t.visual.fg_color)
+                            .visualize(
+                                owner.visual.name.as_str(),
+                                owner.visual.glyph,
+                                owner.visual.fg_color,
+                            )
                             .genome(
                                 owner.gene_stability,
                                 state
@@ -1031,6 +1054,12 @@ impl Action for ActBinaryFission {
                             .control_opt(child_ctrl)
                             .living(true);
                         child.physics.is_visible = t.physics.is_visible;
+                        // play a little particle effect
+                        if child.physics.is_visible {
+                            let fg = (10, 255, 180, 180);
+                            let bg = (0, 0, 0, 0);
+                            register_particle(child.pos.into(), fg, bg, '◙', 500.0);
+                        }
                         Some(child)
                     }
                 }
