@@ -320,6 +320,7 @@ impl Object {
         }
     }
 
+    /// Re-generate genetic traits from the raw dna and then re-set all dna-dependent fields.
     pub fn update_genome_from_dna(&mut self, state: &mut GameState) {
         let (new_s, new_p, new_a, new_d) = state
             .gene_library
