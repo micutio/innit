@@ -21,7 +21,7 @@
                 "genome_len": 10
             }
         },
-        "stability": 0.75
+        "stability": 0.90
     },
     {
         "npc": "Plasmid",
@@ -45,7 +45,7 @@
         "dna_type": "Plasmid",
         "dna_template": {
             "Random": {
-                "genome_len": 10
+                "genome_len": 2
             }
         },
         "stability": 0.99
