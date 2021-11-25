@@ -40,7 +40,7 @@ pub struct InvItem {
 }
 
 impl ObjectTemplate {
-    pub fn example() -> Vec<Self> {
+    pub fn _example() -> Vec<Self> {
         vec![ObjectTemplate {
             npc: "Virus".to_string(),
             glyph: 'v',
