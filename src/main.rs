@@ -29,11 +29,10 @@ mod util;
 use crate::core::innit_env;
 use crate::game::Game;
 use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
-use crate::raws::object_template::ObjectTemplate;
 use rltk::RltkBuilder;
 use std::env;
 
-rltk::embedded_resource!(YUN_FONT, "../resources/rogueyun_16x16_soft.png");
+rltk::embedded_resource!(CONSOLE_FONT, "../resources/fonts/16x16-sm.png");
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
@@ -72,15 +71,15 @@ pub fn main() -> rltk::BError {
 
     // build engine and launch the game
 
-    rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
-    let yun_font = "rogueyun_16x16_soft.png";
+    rltk::link_resource!(CONSOLE_FONT, "resources/fonts/16x16-sm.png");
+    let font = "fonts/16x16-sm.png";
     let context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .with_font(yun_font, 16, 16)
+        .with_font(font, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // world layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // world layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_vsync(false)
