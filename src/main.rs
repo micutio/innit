@@ -57,7 +57,7 @@ pub fn main() -> rltk::BError {
 
     // parse program arguments
     let args: Vec<String> = env::args().collect();
-    println!("args: {:?}", args);
+    debug!("args: {:?}", args);
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
             innit_env().set_debug_mode(true);
@@ -70,21 +70,17 @@ pub fn main() -> rltk::BError {
         }
     }
 
-    let obj_str: String = serde_json::to_string(&ObjectTemplate::example()).unwrap();
-    println!("{}", obj_str);
-
     // build engine and launch the game
 
     rltk::link_resource!(YUN_FONT, "resources/rogueyun_16x16_soft.png");
     let yun_font = "rogueyun_16x16_soft.png";
     let context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        // .with_font(font_rex, 10, 10)
         .with_font(yun_font, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font)
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // world layer
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, yun_font) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_vsync(false)

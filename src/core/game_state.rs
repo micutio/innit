@@ -256,7 +256,7 @@ impl GameState {
         }
 
         if actor.dna.raw.is_empty() {
-            println!("{} dna is empty!", actor.visual.name);
+            debug!("{} dna is empty!", actor.visual.name);
             return;
         }
 
