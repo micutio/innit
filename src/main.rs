@@ -32,7 +32,10 @@ use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use rltk::RltkBuilder;
 use std::env;
 
-rltk::embedded_resource!(CONSOLE_FONT, "../resources/fonts/16x16-sm.png");
+rltk::embedded_resource!(CONSOLE_FONT_8X8, "../resources/fonts/Cheepicus_8x8.png");
+rltk::embedded_resource!(CONSOLE_FONT_12X12, "../resources/fonts/Cheepicus_12x12.png");
+rltk::embedded_resource!(CONSOLE_FONT_14X14, "../resources/fonts/Cheepicus_14x14.png");
+rltk::embedded_resource!(CONSOLE_FONT_16X16, "../resources/fonts/Cheepicus_16x16.png");
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
@@ -71,21 +74,30 @@ pub fn main() -> rltk::BError {
 
     // build engine and launch the game
 
-    rltk::link_resource!(CONSOLE_FONT, "resources/fonts/16x16-sm.png");
-    let font = "fonts/16x16-sm.png";
-    let context = RltkBuilder::new()
+    rltk::link_resource!(CONSOLE_FONT_8X8, "resources/fonts/Cheepicus_8x8.png");
+    rltk::link_resource!(CONSOLE_FONT_12X12, "resources/fonts/Cheepicus_12x12.png");
+    rltk::link_resource!(CONSOLE_FONT_14X14, "resources/fonts/Cheepicus_14x14.png");
+    rltk::link_resource!(CONSOLE_FONT_16X16, "resources/fonts/Cheepicus_16x16.png");
+    let font_8x8 = "fonts/Cheepicus_8x8.png";
+    let font_12x12 = "fonts/Cheepicus_12x12.png";
+    let font_14x14 = "fonts/Cheepicus_14x14.png";
+    let font_16x16 = "fonts/Cheepicus_16x16.png";
+    let mut context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .with_font(font, 16, 16)
+        .with_font(font_8x8, 8, 8)
+        .with_font(font_12x12, 12, 12)
+        .with_font(font_14x14, 14, 14)
+        .with_font(font_16x16, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // world layer
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // world layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
         .with_vsync(true)
         .build()?;
 
-    // context.set_active_font(0, true);
+    context.set_active_font(0, true);
     rltk::main_loop(context, Game::new())
 }

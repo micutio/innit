@@ -567,7 +567,7 @@ impl Rltk_GameState for Game {
 pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
-    _ctx: &mut Rltk,
+    ctx: &mut Rltk,
     action: UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
@@ -678,6 +678,18 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::Help => RunState::InfoBox(controls_screen()),
+        UiAction::SetFont(x) => {
+            ctx.set_active_console(WORLD_CON);
+            ctx.set_active_font(x, false);
+            // ctx.cls();
+            ctx.set_active_console(HUD_CON);
+            ctx.set_active_font(x, false);
+            // ctx.cls();
+            ctx.set_active_console(PAR_CON);
+            ctx.set_active_font(x, false);
+            // ctx.cls();
+            RunState::CheckInput
+        }
     }
 }
 
