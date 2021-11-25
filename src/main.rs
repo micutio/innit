@@ -78,12 +78,12 @@ pub fn main() -> rltk::BError {
         .with_font(font, 16, 16)
         .with_advanced_input(true)
         .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // world layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // hud layer
         .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
-        // .with_vsync(false)
-        // .with_automatic_console_resize(false)
+        // .with_automatic_console_resize(true)
+        .with_vsync(true)
         .build()?;
 
     // context.set_active_font(0, true);
