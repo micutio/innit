@@ -10,6 +10,8 @@ pub struct ColorPalette {
     pub col_acc2: (u8, u8, u8, u8),
     /// Accent color 3
     pub col_acc3: (u8, u8, u8, u8),
+    /// transparent color
+    pub col_transparent: (u8, u8, u8, u8),
 
     // hud colors - background
     pub hud_bg: (u8, u8, u8, u8),
@@ -67,6 +69,8 @@ pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
     col_acc2: (182, 191, 118, 255),
     /// Accent color 3
     col_acc3: (220, 98, 42, 255),
+    /// transparent color
+    col_transparent: (255, 255, 255, 0),
 
     // hud colors - background
     hud_bg: (124, 8, 59, 255),

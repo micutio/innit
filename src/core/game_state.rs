@@ -282,7 +282,7 @@ impl GameState {
 
             if actor.is_player() {
                 let gene_no = position / GRAY_CODE_WIDTH as usize;
-                let old_trait = &self
+                let old_trait = &self // TODO: fix out of bounds error here
                     .gene_library
                     .dna_to_traits(actor.dna.dna_type, &old_trait)
                     .3

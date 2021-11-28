@@ -188,7 +188,7 @@ impl Action for ActMetabolise {
             register_particle(
                 owner.pos,
                 (50, 255, 50, 180),
-                palette().world_bg_ground_fov_true,
+                palette().col_transparent,
                 owner.visual.glyph,
                 150.0,
             )
@@ -277,7 +277,7 @@ impl Action for ActAttack {
                     register_particle(
                         t.pos,
                         (200, 10, 10, 180),
-                        palette().world_bg_ground_fov_true,
+                        palette().col_transparent,
                         'x',
                         250.0,
                     )
@@ -597,7 +597,7 @@ impl Action for ActInjectRetrovirus {
                     );
                     // play a little particle effect
                     let fg = palette().col_acc3;
-                    let bg = palette().world_bg_ground_fov_true;
+                    let bg = palette().col_transparent;
                     register_particle(owner.pos.into(), fg, bg, '?', 150.0);
                 }
             } else if owner.processors.receptors.is_empty() {
@@ -612,7 +612,7 @@ impl Action for ActInjectRetrovirus {
                     );
                     // play a little particle effect
                     let fg = palette().col_acc3;
-                    let bg = palette().world_bg_ground_fov_true;
+                    let bg = palette().col_transparent;
                     register_particle(owner.pos.into(), fg, bg, '?', 150.0);
                 }
             } else if target
@@ -641,7 +641,7 @@ impl Action for ActInjectRetrovirus {
                     );
                     // play a little particle effect
                     let fg = palette().hud_fg_bar_health;
-                    let bg = palette().world_bg_ground_fov_true;
+                    let bg = palette().col_transparent;
                     register_particle(owner.pos.into(), fg, bg, target.visual.glyph, 350.0);
                 }
             }
@@ -888,7 +888,7 @@ impl Action for ActKillSwitch {
                 // play a little particle effect
                 if owner.physics.is_visible {
                     let fg = (255, 10, 90, 180);
-                    let bg = (0, 0, 0, 0);
+                    let bg = palette().col_transparent;
                     register_particle(owner.pos.into(), fg, bg, '☼', 500.0);
                 }
                 ActionResult::Success { callback }
@@ -914,7 +914,7 @@ impl Action for ActKillSwitch {
                         target.die(state, objects);
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
-                            let bg = (0, 0, 0, 0);
+                            let bg = palette().col_transparent;
                             register_particle(target.pos.into(), fg, bg, '☼', 500.0);
                         }
                     }
@@ -1014,8 +1014,8 @@ impl Action for ActBinaryFission {
                             // play a little particle effect
                             if t.physics.is_visible {
                                 let fg = (10, 255, 180, 180);
-                                let bg = (0, 0, 0, 0);
-                                register_particle(t.pos.into(), fg, bg, '◙', 500.0);
+                                let bg = palette().col_transparent;
+                                register_particle(t.pos.into(), fg, bg, '○', 500.0);
                             }
 
                             // return prematurely because we don't need to insert anything new into
@@ -1057,8 +1057,8 @@ impl Action for ActBinaryFission {
                         // play a little particle effect
                         if child.physics.is_visible {
                             let fg = (10, 255, 180, 180);
-                            let bg = (0, 0, 0, 0);
-                            register_particle(child.pos.into(), fg, bg, '◙', 500.0);
+                            let bg = palette().col_transparent;
+                            register_particle(child.pos.into(), fg, bg, '○', 500.0);
                         }
                         Some(child)
                     }
