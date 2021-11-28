@@ -338,11 +338,13 @@ impl Rltk_GameState for Game {
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
         for particle in &particles().particles {
-            draw_batch.print_color(
-                particle.pos.into(),
-                particle.glyph,
-                ColorPair::new(particle.col_fg, particle.col_bg),
-            );
+            if particle.start_delay <= 0.0 {
+                draw_batch.print_color(
+                    particle.pos.into(),
+                    particle.glyph,
+                    ColorPair::new(particle.col_fg, particle.col_bg),
+                );
+            }
         }
         // TODO: Use constants for z_order!
         draw_batch.submit(10000).unwrap();

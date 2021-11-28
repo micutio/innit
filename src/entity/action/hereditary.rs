@@ -11,7 +11,8 @@ use crate::entity::genetics::DnaType;
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
-use crate::ui::{palette, register_particle};
+use crate::ui::particle::ParticleBuilder;
+use crate::ui::{palette, register_particle, register_particles};
 use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
@@ -1013,9 +1014,13 @@ impl Action for ActBinaryFission {
 
                             // play a little particle effect
                             if t.physics.is_visible {
-                                let fg = (10, 255, 180, 180);
+                                let fg = (180, 255, 180, 180);
                                 let bg = palette().col_transparent;
-                                register_particle(t.pos.into(), fg, bg, '○', 500.0);
+                                register_particles(
+                                    ParticleBuilder::new(owner.pos.into(), fg, bg, '○', 600.0)
+                                        .with_moving_to(t.pos.into())
+                                        .with_end_color((180, 255, 180, 180), bg),
+                                )
                             }
 
                             // return prematurely because we don't need to insert anything new into

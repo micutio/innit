@@ -12,7 +12,7 @@ use std::sync::{Mutex, MutexGuard};
 
 use crate::core::position::Position;
 use crate::ui::color_palette::{ColorPalette, PALETTE_DEFAULT};
-use crate::ui::particle::{Particle, ParticleSystem};
+use crate::ui::particle::{Particle, ParticleBuilder, ParticleSystem};
 
 lazy_static! {
     static ref PARTICLE_SYS: Mutex<ParticleSystem> = Mutex::new(ParticleSystem::new());
@@ -28,7 +28,12 @@ pub fn register_particle(
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
     particle_sys
         .particles
-        .push(Particle::new(pos, col_fg, col_bg, glyph, lifetime));
+        .push(Particle::new(pos, col_fg, col_bg, glyph, lifetime, 0.0));
+}
+
+pub fn register_particles(builder: ParticleBuilder) {
+    let mut particle_sys = PARTICLE_SYS.lock().unwrap();
+    particle_sys.particles.append(&mut builder.build());
 }
 
 pub fn particles<'a>() -> MutexGuard<'a, ParticleSystem> {
