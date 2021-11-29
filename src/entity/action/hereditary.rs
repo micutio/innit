@@ -163,35 +163,32 @@ impl Action for ActMove {
 
 /// Focus on increased energy production for this turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActMetabolise {
+pub struct ActRepairStructure {
     lvl: i32,
 }
 
-impl ActMetabolise {
+impl ActRepairStructure {
     pub fn new() -> Self {
-        ActMetabolise { lvl: 0 }
+        ActRepairStructure { lvl: 0 }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActMetabolise {
+impl Action for ActRepairStructure {
     fn perform(
         &self,
         _state: &mut GameState,
         _objects: &mut GameObjects,
         owner: &mut Object,
     ) -> ActionResult {
-        owner.processors.energy = i32::min(
-            owner.processors.energy + self.lvl,
-            owner.processors.energy_storage,
-        );
+        owner.actuators.hp = i32::min(owner.actuators.hp + (self.lvl * 2), owner.actuators.max_hp);
         if owner.physics.is_visible {
             register_particle(
                 owner.pos,
                 (50, 255, 50, 180),
                 palette().col_transparent,
                 owner.visual.glyph,
-                150.0,
+                450.0,
             )
         }
         ActionResult::Success {
@@ -214,15 +211,15 @@ impl Action for ActMetabolise {
     }
 
     fn get_identifier(&self) -> String {
-        "metabolize".to_string()
+        "repair".to_string()
     }
 
     fn get_energy_cost(&self) -> i32 {
-        0
+        self.lvl
     }
 
     fn to_text(&self) -> String {
-        "increase metabolism momentarily".to_string()
+        "repair cell structure".to_string()
     }
 }
 

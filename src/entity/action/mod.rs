@@ -121,7 +121,7 @@ pub fn action_from_string(action_descriptor: &str) -> Result<Box<dyn Action>, St
     match action_descriptor {
         "ActPass" => Ok(Box::new(ActPass::default())),
         "ActMove" => Ok(Box::new(ActMove::new())),
-        "ActMetabolise" => Ok(Box::new(ActMetabolise::new())),
+        "ActRepairStructure" => Ok(Box::new(ActRepairStructure::new())),
         "ActAttack" => Ok(Box::new(ActAttack::new())),
         "ActEditGenome" => Ok(Box::new(ActEditGenome::new())),
         _ => Err(format!("cannot find action for {}", action_descriptor)),
