@@ -180,16 +180,20 @@ impl GameState {
 
     fn take_turn(&mut self, objects: &mut GameObjects, actor: &mut Object) -> ObjectFeedback {
         if actor.control.is_none() {
-            ObjectFeedback::NoFeedback
-        } else if actor.processors.energy < actor.processors.energy_storage {
+            return ObjectFeedback::NoFeedback;
+        }
+
+        if actor.processors.energy < actor.processors.energy_storage {
             // if not enough energy available try to replenish energy via metabolising
             actor.metabolize();
             if self.is_players_turn() {
-                ObjectFeedback::Render
+                return ObjectFeedback::Render;
             } else {
-                ObjectFeedback::NoFeedback
+                return ObjectFeedback::NoFeedback;
             }
-        } else if let Some(next_action) = actor.extract_next_action(self, objects) {
+        }
+
+        if let Some(next_action) = actor.extract_next_action(self, objects) {
             // use up energy before action
             if actor.physics.is_visible && next_action.get_identifier().ne("pass") {
                 trace!("next action: {}", next_action.get_identifier());

@@ -289,7 +289,9 @@ impl Action for ActAttack {
                 }
             }
             None => {
-                state.log.add("Nothing to attack here", MsgClass::Info);
+                if owner.is_player() {
+                    state.log.add("Nothing to attack here", MsgClass::Info);
+                }
                 ActionResult::Failure
             }
         }
