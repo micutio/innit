@@ -286,20 +286,30 @@ impl GameState {
 
             if actor.is_player() {
                 let gene_no = position / GRAY_CODE_WIDTH as usize;
-                let old_trait = &self
+                let old_trait_dna = &self
                     .gene_library
                     .dna_to_traits(actor.dna.dna_type, &old_trait)
-                    .3
-                    .simplified[0]; // TODO: fix out of bounds error here
-                let new_trait = &self
+                    .3;
+                let new_trait_dna = &self
                     .gene_library
                     .dna_to_traits(actor.dna.dna_type, &new_trait)
-                    .3
-                    .simplified[0]; // TODO: fix out of bounds error here
+                    .3;
+                let is_old_trait_junk = old_trait_dna.simplified.is_empty();
+                let old_trait_name = if is_old_trait_junk {
+                    "junk?"
+                } else {
+                    &old_trait_dna.simplified[0].trait_name
+                };
+                let is_new_trait_junk = new_trait_dna.simplified.is_empty();
+                let new_trait_name = if is_new_trait_junk {
+                    "junk?"
+                } else {
+                    &new_trait_dna.simplified[0].trait_name
+                };
                 self.log.add(
                     format!(
                         "Gene {} mutated from {} to {}",
-                        gene_no, old_trait.trait_name, new_trait.trait_name
+                        gene_no, old_trait_name, new_trait_name
                     ),
                     MsgClass::Alert,
                 );
