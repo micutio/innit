@@ -19,6 +19,7 @@ pub fn controls_screen() -> InfoBox {
         "Other".to_string(),
         "C                        display character info".to_string(),
         "F1                       display controls".to_string(),
+        "1 - 8                    switch to font <no>".to_string(),
     ];
     InfoBox::new(title, lines)
 }

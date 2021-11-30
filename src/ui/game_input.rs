@@ -79,6 +79,10 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::Key2, false, false) => MetaInput(SetFont(1)),
         (VirtualKeyCode::Key3, false, false) => MetaInput(SetFont(2)),
         (VirtualKeyCode::Key4, false, false) => MetaInput(SetFont(3)),
+        (VirtualKeyCode::Key5, false, false) => MetaInput(SetFont(4)),
+        (VirtualKeyCode::Key6, false, false) => MetaInput(SetFont(5)),
+        (VirtualKeyCode::Key7, false, false) => MetaInput(SetFont(6)),
+        (VirtualKeyCode::Key8, false, false) => MetaInput(SetFont(7)),
         _ => Undefined,
     }
 }

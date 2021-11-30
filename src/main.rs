@@ -32,10 +32,32 @@ use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use rltk::RltkBuilder;
 use std::env;
 
-rltk::embedded_resource!(CONSOLE_FONT_8X8, "../resources/fonts/Cheepicus_8x8.png");
-rltk::embedded_resource!(CONSOLE_FONT_12X12, "../resources/fonts/Cheepicus_12x12.png");
-rltk::embedded_resource!(CONSOLE_FONT_14X14, "../resources/fonts/Cheepicus_14x14.png");
-rltk::embedded_resource!(CONSOLE_FONT_16X16, "../resources/fonts/Cheepicus_16x16.png");
+rltk::embedded_resource!(FONT_8X8_CHEEPICUS, "../resources/fonts/Cheepicus_8x8.png");
+rltk::embedded_resource!(
+    FONT_12X12_CHEEPICUS,
+    "../resources/fonts/Cheepicus_12x12.png"
+);
+rltk::embedded_resource!(
+    FONT_14X14_CHEEPICUS,
+    "../resources/fonts/Cheepicus_14x14.png"
+);
+rltk::embedded_resource!(
+    FONT_16X16_CHEEPICUS,
+    "../resources/fonts/Cheepicus_16x16.png"
+);
+rltk::embedded_resource!(FONT_8X8_REX_PAINT, "../resources/fonts/rex_paint_8x8.png");
+rltk::embedded_resource!(
+    FONT_12X12_REX_PAINT,
+    "../resources/fonts/rex_paint_12x12.png"
+);
+rltk::embedded_resource!(
+    FONT_14X14_REX_PAINT,
+    "../resources/fonts/rex_paint_14x14.png"
+);
+rltk::embedded_resource!(
+    FONT_16X16_REX_PAINT,
+    "../resources/fonts/rex_paint_16x16.png"
+);
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
@@ -74,24 +96,36 @@ pub fn main() -> rltk::BError {
 
     // build engine and launch the game
 
-    rltk::link_resource!(CONSOLE_FONT_8X8, "resources/fonts/Cheepicus_8x8.png");
-    rltk::link_resource!(CONSOLE_FONT_12X12, "resources/fonts/Cheepicus_12x12.png");
-    rltk::link_resource!(CONSOLE_FONT_14X14, "resources/fonts/Cheepicus_14x14.png");
-    rltk::link_resource!(CONSOLE_FONT_16X16, "resources/fonts/Cheepicus_16x16.png");
-    let font_8x8 = "fonts/Cheepicus_8x8.png";
-    let font_12x12 = "fonts/Cheepicus_12x12.png";
-    let font_14x14 = "fonts/Cheepicus_14x14.png";
-    let font_16x16 = "fonts/Cheepicus_16x16.png";
+    rltk::link_resource!(FONT_8X8_CHEEPICUS, "resources/fonts/Cheepicus_8x8.png");
+    rltk::link_resource!(FONT_12X12_CHEEPICUS, "resources/fonts/Cheepicus_12x12.png");
+    rltk::link_resource!(FONT_14X14_CHEEPICUS, "resources/fonts/Cheepicus_14x14.png");
+    rltk::link_resource!(FONT_16X16_CHEEPICUS, "resources/fonts/Cheepicus_16x16.png");
+    rltk::link_resource!(FONT_8X8_REX_PAINT, "resources/fonts/rex_paint_8x8.png");
+    rltk::link_resource!(FONT_12X12_REX_PAINT, "resources/fonts/rex_paint_12x12.png");
+    rltk::link_resource!(FONT_14X14_REX_PAINT, "resources/fonts/rex_paint_14x14.png");
+    rltk::link_resource!(FONT_16X16_REX_PAINT, "resources/fonts/rex_paint_16x16.png");
+    let font_8x8_cheepicus = "fonts/Cheepicus_8x8.png";
+    let font_12x12_cheepicus = "fonts/Cheepicus_12x12.png";
+    let font_14x14_cheepicus = "fonts/Cheepicus_14x14.png";
+    let font_16x16_cheepicus = "fonts/Cheepicus_16x16.png";
+    let font_8x8_rex_paint = "fonts/rex_paint_8x8.png";
+    let font_12x12_rex_paint = "fonts/rex_paint_12x12.png";
+    let font_14x14_rex_paint = "fonts/rex_paint_14x14.png";
+    let font_16x16_rex_paint = "fonts/rex_paint_16x16.png";
     let mut context = RltkBuilder::new()
         .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .with_font(font_8x8, 8, 8)
-        .with_font(font_12x12, 12, 12)
-        .with_font(font_14x14, 14, 14)
-        .with_font(font_16x16, 16, 16)
+        .with_font(font_8x8_cheepicus, 8, 8)
+        .with_font(font_12x12_cheepicus, 12, 12)
+        .with_font(font_14x14_cheepicus, 14, 14)
+        .with_font(font_16x16_cheepicus, 16, 16)
+        .with_font(font_8x8_rex_paint, 8, 8)
+        .with_font(font_12x12_rex_paint, 12, 12)
+        .with_font(font_14x14_rex_paint, 14, 14)
+        .with_font(font_16x16_rex_paint, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // world layer
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8) // particles layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // world layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // hud layer
+        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
