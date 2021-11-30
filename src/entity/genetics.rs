@@ -46,7 +46,7 @@ use std::cmp;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-pub const GENE_LEN: usize = 15; // TODO: Replace with less generic constant.
+pub const GENOME_LEN: usize = 15; // TODO: Replace with less generic constant.
 pub const GRAY_CODE_WIDTH: u8 = 4;
 
 /// All traits belong to one of three major categories, called trait families.

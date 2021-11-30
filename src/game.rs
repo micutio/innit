@@ -10,7 +10,7 @@ use crate::entity::action::hereditary::ActPass;
 use crate::entity::action::inventory::ActDropItem;
 use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::Controller;
-use crate::entity::genetics::{DnaType, GENE_LEN};
+use crate::entity::genetics::{DnaType, GENOME_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::raws::object_template::ObjectTemplate;
@@ -207,7 +207,7 @@ impl Game {
                                 &mut self.state.rng,
                                 DnaType::Nucleus,
                                 false,
-                                GENE_LEN,
+                                GENOME_LEN,
                             ),
                         );
 

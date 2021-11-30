@@ -1,6 +1,6 @@
 use crate::core::position::Position;
 use crate::core::world::Tile;
-use crate::entity::genetics::{DnaType, GeneLibrary, GENE_LEN};
+use crate::entity::genetics::{DnaType, GeneLibrary, GENOME_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
@@ -65,7 +65,7 @@ impl GameObjects {
                     &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(rng, DnaType::Nucleus, false, GENE_LEN);
+                        gene_library.new_genetics(rng, DnaType::Nucleus, false, GENOME_LEN);
                     tile.set_genome(sensors, processors, actuators, dna);
                 }
             }

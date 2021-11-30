@@ -8,7 +8,7 @@ use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActMove
 #[test]
 fn test_random_ai() {
     use crate::entity::ai::AiVirus;
-    use crate::entity::genetics::{DnaType, GENE_LEN};
+    use crate::entity::genetics::{DnaType, GENOME_LEN};
     use crate::entity::object::Object;
     use crate::entity::player::PLAYER;
     use crate::ui::palette;
@@ -38,7 +38,7 @@ fn test_random_ai() {
             0.75,
             state
                 .gene_library
-                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
@@ -51,7 +51,7 @@ fn test_random_ai() {
             0.75,
             state
                 .gene_library
-                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
@@ -64,7 +64,7 @@ fn test_random_ai() {
             0.75,
             state
                 .gene_library
-                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
@@ -93,7 +93,7 @@ fn test_random_ai() {
             0.75,
             state
                 .gene_library
-                .new_genetics(&mut state.rng, DnaType::Rna, true, GENE_LEN),
+                .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
