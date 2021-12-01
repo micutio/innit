@@ -1,7 +1,7 @@
 use crate::core::game_objects::GameObjects;
 use crate::core::innit_env;
 use crate::entity::action::*;
-use crate::entity::genetics::{GeneLibrary, GRAY_CODE_WIDTH};
+use crate::entity::genetics::GeneLibrary;
 use crate::entity::object::Object;
 use crate::entity::player::PLAYER;
 use crate::util::game_rng::{GameRng, RngExtended};
@@ -266,11 +266,13 @@ impl GameState {
 
         if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
-            let trait_count = actor.dna.raw.len() / GRAY_CODE_WIDTH as usize;
-            let trait_start = self.rng.gen_range(0..trait_count);
-            let trait_end = trait_start + GRAY_CODE_WIDTH as usize;
-            let gene = self.rng.gen_range(0..GRAY_CODE_WIDTH as usize);
-            let position = trait_start + gene;
+            let gene_width = 3;
+            println!("ACTOR RAW DNA LENGTH: {}", actor.dna.raw.len());
+            let trait_count = actor.dna.raw.len() / gene_width as usize;
+            let trait_start = self.rng.gen_range(0..trait_count) * gene_width;
+            let trait_end = trait_start + gene_width as usize;
+            let gene_pos = self.rng.gen_range(0..gene_width as usize);
+            let position = trait_start + gene_pos;
             let old_gene = actor.dna.raw[position];
             let old_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
             // ^ = bitwise exclusive or
@@ -285,7 +287,7 @@ impl GameState {
             );
 
             if actor.is_player() {
-                let gene_no = position / GRAY_CODE_WIDTH as usize;
+                let gene_no = (trait_start / gene_width as usize) + 1; // start from 1 instead of 0
                 let old_trait_dna = &self
                     .gene_library
                     .dna_to_traits(actor.dna.dna_type, &old_trait)

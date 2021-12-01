@@ -301,14 +301,14 @@ impl Hud {
             };
             let dna_glyph: char = if h_offset % 2 == 0 { '►' } else { '◄' };
 
+            let gene_title = format!("gene {:2}:", h_offset + 1);
             let is_from_plasmid = h_offset >= player_dna_length;
-
             let mut tooltip_text = vec![
-                ("trait:".to_string(), g_trait.trait_name.clone()),
-                ("group:".to_string(), g_trait.trait_family.to_string()),
+                (gene_title, g_trait.trait_name.clone()),
+                ("group  :".to_string(), g_trait.trait_family.to_string()),
             ];
             if is_from_plasmid {
-                tooltip_text.push(("origin:".to_string(), "plasmid".to_string()));
+                tooltip_text.push(("origin: ".to_string(), "plasmid".to_string()));
             }
 
             let bg_color = if is_from_plasmid {
@@ -350,14 +350,14 @@ impl Hud {
 
             let dna_glyph: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
 
+            let gene_title = format!("gene {:2}:", v_offset + 1);
             let is_from_plasmid = v_offset + horiz_display_count >= player_dna_length;
-
             let mut tooltip_text = vec![
-                ("trait:".to_string(), g_trait.trait_name.clone()),
-                ("group:".to_string(), g_trait.trait_family.to_string()),
+                (gene_title, g_trait.trait_name.clone()),
+                ("group  :".to_string(), g_trait.trait_family.to_string()),
             ];
             if is_from_plasmid {
-                tooltip_text.push(("origin:".to_string(), "plasmid".to_string()));
+                tooltip_text.push(("origin :".to_string(), "plasmid".to_string()));
             }
 
             let bg_color = if is_from_plasmid {
