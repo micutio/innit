@@ -90,7 +90,6 @@ pub struct GenomeEditor {
     selected_function: usize,
     pub state: GenomeEditingState,
     pub player_dna: Dna,
-    clipboard: Option<GeneItem>,
     edit_functions: Vec<EditFunction>,
     gene_items: Vec<GeneItem>,
 }
@@ -154,7 +153,6 @@ impl GenomeEditor {
             selected_function: 0,
             state: GenomeEditingState::ChooseGene,
             player_dna: dna,
-            clipboard: None,
             edit_functions,
             gene_items,
         }
