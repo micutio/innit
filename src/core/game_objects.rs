@@ -21,19 +21,19 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Default, Debug)]
 pub struct GameObjects {
-    num_world_tiles: usize,
+    world_tile_count: usize,
     obj_vec: Vec<Option<Object>>,
 }
 
 impl GameObjects {
     pub fn new() -> Self {
-        let num_world_tiles = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
+        let world_tile_count = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
         let obj_vec = Vec::new();
         // obj_vec.push(None);
         // obj_vec.resize_with(num_world_tiles + 1, || None);
 
         GameObjects {
-            num_world_tiles,
+            world_tile_count,
             obj_vec,
         }
     }
@@ -47,7 +47,7 @@ impl GameObjects {
     pub fn blank_world(&mut self) {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
-        self.obj_vec.resize_with(self.num_world_tiles + 1, || None);
+        self.obj_vec.resize_with(self.world_tile_count + 1, || None);
         for y in 0..WORLD_HEIGHT {
             for x in 0..WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);

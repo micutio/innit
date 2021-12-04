@@ -243,13 +243,13 @@ pub struct Hud {
 
 impl Hud {
     pub fn new() -> Self {
-        let x1 = SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1;
+        let x1 = SCREEN_WIDTH - SIDE_PANEL_WIDTH;
         let y1 = 0;
-        let x2 = x1 + SIDE_PANEL_WIDTH;
+        let x2 = x1 + SIDE_PANEL_WIDTH - 1;
         let y2 = SIDE_PANEL_HEIGHT - 1;
         let layout = Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 13, SCREEN_WIDTH - 2, 23);
-        let log_area = Rect::with_exact(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 26, SCREEN_WIDTH - 2, 58);
+        let inv_area = Rect::with_exact(x1 + 1, 13, SCREEN_WIDTH - 2, 23);
+        let log_area = Rect::with_exact(x1 + 1, 26, SCREEN_WIDTH - 2, 58);
         Hud {
             layout,
             inv_area,
@@ -286,7 +286,7 @@ impl Hud {
 
         let combined_simplified_dna = player.get_combined_simplified_dna();
         let player_dna_length = player.dna.simplified.len();
-        let horiz_display_count = SIDE_PANEL_WIDTH as usize - 4;
+        let horiz_display_count = SIDE_PANEL_WIDTH as usize - 5;
         for (h_offset, g_trait) in combined_simplified_dna
             .iter()
             .take(horiz_display_count)
@@ -464,12 +464,12 @@ fn render_dna_region(draw_batch: &mut DrawBatch) {
         to_cp437(' '),
     );
     draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH, 0),
+        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH - 1, 0),
         ColorPair::new(bg_dna, bg_dna),
         to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 0),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0),
         "DNA ",
         ColorPair::new(fg_hud, bg_dna),
     );
@@ -485,8 +485,8 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let lifetime = palette().hud_fg_bar_lifetime;
 
     let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
-    let bar_x = SCREEN_WIDTH - SIDE_PANEL_WIDTH;
-    let bar_width = SIDE_PANEL_WIDTH - 3;
+    let bar_x = SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1;
+    let bar_width = SIDE_PANEL_WIDTH - 4;
 
     // draw headers for bars
     draw_batch.print_color(Point::new(bar_x, 2), '+', bar_icon_col);
@@ -503,7 +503,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         ColorPair::new(health, bg_hud_content),
     );
     draw_batch.print_centered_at(
-        Point::new(bar_x + 10, 2),
+        Point::new(bar_x + 9, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
     );
     // - energy bar
@@ -516,7 +516,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     );
 
     draw_batch.print_centered_at(
-        Point::new(bar_x + 10, 3),
+        Point::new(bar_x + 9, 3),
         format!(
             "{}/{}",
             player.processors.energy, player.processors.energy_storage
@@ -539,7 +539,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         1
     };
     draw_batch.bar_horizontal(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 2, 4),
+        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3, 4),
         bar_width,
         current_life,
         max_life,
@@ -551,10 +551,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     } else {
         "∞".into()
     };
-    draw_batch.print_centered_at(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH + 10, 4),
-        life_indicator,
-    );
+    draw_batch.print_centered_at(Point::new(bar_x + 9, 4), life_indicator);
 }
 
 fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBatch) {
@@ -562,36 +559,37 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
     let action_bg = palette().hud_bg;
     let action_fg = palette().hud_fg;
     let action_fg_hl = palette().hud_fg_highlight;
+    let x = SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1;
 
     // draw action header
     draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH - 1, 6, SIDE_PANEL_WIDTH, 0),
+        Rect::with_size(x - 1, 6, SIDE_PANEL_WIDTH - 1, 0),
         ColorPair::new(action_fg, action_header_bg),
         to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 6),
+        Point::new(x, 6),
         "Actions",
         ColorPair::new(action_fg, action_header_bg),
     );
     // draw buttons
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 7),
+        Point::new(x, 7),
         "P",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 8),
+        Point::new(x, 8),
         "S",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 9),
+        Point::new(x, 9),
         "Q",
         ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 10),
+        Point::new(x, 10),
         "E",
         ColorPair::new(action_fg_hl, action_bg),
     );

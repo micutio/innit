@@ -14,7 +14,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     let world_col = palette().world_bg;
 
     draw_batch.fill_region(
-        Rect::with_size(0, 0, WORLD_WIDTH, WORLD_HEIGHT),
+        Rect::with_size(0, 0, WORLD_WIDTH - 1, WORLD_HEIGHT - 1),
         ColorPair::new(world_col, world_col),
         to_cp437(' '),
     );
