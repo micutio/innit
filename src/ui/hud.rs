@@ -110,6 +110,7 @@ fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
             Rect::with_size(button_x, 3, bar_width, 1),
             col_pair,
         ),
+        /* lifetime display disabled for now
         UiItem::new(
             HudItem::BarItem,
             "",
@@ -117,6 +118,7 @@ fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
             Rect::with_size(button_x, 4, bar_width, 1),
             col_pair,
         ),
+        */
         UiItem::new(
             HudItem::PrimaryAction,
             "",
@@ -482,7 +484,6 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let bg_hud_content = palette().hud_bg_content;
     let health = palette().hud_fg_bar_health;
     let energy = palette().hud_fg_bar_energy;
-    let lifetime = palette().hud_fg_bar_lifetime;
 
     let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
     let bar_x = SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1;
@@ -491,7 +492,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     // draw headers for bars
     draw_batch.print_color(Point::new(bar_x, 2), '+', bar_icon_col);
     draw_batch.print_color(Point::new(bar_x, 3), '√', bar_icon_col);
-    draw_batch.print_color(Point::new(bar_x, 4), '♥', bar_icon_col);
+    // draw_batch.print_color(Point::new(bar_x, 4), '♥', bar_icon_col);
 
     // draw bars
     // - health bar
@@ -523,6 +524,9 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
         ),
     );
     // - lifetime bar
+    // disabled for now, because it has no useful functionality
+    /*
+    let lifetime = palette().hud_fg_bar_lifetime;
     let has_finite_life = player
         .processors
         .actions
@@ -551,7 +555,9 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     } else {
         "∞".into()
     };
+
     draw_batch.print_centered_at(Point::new(bar_x + 9, 4), life_indicator);
+    */
 }
 
 fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBatch) {
