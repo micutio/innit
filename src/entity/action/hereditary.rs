@@ -915,7 +915,7 @@ impl Action for ActKillSwitch {
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
                             let bg = palette().col_transparent;
-                            register_particle(target.pos.into(), fg, bg, '☼', 500.0);
+                            register_particle(target.pos.into(), fg, bg, '◘', 500.0);
                         }
                     }
 
@@ -1016,7 +1016,7 @@ impl Action for ActBinaryFission {
                                 let fg = (180, 255, 180, 180);
                                 let bg = palette().col_transparent;
                                 register_particles(
-                                    ParticleBuilder::new(owner.pos.into(), fg, bg, '○', 600.0)
+                                    ParticleBuilder::new(owner.pos.into(), fg, bg, '◘', 600.0)
                                         .with_moving_to(t.pos.into())
                                         .with_end_color((180, 255, 180, 180), bg),
                                 )
@@ -1062,7 +1062,7 @@ impl Action for ActBinaryFission {
                         if child.physics.is_visible {
                             let fg = (10, 255, 180, 180);
                             let bg = palette().col_transparent;
-                            register_particle(child.pos.into(), fg, bg, '○', 500.0);
+                            register_particle(child.pos.into(), fg, bg, '◘', 500.0);
                         }
                         Some(child)
                     }
