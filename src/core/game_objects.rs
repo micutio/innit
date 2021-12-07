@@ -85,7 +85,7 @@ impl GameObjects {
                 {
                     let (sensors, processors, actuators, dna) = gene_library.dna_to_traits(
                         DnaType::Nucleus,
-                        &gene_library.trait_strs_to_dna(rng, &traits),
+                        &gene_library.dna_from_trait_strs(rng, &traits),
                     );
                     tile.set_genome(sensors, processors, actuators, dna);
                     tile.processors.life_elapsed =

@@ -377,7 +377,12 @@ impl GeneLibrary {
     }
 
     /// Generate a new random binary DNA code from a given length and possibly with LTR markers.
-    pub fn new_dna(&self, rng: &mut GameRng, has_ltr: bool, avg_genome_len: usize) -> Vec<u8> {
+    pub fn dna_from_size(
+        &self,
+        rng: &mut GameRng,
+        has_ltr: bool,
+        avg_genome_len: usize,
+    ) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
 
         if has_ltr {
@@ -420,7 +425,7 @@ impl GeneLibrary {
     }
 
     /// Encode a slice of genetic trait objects into binary DNA code.
-    pub fn g_traits_to_dna(&self, traits: &[GeneticTrait]) -> Vec<u8> {
+    pub fn dna_from_traits(&self, traits: &[GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
@@ -451,7 +456,7 @@ impl GeneLibrary {
     }
 
     /// Encode a slice of genetic trait object references into binary DNA code.
-    pub fn g_trait_refs_to_dna(&self, traits: &[&GeneticTrait]) -> Vec<u8> {
+    pub fn dna_from_trait_refs(&self, traits: &[&GeneticTrait]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
@@ -482,7 +487,7 @@ impl GeneLibrary {
     }
 
     /// Encode a vector of genetic trait names into binary DNA code.
-    pub fn trait_strs_to_dna(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
+    pub fn dna_from_trait_strs(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
@@ -575,7 +580,7 @@ impl GeneLibrary {
         has_ltr: bool,
         avg_genome_len: usize,
     ) -> (Sensors, Processors, Actuators, Dna) {
-        let dna = self.new_dna(rng, has_ltr, avg_genome_len);
+        let dna = self.dna_from_size(rng, has_ltr, avg_genome_len);
         let (s, p, a, mut d) = self.dna_to_traits(dna_type, &dna);
         d.raw = dna;
         (s, p, a, d)

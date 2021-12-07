@@ -281,7 +281,7 @@ fn place_objects(
 
                 // generate DNA, either probabilistically or from a template
                 let raw_dna = match &template.dna_template {
-                    DnaTemplate::Random { genome_len } => state.gene_library.new_dna(
+                    DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
                         &mut state.rng,
                         template.dna_type == DnaType::Rna,
                         *genome_len,
@@ -304,7 +304,7 @@ fn place_objects(
                     ),
                     DnaTemplate::Defined { traits } => state
                         .gene_library
-                        .trait_strs_to_dna(&mut state.rng, &traits),
+                        .dna_from_trait_strs(&mut state.rng, &traits),
                 };
 
                 // populate inventory if present

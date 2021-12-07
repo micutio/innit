@@ -437,7 +437,7 @@ impl GenomeEditor {
                 if let Some(item) = self.gene_items.get(self.selected_gene) {
                     if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
                         let gene_bits: Vec<u8> =
-                            game_state.gene_library.g_trait_refs_to_dna(&[g_trait]);
+                            game_state.gene_library.dna_from_trait_refs(&[g_trait]);
                         let gene_str: String = gene_bits
                             .iter()
                             .map(|b| format!("{:08b}", b))
@@ -704,7 +704,7 @@ impl GenomeEditor {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
                             let mut gene_bits: Vec<u8> =
-                                game_state.gene_library.g_trait_refs_to_dna(&[g_trait]);
+                                game_state.gene_library.dna_from_trait_refs(&[g_trait]);
                             let random_bit = game_state.rng.gen_range(0..gene_bits.len());
                             gene_bits[random_bit] ^= game_state.rng.random_bit();
                             let new_dna: Dna = game_state
@@ -769,7 +769,7 @@ impl GenomeEditor {
     fn regenerate_dna(&mut self, game_state: &mut GameState) {
         let bit_vec = game_state
             .gene_library
-            .g_traits_to_dna(self.player_dna.simplified.as_slice());
+            .dna_from_traits(self.player_dna.simplified.as_slice());
         let new_dna = game_state
             .gene_library
             .dna_to_traits(self.player_dna.dna_type, &bit_vec);

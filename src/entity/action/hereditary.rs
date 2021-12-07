@@ -746,7 +746,7 @@ impl Action for ActProduceVirion {
                 if let (Some(a), Some(b)) = (p0, p1) {
                     if a != b {
                         let dna_from_seq =
-                            state.gene_library.g_traits_to_dna(&owner.dna.simplified);
+                            state.gene_library.dna_from_traits(&owner.dna.simplified);
                         owner.inventory.items.push(
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
