@@ -572,7 +572,7 @@ impl GeneLibrary {
         trait_builder.finalize(&self.trait_vec)
     }
 
-    /// Combine *new_dna()* and *decode_dna()* into a single function call.
+    /// Combine *dna_from_size()* and *decode_dna()* into a single function call.
     pub fn new_genetics(
         &self,
         rng: &mut GameRng,

@@ -10,7 +10,7 @@ use crate::entity::action::hereditary::ActPass;
 use crate::entity::action::inventory::ActDropItem;
 use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::Controller;
-use crate::entity::genetics::{DnaType, GENOME_LEN};
+use crate::entity::genetics::{DnaType, TraitFamily, GENOME_LEN};
 use crate::entity::object::Object;
 use crate::entity::player::PlayerCtrl;
 use crate::raws::object_template::ObjectTemplate;
@@ -195,6 +195,17 @@ impl Game {
                 if !innit_env().is_spectating {
                     // create object representing the player
                     let (new_x, new_y) = self.world_generator.get_player_start_pos();
+                    let dna = self.state.gene_library.dna_from_distribution(
+                        &mut self.state.rng,
+                        &[3, 2, 5],
+                        &[
+                            TraitFamily::Sensing,
+                            TraitFamily::Processing,
+                            TraitFamily::Actuating,
+                        ],
+                        false,
+                        GENOME_LEN,
+                    );
                     let player = Object::new()
                         .position(new_x, new_y)
                         .living(true)
@@ -203,12 +214,9 @@ impl Game {
                         .control(Controller::Player(PlayerCtrl::new()))
                         .genome(
                             0.99,
-                            self.state.gene_library.new_genetics(
-                                &mut self.state.rng,
-                                DnaType::Nucleus,
-                                false,
-                                GENOME_LEN,
-                            ),
+                            self.state
+                                .gene_library
+                                .dna_to_traits(DnaType::Nucleus, &dna),
                         );
 
                     trace!("created player object {}", player);
