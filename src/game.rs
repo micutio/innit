@@ -32,7 +32,7 @@ use crate::ui::particles;
 use crate::ui::rex_assets::RexAssets;
 use crate::util::timer::{time_from, Timer};
 use core::fmt;
-use rltk::{ColorPair, DrawBatch, GameState as Rltk_GameState, Rltk};
+use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, PointF, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 #[cfg(not(target_arch = "wasm32"))]
@@ -347,10 +347,13 @@ impl Rltk_GameState for Game {
         let mut draw_batch = DrawBatch::new();
         for particle in &particles().particles {
             if particle.start_delay <= 0.0 {
-                draw_batch.print_color(
-                    particle.pos.into(),
-                    particle.glyph,
+                draw_batch.set_fancy(
+                    particle.pos,
+                    1,
+                    Degrees::new(0.0),
+                    PointF::new(1.0, 1.0),
                     ColorPair::new(particle.col_fg, particle.col_bg),
+                    to_cp437(particle.glyph),
                 );
             }
         }

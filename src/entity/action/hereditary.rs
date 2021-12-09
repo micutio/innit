@@ -925,19 +925,21 @@ impl Action for ActBinaryFission {
                             // play a little particle effect
                             if t.physics.is_visible {
                                 // cover up the new cell as long as the creation particles play
-                                register_particle(
-                                    owner.pos,
-                                    (0, 0, 0, 0),
-                                    (0, 0, 0, 0),
-                                    ' ',
-                                    600.0,
-                                );
+                                let t_fg = t.visual.fg_color;
+                                let t_bg = t.visual.bg_color;
+                                // register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0);
                                 let fg = owner.visual.fg_color;
-                                let bg = palette().col_transparent;
+                                let bg = owner.visual.bg_color;
                                 register_particles(
-                                    ParticleBuilder::new(owner.pos.into(), fg, bg, '◘', 600.0)
-                                        .with_moving_to(t.pos.into())
-                                        .with_end_color((180, 255, 180, 180), bg),
+                                    ParticleBuilder::new(
+                                        owner.pos.into(),
+                                        fg,
+                                        bg,
+                                        owner.visual.glyph,
+                                        600.0,
+                                    )
+                                    .with_moving_to(t.pos.into())
+                                    .with_end_color((180, 255, 180, 180), (0, 0, 0, 0)),
                                 )
                             }
 
@@ -979,9 +981,23 @@ impl Action for ActBinaryFission {
                         child.physics.is_visible = t.physics.is_visible;
                         // play a little particle effect
                         if child.physics.is_visible {
-                            let fg = (10, 255, 180, 180);
-                            let bg = palette().col_transparent;
-                            register_particle(child.pos.into(), fg, bg, '◘', 500.0);
+                            // cover up the new cell as long as the creation particles play
+                            let t_fg = t.visual.fg_color;
+                            let t_bg = t.visual.bg_color;
+                            register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0);
+                            let fg = owner.visual.fg_color;
+                            let bg = owner.visual.bg_color;
+                            register_particles(
+                                ParticleBuilder::new(
+                                    owner.pos.into(),
+                                    fg,
+                                    bg,
+                                    child.visual.glyph,
+                                    600.0,
+                                )
+                                .with_moving_to(t.pos.into())
+                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0)),
+                            )
                         }
                         Some(child)
                     }

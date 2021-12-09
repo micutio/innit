@@ -96,16 +96,16 @@ impl ParticleBuilder {
 
         // if we have multiple particles, then render one per frame
         if self.end_pos.is_some() || self.end_col.is_some() {
-            let time_per_particle = self.lifetime / TIME_MS_PER_FRAME;
             let pos_f = PointF::new(self.pos.x as f32, self.pos.y as f32);
 
             let mut t = 0.0;
             while t < self.lifetime {
                 let progress = t / self.lifetime;
+                println!("PROGRESS: {}%", progress);
                 let pos = self.end_pos.map_or(pos_f, |p| {
                     PointF::new(
-                        pos_f.x + progress * (p.x as f32 - pos_f.x),
-                        pos_f.y + progress * (p.y as f32 - pos_f.y),
+                        pos_f.x + (progress * (p.x as f32 - pos_f.x)),
+                        pos_f.y + (progress * (p.y as f32 - pos_f.y)),
                     )
                 });
                 let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
@@ -120,8 +120,8 @@ impl ParticleBuilder {
                     col.0,
                     col.1,
                     self.glyph,
-                    time_per_particle,
-                    self.start_delay + time_per_particle,
+                    TIME_MS_PER_FRAME,
+                    self.start_delay + t,
                 );
                 particles.push(particle);
                 t += TIME_MS_PER_FRAME;
