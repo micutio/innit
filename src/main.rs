@@ -125,7 +125,7 @@ pub fn main() -> rltk::BError {
         .with_advanced_input(true)
         .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // world layer
         .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // hud layer
-        .with_sparse_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // particles layer
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
