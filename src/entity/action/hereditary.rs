@@ -889,7 +889,7 @@ impl Action for ActKillSwitch {
                 if owner.physics.is_visible {
                     let fg = (255, 10, 90, 180);
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '☼', 500.0);
+                    register_particle(owner.pos.into(), fg, bg, '◘', 500.0);
                 }
                 ActionResult::Success { callback }
             }

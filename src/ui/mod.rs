@@ -26,9 +26,15 @@ pub fn register_particle(
     lifetime: f32,
 ) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
-    particle_sys
-        .particles
-        .push(Particle::new(pos, col_fg, col_bg, glyph, lifetime, 0.0));
+    particle_sys.particles.push(Particle::new(
+        pos.x as f32,
+        pos.y as f32,
+        col_fg,
+        col_bg,
+        glyph,
+        lifetime,
+        0.0,
+    ));
 }
 
 pub fn register_particles(builder: ParticleBuilder) {

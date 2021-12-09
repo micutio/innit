@@ -1,10 +1,12 @@
 //! This module contains the particle/animation system
 
 use crate::core::position::Position;
-use rltk::{Bresenham, Point, Rltk, RGBA};
+use rltk::{PointF, Rltk, RGBA};
+
+const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
 pub struct Particle {
-    pub pos: Position,
+    pub pos: PointF,
     pub col_fg: RGBA,
     pub col_bg: RGBA,
     pub glyph: char,
@@ -15,16 +17,24 @@ pub struct Particle {
 }
 
 impl Particle {
-    pub(crate) fn new<T: Into<RGBA>>(
-        pos: Position,
-        col_fg: T,
-        col_bg: T,
+    pub fn new<NumT, RgbT>(
+        x: NumT,
+        y: NumT,
+        col_fg: RgbT,
+        col_bg: RgbT,
         glyph: char,
         lifetime: f32,
         start_delay: f32,
-    ) -> Self {
+    ) -> Self
+    where
+        NumT: TryInto<f32>,
+        RgbT: Into<RGBA>,
+    {
         Particle {
-            pos,
+            pos: PointF::new(
+                x.try_into().ok().unwrap_or(0.0),
+                y.try_into().ok().unwrap_or(0.0),
+            ),
             col_fg: col_fg.into(),
             col_bg: col_bg.into(),
             glyph,
@@ -83,69 +93,38 @@ impl ParticleBuilder {
     // TODO: Extract each branch into a separate helper function.
     pub fn build(self) -> Vec<Particle> {
         let mut particles = Vec::new();
-        if let Some(p) = self.end_pos {
-            let mut path: Vec<Point> = Bresenham::new(self.pos.into(), p.into()).collect();
-            path.push(p.into());
-            let path_len = path.len() as f32;
-            println!("BRESENHAM PATH LEN: {}", path_len);
-            let time_per_part = self.lifetime / path_len;
-            let mut delay = self.start_delay;
-            for (idx, point) in path.into_iter().enumerate() {
-                let part_ratio = idx as f32 / path_len;
-                let part_colors = if let Some((col_fg, col_bg)) = self.end_col {
-                    let mut fg = RGBA::from(self.col_fg);
-                    fg = fg.lerp(col_fg.into(), part_ratio);
-                    let mut bg = RGBA::from(self.col_bg);
-                    bg = bg.lerp(col_bg.into(), part_ratio);
-                    (fg, bg)
-                } else {
-                    (self.col_fg, self.col_bg)
-                };
-                let part_delay = delay;
-                delay += time_per_part;
+
+        // if we have multiple particles, then render one per frame
+        if self.end_pos.is_some() || self.end_col.is_some() {
+            let time_per_particle = self.lifetime / TIME_MS_PER_FRAME;
+            let pos_f = PointF::new(self.pos.x as f32, self.pos.y as f32);
+
+            let mut t = 0.0;
+            while t < self.lifetime {
+                let progress = t / self.lifetime;
+                let pos = self.end_pos.map_or(pos_f, |p| {
+                    PointF::new(
+                        pos_f.x + progress * (p.x as f32 - pos_f.x),
+                        pos_f.y + progress * (p.y as f32 - pos_f.y),
+                    )
+                });
+                let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
+                    (
+                        RGBA::from(self.col_fg).lerp(c.0, progress),
+                        RGBA::from(self.col_fg).lerp(c.1, progress),
+                    )
+                });
                 let particle = Particle::new(
-                    point.into(),
-                    part_colors.0,
-                    part_colors.1,
+                    pos.x,
+                    pos.y,
+                    col.0,
+                    col.1,
                     self.glyph,
-                    time_per_part,
-                    part_delay,
+                    time_per_particle,
+                    self.start_delay + time_per_particle,
                 );
                 particles.push(particle);
-            }
-        } else {
-            if let Some((col_fg, col_bg)) = self.end_col {
-                let time_per_part = self.lifetime / 2.0;
-                let particle1 = Particle::new(
-                    self.pos,
-                    self.col_fg,
-                    self.col_bg,
-                    self.glyph,
-                    time_per_part,
-                    self.start_delay,
-                );
-
-                let particle2 = Particle::new(
-                    self.pos,
-                    col_fg,
-                    col_bg,
-                    self.glyph,
-                    time_per_part,
-                    self.start_delay + time_per_part,
-                );
-
-                particles.push(particle1);
-                particles.push(particle2);
-            } else {
-                let particle = Particle::new(
-                    self.pos,
-                    self.col_fg,
-                    self.col_bg,
-                    self.glyph,
-                    self.lifetime,
-                    self.start_delay,
-                );
-                particles.push(particle);
+                t += TIME_MS_PER_FRAME;
             }
         }
         particles
