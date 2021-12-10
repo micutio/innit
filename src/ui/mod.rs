@@ -24,6 +24,7 @@ pub fn register_particle(
     col_bg: (u8, u8, u8, u8),
     glyph: char,
     lifetime: f32,
+    scale: (f32, f32),
 ) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
     particle_sys.particles.push(Particle::new(
@@ -34,6 +35,7 @@ pub fn register_particle(
         glyph,
         lifetime,
         0.0,
+        scale,
     ));
 }
 

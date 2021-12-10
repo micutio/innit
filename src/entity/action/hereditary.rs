@@ -189,6 +189,7 @@ impl Action for ActRepairStructure {
                 palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
+                (1.0, 1.0),
             )
         }
         ActionResult::Success {
@@ -278,6 +279,7 @@ impl Action for ActAttack {
                         palette().col_transparent,
                         'x',
                         250.0,
+                        (1.0, 1.0),
                     )
                 }
 
@@ -509,7 +511,7 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().col_acc3;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -524,7 +526,7 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().col_acc3;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -553,7 +555,14 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().hud_fg_bar_health;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, target.visual.glyph, 350.0);
+                    register_particle(
+                        owner.pos.into(),
+                        fg,
+                        bg,
+                        target.visual.glyph,
+                        350.0,
+                        (1.0, 1.0),
+                    );
                 }
             }
             objects.replace(index, target);
@@ -800,7 +809,7 @@ impl Action for ActKillSwitch {
                 if owner.physics.is_visible {
                     let fg = (255, 10, 90, 180);
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '◘', 500.0);
+                    register_particle(owner.pos.into(), fg, bg, '◘', 500.0, (1.0, 1.0));
                 }
                 ActionResult::Success { callback }
             }
@@ -826,7 +835,7 @@ impl Action for ActKillSwitch {
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
                             let bg = palette().col_transparent;
-                            register_particle(target.pos.into(), fg, bg, '◘', 500.0);
+                            register_particle(target.pos.into(), fg, bg, '◘', 500.0, (1.0, 1.0));
                         }
                     }
 
@@ -932,13 +941,14 @@ impl Action for ActBinaryFission {
                                 let bg = owner.visual.bg_color;
                                 register_particles(
                                     ParticleBuilder::new(
-                                        owner.pos.into(),
+                                        owner.pos.x as f32,
+                                        owner.pos.y as f32,
                                         fg,
                                         bg,
                                         owner.visual.glyph,
                                         600.0,
                                     )
-                                    .with_moving_to(t.pos.into())
+                                    .with_moving_to(t.pos.x as f32, t.pos.y as f32)
                                     .with_end_color((180, 255, 180, 180), (0, 0, 0, 0)),
                                 )
                             }
@@ -984,19 +994,25 @@ impl Action for ActBinaryFission {
                             // cover up the new cell as long as the creation particles play
                             let t_fg = t.visual.fg_color;
                             let t_bg = t.visual.bg_color;
-                            register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0);
+                            register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0, (1.0, 1.0));
                             let fg = owner.visual.fg_color;
                             let bg = owner.visual.bg_color;
+                            let start_x =
+                                owner.pos.x as f32 + ((t.pos.x - owner.pos.x) as f32 * 0.5);
+                            let start_y =
+                                owner.pos.y as f32 + ((t.pos.y - owner.pos.y) as f32 * 0.5);
                             register_particles(
                                 ParticleBuilder::new(
-                                    owner.pos.into(),
+                                    start_x,
+                                    start_y,
                                     fg,
                                     bg,
                                     child.visual.glyph,
                                     600.0,
                                 )
-                                .with_moving_to(t.pos.into())
-                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0)),
+                                .with_moving_to(t.pos.x as f32, t.pos.y as f32)
+                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                                .with_scale((0.0, 0.0), (1.0, 1.0)),
                             )
                         }
                         Some(child)

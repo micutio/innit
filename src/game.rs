@@ -32,7 +32,7 @@ use crate::ui::particles;
 use crate::ui::rex_assets::RexAssets;
 use crate::util::timer::{time_from, Timer};
 use core::fmt;
-use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, PointF, Rltk};
+use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 #[cfg(not(target_arch = "wasm32"))]
@@ -351,7 +351,7 @@ impl Rltk_GameState for Game {
                     particle.pos,
                     1,
                     Degrees::new(0.0),
-                    PointF::new(1.0, 1.0),
+                    particle.scale.into(),
                     ColorPair::new(particle.col_fg, particle.col_bg),
                     to_cp437(particle.glyph),
                 );

@@ -14,6 +14,7 @@ pub struct Particle {
     pub lifetime: f32,
     /// delay until the particle is displayed, given in [ms]
     pub start_delay: f32,
+    pub scale: (f32, f32),
 }
 
 impl Particle {
@@ -25,6 +26,7 @@ impl Particle {
         glyph: char,
         lifetime: f32,
         start_delay: f32,
+        scale: (f32, f32),
     ) -> Self
     where
         NumT: TryInto<f32>,
@@ -40,31 +42,41 @@ impl Particle {
             glyph,
             lifetime,
             start_delay,
+            scale,
         }
     }
 }
 
 pub struct ParticleBuilder {
-    pos: Position,
+    pos: PointF,
     col_fg: RGBA,
     col_bg: RGBA,
     glyph: char,
     lifetime: f32,
     start_delay: f32,
-    end_pos: Option<Position>,
+    end_pos: Option<PointF>,
     end_col: Option<(RGBA, RGBA)>,
+    scale: Option<((f32, f32), (f32, f32))>,
 }
 
 impl ParticleBuilder {
-    pub fn new<T: Into<RGBA>>(
-        pos: Position,
-        col_fg: T,
-        col_bg: T,
+    pub fn new<NumT, RgbT>(
+        x: NumT,
+        y: NumT,
+        col_fg: RgbT,
+        col_bg: RgbT,
         glyph: char,
         lifetime: f32,
-    ) -> Self {
+    ) -> Self
+    where
+        NumT: TryInto<f32>,
+        RgbT: Into<RGBA>,
+    {
         ParticleBuilder {
-            pos,
+            pos: PointF::new(
+                x.try_into().ok().unwrap_or(0.0),
+                y.try_into().ok().unwrap_or(0.0),
+            ),
             col_fg: col_fg.into(),
             col_bg: col_bg.into(),
             glyph,
@@ -72,6 +84,7 @@ impl ParticleBuilder {
             start_delay: 0.0,
             end_pos: None,
             end_col: None,
+            scale: None,
         }
     }
 
@@ -80,13 +93,21 @@ impl ParticleBuilder {
         self
     }
 
-    pub fn with_moving_to(mut self, end_pos: Position) -> Self {
-        self.end_pos = Some(end_pos);
+    pub fn with_moving_to<NumT: TryInto<f32>>(mut self, x: NumT, y: NumT) -> Self {
+        self.end_pos = Some(PointF::new(
+            x.try_into().ok().unwrap_or(0.0),
+            y.try_into().ok().unwrap_or(0.0),
+        ));
         self
     }
 
     pub fn with_end_color<T: Into<RGBA>>(mut self, col_fg: T, col_bg: T) -> Self {
         self.end_col = Some((col_fg.into(), col_bg.into()));
+        self
+    }
+
+    pub fn with_scale(mut self, start_scale: (f32, f32), end_scale: (f32, f32)) -> Self {
+        self.scale = Some((start_scale, end_scale));
         self
     }
 
@@ -114,6 +135,12 @@ impl ParticleBuilder {
                         RGBA::from(self.col_fg).lerp(c.1, progress),
                     )
                 });
+                let scale = self.scale.map_or((1.0, 1.0), |(start_sc, end_sc)| {
+                    (
+                        start_sc.0 + (progress * (end_sc.0 - start_sc.0)),
+                        start_sc.1 + (progress * (end_sc.1 - start_sc.1)),
+                    )
+                });
                 let particle = Particle::new(
                     pos.x,
                     pos.y,
@@ -122,6 +149,7 @@ impl ParticleBuilder {
                     self.glyph,
                     TIME_MS_PER_FRAME,
                     self.start_delay + t,
+                    scale,
                 );
                 particles.push(particle);
                 t += TIME_MS_PER_FRAME;
