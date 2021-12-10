@@ -99,15 +99,15 @@ pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
     hud_fg_msg_story: (100, 180, 255, 255),
 
     // world colors
-    world_bg: (39, 39, 39, 255),
-    world_bg_wall_fov_true: (176, 52, 96, 255),
-    world_bg_wall_fov_false: (39, 39, 39, 255),
-    world_bg_ground_fov_true: (124, 8, 59, 255),
-    world_bg_ground_fov_false: (39, 39, 39, 255),
+    world_bg: (49, 49, 49, 255),
+    world_bg_wall_fov_true: (206, 82, 126, 255),
+    world_bg_wall_fov_false: (54, 54, 54, 255),
+    world_bg_ground_fov_true: (154, 38, 84, 255),
+    world_bg_ground_fov_false: (54, 54, 54, 255),
     world_fg_wall_fov_true: (218, 85, 135, 255),
-    world_fg_wall_fov_false: (49, 49, 49, 255),
-    world_fg_ground_fov_true: (144, 48, 90, 255),
-    world_fg_ground_fov_false: (49, 49, 49, 255),
+    world_fg_wall_fov_false: (75, 75, 75, 255),
+    world_fg_ground_fov_true: (134, 38, 80, 255),
+    world_fg_ground_fov_false: (75, 75, 75, 255),
 
     // entity colors
     entity_player: (170, 170, 170, 255),
