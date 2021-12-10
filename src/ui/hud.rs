@@ -12,7 +12,7 @@
 use crate::core::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
-use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
+use crate::game::{HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::palette;
 use crate::{entity::action::Target, util::text_to_width};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
@@ -454,7 +454,7 @@ pub fn render_gui(state: &GameState, hud: &mut Hud, _ctx: &mut Rltk, player: &Ob
     render_ui_items(hud, &mut draw_batch);
     render_tooltip(hud, &mut draw_batch);
 
-    draw_batch.submit(5000).unwrap();
+    draw_batch.submit(HUD_CON).unwrap();
 }
 
 fn render_dna_region(draw_batch: &mut DrawBatch) {

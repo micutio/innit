@@ -267,7 +267,6 @@ impl GameState {
         if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
             let gene_width = 3;
-            println!("ACTOR RAW DNA LENGTH: {}", actor.dna.raw.len());
             let trait_count = actor.dna.raw.len() / gene_width as usize;
             let trait_start = self.rng.gen_range(0..trait_count) * gene_width;
             let trait_end = trait_start + gene_width as usize;

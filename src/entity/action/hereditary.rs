@@ -189,6 +189,7 @@ impl Action for ActRepairStructure {
                 palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
+                (1.0, 1.0),
             )
         }
         ActionResult::Success {
@@ -278,6 +279,7 @@ impl Action for ActAttack {
                         palette().col_transparent,
                         'x',
                         250.0,
+                        (1.0, 1.0),
                     )
                 }
 
@@ -322,95 +324,6 @@ impl Action for ActAttack {
         format!("attack {:?}", self.target)
     }
 }
-
-// TODO: Add actions for
-// - attaching to another cell
-// - inserting genome into another cell
-// - immobilising and manipulating another cell
-// - producing stuff
-
-// /// Attach to another object.
-// #[derive(Debug, Serialize, Deserialize, Clone)]
-// pub struct ActAttach {
-//     lvl: i32,
-//     target: Target,
-// }
-//
-// impl ActAttach {
-//     pub fn new() -> Self {
-//         ActAttach {
-//             lvl: 0,
-//             target: Target::Center,
-//         }
-//     }
-// }
-//
-// #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-// impl Action for ActAttach {
-//     fn perform(
-//         &self,
-//         state: &mut GameState,
-//         objects: &mut GameObjects,
-//         owner: &mut Object,
-//     ) -> ActionResult {
-//         // get coords of self position plus direction
-//         // find any objects that are at that position and blocking
-//         // assert that there is only one available
-//         // return
-//         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-//         let valid_target: Option<&mut Object> = objects
-//             .get_vector_mut()
-//             .iter_mut()
-//             .flatten()
-//             .find(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos));
-//
-//         match valid_target {
-//             Some(t) => {
-//                 // deal damage
-//                 t.actuators.hp -= self.lvl;
-//                 debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
-//                 state.log.add(
-//                     format!(
-//                         "{} attacked {} for {} damage",
-//                         &owner.visual.name, &t.visual.name, self.lvl
-//                     ),
-//                     MsgClass::Info,
-//                 );
-//                 ActionResult::Success {
-//                     callback: ObjectFeedback::NoFeedback,
-//                 }
-//             }
-//             None => {
-//                 state.log.add("Nothing to attack here", MsgClass::Info);
-//                 ActionResult::Failure
-//             }
-//         }
-//     }
-//
-//     fn set_target(&mut self, target: Target) {
-//         self.target = target;
-//     }
-//
-//     fn set_level(&mut self, lvl: i32) {
-//         self.lvl = lvl;
-//     }
-//
-//     fn get_target_category(&self) -> TargetCategory {
-//         TargetCategory::BlockingObject
-//     }
-//
-//     fn get_identifier(&self) -> String {
-//         "attack".to_string()
-//     }
-//
-//     fn get_energy_cost(&self) -> i32 {
-//         self.lvl
-//     }
-//
-//     fn to_text(&self) -> String {
-//         format!("attack {:?}", self.target)
-//     }
-// }
 
 /// A virus' sole purpose is to go forth and multiply.
 /// This action corresponds to the virus trait which is located at the beginning of virus DNA.
@@ -598,7 +511,7 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().col_acc3;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -613,7 +526,7 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().col_acc3;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0);
+                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -642,7 +555,14 @@ impl Action for ActInjectRetrovirus {
                     // play a little particle effect
                     let fg = palette().hud_fg_bar_health;
                     let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, target.visual.glyph, 350.0);
+                    register_particle(
+                        owner.pos.into(),
+                        fg,
+                        bg,
+                        target.visual.glyph,
+                        350.0,
+                        (1.0, 1.0),
+                    );
                 }
             }
             objects.replace(index, target);
@@ -879,18 +799,31 @@ impl Action for ActKillSwitch {
     ) -> ActionResult {
         match self.target {
             Target::Center => {
+                // play a little particle effect
+                if owner.physics.is_visible {
+                    let fg = (255, 10, 90, 180);
+                    let bg = palette().col_transparent;
+
+                    register_particles(
+                        ParticleBuilder::new(
+                            owner.pos.x as f32,
+                            owner.pos.y as f32,
+                            fg,
+                            bg,
+                            owner.visual.glyph,
+                            600.0,
+                        )
+                        .with_end_color((0, 0, 0, 0), bg)
+                        .with_scale((0.0, 0.0), (1.0, 1.0)),
+                    )
+                }
                 owner.die(state, objects);
                 let callback = if owner.physics.is_visible {
                     ObjectFeedback::Render
                 } else {
                     ObjectFeedback::NoFeedback
                 };
-                // play a little particle effect
-                if owner.physics.is_visible {
-                    let fg = (255, 10, 90, 180);
-                    let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '☼', 500.0);
-                }
+
                 ActionResult::Success { callback }
             }
 
@@ -911,12 +844,24 @@ impl Action for ActKillSwitch {
                         .iter()
                         .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
                     if has_killswitch && has_matching_receptor {
-                        target.die(state, objects);
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
                             let bg = palette().col_transparent;
-                            register_particle(target.pos.into(), fg, bg, '◘', 500.0);
+
+                            register_particles(
+                                ParticleBuilder::new(
+                                    target.pos.x as f32,
+                                    target.pos.y as f32,
+                                    fg,
+                                    bg,
+                                    target.visual.glyph,
+                                    600.0,
+                                )
+                                .with_end_color((0, 0, 0, 0), bg)
+                                .with_scale((0.0, 0.0), (1.0, 1.0)),
+                            )
                         }
+                        target.die(state, objects);
                     }
 
                     let callback = if !target.alive && target.physics.is_visible {
@@ -1013,12 +958,31 @@ impl Action for ActBinaryFission {
 
                             // play a little particle effect
                             if t.physics.is_visible {
-                                let fg = (180, 255, 180, 180);
-                                let bg = palette().col_transparent;
+                                // cover up the new cell as long as the creation particles play
+                                let t_fg = t.visual.fg_color;
+                                let t_bg = t.visual.bg_color;
+                                register_particle(
+                                    t.pos,
+                                    t_fg,
+                                    t_bg,
+                                    t.visual.glyph,
+                                    600.0,
+                                    (1.0, 1.0),
+                                );
+                                let fg = owner.visual.fg_color;
+                                let bg = owner.visual.bg_color;
                                 register_particles(
-                                    ParticleBuilder::new(owner.pos.into(), fg, bg, '◘', 600.0)
-                                        .with_moving_to(t.pos.into())
-                                        .with_end_color((180, 255, 180, 180), bg),
+                                    ParticleBuilder::new(
+                                        owner.pos.x as f32,
+                                        owner.pos.y as f32,
+                                        fg,
+                                        bg,
+                                        owner.visual.glyph,
+                                        600.0,
+                                    )
+                                    .with_moving_to(t.pos.x as f32, t.pos.y as f32)
+                                    .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                                    .with_scale((0.0, 0.0), (1.0, 1.0)),
                                 )
                             }
 
@@ -1060,9 +1024,29 @@ impl Action for ActBinaryFission {
                         child.physics.is_visible = t.physics.is_visible;
                         // play a little particle effect
                         if child.physics.is_visible {
-                            let fg = (10, 255, 180, 180);
-                            let bg = palette().col_transparent;
-                            register_particle(child.pos.into(), fg, bg, '◘', 500.0);
+                            // cover up the new cell as long as the creation particles play
+                            let t_fg = t.visual.fg_color;
+                            let t_bg = t.visual.bg_color;
+                            register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0, (1.0, 1.0));
+                            let fg = owner.visual.fg_color;
+                            let bg = owner.visual.bg_color;
+                            let start_x =
+                                owner.pos.x as f32 + ((t.pos.x - owner.pos.x) as f32 * 0.5);
+                            let start_y =
+                                owner.pos.y as f32 + ((t.pos.y - owner.pos.y) as f32 * 0.5);
+                            register_particles(
+                                ParticleBuilder::new(
+                                    start_x,
+                                    start_y,
+                                    fg,
+                                    bg,
+                                    child.visual.glyph,
+                                    600.0,
+                                )
+                                .with_moving_to(t.pos.x as f32, t.pos.y as f32)
+                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                                .with_scale((0.0, 0.0), (1.0, 1.0)),
+                            )
                         }
                         Some(child)
                     }

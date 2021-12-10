@@ -473,7 +473,7 @@ impl GenomeEditor {
             ColorPair::new(hud_fg, hud_bg),
         );
 
-        draw_batch.submit(6000).unwrap();
+        draw_batch.submit(HUD_CON).unwrap();
     }
 
     fn read_input(mut self, game_state: &mut GameState, ctx: &mut Rltk) -> RunState {
