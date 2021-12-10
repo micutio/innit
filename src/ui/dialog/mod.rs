@@ -2,7 +2,7 @@ pub mod character;
 pub mod controls;
 
 use crate::{
-    game::{SCREEN_HEIGHT, SCREEN_WIDTH},
+    game::{HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH},
     ui::palette,
 };
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
@@ -58,7 +58,7 @@ impl InfoBox {
             );
         }
 
-        draw_batch.submit(6000).unwrap();
+        draw_batch.submit(HUD_CON).unwrap();
     }
 
     /// Main menu of the game.

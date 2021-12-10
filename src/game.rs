@@ -357,8 +357,7 @@ impl Rltk_GameState for Game {
                 );
             }
         }
-        // TODO: Use constants for z_order!
-        draw_batch.submit(10000).unwrap();
+        draw_batch.submit(PAR_CON).unwrap();
         self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
