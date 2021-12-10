@@ -799,18 +799,31 @@ impl Action for ActKillSwitch {
     ) -> ActionResult {
         match self.target {
             Target::Center => {
+                // play a little particle effect
+                if owner.physics.is_visible {
+                    let fg = (255, 10, 90, 180);
+                    let bg = palette().col_transparent;
+
+                    register_particles(
+                        ParticleBuilder::new(
+                            owner.pos.x as f32,
+                            owner.pos.y as f32,
+                            fg,
+                            bg,
+                            owner.visual.glyph,
+                            600.0,
+                        )
+                        .with_end_color((0, 0, 0, 0), bg)
+                        .with_scale((0.0, 0.0), (1.0, 1.0)),
+                    )
+                }
                 owner.die(state, objects);
                 let callback = if owner.physics.is_visible {
                     ObjectFeedback::Render
                 } else {
                     ObjectFeedback::NoFeedback
                 };
-                // play a little particle effect
-                if owner.physics.is_visible {
-                    let fg = (255, 10, 90, 180);
-                    let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '◘', 500.0, (1.0, 1.0));
-                }
+
                 ActionResult::Success { callback }
             }
 
@@ -831,12 +844,24 @@ impl Action for ActKillSwitch {
                         .iter()
                         .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
                     if has_killswitch && has_matching_receptor {
-                        target.die(state, objects);
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
                             let bg = palette().col_transparent;
-                            register_particle(target.pos.into(), fg, bg, '◘', 500.0, (1.0, 1.0));
+
+                            register_particles(
+                                ParticleBuilder::new(
+                                    target.pos.x as f32,
+                                    target.pos.y as f32,
+                                    fg,
+                                    bg,
+                                    target.visual.glyph,
+                                    600.0,
+                                )
+                                .with_end_color((0, 0, 0, 0), bg)
+                                .with_scale((0.0, 0.0), (1.0, 1.0)),
+                            )
                         }
+                        target.die(state, objects);
                     }
 
                     let callback = if !target.alive && target.physics.is_visible {

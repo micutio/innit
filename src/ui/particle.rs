@@ -32,9 +32,11 @@ impl Particle {
         RgbT: Into<RGBA>,
     {
         Particle {
+            // For some reason the y-coordinate needs to be adjusted by 1 for the particle to be
+            // correct, no idea why.
             pos: PointF::new(
                 x.try_into().ok().unwrap_or(0.0),
-                y.try_into().ok().unwrap_or(0.0),
+                y.try_into().ok().unwrap_or(0.0) + 1.0,
             ),
             col_fg: col_fg.into(),
             col_bg: col_bg.into(),
@@ -116,16 +118,15 @@ impl ParticleBuilder {
 
         // if we have multiple particles, then render one per frame
         if self.end_pos.is_some() || self.end_col.is_some() {
-            let pos_f = PointF::new(self.pos.x as f32, self.pos.y as f32);
+            let pos_start = PointF::new(self.pos.x as f32, self.pos.y as f32);
 
             let mut t = 0.0;
             while t < self.lifetime {
                 let progress = t / self.lifetime;
-                println!("PROGRESS: {}%", progress);
-                let pos = self.end_pos.map_or(pos_f, |p| {
+                let pos = self.end_pos.map_or(pos_start, |pos_end| {
                     PointF::new(
-                        pos_f.x + (progress * (p.x as f32 - pos_f.x)),
-                        pos_f.y + (progress * (p.y as f32 - pos_f.y)),
+                        pos_start.x + (progress * (pos_end.x as f32 - pos_start.x)),
+                        pos_start.y + (progress * (pos_end.y as f32 - pos_start.y)),
                     )
                 });
                 let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
