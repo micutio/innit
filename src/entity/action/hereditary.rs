@@ -959,8 +959,8 @@ impl Action for ActBinaryFission {
                             // play a little particle effect
                             if t.physics.is_visible {
                                 // cover up the new cell as long as the creation particles play
-                                let t_fg = t.visual.fg_color;
-                                let t_bg = t.visual.bg_color;
+                                let t_fg = palette().world_bg;
+                                let t_bg = palette().world_bg;
                                 register_particle(
                                     t.pos,
                                     t_fg,
