@@ -4,7 +4,7 @@ they have a plasmid that allows this.
 */
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
-use crate::game::{RunState, HUD_CON, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{RunState, HUD_CON, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
 use crate::util::game_rng::RngExtended;
 use crate::{core::game_state::GameState, ui::palette};
@@ -473,7 +473,7 @@ impl GenomeEditor {
             ColorPair::new(hud_fg, hud_bg),
         );
 
-        draw_batch.submit(HUD_CON).unwrap();
+        draw_batch.submit(HUD_CON_Z).unwrap();
     }
 
     fn read_input(mut self, game_state: &mut GameState, ctx: &mut Rltk) -> RunState {

@@ -3,7 +3,7 @@ pub mod game_over_menu;
 pub mod main_menu;
 
 use crate::core::game_state::GameState;
-use crate::game::{RunState, HUD_CON, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{RunState, HUD_CON, HUD_CON_Z, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::hud::{ToolTip, UiItem};
 use crate::{core::game_objects::GameObjects, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
@@ -72,7 +72,7 @@ impl<T: MenuItem> Menu<T> {
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }
 
-        draw_batch.submit(HUD_CON).unwrap();
+        draw_batch.submit(HUD_CON_Z).unwrap();
     }
 
     /// Main menu of the game.

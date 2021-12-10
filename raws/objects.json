@@ -18,8 +18,16 @@
         "controller": "AiVirus",
         "dna_type": "Rna",
         "dna_template": {
-            "Random": {
-                "genome_len": 10
+            "Defined": {
+                "traits": [
+                    "LTR marker",
+                    "Receptor",
+                    "Attack",
+                    "Repair Structure",
+                    "Kill Switch",
+                    "Kill Switch",
+                    "LTR marker"
+                ]
             }
         },
         "stability": 0.90

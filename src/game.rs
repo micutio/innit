@@ -52,8 +52,11 @@ pub const SIDE_PANEL_WIDTH: i32 = 20;
 pub const SIDE_PANEL_HEIGHT: i32 = 60;
 // consoles
 pub const WORLD_CON: usize = 0;
+pub const WORLD_CON_Z: usize = 1000;
 pub const HUD_CON: usize = 1;
+pub const HUD_CON_Z: usize = 10000;
 pub const PAR_CON: usize = 2;
+pub const PAR_CON_Z: usize = 20000;
 
 pub const MENU_WIDTH: i32 = 20;
 
@@ -357,7 +360,7 @@ impl Rltk_GameState for Game {
                 );
             }
         }
-        draw_batch.submit(PAR_CON).unwrap();
+        draw_batch.submit(PAR_CON_Z).unwrap();
         self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();

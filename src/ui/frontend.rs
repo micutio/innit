@@ -2,7 +2,7 @@ use crate::core::innit_env;
 use crate::core::position::Position;
 use crate::core::world::is_explored;
 use crate::entity::object::Object;
-use crate::game::{WORLD_CON, WORLD_HEIGHT, WORLD_WIDTH};
+use crate::game::{WORLD_CON_Z, WORLD_HEIGHT, WORLD_WIDTH};
 use crate::util::timer::{time_from, Timer};
 use crate::{core::game_objects::GameObjects, ui::palette};
 use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB, RGBA};
@@ -48,7 +48,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     let elapsed = timer.stop_silent();
     info!("render world in {}", time_from(elapsed));
 
-    draw_batch.submit(WORLD_CON).unwrap()
+    draw_batch.submit(WORLD_CON_Z).unwrap()
 }
 
 fn update_visibility(objects: &mut GameObjects) {
