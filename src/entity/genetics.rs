@@ -613,11 +613,6 @@ impl GeneLibrary {
                 return (i, end_ptr);
             }
             // take u8 word and map it to action/attribute
-            // match self.gray_to_trait.get(&dna[i]) {
-            //     Some(Trait::TAttribute(attr)) => trait_builder.add_attribute(*attr),
-            //     Some(Trait::TAction(actn)) => trait_builder.add_action(*actn),
-            //     None => {}
-            // }
             if let Some(trait_name) = self.gray_to_trait.get(&dna[i]) {
                 // println!("gtt[{} (dna[{}])] -> {}", &dna[i], i, trait_name);
                 if let Some(genetic_trait) = self

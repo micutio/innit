@@ -201,12 +201,12 @@ impl Ai for AiVirus {
             .flatten()
             .filter(|obj| {
                 owner.pos.is_adjacent(&obj.pos)
-                    && (obj.physics.is_blocking)
+                    && obj.physics.is_blocking
                     && obj
                         .processors
                         .receptors
                         .iter()
-                        .any(|e| owner.processors.receptors.contains(e))
+                        .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
             })
             .choose(&mut state.rng)
         {
