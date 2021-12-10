@@ -1,6 +1,5 @@
 //! This module contains the particle/animation system
 
-use crate::core::position::Position;
 use rltk::{PointF, Rltk, RGBA};
 
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;

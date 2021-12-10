@@ -936,7 +936,14 @@ impl Action for ActBinaryFission {
                                 // cover up the new cell as long as the creation particles play
                                 let t_fg = t.visual.fg_color;
                                 let t_bg = t.visual.bg_color;
-                                // register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0);
+                                register_particle(
+                                    t.pos,
+                                    t_fg,
+                                    t_bg,
+                                    t.visual.glyph,
+                                    600.0,
+                                    (1.0, 1.0),
+                                );
                                 let fg = owner.visual.fg_color;
                                 let bg = owner.visual.bg_color;
                                 register_particles(
@@ -949,7 +956,8 @@ impl Action for ActBinaryFission {
                                         600.0,
                                     )
                                     .with_moving_to(t.pos.x as f32, t.pos.y as f32)
-                                    .with_end_color((180, 255, 180, 180), (0, 0, 0, 0)),
+                                    .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                                    .with_scale((0.0, 0.0), (1.0, 1.0)),
                                 )
                             }
 
