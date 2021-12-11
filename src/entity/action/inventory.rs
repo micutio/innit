@@ -1,9 +1,11 @@
 //! This module contains actions that are automatically available to all objects with an inventory.
 
-use crate::game::game_objects::GameObjects;
-use crate::game::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
-use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
+use crate::entity::action::{self, Action};
 use crate::entity::object::Object;
+use crate::game;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::{GameState, MessageLog};
+
 use serde::{Deserialize, Serialize};
 
 /// Pick up an item and store it in the inventory.
@@ -17,7 +19,7 @@ impl Action for ActPickUpItem {
         state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
-    ) -> ActionResult {
+    ) -> action::ActionResult {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
             // do stuff with object
             if target_obj.item.is_some() {
@@ -28,36 +30,38 @@ impl Action for ActPickUpItem {
                             "{} picked up a {}",
                             owner.visual.name, &target_obj.visual.name
                         ),
-                        MsgClass::Info,
+                        game::game_state::MsgClass::Info,
                     );
                     owner.add_to_inventory(target_obj);
 
                     // keep the object vector neat and tidy
                     objects.get_vector_mut().remove(index);
 
-                    return ActionResult::Success {
-                        callback: ObjectFeedback::NoFeedback,
+                    return action::ActionResult::Success {
+                        callback: action::ObjectFeedback::NoFeedback,
                     };
                 } else {
-                    state.log.add("Your inventory is full!", MsgClass::Info);
+                    state
+                        .log
+                        .add("Your inventory is full!", game::game_state::MsgClass::Info);
                 }
             }
             //else {
             // otherwise put it back into the world
             //}
             objects.replace(index, target_obj);
-            ActionResult::Failure
+            action::ActionResult::Failure
         } else {
-            ActionResult::Failure
+            action::ActionResult::Failure
         }
     }
 
-    fn set_target(&mut self, _t: Target) {}
+    fn set_target(&mut self, _t: action::Target) {}
 
     fn set_level(&mut self, _lvl: i32) {}
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
+    fn get_target_category(&self) -> action::TargetCategory {
+        action::TargetCategory::None
     }
 
     fn get_level(&self) -> i32 {
@@ -96,13 +100,13 @@ impl Action for ActDropItem {
         state: &mut GameState,
         objects: &mut GameObjects,
         owner: &mut Object,
-    ) -> ActionResult {
+    ) -> action::ActionResult {
         // make sure there is an item at slot [self.lvl]
         if owner.inventory.items.len() > self.lvl as usize {
             let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
-                MsgClass::Info,
+                game::game_state::MsgClass::Info,
             );
             // set the item to be dropped at the same position as the player
             item.pos.set(owner.pos.x, owner.pos.y);
@@ -114,22 +118,22 @@ impl Action for ActDropItem {
                     || action.get_level() != self.get_level()
             });
 
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
+            action::ActionResult::Success {
+                callback: action::ObjectFeedback::NoFeedback,
             }
         } else {
-            ActionResult::Failure
+            action::ActionResult::Failure
         }
     }
 
-    fn set_target(&mut self, _t: Target) {}
+    fn set_target(&mut self, _t: action::Target) {}
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;
     }
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
+    fn get_target_category(&self) -> action::TargetCategory {
+        action::TargetCategory::None
     }
 
     fn get_level(&self) -> i32 {

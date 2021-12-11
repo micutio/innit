@@ -13,7 +13,6 @@ use crate::entity::action;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object;
-use crate::entity::player;
 use crate::game::game_state::MessageLog;
 use crate::raws;
 use crate::ui::custom::genome_editor;
@@ -238,7 +237,7 @@ impl Game {
                         .living(true)
                         .visualize("You", '@', (255, 255, 255, 255))
                         .physical(true, false, true)
-                        .control(control::Controller::Player(player::PlayerCtrl::new()))
+                        .control(control::Controller::Player(control::Player::new()))
                         .genome(
                             0.99,
                             self.state
@@ -456,19 +455,17 @@ impl Rltk_GameState for Game {
                 // be printed to the log.
                 'processing: loop {
                     feedback = self.state.process_object(&mut self.objects);
-                    if feedback != game_state::ObjectFeedback::NoFeedback
-                        || self.state.log.is_changed
-                    {
+                    if feedback != action::ObjectFeedback::NoFeedback || self.state.log.is_changed {
                         break 'processing;
                     }
                 }
 
                 trace!("process feedback in RunState::Ticking: {:#?}", feedback);
                 match feedback {
-                    game_state::ObjectFeedback::GameOver => {
+                    action::ObjectFeedback::GameOver => {
                         RunState::GameOver(menu::game_over_menu::game_over_menu())
                     }
-                    game_state::ObjectFeedback::Render => {
+                    action::ObjectFeedback::Render => {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
                         // } else {
@@ -476,7 +473,7 @@ impl Rltk_GameState for Game {
                         RunState::Ticking
                         // }
                     }
-                    game_state::ObjectFeedback::GenomeManipulator => {
+                    action::ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
                             create_genome_manipulator(&mut self.state, &mut self.objects)
                         {
@@ -485,7 +482,7 @@ impl Rltk_GameState for Game {
                             RunState::CheckInput
                         }
                     }
-                    game_state::ObjectFeedback::UpdateHud => {
+                    action::ObjectFeedback::UpdateHud => {
                         self.hud.require_refresh = true;
                         RunState::Ticking
                     }

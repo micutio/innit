@@ -10,7 +10,7 @@ fn test_random_ai() {
     use crate::entity::ai::AiVirus;
     use crate::entity::genetics::{DnaType, GENOME_LEN};
     use crate::entity::object::Object;
-    use crate::entity::player::PLAYER;
+    use crate::game::game_env::PLAYER;
     use crate::ui::palette;
 
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();

@@ -1,5 +1,5 @@
 use crate::entity::object::{self, Object};
-use crate::entity::{action, ai, control, genetics, player};
+use crate::entity::{action, ai, control, genetics};
 use crate::game::{self, GameObjects, GameState};
 use crate::raws;
 use crate::util::rng::RngExtended;
@@ -252,7 +252,7 @@ fn place_objects(
                 use control::Controller;
                 let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
                     match ctrl.as_str() {
-                        "player" => Some(Controller::Player(player::PlayerCtrl::new())),
+                        "player" => Some(Controller::Player(control::Player::new())),
                         "AiPassive" => Some(Controller::Npc(Box::new(ai::AiPassive))),
                         "AiRandom" => Some(Controller::Npc(Box::new(ai::AiRandom::new()))),
                         "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::AiRandomWalk))),

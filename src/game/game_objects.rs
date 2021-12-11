@@ -1,6 +1,6 @@
 use crate::entity::genetics::{DnaType, GeneLibrary, GENOME_LEN};
 use crate::entity::object::Object;
-use crate::entity::player::PLAYER;
+use crate::game::game_env::PLAYER;
 use crate::game::position::Position;
 use crate::game::world_gen::Tile;
 use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};

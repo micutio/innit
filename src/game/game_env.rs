@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub const PLAYER: usize = 0; // player object reference, index of the object vector
+
 #[derive(Clone, Copy, Serialize, Deserialize, Default)]
 pub struct GameEnv {
     /// if true: run innit in debug mode
