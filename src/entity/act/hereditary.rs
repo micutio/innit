@@ -1067,7 +1067,7 @@ impl Action for BinaryFission {
 
             // finally place the 'child' cell into the world
             if let Some(child) = child_obj {
-                let callback = if child.physics.is_visible && !game::innit_env().is_debug_mode {
+                let callback = if child.physics.is_visible && !game::env().is_debug_mode {
                     ObjectFeedback::Render
                 } else {
                     ObjectFeedback::NoFeedback

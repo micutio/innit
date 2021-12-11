@@ -1,10 +1,9 @@
 use crate::entity::act::*;
 use crate::entity::control::Controller::Player;
-use crate::game::State;
-use crate::game::innit_env;
 use crate::game::objects::ObjectStore;
 use crate::game::position::Position;
-use crate::game::WORLD_WIDTH;
+use crate::game::State;
+use crate::game::{self, env};
 use crate::ui::game_input::PlayerAction::PrimaryAction;
 use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
 use crate::ui::hud::{Hud, HudItem, ToolTip};
@@ -56,7 +55,7 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
         (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
         (VirtualKeyCode::E, false, true) => MetaInput(ChooseQuick2Action),
         (VirtualKeyCode::G, false, false) => {
-            if innit_env().is_debug_mode {
+            if env().is_debug_mode {
                 MetaInput(GenomeEditor)
             } else {
                 Undefined
@@ -159,7 +158,7 @@ pub fn read_input(
     );
 
     // 3) if mouse is hovering over world
-    if mouse.x < WORLD_WIDTH {
+    if mouse.x < game::consts::WORLD_WIDTH {
         // 3b) check whether a mouse button has been pressed for player action
         if is_clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action

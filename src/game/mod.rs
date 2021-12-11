@@ -1,12 +1,14 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-pub mod game_env;
+pub mod consts;
+pub mod env;
 pub mod msg;
 pub mod objects;
 pub mod position;
 mod state;
 
+pub use env::env;
 pub use objects::ObjectStore;
 pub use state::State;
 
@@ -37,36 +39,6 @@ use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 #[cfg(not(target_arch = "wasm32"))]
 use std::io::{Read, Write};
-
-use std::sync::{Mutex, MutexGuard};
-
-lazy_static! {
-    static ref GAME_ENV: Mutex<game_env::GameEnv> = Mutex::new(game_env::GameEnv::new());
-}
-
-pub fn innit_env<'a>() -> MutexGuard<'a, game_env::GameEnv> {
-    GAME_ENV.lock().unwrap()
-}
-
-// environment constraints
-// game window
-pub const SCREEN_WIDTH: i32 = 100;
-pub const SCREEN_HEIGHT: i32 = 60;
-// world
-pub const WORLD_WIDTH: i32 = 80;
-pub const WORLD_HEIGHT: i32 = 60;
-// sidebar
-pub const SIDE_PANEL_WIDTH: i32 = 20;
-pub const SIDE_PANEL_HEIGHT: i32 = 60;
-// consoles
-pub const WORLD_CON: usize = 0;
-pub const WORLD_CON_Z: usize = 1000;
-pub const HUD_CON: usize = 1;
-pub const HUD_CON_Z: usize = 10000;
-pub const PAR_CON: usize = 2;
-pub const PAR_CON_Z: usize = 20000;
-
-pub const MENU_WIDTH: i32 = 20;
 
 #[derive(Debug)]
 pub enum RunState {
@@ -206,7 +178,7 @@ impl Game {
                     &self.state.gene_library,
                 );
 
-                if !innit_env().is_spectating {
+                if !env::env().is_spectating {
                     // create object representing the player
                     let (new_x, new_y) = self.world_generator.get_player_start_pos();
                     // let dna = self.state.gene_library.dna_from_distribution(
@@ -347,16 +319,16 @@ impl Rltk_GameState for Game {
             //     "{}, {}, {}",
             //     self.re_render, self.hud.require_refresh, self.state.log.is_changed
             // );
-            ctx.set_active_console(HUD_CON);
+            ctx.set_active_console(consts::HUD_CON);
             ctx.cls();
 
             // if self.re_render || self.hud.require_refresh {
-            ctx.set_active_console(WORLD_CON);
+            ctx.set_active_console(consts::WORLD_CON);
             ctx.cls();
             frontend::render_world(&mut self.objects, ctx);
             // }
 
-            ctx.set_active_console(HUD_CON);
+            ctx.set_active_console(consts::HUD_CON);
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
@@ -375,7 +347,7 @@ impl Rltk_GameState for Game {
 
         // The particles need to be queried each cycle to activate and cull them in time.
         // TODO: move particle render routine into separate function
-        ctx.set_active_console(PAR_CON);
+        ctx.set_active_console(consts::PAR_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
         for particle in &particles().particles {
@@ -390,7 +362,7 @@ impl Rltk_GameState for Game {
                 );
             }
         }
-        draw_batch.submit(PAR_CON_Z).unwrap();
+        draw_batch.submit(consts::PAR_CON_Z).unwrap();
         self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
@@ -400,7 +372,7 @@ impl Rltk_GameState for Game {
                 self.hud.require_refresh = false;
                 self.re_render = false;
                 particles().particles.clear();
-                ctx.set_active_console(WORLD_CON);
+                ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
@@ -418,12 +390,12 @@ impl Rltk_GameState for Game {
                 self.hud.require_refresh = false;
                 self.re_render = false;
                 particles().particles.clear();
-                ctx.set_active_console(WORLD_CON);
+                ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 let fg = palette().hud_fg_dna_sensor;
                 let bg = palette().hud_bg;
-                ctx.print_color_centered_at(SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
+                ctx.print_color_centered_at(consts::SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
                     Some(option) => {
                         <menu::game_over_menu::GameOverMenuItem as menu::MenuItem>::process(
@@ -491,7 +463,7 @@ impl Rltk_GameState for Game {
                     _ => {
                         if self.state.is_players_turn()
                             && (self.state.player_energy_full(&self.objects)
-                                || innit_env().is_spectating)
+                                || env::env().is_spectating)
                         {
                             RunState::CheckInput
                         } else {
@@ -549,7 +521,7 @@ impl Rltk_GameState for Game {
                     game_input::PlayerInput::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
                         // checking for input
-                        if innit_env().is_spectating {
+                        if env::env().is_spectating {
                             RunState::Ticking
                         } else {
                             RunState::CheckInput
@@ -594,7 +566,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::WorldGen => {
-                if innit_env().is_debug_mode {
+                if env::env().is_debug_mode {
                     self.re_render = true;
                 }
                 self.world_gen()
@@ -602,7 +574,7 @@ impl Rltk_GameState for Game {
         };
         self.run_state.replace(new_run_state);
 
-        ctx.set_active_console(HUD_CON);
+        ctx.set_active_console(consts::HUD_CON);
         ctx.print_color(
             1,
             1,
@@ -740,13 +712,13 @@ pub fn handle_meta_actions(
         }
         UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
         UiAction::SetFont(x) => {
-            ctx.set_active_console(WORLD_CON);
+            ctx.set_active_console(consts::WORLD_CON);
             ctx.set_active_font(x, false);
             // ctx.cls();
-            ctx.set_active_console(HUD_CON);
+            ctx.set_active_console(consts::HUD_CON);
             ctx.set_active_font(x, false);
             // ctx.cls();
-            ctx.set_active_console(PAR_CON);
+            ctx.set_active_console(consts::PAR_CON);
             ctx.set_active_font(x, false);
             // ctx.cls();
             RunState::CheckInput

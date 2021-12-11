@@ -1,9 +1,8 @@
 use crate::entity::genetics::{DnaType, GeneLibrary, GENOME_LEN};
 use crate::entity::object::Object;
-use crate::game::game_env::PLAYER;
+use crate::game;
 use crate::game::position::Position;
 use crate::game::world_gen::Tile;
-use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 use crate::rand::Rng;
 use crate::util::rng::GameRng;
 use rltk::{Algorithm2D, BaseMap, Point};
@@ -27,7 +26,7 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let world_tile_count = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
+        let world_tile_count = (game::consts::WORLD_WIDTH * game::consts::WORLD_HEIGHT) as usize;
         let obj_vec = Vec::new();
         // obj_vec.push(None);
         // obj_vec.resize_with(num_world_tiles + 1, || None);
@@ -40,7 +39,7 @@ impl ObjectStore {
 
     pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
         // offset by one because player is the first object
-        &mut self.obj_vec[(y as usize * (WORLD_WIDTH as usize) + x as usize) + 1]
+        &mut self.obj_vec[(y as usize * (game::consts::WORLD_WIDTH as usize) + x as usize) + 1]
     }
 
     /// Allocate enough space in the object vector to fit the player and all world tiles.
@@ -48,21 +47,22 @@ impl ObjectStore {
         assert!(self.obj_vec.is_empty());
         self.obj_vec.push(None);
         self.obj_vec.resize_with(self.world_tile_count + 1, || None);
-        for y in 0..WORLD_HEIGHT {
-            for x in 0..WORLD_WIDTH {
+        for y in 0..game::consts::WORLD_HEIGHT {
+            for x in 0..game::consts::WORLD_WIDTH {
                 // debug!("placing tile at ({}, {})", x, y);
-                self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
+                self.obj_vec
+                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
                     .replace(Tile::wall(x, y, false));
             }
         }
     }
 
     pub fn _set_tile_dna_random(&mut self, rng: &mut GameRng, gene_library: &GeneLibrary) {
-        for y in 0..WORLD_HEIGHT {
-            for x in 0..WORLD_WIDTH {
+        for y in 0..game::consts::WORLD_HEIGHT {
+            for x in 0..game::consts::WORLD_WIDTH {
                 // debug!("setting tile dna at ({}, {})", x, y);
-                if let Some(tile) =
-                    &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
+                if let Some(tile) = &mut self.obj_vec
+                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) =
                         gene_library.new_genetics(rng, DnaType::Nucleus, false, GENOME_LEN);
@@ -78,10 +78,10 @@ impl ObjectStore {
         traits: Vec<String>,
         gene_library: &GeneLibrary,
     ) {
-        for y in 0..WORLD_HEIGHT {
-            for x in 0..WORLD_WIDTH {
-                if let Some(tile) =
-                    &mut self.obj_vec[((y as usize) * (WORLD_WIDTH as usize) + (x as usize)) + 1]
+        for y in 0..game::consts::WORLD_HEIGHT {
+            for x in 0..game::consts::WORLD_WIDTH {
+                if let Some(tile) = &mut self.obj_vec
+                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) = gene_library.dna_to_traits(
                         DnaType::Nucleus,
@@ -100,7 +100,7 @@ impl ObjectStore {
     }
 
     pub fn set_player(&mut self, object: Object) {
-        match &mut self.obj_vec[PLAYER] {
+        match &mut self.obj_vec[game::consts::PLAYER] {
             Some(player) => {
                 panic!(
                     "Error: trying to replace the player {:?} with {:?}",
@@ -109,7 +109,7 @@ impl ObjectStore {
             }
             None => {
                 trace!("setting player object {:?}", object);
-                self.obj_vec[PLAYER].replace(object);
+                self.obj_vec[game::consts::PLAYER].replace(object);
             }
         }
     }
@@ -239,7 +239,7 @@ impl ObjectStore {
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles(&self) -> &[Option<Object>] {
         let start: usize = 1;
-        let end: usize = WORLD_HEIGHT as usize * WORLD_WIDTH as usize;
+        let end: usize = game::consts::WORLD_HEIGHT as usize * game::consts::WORLD_WIDTH as usize;
         &self.obj_vec[start..end]
     }
 
@@ -250,13 +250,13 @@ impl ObjectStore {
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
         let start: usize = 1;
-        let end: usize = WORLD_HEIGHT as usize * WORLD_WIDTH as usize;
+        let end: usize = game::consts::WORLD_HEIGHT as usize * game::consts::WORLD_WIDTH as usize;
         &mut self.obj_vec[start..end]
     }
 
     /// Return a Vec slice with all objects that are not tiles in the world.
     pub fn get_non_tiles(&self) -> &[Option<Object>] {
-        let start: usize = WORLD_HEIGHT as usize * WORLD_WIDTH as usize;
+        let start: usize = game::consts::WORLD_HEIGHT as usize * game::consts::WORLD_WIDTH as usize;
         &self.obj_vec[start..]
     }
 }
@@ -297,7 +297,7 @@ impl BaseMap for ObjectStore {
     }
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
-        let w = WORLD_WIDTH as usize;
+        let w = game::consts::WORLD_WIDTH as usize;
         let p1 = Point::new(idx1 % w, idx1 / w);
         let p2 = Point::new(idx2 % w, idx2 / w);
         rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
@@ -307,19 +307,19 @@ impl BaseMap for ObjectStore {
 impl Algorithm2D for ObjectStore {
     /// Convert a Point (x/y) to an array index.
     fn point2d_to_index(&self, pt: Point) -> usize {
-        (pt.y as usize * (WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)
+        (pt.y as usize * (game::consts::WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)
     }
 
     /// Convert an array index to a point. Defaults to an index based on an array
     fn index_to_point2d(&self, idx: usize) -> Point {
         Point::new(
-            (idx - 1) as i32 % WORLD_WIDTH,
-            (idx - 1) as i32 / WORLD_WIDTH,
+            (idx - 1) as i32 % game::consts::WORLD_WIDTH,
+            (idx - 1) as i32 / game::consts::WORLD_WIDTH,
         )
     }
 
     fn dimensions(&self) -> Point {
-        Point::new(WORLD_WIDTH, WORLD_HEIGHT)
+        Point::new(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT)
     }
 }
 
@@ -359,7 +359,11 @@ impl<'a> Iterator for Neighborhood<'a> {
 
                 self.count += 1;
 
-                if x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT {
+                if x >= 0
+                    && x < game::consts::WORLD_WIDTH
+                    && y >= 0
+                    && y < game::consts::WORLD_HEIGHT
+                {
                     return Some(&self.buffer[position_to_index(x, y)]);
                 }
             }
@@ -370,13 +374,13 @@ impl<'a> Iterator for Neighborhood<'a> {
 
 /// Convert a Point (x/y) to an array index.
 fn position_to_index(x: i32, y: i32) -> usize {
-    (y as usize * (WORLD_WIDTH as usize) + x as usize) + (1 as usize)
+    (y as usize * (game::consts::WORLD_WIDTH as usize) + x as usize) + (1 as usize)
 }
 
 /// Convert an array index to a point. Defaults to an index based on an array
 fn _index_to_position(idx: usize) -> Position {
     Position::new(
-        (idx - 1) as i32 % WORLD_WIDTH,
-        (idx - 1) as i32 / WORLD_WIDTH,
+        (idx - 1) as i32 % game::consts::WORLD_WIDTH,
+        (idx - 1) as i32 / game::consts::WORLD_WIDTH,
     )
 }

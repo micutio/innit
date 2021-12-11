@@ -1,6 +1,6 @@
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
-use crate::game::innit_env;
+use crate::game::env;
 use crate::game::State;
 use crate::world_gen::Tile;
 use crate::{entity::act::Move, game::objects::ObjectStore};
@@ -10,7 +10,7 @@ fn test_random_ai() {
     use crate::entity::ai::AiVirus;
     use crate::entity::genetics::{DnaType, GENOME_LEN};
     use crate::entity::object::Object;
-    use crate::game::game_env::PLAYER;
+    use crate::game::consts::PLAYER;
     use crate::ui::palette;
 
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
@@ -115,7 +115,7 @@ fn test_random_ai() {
 fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
     use crate::entity::ai::AiRandom;
     use crate::entity::object::Object;
-    use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
+    use crate::game::consts::{WORLD_HEIGHT, WORLD_WIDTH};
 
     // create game state holding game-relevant information
     let level = 1;
@@ -130,19 +130,19 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
     // make tiles near the player walkable
     objects
         .get_tile_at(p_x, p_y)
-        .replace(Tile::floor(p_x, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x + 1, p_y)
-        .replace(Tile::floor(p_x + 1, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x + 1, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x - 1, p_y)
-        .replace(Tile::floor(p_x - 1, p_y, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x - 1, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x, p_y - 1)
-        .replace(Tile::floor(p_x, p_y - 1, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y - 1, env().is_debug_mode));
     objects
         .get_tile_at(p_x, p_y + 1)
-        .replace(Tile::floor(p_x, p_y + 1, innit_env().is_debug_mode));
+        .replace(Tile::floor(p_x, p_y + 1, env().is_debug_mode));
 
     let player = Object::new()
         .position(p_x, p_y)

@@ -9,14 +9,13 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
-use crate::entity::genetics::TraitFamily;
-use crate::entity::object::Object;
-use crate::game::State;
-use crate::game::{
-    self, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH,
-};
+use crate::entity::act;
+use crate::entity::genetics;
+use crate::entity::Object;
+use crate::game::{self, State};
 use crate::ui::palette;
-use crate::{entity::act::Target, util::text_to_width};
+use crate::util;
+
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties
@@ -91,12 +90,12 @@ impl HudItem {
 }
 
 fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
-    let button_len = SIDE_PANEL_WIDTH / 2;
+    let button_len = game::consts::SIDE_PANEL_WIDTH / 2;
     let button_x = hud_layout.x1 + 3;
     let fg_col = palette().hud_fg;
     let bg_col = palette().hud_bg;
     let col_pair = ColorPair::new(fg_col, bg_col);
-    let bar_width = SIDE_PANEL_WIDTH - 3;
+    let bar_width = game::consts::SIDE_PANEL_WIDTH - 3;
     let items = vec![
         UiItem::new(
             HudItem::BarItem,
@@ -247,13 +246,13 @@ pub struct Hud {
 
 impl Hud {
     pub fn new() -> Self {
-        let x1 = SCREEN_WIDTH - SIDE_PANEL_WIDTH;
+        let x1 = game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH;
         let y1 = 0;
-        let x2 = x1 + SIDE_PANEL_WIDTH - 1;
-        let y2 = SIDE_PANEL_HEIGHT - 1;
+        let x2 = x1 + game::consts::SIDE_PANEL_WIDTH - 1;
+        let y2 = game::consts::SIDE_PANEL_HEIGHT - 1;
         let layout = Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = Rect::with_exact(x1 + 1, 13, SCREEN_WIDTH - 2, 23);
-        let log_area = Rect::with_exact(x1 + 1, 26, SCREEN_WIDTH - 2, 58);
+        let inv_area = Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
+        let log_area = Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
         Hud {
             layout,
             inv_area,
@@ -290,12 +289,13 @@ impl Hud {
 
         let combined_simplified_dna = player.get_combined_simplified_dna();
         let player_dna_length = player.dna.simplified.len();
-        let horiz_display_count = SIDE_PANEL_WIDTH as usize - 5;
+        let horiz_display_count = game::consts::SIDE_PANEL_WIDTH as usize - 5;
         for (h_offset, g_trait) in combined_simplified_dna
             .iter()
             .take(horiz_display_count)
             .enumerate()
         {
+            use genetics::TraitFamily;
             let col: (u8, u8, u8, u8) = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
@@ -326,7 +326,9 @@ impl Hud {
                 dna_glyph,
                 ToolTip::no_header(tooltip_text),
                 Rect::with_size(
-                    SCREEN_WIDTH - SIDE_PANEL_WIDTH + 3 + h_offset as i32,
+                    game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH
+                        + 3
+                        + h_offset as i32,
                     0,
                     1,
                     1,
@@ -341,9 +343,10 @@ impl Hud {
             .enumerate()
         {
             // abort if we're running out of vertical rendering space
-            if v_offset >= SCREEN_HEIGHT as usize {
+            if v_offset >= game::consts::SCREEN_HEIGHT as usize {
                 break;
             }
+            use genetics::TraitFamily;
             let col: (u8, u8, u8, u8) = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
@@ -373,7 +376,7 @@ impl Hud {
                 HudItem::DnaItem,
                 dna_glyph,
                 ToolTip::no_header(tooltip_text),
-                Rect::with_size(SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
+                Rect::with_size(game::consts::SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
                 ColorPair::new(col, bg_color),
             ));
         }
@@ -456,24 +459,37 @@ pub fn render_gui(state: &State, hud: &mut Hud, _ctx: &mut Rltk, player: &Object
     render_ui_items(hud, &mut draw_batch);
     render_tooltip(hud, &mut draw_batch);
 
-    draw_batch.submit(HUD_CON_Z).unwrap();
+    draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
 }
 
 fn render_dna_region(draw_batch: &mut DrawBatch) {
     let fg_hud = palette().hud_fg;
     let bg_dna = palette().hud_bg_dna;
     draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - 1, 0, 0, SCREEN_HEIGHT - 1),
+        Rect::with_size(
+            game::consts::SCREEN_WIDTH - 1,
+            0,
+            0,
+            game::consts::SCREEN_HEIGHT - 1,
+        ),
         ColorPair::new(bg_dna, bg_dna),
         to_cp437(' '),
     );
     draw_batch.fill_region(
-        Rect::with_size(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0, SIDE_PANEL_WIDTH - 1, 0),
+        Rect::with_size(
+            game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
+            0,
+            game::consts::SIDE_PANEL_WIDTH - 1,
+            0,
+        ),
         ColorPair::new(bg_dna, bg_dna),
         to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(SCREEN_WIDTH - SIDE_PANEL_WIDTH, 0),
+        Point::new(
+            game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
+            0,
+        ),
         "DNA ",
         ColorPair::new(fg_hud, bg_dna),
     );
@@ -488,8 +504,8 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let energy = palette().hud_fg_bar_energy;
 
     let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
-    let bar_x = SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1;
-    let bar_width = SIDE_PANEL_WIDTH - 4;
+    let bar_x = game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH + 1;
+    let bar_width = game::consts::SIDE_PANEL_WIDTH - 4;
 
     // draw headers for bars
     draw_batch.print_color(Point::new(bar_x, 2), '+', bar_icon_col);
@@ -567,11 +583,11 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
     let action_bg = palette().hud_bg;
     let action_fg = palette().hud_fg;
     let action_fg_hl = palette().hud_fg_highlight;
-    let x = SCREEN_WIDTH - SIDE_PANEL_WIDTH + 1;
+    let x = game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH + 1;
 
     // draw action header
     draw_batch.fill_region(
-        Rect::with_size(x - 1, 6, SIDE_PANEL_WIDTH - 1, 0),
+        Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH - 1, 0),
         ColorPair::new(action_fg, action_header_bg),
         to_cp437(' '),
     );
@@ -603,8 +619,8 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
     );
 
     // update action button texts
-    let p_action = player.get_primary_action(Target::Center);
-    let s_action = player.get_secondary_action(Target::Center);
+    let p_action = player.get_primary_action(act::Target::Center);
+    let s_action = player.get_secondary_action(act::Target::Center);
     let q1_action = player.get_quick1_action();
     let q2_action = player.get_quick2_action();
     hud.items.iter_mut().for_each(|i| match i.item_enum {
@@ -689,7 +705,7 @@ fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
     let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
     let mut log_lines: Vec<(String, (u8, u8, u8, u8), (u8, u8, u8, u8))> = Vec::new();
     for (msg, class) in &state.log.messages {
-        let lines = text_to_width(&msg, layout.width());
+        let lines = util::text_to_width(&msg, layout.width());
         let fg_color = match class {
             game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
             game::msg::MsgClass::Info => palette().hud_fg_msg_info,
@@ -761,10 +777,10 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
     let is_render_horiz = max_width < max_height;
     let is_forwards: bool = if is_render_horiz {
         // check whether to render tooltips left-to-right or the other way around
-        hud.last_mouse.x < SCREEN_WIDTH - hud.last_mouse.x
+        hud.last_mouse.x < game::consts::SCREEN_WIDTH - hud.last_mouse.x
     } else {
         // check whether to render tooltips up-down or the other way around
-        hud.last_mouse.y < SCREEN_HEIGHT - hud.last_mouse.y
+        hud.last_mouse.y < game::consts::SCREEN_HEIGHT - hud.last_mouse.y
     };
 
     let x_direction = match (is_render_horiz, is_forwards) {
@@ -772,10 +788,10 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         (true, false) => -1,
         (false, _) => 1,
     };
-    let mut next_x = if hud.last_mouse.x + x_direction + max_width < SCREEN_WIDTH {
+    let mut next_x = if hud.last_mouse.x + x_direction + max_width < game::consts::SCREEN_WIDTH {
         hud.last_mouse.x + x_direction
     } else {
-        hud.last_mouse.x - (hud.last_mouse.x + x_direction + max_width - SCREEN_WIDTH)
+        hud.last_mouse.x - (hud.last_mouse.x + x_direction + max_width - game::consts::SCREEN_WIDTH)
     };
 
     let y_direction = match (is_render_horiz, is_forwards) {
@@ -783,10 +799,11 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         (false, true) => 1,
         (false, false) => -1,
     };
-    let mut next_y = if hud.last_mouse.y + y_direction + max_height < SCREEN_HEIGHT {
+    let mut next_y = if hud.last_mouse.y + y_direction + max_height < game::consts::SCREEN_HEIGHT {
         hud.last_mouse.y + y_direction
     } else {
-        hud.last_mouse.y - (hud.last_mouse.y + y_direction + max_height - SCREEN_HEIGHT)
+        hud.last_mouse.y
+            - (hud.last_mouse.y + y_direction + max_height - game::consts::SCREEN_HEIGHT)
     };
 
     // define tooltip colors
@@ -861,11 +878,11 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         // advance x and y coordinates for next box
         if is_render_horiz {
             let projected_x = next_x + (tt_width * x_direction);
-            if projected_x > 0 && projected_x < SCREEN_WIDTH {
+            if projected_x > 0 && projected_x < game::consts::SCREEN_WIDTH {
                 next_x = projected_x;
             } else {
                 if x_direction < 0 {
-                    next_x = SCREEN_WIDTH - 1;
+                    next_x = game::consts::SCREEN_WIDTH - 1;
                 } else {
                     next_x = 1;
                 }
@@ -873,11 +890,11 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
             }
         } else {
             let projected_y = next_y + 1 + (tt_height * x_direction);
-            if projected_y > 0 && projected_y < SCREEN_HEIGHT {
+            if projected_y > 0 && projected_y < game::consts::SCREEN_HEIGHT {
                 next_y = projected_y;
             } else {
                 if y_direction < 0 {
-                    next_y = SCREEN_HEIGHT - 1;
+                    next_y = game::consts::SCREEN_HEIGHT - 1;
                 } else {
                     next_y = 1
                 }

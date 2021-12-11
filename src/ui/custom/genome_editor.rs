@@ -4,8 +4,7 @@ they have a plasmid that allows this.
 */
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
-use crate::game::State;
-use crate::game::{RunState, HUD_CON, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{self, State};
 use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
@@ -133,8 +132,8 @@ impl GenomeEditor {
         let total_width = func_width.max(dna.simplified.len() as i32 + 2);
         let total_height = 16;
         let layout = rltk::Rect::with_size(
-            (SCREEN_WIDTH / 2) - (total_width / 2),
-            (SCREEN_HEIGHT / 2) - (total_height / 2),
+            (game::consts::SCREEN_WIDTH / 2) - (total_width / 2),
+            (game::consts::SCREEN_HEIGHT / 2) - (total_height / 2),
             total_width,
             total_height,
         );
@@ -183,7 +182,7 @@ impl GenomeEditor {
             .collect()
     }
 
-    pub fn display(self, game_state: &mut State, ctx: &mut rltk::Rltk) -> RunState {
+    pub fn display(self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
         // 1. render everything
         self.render(game_state, ctx);
 
@@ -192,7 +191,7 @@ impl GenomeEditor {
     }
 
     fn render(&self, game_state: &mut State, ctx: &mut rltk::Rltk) {
-        ctx.set_active_console(HUD_CON);
+        ctx.set_active_console(game::consts::HUD_CON);
         ctx.cls();
         let mut draw_batch = rltk::DrawBatch::new();
         let hud_fg = ui::palette().hud_fg;
@@ -480,10 +479,10 @@ impl GenomeEditor {
             rltk::ColorPair::new(hud_fg, hud_bg),
         );
 
-        draw_batch.submit(HUD_CON_Z).unwrap();
+        draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
 
-    fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::Rltk) -> RunState {
+    fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
         // wait for user input
         // a) keyboard input
         // if we have a key activity, process and return immediately
@@ -581,17 +580,17 @@ impl GenomeEditor {
                 Return => {
                     // use dummy value, this function will call itself with the correct value.
                     return match self.state {
-                        ChooseGene => RunState::GenomeEditing(self),
+                        ChooseGene => game::RunState::GenomeEditing(self),
                         _ => {
                             let function_idx: usize = self.selected_function;
                             self.do_action(game_state, function_idx)
                         }
                     };
                 }
-                Escape => return RunState::CheckInput,
+                Escape => return game::RunState::CheckInput,
                 _ => {}
             }
-            return RunState::GenomeEditing(self);
+            return game::RunState::GenomeEditing(self);
         }
 
         // b) mouse input
@@ -679,10 +678,10 @@ impl GenomeEditor {
             }
         }
 
-        RunState::GenomeEditing(self)
+        game::RunState::GenomeEditing(self)
     }
 
-    fn do_action(mut self, game_state: &mut State, active_idx: usize) -> RunState {
+    fn do_action(mut self, game_state: &mut State, active_idx: usize) -> game::RunState {
         if let Some(item) = self.edit_functions.get(active_idx) {
             self.selected_function = item.idx;
             use GenomeEditingState::*;
@@ -748,12 +747,12 @@ impl GenomeEditor {
                 Done => {
                     // apply changed genome to player
                     self.state = Done;
-                    return RunState::GenomeEditing(self);
+                    return game::RunState::GenomeEditing(self);
                 }
                 _ => {}
             }
         }
-        RunState::GenomeEditing(self)
+        game::RunState::GenomeEditing(self)
     }
 
     /// Decrease the plasmid charge and update the UI accordingly

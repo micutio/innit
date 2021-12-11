@@ -2,8 +2,9 @@ use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::msg::MessageLog;
 use crate::game::objects::ObjectStore;
-use crate::game::{game_env, msg};
+use crate::game::{consts, msg};
 use crate::util::rng;
+
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +24,7 @@ pub struct State {
 
 impl State {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if super::innit_env().is_using_fixed_seed {
+        let rng_seed = if super::env().is_using_fixed_seed {
             0
         } else {
             rand::thread_rng().next_u64()
@@ -37,7 +38,7 @@ impl State {
             dungeon_level: level,
             gene_library: genetics::GeneLibrary::new(),
             obj_idx: 0,
-            player_idx: game_env::PLAYER,
+            player_idx: consts::PLAYER,
         }
     }
 
@@ -306,7 +307,7 @@ impl State {
                 objects.get_vector_mut().remove(self.obj_idx);
             }
             // if the "main" player is dead, the game is over
-            if self.obj_idx == game_env::PLAYER {
+            if self.obj_idx == consts::PLAYER {
                 *process_result = act::ObjectFeedback::GameOver;
             }
         } else {

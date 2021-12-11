@@ -11,7 +11,7 @@ const CA_CYCLES: i32 = 150;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking
 /// blood vessels, branching fractal-like lungs, spongy tissue and more.
-// TODO: Rename into game::world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
+// TODO: Rename into game::consts::world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
 //       once we have more than one CA variant.
 pub struct CaBased {
     player_start: (i32, i32),
@@ -41,7 +41,10 @@ impl WorldGen for CaBased {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
             self.ca = Some(make_ca(state));
-            self.player_start = (game::WORLD_WIDTH / 2, game::WORLD_HEIGHT / 2);
+            self.player_start = (
+                game::consts::WORLD_WIDTH / 2,
+                game::consts::WORLD_HEIGHT / 2,
+            );
         }
 
         // step 2: use cellular automaton to fill in and smooth out
@@ -72,7 +75,7 @@ impl WorldGen for CaBased {
                 }
             }
             self.ca_cycle_count += 1;
-            if game::innit_env().is_debug_mode {
+            if game::env().is_debug_mode {
                 return game::RunState::WorldGen;
             }
         }
@@ -121,21 +124,22 @@ impl Default for CellState {
 /// Create a cellular automaton from the tiles of the game world.
 fn make_ca(state: &mut State) -> Simulation<CaCell> {
     // init cells
-    let mut cells = vec![CaCell::default(); (game::WORLD_WIDTH * game::WORLD_HEIGHT) as usize];
-    let mid_x = game::WORLD_WIDTH / 2;
-    let mid_y = game::WORLD_HEIGHT / 2;
+    let mut cells =
+        vec![CaCell::default(); (game::consts::WORLD_WIDTH * game::consts::WORLD_HEIGHT) as usize];
+    let mid_x = game::consts::WORLD_WIDTH / 2;
+    let mid_y = game::consts::WORLD_HEIGHT / 2;
     // let max_dist =
-    //     f64::sqrt((game::WORLD_WIDTH * game::WORLD_WIDTH) as f64 + (game::WORLD_HEIGHT * game::WORLD_HEIGHT) as f64);
-    let max_dist = i32::max(game::WORLD_WIDTH, game::WORLD_HEIGHT) as f64;
-    for y in 0..game::WORLD_HEIGHT {
-        for x in 0..game::WORLD_WIDTH {
-            let idx = coord_to_idx(game::WORLD_WIDTH, x, y);
+    //     f64::sqrt((game::consts::WORLD_WIDTH * game::consts::WORLD_WIDTH) as f64 + (game::consts::WORLD_HEIGHT * game::consts::WORLD_HEIGHT) as f64);
+    let max_dist = i32::max(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT) as f64;
+    for y in 0..game::consts::WORLD_HEIGHT {
+        for x in 0..game::consts::WORLD_WIDTH {
+            let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
             let cell = &mut cells[idx];
             // let dist_to_mid =
             //     f64::sqrt(f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0));
             // let morphogen = 1.0 - f64::min((dist_to_mid * 2.0) / max_dist, 0.01);
-            let dist_to_x_border = i32::min(x, game::WORLD_WIDTH - x);
-            let dist_to_y_border = i32::min(y, game::WORLD_HEIGHT - y);
+            let dist_to_x_border = i32::min(x, game::consts::WORLD_WIDTH - x);
+            let dist_to_y_border = i32::min(y, game::consts::WORLD_HEIGHT - y);
             let min_dist_border = i32::min(dist_to_x_border, dist_to_y_border);
 
             let morphogen = (((min_dist_border * 2) as f64 / max_dist) * 0.20) + 0.50;
@@ -150,7 +154,7 @@ fn make_ca(state: &mut State) -> Simulation<CaCell> {
         }
     }
 
-    let mid_idx = coord_to_idx(game::WORLD_WIDTH, mid_x, mid_y);
+    let mid_idx = coord_to_idx(game::consts::WORLD_WIDTH, mid_x, mid_y);
     cells[mid_idx].state = CellState::BURNING;
 
     // transition function
@@ -202,8 +206,8 @@ fn make_ca(state: &mut State) -> Simulation<CaCell> {
     };
 
     Simulation::from_cells(
-        game::WORLD_WIDTH,
-        game::WORLD_HEIGHT,
+        game::consts::WORLD_WIDTH,
+        game::consts::WORLD_HEIGHT,
         trans_fn,
         VON_NEUMAN_NEIGHBORHOOD,
         cells,

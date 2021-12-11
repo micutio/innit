@@ -1,5 +1,5 @@
 use crate::entity::Object;
-use crate::game::{self, objects::ObjectStore, position::Position, WORLD_WIDTH};
+use crate::game::{self, objects::ObjectStore, position::Position};
 use crate::ui;
 use crate::util::timer;
 use crate::world_gen;
@@ -13,7 +13,12 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     let world_col = ui::palette().world_bg;
 
     draw_batch.fill_region(
-        rltk::Rect::with_size(0, 0, game::WORLD_WIDTH - 1, game::WORLD_HEIGHT - 1),
+        rltk::Rect::with_size(
+            0,
+            0,
+            game::consts::WORLD_WIDTH - 1,
+            game::consts::WORLD_HEIGHT - 1,
+        ),
         rltk::ColorPair::new(world_col, world_col),
         rltk::to_cp437(' '),
     );
@@ -26,7 +31,7 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
         .flatten()
         .filter(|o| {
             // Is there a better way than using `and_then`?
-            game::innit_env().is_debug_mode
+            game::env().is_debug_mode
                 || o.physics.is_visible
                 || o.physics.is_always_visible
                 || (o.tile.is_some() && *o.tile.as_ref().and_then(world_gen::is_explored).unwrap())
@@ -47,12 +52,12 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     let elapsed = timer.stop_silent();
     info!("render world in {}", timer::time_to_str(elapsed));
 
-    draw_batch.submit(game::WORLD_CON_Z).unwrap()
+    draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
 }
 
 fn update_visibility(objects: &mut ObjectStore) {
     // in debug mode everything is visible
-    if game::innit_env().is_debug_mode {
+    if game::env().is_debug_mode {
         let bwft = ui::palette().world_bg_wall_fov_true;
         let bgft = ui::palette().world_bg_ground_fov_true;
         let fwft = ui::palette().world_fg_wall_fov_true;
@@ -83,8 +88,9 @@ fn update_visibility(objects: &mut ObjectStore) {
     // set all objects invisible by default
     let mut dist_map: Vec<f32> = vec![
         f32::MAX;
-        (game::WORLD_HEIGHT * game::WORLD_WIDTH) as usize
-            + game::WORLD_WIDTH as usize
+        (game::consts::WORLD_HEIGHT * game::consts::WORLD_WIDTH)
+            as usize
+            + game::consts::WORLD_WIDTH as usize
     ];
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
@@ -96,7 +102,10 @@ fn update_visibility(objects: &mut ObjectStore) {
     for (pos, range) in player_positions {
         let mut visible_pos = rltk::field_of_view(pos.into(), range, objects);
         visible_pos.retain(|p| {
-            p.x >= 0 && p.x < game::WORLD_WIDTH && p.y >= 0 && p.y < game::WORLD_HEIGHT
+            p.x >= 0
+                && p.x < game::consts::WORLD_WIDTH
+                && p.y >= 0
+                && p.y < game::consts::WORLD_HEIGHT
         });
 
         for object_opt in objects.get_vector_mut() {
@@ -130,7 +139,7 @@ fn update_visual(
 
     let wall = object.physics.is_blocking_sight;
 
-    let idx = object.pos.y as usize * (WORLD_WIDTH as usize) + object.pos.x as usize;
+    let idx = object.pos.y as usize * (game::consts::WORLD_WIDTH as usize) + object.pos.x as usize;
     if idx >= dist_map.len() {
         panic!("Invalid object index!");
     }
@@ -158,7 +167,7 @@ fn update_visual(
         if object.physics.is_visible {
             tile.is_explored = true;
         }
-        if tile.is_explored || game::innit_env().is_debug_mode {
+        if tile.is_explored || game::env().is_debug_mode {
             // show explored tiles only (any visible tile is explored already)
             object.visual.fg_color = (
                 (tile_color_fg.r * 255.0) as u8,

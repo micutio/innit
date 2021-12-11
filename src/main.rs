@@ -80,13 +80,13 @@ pub fn main() -> rltk::BError {
     debug!("args: {:?}", args);
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
-            game::innit_env().set_debug_mode(true);
+            game::env().set_debug_mode(true);
         }
         if arg.eq("-s") || arg.eq("--seeding") {
-            game::innit_env().set_rng_seeding(true);
+            game::env().set_rng_seeding(true);
         }
         if arg.eq("--spectate") {
-            game::innit_env().set_spectating(true);
+            game::env().set_spectating(true);
         }
     }
 
@@ -109,7 +109,7 @@ pub fn main() -> rltk::BError {
     let font_14x14_rex_paint = "fonts/rex_paint_14x14.png";
     let font_16x16_rex_paint = "fonts/rex_paint_16x16.png";
     let mut context = rltk::RltkBuilder::new()
-        .with_dimensions(game::SCREEN_WIDTH, game::SCREEN_HEIGHT)
+        .with_dimensions(game::consts::SCREEN_WIDTH, game::consts::SCREEN_HEIGHT)
         .with_font(font_8x8_cheepicus, 8, 8)
         .with_font(font_12x12_cheepicus, 12, 12)
         .with_font(font_14x14_cheepicus, 14, 14)
@@ -119,9 +119,21 @@ pub fn main() -> rltk::BError {
         .with_font(font_14x14_rex_paint, 14, 14)
         .with_font(font_16x16_rex_paint, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(game::SCREEN_WIDTH, game::SCREEN_HEIGHT, font_8x8_cheepicus) // world layer
-        .with_fancy_console(game::SCREEN_WIDTH, game::SCREEN_HEIGHT, font_8x8_cheepicus) // hud layer
-        .with_fancy_console(game::SCREEN_WIDTH, game::SCREEN_HEIGHT, font_8x8_cheepicus) // particles layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // world layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // hud layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // particles layer
         .with_title("Innit alpha v0.0.4")
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
