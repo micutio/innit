@@ -3,7 +3,7 @@ use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::game::game_state::GameState;
 use crate::game::innit_env;
 use crate::world_gen::Tile;
-use crate::{entity::act::Move, game::game_objects::GameObjects};
+use crate::{entity::act::Move, game::objects::GameObjects};
 
 #[test]
 fn test_random_ai() {

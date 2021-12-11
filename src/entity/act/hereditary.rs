@@ -6,7 +6,7 @@ use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object::Object;
 use crate::game;
-use crate::game::game_objects::GameObjects;
+use crate::game::objects::GameObjects;
 use crate::game::game_state::{GameState, MessageLog};
 use crate::game::position::Position;
 use crate::ui::{self, particle};

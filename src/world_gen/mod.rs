@@ -6,8 +6,8 @@ pub mod rogue;
 
 use crate::entity::{ai, control, Object};
 use crate::game;
-use crate::game::game_objects::GameObjects;
 use crate::game::game_state::GameState;
+use crate::game::objects::GameObjects;
 use crate::raws;
 use serde::{Deserialize, Serialize};
 

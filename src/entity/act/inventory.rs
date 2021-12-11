@@ -3,7 +3,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
 use crate::game;
-use crate::game::game_objects::GameObjects;
+use crate::game::objects::GameObjects;
 use crate::game::game_state::{GameState, MessageLog};
 
 use serde::{Deserialize, Serialize};

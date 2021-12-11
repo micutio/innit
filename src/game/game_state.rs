@@ -1,7 +1,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::game_env;
-use crate::game::game_objects::GameObjects;
+use crate::game::objects::GameObjects;
 use crate::util::rng;
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};

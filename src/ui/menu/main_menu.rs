@@ -1,4 +1,4 @@
-use crate::game::game_objects::GameObjects;
+use crate::game::objects::GameObjects;
 use crate::game::game_state::GameState;
 use crate::game::RunState;
 use crate::ui::menu::{Menu, MenuItem};

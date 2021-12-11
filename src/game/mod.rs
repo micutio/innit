@@ -2,11 +2,11 @@
 //! the game loop is executed.
 
 pub mod game_env;
-pub mod game_objects;
+pub mod objects;
 pub mod game_state;
 pub mod position;
 
-pub use game_objects::GameObjects;
+pub use objects::GameObjects;
 pub use game_state::GameState;
 
 use crate::entity::act;

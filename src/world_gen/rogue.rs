@@ -1,5 +1,5 @@
 use crate::entity::object::Object;
-use crate::game::{self, game_objects::GameObjects, game_state::GameState, innit_env};
+use crate::game::{self, objects::GameObjects, game_state::GameState, innit_env};
 use crate::raws;
 use crate::ui::menu::main_menu::main_menu;
 use crate::ui::palette;

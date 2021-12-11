@@ -1,5 +1,5 @@
 use crate::entity::Object;
-use crate::game::{self, game_objects::GameObjects, position::Position, WORLD_WIDTH};
+use crate::game::{self, objects::GameObjects, position::Position, WORLD_WIDTH};
 use crate::ui;
 use crate::util::timer;
 use crate::world_gen;

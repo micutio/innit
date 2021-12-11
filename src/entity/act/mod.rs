@@ -10,8 +10,8 @@ pub use self::hereditary::*;
 pub use self::inventory::*;
 
 use crate::entity::object::Object;
-use crate::game::game_objects::GameObjects;
 use crate::game::game_state::GameState;
+use crate::game::objects::GameObjects;
 use crate::game::position::Position;
 pub use hereditary::*;
 use serde::{Deserialize, Serialize};

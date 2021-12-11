@@ -1,8 +1,8 @@
 use crate::entity::act::*;
 use crate::entity::control::Controller::Player;
-use crate::game::game_objects::GameObjects;
 use crate::game::game_state::GameState;
 use crate::game::innit_env;
+use crate::game::objects::GameObjects;
 use crate::game::position::Position;
 use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
