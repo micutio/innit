@@ -349,10 +349,12 @@ impl GameState {
         actor: Object,
         process_result: &mut ObjectFeedback,
     ) {
-        if !actor.alive && actor.physics.is_visible {
-            self.log
-                .add(format!("{} died!", actor.visual.name), MsgClass::Alert);
-            debug!("{} died!", actor.visual.name);
+        if !actor.alive {
+            if actor.physics.is_visible {
+                self.log
+                    .add(format!("{} died!", actor.visual.name), MsgClass::Alert);
+                debug!("{} died!", actor.visual.name);
+            }
 
             // if the dead object is a player then keep it in the world,
             // otherwise remove it.
