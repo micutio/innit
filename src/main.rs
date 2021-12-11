@@ -24,7 +24,7 @@ mod raws;
 mod test;
 mod ui;
 mod util;
-mod world;
+mod world_gen;
 
 use std::env;
 

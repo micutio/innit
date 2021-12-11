@@ -9,7 +9,7 @@ use crate::game::position::Position;
 use crate::game::GameObjects;
 use crate::game::GameState;
 use crate::ui::hud;
-use crate::world;
+use crate::world_gen;
 
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
@@ -37,7 +37,7 @@ pub struct Object {
     pub pos: Position,
     pub visual: Visual,
     pub physics: Physics,
-    pub tile: Option<world::Tile>,
+    pub tile: Option<world_gen::Tile>,
     pub control: Option<control::Controller>,
     pub dna: genetics::Dna,
     pub sensors: genetics::Sensors,
@@ -197,7 +197,7 @@ impl Object {
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
     pub fn tile_explored(mut self, is_explored: bool) -> Object {
-        self.tile = Some(world::Tile {
+        self.tile = Some(world_gen::Tile {
             is_explored,
             morphogen: 0.0,
         });

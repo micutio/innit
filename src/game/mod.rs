@@ -26,8 +26,8 @@ use crate::ui::palette;
 use crate::ui::particles;
 use crate::ui::rex_assets;
 use crate::util::timer;
-use crate::world;
-use crate::world::WorldGen;
+use crate::world_gen;
+use crate::world_gen::WorldGen;
 
 use core::fmt;
 use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, Rltk};
@@ -107,7 +107,7 @@ pub struct Game {
     spawns: Vec<raws::spawn::Spawn>,
     object_templates: Vec<raws::object_template::ObjectTemplate>,
     // world_generator = RogueWorldGenerator::new();
-    world_generator: world::world_gen_organic::OrganicsWorldGenerator,
+    world_generator: world_gen::ca::CaBased,
     // world generation state end
     hud: hud::Hud,
     re_render: bool,
@@ -136,7 +136,7 @@ impl Game {
             object_templates: raws::load_object_templates(),
 
             // let mut world_generator : RogueWorldGenerator::new(),
-            world_generator: world::world_gen_organic::OrganicsWorldGenerator::new(),
+            world_generator: world_gen::ca::CaBased::new(),
             hud: hud::Hud::new(),
             re_render: false,
             rex_assets: rex_assets::RexAssets::new(),
@@ -170,7 +170,7 @@ impl Game {
         // let object_templates = load_object_templates();
 
         // // let mut world_generator = RogueWorldGenerator::new();
-        // let mut world_generator = OrganicsWorldGenerator::new();
+        // let mut world_generator = CaBased::new();
 
         (state, objects)
     }
@@ -583,7 +583,7 @@ impl Rltk_GameState for Game {
                 // start new game
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
-                self.world_generator = world::world_gen_organic::OrganicsWorldGenerator::new();
+                self.world_generator = world_gen::ca::CaBased::new();
                 RunState::WorldGen
             }
             RunState::LoadGame => {

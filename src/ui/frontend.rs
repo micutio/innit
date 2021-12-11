@@ -2,7 +2,7 @@ use crate::entity::Object;
 use crate::game::{self, game_objects::GameObjects, position::Position, WORLD_WIDTH};
 use crate::ui;
 use crate::util::timer;
-use crate::world;
+use crate::world_gen;
 
 use rltk;
 
@@ -29,7 +29,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut rltk::Rltk) {
             game::innit_env().is_debug_mode
                 || o.physics.is_visible
                 || o.physics.is_always_visible
-                || (o.tile.is_some() && *o.tile.as_ref().and_then(world::is_explored).unwrap())
+                || (o.tile.is_some() && *o.tile.as_ref().and_then(world_gen::is_explored).unwrap())
         })
         .collect();
 

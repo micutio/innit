@@ -3,7 +3,7 @@ use crate::game::{self, game_objects::GameObjects, game_state::GameState, innit_
 use crate::raws;
 use crate::ui::menu::main_menu::main_menu;
 use crate::ui::palette;
-use crate::world::{Tile, WorldGen};
+use crate::world_gen::{Tile, WorldGen};
 use rand::Rng;
 use std::{cmp, thread, time};
 

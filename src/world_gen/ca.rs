@@ -3,7 +3,7 @@ use crate::entity::{action, ai, control, genetics, player};
 use crate::game::{self, GameObjects, GameState};
 use crate::raws;
 use crate::util::rng::RngExtended;
-use crate::world::WorldGen;
+use crate::world_gen::WorldGen;
 
 use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
 
@@ -13,15 +13,15 @@ const CA_CYCLES: i32 = 150;
 /// blood vessels, branching fractal-like lungs, spongy tissue and more.
 // TODO: Rename into game::world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
 //       once we have more than one CA variant.
-pub struct OrganicsWorldGenerator {
+pub struct CaBased {
     player_start: (i32, i32),
     ca_cycle_count: i32,
     ca: Option<Simulation<CaCell>>,
 }
 
-impl OrganicsWorldGenerator {
+impl CaBased {
     pub fn new() -> Self {
-        OrganicsWorldGenerator {
+        CaBased {
             player_start: (0, 0),
             ca_cycle_count: 0,
             ca: None,
@@ -29,7 +29,7 @@ impl OrganicsWorldGenerator {
     }
 }
 
-impl WorldGen for OrganicsWorldGenerator {
+impl WorldGen for CaBased {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
