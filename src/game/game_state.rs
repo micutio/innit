@@ -1,4 +1,4 @@
-use crate::entity::action::{self, Action};
+use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::game_env;
 use crate::game::game_objects::GameObjects;
@@ -102,7 +102,7 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    pub fn process_object(&mut self, objects: &mut GameObjects) -> action::ObjectFeedback {
+    pub fn process_object(&mut self, objects: &mut GameObjects) -> act::ObjectFeedback {
         // unpack object to process its next action
         if let Some(mut actor) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
@@ -129,7 +129,7 @@ impl GameState {
                 let can_rest = actor.processors.energy == actor.processors.energy_storage;
                 if !actor.has_next_action() && can_rest {
                     objects.replace(self.obj_idx, actor);
-                    return action::ObjectFeedback::NoAction;
+                    return act::ObjectFeedback::NoAction;
                 }
             }
 
@@ -161,26 +161,22 @@ impl GameState {
 
             // increase object index and turn counter
             self.conclude_advance_turn(objects.get_obj_count());
-            action::ObjectFeedback::Render
+            act::ObjectFeedback::Render
         }
     }
 
-    fn take_turn(
-        &mut self,
-        objects: &mut GameObjects,
-        actor: &mut Object,
-    ) -> action::ObjectFeedback {
+    fn take_turn(&mut self, objects: &mut GameObjects, actor: &mut Object) -> act::ObjectFeedback {
         if actor.control.is_none() {
-            return action::ObjectFeedback::NoFeedback;
+            return act::ObjectFeedback::NoFeedback;
         }
 
         if actor.processors.energy < actor.processors.energy_storage {
             // if not enough energy available try to replenish energy via metabolising
             actor.metabolize();
             if self.is_players_turn() {
-                return action::ObjectFeedback::Render;
+                return act::ObjectFeedback::Render;
             } else {
-                return action::ObjectFeedback::NoFeedback;
+                return act::ObjectFeedback::NoFeedback;
             }
         }
 
@@ -192,7 +188,7 @@ impl GameState {
             if next_action.get_energy_cost() > actor.processors.energy_storage {
                 self.log
                     .add("You don't have enough energy for that!", MsgClass::Info);
-                action::ObjectFeedback::NoFeedback
+                act::ObjectFeedback::NoFeedback
             } else {
                 actor.processors.energy -= next_action.get_energy_cost();
                 self.process_action(objects, actor, next_action)
@@ -209,26 +205,26 @@ impl GameState {
         objects: &mut GameObjects,
         actor: &mut Object,
         action: Box<dyn Action>,
-    ) -> action::ObjectFeedback {
+    ) -> act::ObjectFeedback {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            action::ActionResult::Success { callback } => match callback {
-                action::ObjectFeedback::NoFeedback => action::ObjectFeedback::NoFeedback,
+            act::ActionResult::Success { callback } => match callback {
+                act::ObjectFeedback::NoFeedback => act::ObjectFeedback::NoFeedback,
                 _ => callback,
             },
-            action::ActionResult::Failure => action::ObjectFeedback::NoFeedback, // TODO: How to handle fails?
-            action::ActionResult::Consequence {
+            act::ActionResult::Failure => act::ObjectFeedback::NoFeedback, // TODO: How to handle fails?
+            act::ActionResult::Consequence {
                 callback,
                 follow_up,
             } => {
                 let consequence_feedback = self.process_action(objects, actor, follow_up);
                 match (&callback, &consequence_feedback) {
-                    (action::ObjectFeedback::NoFeedback, _) => consequence_feedback,
-                    (action::ObjectFeedback::NoAction, _) => consequence_feedback,
-                    (action::ObjectFeedback::GameOver, _) => callback,
-                    (action::ObjectFeedback::Render, _) => callback,
-                    (action::ObjectFeedback::UpdateHud, _) => callback,
-                    (action::ObjectFeedback::GenomeManipulator, _) => callback,
+                    (act::ObjectFeedback::NoFeedback, _) => consequence_feedback,
+                    (act::ObjectFeedback::NoAction, _) => consequence_feedback,
+                    (act::ObjectFeedback::GameOver, _) => callback,
+                    (act::ObjectFeedback::Render, _) => callback,
+                    (act::ObjectFeedback::UpdateHud, _) => callback,
+                    (act::ObjectFeedback::GenomeManipulator, _) => callback,
                 }
             }
         }
@@ -318,7 +314,7 @@ impl GameState {
         &mut self,
         objects: &mut GameObjects,
         actor: &mut Object,
-        process_result: &mut action::ObjectFeedback,
+        process_result: &mut act::ObjectFeedback,
     ) {
         if actor.actuators.hp == 0 {
             actor.die(self, objects);
@@ -327,8 +323,8 @@ impl GameState {
             // the hud should be updated to show the new lifetime of the player unless already
             // something render-worthy happened
             if actor.is_player() {
-                if let action::ObjectFeedback::NoFeedback = process_result {
-                    *process_result = action::ObjectFeedback::UpdateHud
+                if let act::ObjectFeedback::NoFeedback = process_result {
+                    *process_result = act::ObjectFeedback::UpdateHud
                 };
             }
         }
@@ -338,7 +334,7 @@ impl GameState {
         &mut self,
         objects: &mut GameObjects,
         actor: Object,
-        process_result: &mut action::ObjectFeedback,
+        process_result: &mut act::ObjectFeedback,
     ) {
         if !actor.alive {
             if actor.physics.is_visible {
@@ -357,7 +353,7 @@ impl GameState {
             }
             // if the "main" player is dead, the game is over
             if self.obj_idx == game_env::PLAYER {
-                *process_result = action::ObjectFeedback::GameOver;
+                *process_result = act::ObjectFeedback::GameOver;
             }
         } else {
             objects[self.obj_idx].replace(actor);

@@ -9,12 +9,12 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
-use crate::game::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
+use crate::game::game_state::{GameState, MsgClass};
 use crate::game::{HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
 use crate::ui::palette;
-use crate::{entity::action::Target, util::text_to_width};
+use crate::{entity::act::Target, util::text_to_width};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
 
 /// Menu item properties

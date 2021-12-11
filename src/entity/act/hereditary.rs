@@ -1,6 +1,6 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::entity::action::{Action, ActionResult, ObjectFeedback, Target, TargetCategory};
+use crate::entity::act::{Action, ActionResult, ObjectFeedback, Target, TargetCategory};
 use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
@@ -14,26 +14,26 @@ use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActPass {
+pub struct Pass {
     force_redraw: bool,
 }
 
-impl ActPass {
+impl Pass {
     pub fn update() -> Self {
-        ActPass { force_redraw: true }
+        Pass { force_redraw: true }
     }
 }
 
-impl Default for ActPass {
+impl Default for Pass {
     fn default() -> Self {
-        ActPass {
+        Pass {
             force_redraw: false,
         }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActPass {
+impl Action for Pass {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -84,15 +84,15 @@ impl Action for ActPass {
 
 /// Move an object
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActMove {
+pub struct Move {
     lvl: i32,
     direction: Target,
 }
 
-impl ActMove {
+impl Move {
     // TODO: use level
     pub fn new() -> Self {
-        ActMove {
+        Move {
             lvl: 0,
             direction: Target::Center,
         }
@@ -100,7 +100,7 @@ impl ActMove {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActMove {
+impl Action for Move {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -153,18 +153,18 @@ impl Action for ActMove {
 
 /// Focus on increased energy production for this turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActRepairStructure {
+pub struct RepairStructure {
     lvl: i32,
 }
 
-impl ActRepairStructure {
+impl RepairStructure {
     pub fn new() -> Self {
-        ActRepairStructure { lvl: 0 }
+        RepairStructure { lvl: 0 }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActRepairStructure {
+impl Action for RepairStructure {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -216,14 +216,14 @@ impl Action for ActRepairStructure {
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActAttack {
+pub struct Attack {
     lvl: i32,
     target: Target,
 }
 
-impl ActAttack {
+impl Attack {
     pub fn new() -> Self {
-        ActAttack {
+        Attack {
             lvl: 0,
             target: Target::Center,
         }
@@ -231,7 +231,7 @@ impl ActAttack {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActAttack {
+impl Action for Attack {
     fn perform(
         &self,
         state: &mut GameState,
@@ -323,15 +323,15 @@ impl Action for ActAttack {
 /// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActInjectRnaVirus {
+pub struct InjectRnaVirus {
     lvl: i32,
     target: Target,
     rna: Vec<u8>,
 }
 
-impl ActInjectRnaVirus {
+impl InjectRnaVirus {
     pub fn new(target: Target, dna: Vec<u8>) -> Self {
-        ActInjectRnaVirus {
+        InjectRnaVirus {
             lvl: 0,
             target,
             rna: dna,
@@ -340,7 +340,7 @@ impl ActInjectRnaVirus {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActInjectRnaVirus {
+impl Action for InjectRnaVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna
     fn perform(
@@ -459,14 +459,14 @@ impl Action for ActInjectRnaVirus {
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActInjectRetrovirus {
+pub struct InjectRetrovirus {
     lvl: i32,
     target: Target,
 }
 
-impl ActInjectRetrovirus {
+impl InjectRetrovirus {
     pub fn _new() -> Self {
-        ActInjectRetrovirus {
+        InjectRetrovirus {
             lvl: 0,
             target: Target::Center,
         }
@@ -474,7 +474,7 @@ impl ActInjectRetrovirus {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActInjectRetrovirus {
+impl Action for InjectRetrovirus {
     // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
     //       cyclic activity
     fn perform(
@@ -608,19 +608,19 @@ impl Action for ActInjectRetrovirus {
 /// If `virus_rna` is `None`, the object will look for a retrovirus sequence within its own dna to
 /// use to initialise the new virion.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActProduceVirion {
+pub struct ProduceVirion {
     lvl: i32,
     virus_rna: Option<Vec<u8>>,
 }
 
-impl ActProduceVirion {
+impl ProduceVirion {
     pub fn new(virus_rna: Option<Vec<u8>>) -> Self {
-        ActProduceVirion { lvl: 0, virus_rna }
+        ProduceVirion { lvl: 0, virus_rna }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActProduceVirion {
+impl Action for ProduceVirion {
     fn perform(
         &self,
         state: &mut GameState,
@@ -720,18 +720,18 @@ impl Action for ActProduceVirion {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActEditGenome {
+pub struct EditGenome {
     lvl: i32,
 }
 
-impl ActEditGenome {
+impl EditGenome {
     pub fn new() -> Self {
-        ActEditGenome { lvl: 0 }
+        EditGenome { lvl: 0 }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActEditGenome {
+impl Action for EditGenome {
     fn perform(
         &self,
         _state: &mut GameState,
@@ -776,14 +776,14 @@ impl Action for ActEditGenome {
 /// Ability for a cell to trigger its own killswitch. It can also trigger someone else's killswitch
 /// provided that cell also has a killswitch and a matching receptor.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActKillSwitch {
+pub struct KillSwitch {
     target: Target,
     lvl: i32,
 }
 
-impl ActKillSwitch {
+impl KillSwitch {
     pub fn new() -> Self {
-        ActKillSwitch {
+        KillSwitch {
             target: Target::Center,
             lvl: 0,
         }
@@ -791,7 +791,7 @@ impl ActKillSwitch {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActKillSwitch {
+impl Action for KillSwitch {
     fn perform(
         &self,
         state: &mut GameState,
@@ -914,14 +914,14 @@ impl Action for ActKillSwitch {
 /// affected by mutation. The target here can be any empty tile to place the child object.
 /// In case of a tile cell replicating, it will replace the empty tile with a wall tile instead.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActBinaryFission {
+pub struct BinaryFission {
     target: Target,
     lvl: i32,
 }
 
-impl ActBinaryFission {
+impl BinaryFission {
     pub fn new() -> Self {
-        ActBinaryFission {
+        BinaryFission {
             target: Target::Center,
             lvl: 0,
         }
@@ -929,7 +929,7 @@ impl ActBinaryFission {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActBinaryFission {
+impl Action for BinaryFission {
     fn perform(
         &self,
         state: &mut GameState,

@@ -1,5 +1,5 @@
-use crate::entity::action;
-use crate::entity::action::Action;
+use crate::entity::act;
+use crate::entity::act::Action;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory::Inventory;
@@ -409,25 +409,25 @@ impl Object {
 
     // NOTE: Consider moving the player-action-related methods into PlayerCtrl.
 
-    pub fn get_primary_action(&self, target: action::Target) -> Box<dyn Action> {
+    pub fn get_primary_action(&self, target: act::Target) -> Box<dyn Action> {
         // Some(def_action.clone())
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             let mut action_clone = ctrl.primary_action.clone();
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(action::hereditary::ActPass::default())
+            Box::new(act::Pass::default())
         }
     }
 
-    pub fn get_secondary_action(&self, target: action::Target) -> Box<dyn Action> {
+    pub fn get_secondary_action(&self, target: act::Target) -> Box<dyn Action> {
         // Some(def_action.clone())
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             let mut action_clone = ctrl.secondary_action.clone();
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(action::hereditary::ActPass::default())
+            Box::new(act::Pass::default())
         }
     }
 
@@ -435,7 +435,7 @@ impl Object {
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick1_action.clone()
         } else {
-            Box::new(action::hereditary::ActPass::default())
+            Box::new(act::Pass::default())
         }
     }
 
@@ -443,7 +443,7 @@ impl Object {
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick2_action.clone()
         } else {
-            Box::new(action::hereditary::ActPass::default())
+            Box::new(act::Pass::default())
         }
     }
 
@@ -464,9 +464,7 @@ impl Object {
         // add action to drop it
         self.inventory
             .inv_actions
-            .push(Box::new(action::inventory::ActDropItem::new(
-                new_idx as i32,
-            )));
+            .push(Box::new(act::DropItem::new(new_idx as i32)));
     }
 
     pub fn remove_from_inventory(&mut self, index: usize) -> Object {

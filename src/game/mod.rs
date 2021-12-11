@@ -9,7 +9,7 @@ pub mod position;
 pub use game_objects::GameObjects;
 pub use game_state::GameState;
 
-use crate::entity::action;
+use crate::entity::act;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object;
@@ -252,7 +252,7 @@ impl Game {
                     trace!("player dna: {:?}", player.dna);
                     trace!(
                         "player default action: {:?}",
-                        player.get_primary_action(action::Target::Center).to_text()
+                        player.get_primary_action(act::Target::Center).to_text()
                     );
 
                     self.objects.set_player(player);
@@ -455,17 +455,17 @@ impl Rltk_GameState for Game {
                 // be printed to the log.
                 'processing: loop {
                     feedback = self.state.process_object(&mut self.objects);
-                    if feedback != action::ObjectFeedback::NoFeedback || self.state.log.is_changed {
+                    if feedback != act::ObjectFeedback::NoFeedback || self.state.log.is_changed {
                         break 'processing;
                     }
                 }
 
                 trace!("process feedback in RunState::Ticking: {:#?}", feedback);
                 match feedback {
-                    action::ObjectFeedback::GameOver => {
+                    act::ObjectFeedback::GameOver => {
                         RunState::GameOver(menu::game_over_menu::game_over_menu())
                     }
-                    action::ObjectFeedback::Render => {
+                    act::ObjectFeedback::Render => {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
                         // } else {
@@ -473,7 +473,7 @@ impl Rltk_GameState for Game {
                         RunState::Ticking
                         // }
                     }
-                    action::ObjectFeedback::GenomeManipulator => {
+                    act::ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
                             create_genome_manipulator(&mut self.state, &mut self.objects)
                         {
@@ -482,7 +482,7 @@ impl Rltk_GameState for Game {
                             RunState::CheckInput
                         }
                     }
-                    action::ObjectFeedback::UpdateHud => {
+                    act::ObjectFeedback::UpdateHud => {
                         self.hud.require_refresh = true;
                         RunState::Ticking
                     }
@@ -511,7 +511,7 @@ impl Rltk_GameState for Game {
                         trace!("inject in-game action {:#?} to player", in_game_action);
                         if let Some(ref mut player) = self.objects[self.state.player_idx] {
                             use crate::ui::game_input::PlayerAction::*;
-                            let a: Option<Box<dyn action::Action>> = match in_game_action {
+                            let a: Option<Box<dyn act::Action>> = match in_game_action {
                                 PrimaryAction(dir) => Some(player.get_primary_action(dir)),
                                 SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
                                 Quick1Action => Some(player.get_quick1_action()),
@@ -532,14 +532,12 @@ impl Rltk_GameState for Game {
                                 DropItem(idx) => {
                                     trace!("PlayInput DROP_ITEM");
                                     if player.inventory.items.len() > idx {
-                                        Some(Box::new(action::inventory::ActDropItem::new(
-                                            idx as i32,
-                                        )))
+                                        Some(Box::new(act::DropItem::new(idx as i32)))
                                     } else {
                                         None
                                     }
                                 }
-                                PassTurn => Some(Box::new(action::hereditary::ActPass::default())),
+                                PassTurn => Some(Box::new(act::Pass::default())),
                             };
                             player.set_next_action(a);
                             RunState::Ticking
@@ -647,9 +645,9 @@ pub fn handle_meta_actions(
                 let action_items = get_available_actions(
                     player,
                     &[
-                        action::TargetCategory::Any,
-                        action::TargetCategory::EmptyObject,
-                        action::TargetCategory::BlockingObject,
+                        act::TargetCategory::Any,
+                        act::TargetCategory::EmptyObject,
+                        act::TargetCategory::BlockingObject,
                     ],
                 );
                 if !action_items.is_empty() {
@@ -673,9 +671,9 @@ pub fn handle_meta_actions(
                 let action_items = get_available_actions(
                     player,
                     &[
-                        action::TargetCategory::Any,
-                        action::TargetCategory::EmptyObject,
-                        action::TargetCategory::BlockingObject,
+                        act::TargetCategory::Any,
+                        act::TargetCategory::EmptyObject,
+                        act::TargetCategory::BlockingObject,
                     ],
                 );
                 if !action_items.is_empty() {
@@ -696,7 +694,7 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick1Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[action::TargetCategory::None]);
+                let action_items = get_available_actions(player, &[act::TargetCategory::None]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
@@ -715,7 +713,7 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick2Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[action::TargetCategory::None]);
+                let action_items = get_available_actions(player, &[act::TargetCategory::None]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
@@ -755,10 +753,7 @@ pub fn handle_meta_actions(
     }
 }
 
-fn get_available_actions(
-    obj: &mut object::Object,
-    targets: &[action::TargetCategory],
-) -> Vec<String> {
+fn get_available_actions(obj: &mut object::Object, targets: &[act::TargetCategory]) -> Vec<String> {
     obj.actuators
         .actions
         .iter()

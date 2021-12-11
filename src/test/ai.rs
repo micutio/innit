@@ -3,7 +3,7 @@ use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
 use crate::game::game_state::GameState;
 use crate::game::innit_env;
 use crate::world_gen::Tile;
-use crate::{entity::action::hereditary::ActMove, game::game_objects::GameObjects};
+use crate::{entity::act::Move, game::game_objects::GameObjects};
 
 #[test]
 fn test_random_ai() {
@@ -155,7 +155,7 @@ fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
                 Sensors::default(),
                 Processors::default(),
                 Actuators {
-                    actions: vec![Box::new(ActMove::new())],
+                    actions: vec![Box::new(Move::new())],
                     max_hp: 1,
                     hp: 1,
                     volume: 1,

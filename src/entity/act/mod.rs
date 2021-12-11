@@ -3,14 +3,17 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
-pub(crate) mod hereditary;
-pub(crate) mod inventory;
+mod hereditary;
+mod inventory;
 
-use crate::entity::action::hereditary::*;
+pub use self::hereditary::*;
+pub use self::inventory::*;
+
 use crate::entity::object::Object;
 use crate::game::game_objects::GameObjects;
 use crate::game::game_state::GameState;
 use crate::game::position::Position;
+pub use hereditary::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -61,11 +64,11 @@ impl Clone for Box<dyn Action> {
 
 pub fn action_from_string(action_descriptor: &str) -> Result<Box<dyn Action>, String> {
     match action_descriptor {
-        "ActPass" => Ok(Box::new(ActPass::default())),
-        "ActMove" => Ok(Box::new(ActMove::new())),
-        "ActRepairStructure" => Ok(Box::new(ActRepairStructure::new())),
-        "ActAttack" => Ok(Box::new(ActAttack::new())),
-        "ActEditGenome" => Ok(Box::new(ActEditGenome::new())),
+        "ActPass" => Ok(Box::new(Pass::default())),
+        "ActMove" => Ok(Box::new(Move::new())),
+        "ActRepairStructure" => Ok(Box::new(RepairStructure::new())),
+        "ActAttack" => Ok(Box::new(Attack::new())),
+        "ActEditGenome" => Ok(Box::new(EditGenome::new())),
         _ => Err(format!("cannot find action for {}", action_descriptor)),
     }
 }

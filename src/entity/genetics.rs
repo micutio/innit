@@ -29,11 +29,9 @@
 //! - Should attributes be fix on trait level or full-on generic as list of attribute objects?
 //! - How to best model synergies and anti-synergies across traits?
 
-use crate::entity::action::hereditary::{
-    ActAttack, ActBinaryFission, ActKillSwitch, ActMove, ActRepairStructure,
-};
-use crate::entity::action::inventory::ActPickUpItem;
-use crate::entity::action::Action;
+use crate::entity::act::Action;
+use crate::entity::act::PickUpItem;
+use crate::entity::act::{Attack, BinaryFission, KillSwitch, Move, RepairStructure};
 use crate::entity::genetics::DnaType::Nucleoid;
 use crate::util::generate_gray_code;
 use crate::util::rng::GameRng;
@@ -138,19 +136,19 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "Move",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(ActMove::new())),
+            Some(Box::new(Move::new())),
         ),
         GeneticTrait::new(
             "Attack",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(ActAttack::new())),
+            Some(Box::new(Attack::new())),
         ),
         GeneticTrait::new(
             "Binary Fission",
             TraitFamily::Actuating,
             TraitAttribute::None,
-            Some(Box::new(ActBinaryFission::new())),
+            Some(Box::new(BinaryFission::new())),
         ),
         GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
@@ -174,14 +172,14 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "Repair Structure",
             Processing,
             TraitAttribute::Hp,
-            Some(Box::new(ActRepairStructure::new())),
+            Some(Box::new(RepairStructure::new())),
         ),
         GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
         GeneticTrait::new(
             "Kill Switch",
             TraitFamily::Processing,
             TraitAttribute::None,
-            Some(Box::new(ActKillSwitch::new())),
+            Some(Box::new(KillSwitch::new())),
         ),
         GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
     ]
@@ -801,7 +799,7 @@ impl TraitBuilder {
         if matches!(self.dna.dna_type, DnaType::Nucleoid)
             || matches!(self.dna.dna_type, DnaType::Nucleus)
         {
-            self.actuators.actions.push(Box::new(ActPickUpItem))
+            self.actuators.actions.push(Box::new(PickUpItem))
         }
 
         (self.sensors, self.processors, self.actuators, self.dna)

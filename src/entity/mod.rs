@@ -1,4 +1,4 @@
-pub mod action;
+pub mod act;
 pub mod ai;
 pub mod control;
 pub mod genetics;

@@ -1,5 +1,5 @@
 use crate::entity::object::{self, Object};
-use crate::entity::{action, ai, control, genetics};
+use crate::entity::{act, ai, control, genetics};
 use crate::game::{self, GameObjects, GameState};
 use crate::raws;
 use crate::util::rng::RngExtended;
@@ -301,7 +301,7 @@ fn place_objects(
                     let action_instance = if item.action.is_empty() {
                         None
                     } else {
-                        match action::action_from_string(item.action.as_ref()) {
+                        match act::action_from_string(item.action.as_ref()) {
                             Ok(action) => Some(action.clone()),
                             Err(msg) => {
                                 error!("error getting action from string: {}", msg);

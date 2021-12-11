@@ -1,4 +1,4 @@
-use crate::entity::{action::Action, object::Object};
+use crate::entity::{act::Action, object::Object};
 
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};

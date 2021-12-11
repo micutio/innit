@@ -1,4 +1,4 @@
-use crate::entity::action::{self, Action};
+use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
 use crate::game::game_objects::GameObjects;
 use crate::game::game_state::GameState;
@@ -55,10 +55,10 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Player {
-            primary_action: Box::new(action::hereditary::ActPass::default()),
-            secondary_action: Box::new(action::hereditary::ActPass::default()),
-            quick1_action: Box::new(action::hereditary::ActPass::default()),
-            quick2_action: Box::new(action::hereditary::ActPass::default()),
+            primary_action: Box::new(act::Pass::default()),
+            secondary_action: Box::new(act::Pass::default()),
+            quick1_action: Box::new(act::Pass::default()),
+            quick2_action: Box::new(act::Pass::default()),
             next_action: None,
         }
     }
