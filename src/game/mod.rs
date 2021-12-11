@@ -2,18 +2,19 @@
 //! the game loop is executed.
 
 pub mod game_env;
-pub mod objects;
 pub mod game_state;
+pub mod msg;
+pub mod objects;
 pub mod position;
 
-pub use objects::GameObjects;
 pub use game_state::GameState;
+pub use objects::GameObjects;
 
 use crate::entity::act;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object;
-use crate::game::game_state::MessageLog;
+use crate::game::msg::MessageLog;
 use crate::raws;
 use crate::ui::custom::genome_editor;
 use crate::ui::dialog;
@@ -260,7 +261,7 @@ impl Game {
                     // a warm welcoming message
                     self.state.log.add(
                         "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-                        game_state::MsgClass::Story,
+                        msg::MsgClass::Story,
                     );
                 }
             }
@@ -658,7 +659,7 @@ pub fn handle_meta_actions(
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        game_state::MsgClass::Alert,
+                        msg::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -684,7 +685,7 @@ pub fn handle_meta_actions(
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        game_state::MsgClass::Alert,
+                        msg::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -703,7 +704,7 @@ pub fn handle_meta_actions(
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        game_state::MsgClass::Alert,
+                        msg::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -722,7 +723,7 @@ pub fn handle_meta_actions(
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        game_state::MsgClass::Alert,
+                        msg::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }

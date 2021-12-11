@@ -4,7 +4,7 @@ use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory::Inventory;
 use crate::game;
-use crate::game::game_state::MessageLog;
+use crate::game::msg::MessageLog;
 use crate::game::position::Position;
 use crate::game::GameObjects;
 use crate::game::GameState;
@@ -253,13 +253,13 @@ impl Object {
     }
 
     /// Transform the object into an NPC or player. Part of the builder pattern.
-    pub fn set_control(mut self, controller: control::Controller, log: &mut game::game_state::Log) {
+    pub fn set_control(mut self, controller: control::Controller, log: &mut game::msg::Log) {
         match controller {
             control::Controller::Npc(_) => {
                 if self.is_player() {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
-                        game::game_state::MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
             }
@@ -267,7 +267,7 @@ impl Object {
                 if let Some(control::Controller::Npc(_)) = self.control {
                     log.add(
                         format!("You gained control over {}", &self.visual.name),
-                        game::game_state::MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
             }

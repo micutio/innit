@@ -11,8 +11,10 @@
 
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
-use crate::game::game_state::{GameState, MsgClass};
-use crate::game::{HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};
+use crate::game::game_state::GameState;
+use crate::game::{
+    self, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH,
+};
 use crate::ui::palette;
 use crate::{entity::act::Target, util::text_to_width};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
@@ -689,10 +691,10 @@ fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
     for (msg, class) in &state.log.messages {
         let lines = text_to_width(&msg, layout.width());
         let fg_color = match class {
-            MsgClass::Alert => palette().hud_fg_msg_alert,
-            MsgClass::Info => palette().hud_fg_msg_info,
-            MsgClass::Action => palette().hud_fg_msg_action,
-            MsgClass::Story => palette().hud_fg_msg_story,
+            game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
+            game::msg::MsgClass::Info => palette().hud_fg_msg_info,
+            game::msg::MsgClass::Action => palette().hud_fg_msg_action,
+            game::msg::MsgClass::Story => palette().hud_fg_msg_story,
         };
         let bg_color = if bg_flag {
             palette().hud_bg_log1

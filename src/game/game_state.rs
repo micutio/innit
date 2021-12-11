@@ -1,59 +1,11 @@
 use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
-use crate::game::game_env;
+use crate::game::msg::MessageLog;
 use crate::game::objects::GameObjects;
+use crate::game::{game_env, msg};
 use crate::util::rng;
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
-
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub enum MsgClass {
-    Info,
-    Action,
-    Alert,
-    Story,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Log {
-    pub is_changed: bool,
-    pub messages: Vec<(String, MsgClass)>,
-}
-
-impl Log {
-    pub fn new() -> Self {
-        Log {
-            is_changed: false,
-            messages: Vec::new(),
-        }
-    }
-}
-
-/// The message log can add text from any string collection.
-pub trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass);
-}
-
-impl MessageLog for Log {
-    /// Push a message into the log under two conditions:
-    /// - either the log is empty
-    /// - or the last message is not identical to the new message
-    fn add<T: Into<String>>(&mut self, msg: T, class: MsgClass) {
-        if self.messages.is_empty() {
-            self.messages.push((msg.into(), class));
-            self.is_changed = true;
-            return;
-        }
-
-        if let Some(recent_msg) = self.messages.last() {
-            let msg_str = msg.into();
-            if !recent_msg.0.eq(&msg_str) {
-                self.messages.push((msg_str, class));
-                self.is_changed = true;
-            }
-        }
-    }
-}
 
 /// The game state struct contains all information necessary to represent the current state of the
 /// game, EXCEPT the object vector. Each field in this struct is serialised and written to the save
@@ -61,7 +13,7 @@ impl MessageLog for Log {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct GameState {
     pub rng: rng::GameRng,
-    pub log: Log,
+    pub log: msg::Log,
     pub turn: u128,
     pub dungeon_level: u32,
     pub gene_library: genetics::GeneLibrary,
@@ -80,7 +32,7 @@ impl GameState {
         GameState {
             // create the list of game messages and their colours, starts empty
             rng: rng::GameRng::new_from_u64_seed(rng_seed),
-            log: Log::new(),
+            log: msg::Log::new(),
             turn: 0,
             dungeon_level: level,
             gene_library: genetics::GeneLibrary::new(),
@@ -186,8 +138,10 @@ impl GameState {
                 trace!("next action: {}", next_action.get_identifier());
             }
             if next_action.get_energy_cost() > actor.processors.energy_storage {
-                self.log
-                    .add("You don't have enough energy for that!", MsgClass::Info);
+                self.log.add(
+                    "You don't have enough energy for that!",
+                    msg::MsgClass::Info,
+                );
                 act::ObjectFeedback::NoFeedback
             } else {
                 actor.processors.energy -= next_action.get_energy_cost();
@@ -235,7 +189,7 @@ impl GameState {
             actor.actuators.hp -= 1;
             if actor.is_player() {
                 self.log
-                    .add("You're overloaded! Taking damage...", MsgClass::Alert);
+                    .add("You're overloaded! Taking damage...", msg::MsgClass::Alert);
             }
         }
     }
@@ -299,12 +253,12 @@ impl GameState {
                         "Gene {} mutated from {} to {}",
                         gene_no, old_trait_name, new_trait_name
                     ),
-                    MsgClass::Alert,
+                    msg::MsgClass::Alert,
                 );
             } else if actor.physics.is_visible {
                 self.log.add(
                     format!("Mutation occurred in {}!", actor.visual.name),
-                    MsgClass::Info,
+                    msg::MsgClass::Info,
                 );
             }
         }
@@ -339,7 +293,7 @@ impl GameState {
         if !actor.alive {
             if actor.physics.is_visible {
                 self.log
-                    .add(format!("{} died!", actor.visual.name), MsgClass::Alert);
+                    .add(format!("{} died!", actor.visual.name), msg::MsgClass::Alert);
                 debug!("{} died!", actor.visual.name);
             }
 

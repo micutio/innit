@@ -1,13 +1,14 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::entity::act::{Action, ActionResult, ObjectFeedback, Target, TargetCategory};
+use crate::entity::act::*;
 use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object::Object;
 use crate::game;
+use crate::game::game_state::GameState;
+use crate::game::msg::MessageLog;
 use crate::game::objects::GameObjects;
-use crate::game::game_state::{GameState, MessageLog};
 use crate::game::position::Position;
 use crate::ui::{self, particle};
 use serde::{Deserialize, Serialize};
@@ -260,7 +261,7 @@ impl Action for Attack {
                             "{} attacked {} for {} damage",
                             &owner.visual.name, &t.visual.name, self.lvl
                         ),
-                        game::game_state::MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // show particle effect
                     ui::register_particle(
@@ -281,7 +282,7 @@ impl Action for Attack {
                 if owner.is_player() {
                     state
                         .log
-                        .add("Nothing to attack here", game::game_state::MsgClass::Info);
+                        .add("Nothing to attack here", game::msg::MsgClass::Info);
                 }
                 ActionResult::Failure
             }
@@ -372,7 +373,7 @@ impl Action for InjectRnaVirus {
                             "{0} has infected {1} with virus RNA. {1} is forced to produce virions",
                             owner.visual.name, target.visual.name
                         ),
-                        game::game_state::MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
                 let original_ai = target.control.take();
@@ -404,7 +405,7 @@ impl Action for InjectRnaVirus {
                             "{} injected virus RNA into {}",
                             owner.visual.name, target_name
                         ),
-                        game::game_state::MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                     debug!(
                         "{} injected virus RNA into {}",
@@ -499,7 +500,7 @@ impl Action for InjectRetrovirus {
                             "A virus has tried to infect {} but it is not a cell!",
                             target.visual.name
                         ),
-                        game::game_state::MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
@@ -514,7 +515,7 @@ impl Action for InjectRetrovirus {
                             "A virus has tried to infect {} but cannot find matching receptor!",
                             target.visual.name
                         ),
-                        game::game_state::MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
@@ -547,7 +548,7 @@ impl Action for InjectRetrovirus {
                 );
                 debug!("{}", msg);
                 if owner.physics.is_visible {
-                    state.log.add(msg, game::game_state::MsgClass::Alert);
+                    state.log.add(msg, game::msg::MsgClass::Alert);
                     // play a little particle effect
                     let fg = ui::palette().hud_fg_bar_health;
                     let bg = ui::palette().col_transparent;
@@ -634,7 +635,7 @@ impl Action for ProduceVirion {
                 if owner.physics.is_visible || owner.is_player() {
                     state.log.add(
                         format!("{} is forced to produce virions", owner.visual.name),
-                        game::game_state::MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
                 owner.inventory.items.push(

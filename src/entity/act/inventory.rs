@@ -3,8 +3,9 @@
 use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
 use crate::game;
+use crate::game::game_state::GameState;
+use crate::game::msg::MessageLog;
 use crate::game::objects::GameObjects;
-use crate::game::game_state::{GameState, MessageLog};
 
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +31,7 @@ impl Action for PickUpItem {
                             "{} picked up a {}",
                             owner.visual.name, &target_obj.visual.name
                         ),
-                        game::game_state::MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     owner.add_to_inventory(target_obj);
 
@@ -43,7 +44,7 @@ impl Action for PickUpItem {
                 } else {
                     state
                         .log
-                        .add("Your inventory is full!", game::game_state::MsgClass::Info);
+                        .add("Your inventory is full!", game::msg::MsgClass::Info);
                 }
             }
             //else {
@@ -106,7 +107,7 @@ impl Action for DropItem {
             let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
-                game::game_state::MsgClass::Info,
+                game::msg::MsgClass::Info,
             );
             // set the item to be dropped at the same position as the player
             item.pos.set(owner.pos.x, owner.pos.y);
