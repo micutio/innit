@@ -1,8 +1,8 @@
-use crate::game::objects::GameObjects;
-use crate::game::game_state::GameState;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
 use crate::ui::dialog::InfoBox;
 
-pub fn character_screen(state: &GameState, objects: &GameObjects) -> InfoBox {
+pub fn character_screen(state: &State, objects: &ObjectStore) -> InfoBox {
     if let Some(ref player) = objects[state.player_idx] {
         let title: String = "Character Information".to_string();
         let lines = vec![

@@ -1,5 +1,5 @@
 use crate::entity::object::Object;
-use crate::game::{self, objects::GameObjects, game_state::GameState, innit_env};
+use crate::game::{self, innit_env, ObjectStore, State};
 use crate::raws;
 use crate::ui::menu::main_menu::main_menu;
 use crate::ui::palette;
@@ -32,8 +32,8 @@ impl RogueWorldGenerator {
 impl WorldGen for RogueWorldGenerator {
     fn make_world(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
         object_templates: &[raws::object_template::ObjectTemplate],
     ) -> game::RunState {
@@ -104,7 +104,7 @@ impl WorldGen for RogueWorldGenerator {
     }
 }
 
-fn create_room(objects: &mut GameObjects, room: Rect) {
+fn create_room(objects: &mut ObjectStore, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
             objects
@@ -114,7 +114,7 @@ fn create_room(objects: &mut GameObjects, room: Rect) {
     }
 }
 
-fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
+fn create_h_tunnel(objects: &mut ObjectStore, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
         objects
             .get_tile_at(x, y)
@@ -122,7 +122,7 @@ fn create_h_tunnel(objects: &mut GameObjects, x1: i32, x2: i32, y: i32) {
     }
 }
 
-fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
+fn create_v_tunnel(objects: &mut ObjectStore, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
         objects
             .get_tile_at(x, y)
@@ -131,8 +131,8 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
 }
 
 fn place_objects(
-    state: &mut GameState,
-    objects: &mut GameObjects,
+    state: &mut State,
+    objects: &mut ObjectStore,
     _spawns: &[raws::spawn::Spawn],
     _object_templates: &[raws::object_template::ObjectTemplate],
 ) {

@@ -1,7 +1,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::msg::MessageLog;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
 use crate::game::{game_env, msg};
 use crate::util::rng;
 use rand::{Rng, RngCore};
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 /// game, EXCEPT the object vector. Each field in this struct is serialised and written to the save
 /// file and thus persistent data. No volatile data is allowed here.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct GameState {
+pub struct State {
     pub rng: rng::GameRng,
     pub log: msg::Log,
     pub turn: u128,
@@ -21,7 +21,7 @@ pub struct GameState {
     pub player_idx: usize, // current player index
 }
 
-impl GameState {
+impl State {
     pub fn new(level: u32) -> Self {
         let rng_seed = if super::innit_env().is_using_fixed_seed {
             0
@@ -29,7 +29,7 @@ impl GameState {
             rand::thread_rng().next_u64()
         };
 
-        GameState {
+        State {
             // create the list of game messages and their colours, starts empty
             rng: rng::GameRng::new_from_u64_seed(rng_seed),
             log: msg::Log::new(),
@@ -45,7 +45,7 @@ impl GameState {
         self.obj_idx == self.player_idx
     }
 
-    pub fn player_energy_full(&self, objects: &GameObjects) -> bool {
+    pub fn player_energy_full(&self, objects: &ObjectStore) -> bool {
         if let Some(player) = &objects[self.player_idx] {
             player.processors.energy == player.processors.energy_storage
         } else {
@@ -54,7 +54,7 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    pub fn process_object(&mut self, objects: &mut GameObjects) -> act::ObjectFeedback {
+    pub fn process_object(&mut self, objects: &mut ObjectStore) -> act::ObjectFeedback {
         // unpack object to process its next action
         if let Some(mut actor) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
@@ -117,7 +117,7 @@ impl GameState {
         }
     }
 
-    fn take_turn(&mut self, objects: &mut GameObjects, actor: &mut Object) -> act::ObjectFeedback {
+    fn take_turn(&mut self, objects: &mut ObjectStore, actor: &mut Object) -> act::ObjectFeedback {
         if actor.control.is_none() {
             return act::ObjectFeedback::NoFeedback;
         }
@@ -156,7 +156,7 @@ impl GameState {
     /// Process an action of the given object.
     fn process_action(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: &mut Object,
         action: Box<dyn Action>,
     ) -> act::ObjectFeedback {
@@ -266,7 +266,7 @@ impl GameState {
 
     fn conclude_ageing(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: &mut Object,
         process_result: &mut act::ObjectFeedback,
     ) {
@@ -286,7 +286,7 @@ impl GameState {
 
     fn conclude_recycle_obj(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: Object,
         process_result: &mut act::ObjectFeedback,
     ) {

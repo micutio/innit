@@ -20,19 +20,19 @@ use serde::{Deserialize, Serialize};
 /// and offers methods to deal with them in an orderly fashion.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Default, Debug)]
-pub struct GameObjects {
+pub struct ObjectStore {
     world_tile_count: usize,
     obj_vec: Vec<Option<Object>>,
 }
 
-impl GameObjects {
+impl ObjectStore {
     pub fn new() -> Self {
         let world_tile_count = (WORLD_WIDTH * WORLD_HEIGHT) as usize;
         let obj_vec = Vec::new();
         // obj_vec.push(None);
         // obj_vec.resize_with(num_world_tiles + 1, || None);
 
-        GameObjects {
+        ObjectStore {
             world_tile_count,
             obj_vec,
         }
@@ -261,7 +261,7 @@ impl GameObjects {
     }
 }
 
-impl Index<usize> for GameObjects {
+impl Index<usize> for ObjectStore {
     type Output = Option<Object>;
 
     fn index(&self, i: usize) -> &Self::Output {
@@ -273,7 +273,7 @@ impl Index<usize> for GameObjects {
     }
 }
 
-impl IndexMut<usize> for GameObjects {
+impl IndexMut<usize> for ObjectStore {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         let item = self.obj_vec.get_mut(i);
         match item {
@@ -283,7 +283,7 @@ impl IndexMut<usize> for GameObjects {
     }
 }
 
-impl BaseMap for GameObjects {
+impl BaseMap for ObjectStore {
     fn is_opaque(&self, idx: usize) -> bool {
         if idx > 0 && idx < self.obj_vec.len() {
             if let Some(o) = &self.obj_vec[idx] {
@@ -304,7 +304,7 @@ impl BaseMap for GameObjects {
     }
 }
 
-impl Algorithm2D for GameObjects {
+impl Algorithm2D for ObjectStore {
     /// Convert a Point (x/y) to an array index.
     fn point2d_to_index(&self, pt: Point) -> usize {
         (pt.y as usize * (WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)

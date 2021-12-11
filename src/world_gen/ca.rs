@@ -1,6 +1,6 @@
 use crate::entity::object::{self, Object};
 use crate::entity::{act, ai, control, genetics};
-use crate::game::{self, GameObjects, GameState};
+use crate::game::{self, ObjectStore, State};
 use crate::raws;
 use crate::util::rng::RngExtended;
 use crate::world_gen::WorldGen;
@@ -33,8 +33,8 @@ impl WorldGen for CaBased {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
         object_templates: &[raws::object_template::ObjectTemplate],
     ) -> game::RunState {
@@ -119,7 +119,7 @@ impl Default for CellState {
 }
 
 /// Create a cellular automaton from the tiles of the game world.
-fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
+fn make_ca(state: &mut State) -> Simulation<CaCell> {
     // init cells
     let mut cells = vec![CaCell::default(); (game::WORLD_WIDTH * game::WORLD_HEIGHT) as usize];
     let mid_x = game::WORLD_WIDTH / 2;
@@ -211,8 +211,8 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
 }
 
 fn place_objects(
-    state: &mut GameState,
-    objects: &mut GameObjects,
+    state: &mut State,
+    objects: &mut ObjectStore,
     spawns: &[raws::spawn::Spawn],
     object_templates: &[raws::object_template::ObjectTemplate],
 ) {

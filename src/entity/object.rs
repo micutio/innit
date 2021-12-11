@@ -6,8 +6,8 @@ use crate::entity::inventory::Inventory;
 use crate::game;
 use crate::game::msg::MessageLog;
 use crate::game::position::Position;
-use crate::game::GameObjects;
-use crate::game::GameState;
+use crate::game::ObjectStore;
+use crate::game::State;
 use crate::ui::hud;
 use crate::world_gen;
 
@@ -222,7 +222,7 @@ impl Object {
     }
 
     /// Perform necessary actions when object dies.
-    pub fn die(&mut self, _state: &mut GameState, objects: &mut GameObjects) {
+    pub fn die(&mut self, _state: &mut State, objects: &mut ObjectStore) {
         if let Some(_) = self.tile {
             // if this object is a tile, just revert it to a floor tile
             self.physics.is_blocking = false;
@@ -326,7 +326,7 @@ impl Object {
     }
 
     /// Re-generate genetic traits from the raw dna and then re-set all dna-dependent fields.
-    pub fn update_genome_from_dna(&mut self, state: &mut GameState) {
+    pub fn update_genome_from_dna(&mut self, state: &mut State) {
         let (new_s, new_p, new_a, new_d) = state
             .gene_library
             .dna_to_traits(self.dna.dna_type, &self.dna.raw);
@@ -336,8 +336,8 @@ impl Object {
     /// Determine and return the next action the object will take.
     pub fn extract_next_action(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
         let mut controller_opt = self.control.take();

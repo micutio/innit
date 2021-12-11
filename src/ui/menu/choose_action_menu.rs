@@ -1,6 +1,6 @@
-use crate::game::game_state::GameState;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
 use crate::game::RunState;
+use crate::game::State;
 use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Clone, Copy, Debug)]
@@ -25,8 +25,8 @@ impl ActionItem {
 
 impl MenuItem for ActionItem {
     fn process(
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         _menu: &mut Menu<ActionItem>,
         item: &ActionItem,
     ) -> RunState {

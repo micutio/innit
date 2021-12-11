@@ -1,12 +1,12 @@
 use crate::entity::Object;
-use crate::game::{self, objects::GameObjects, position::Position, WORLD_WIDTH};
+use crate::game::{self, objects::ObjectStore, position::Position, WORLD_WIDTH};
 use crate::ui;
 use crate::util::timer;
 use crate::world_gen;
 
 use rltk;
 
-pub fn render_world(objects: &mut GameObjects, _ctx: &mut rltk::Rltk) {
+pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     // time rendering method for profiling purposes
     let mut timer = timer::Timer::new("render world");
     let mut draw_batch = rltk::DrawBatch::new();
@@ -50,7 +50,7 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut rltk::Rltk) {
     draw_batch.submit(game::WORLD_CON_Z).unwrap()
 }
 
-fn update_visibility(objects: &mut GameObjects) {
+fn update_visibility(objects: &mut ObjectStore) {
     // in debug mode everything is visible
     if game::innit_env().is_debug_mode {
         let bwft = ui::palette().world_bg_wall_fov_true;

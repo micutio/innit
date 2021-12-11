@@ -3,9 +3,9 @@
 use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
 use crate::game;
-use crate::game::game_state::GameState;
 use crate::game::msg::MessageLog;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
 
 use serde::{Deserialize, Serialize};
 
@@ -17,8 +17,8 @@ pub struct PickUpItem;
 impl Action for PickUpItem {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> act::ActionResult {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
@@ -98,8 +98,8 @@ impl DropItem {
 impl Action for DropItem {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> act::ActionResult {
         // make sure there is an item at slot [self.lvl]

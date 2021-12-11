@@ -6,10 +6,10 @@ use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::object::Object;
 use crate::game;
-use crate::game::game_state::GameState;
 use crate::game::msg::MessageLog;
-use crate::game::objects::GameObjects;
 use crate::game::position::Position;
+use crate::game::ObjectStore;
+use crate::game::State;
 use crate::ui::{self, particle};
 use serde::{Deserialize, Serialize};
 
@@ -37,8 +37,8 @@ impl Default for Pass {
 impl Action for Pass {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> ActionResult {
         // play a little particle effect
@@ -104,8 +104,8 @@ impl Move {
 impl Action for Move {
     fn perform(
         &self,
-        _state: &mut GameState,
-        objects: &mut GameObjects,
+        _state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
@@ -168,8 +168,8 @@ impl RepairStructure {
 impl Action for RepairStructure {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         owner.actuators.hp = i32::min(owner.actuators.hp + (self.lvl * 2), owner.actuators.max_hp);
@@ -235,8 +235,8 @@ impl Attack {
 impl Action for Attack {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         // get coords of self position plus direction
@@ -346,8 +346,8 @@ impl Action for InjectRnaVirus {
     //       virus dna
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
@@ -480,8 +480,8 @@ impl Action for InjectRetrovirus {
     //       cyclic activity
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
@@ -624,8 +624,8 @@ impl ProduceVirion {
 impl Action for ProduceVirion {
     fn perform(
         &self,
-        state: &mut GameState,
-        _objects: &mut GameObjects,
+        state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         match &self.virus_rna {
@@ -735,8 +735,8 @@ impl EditGenome {
 impl Action for EditGenome {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let callback = if owner.is_player() {
@@ -795,8 +795,8 @@ impl KillSwitch {
 impl Action for KillSwitch {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         match self.target {
@@ -933,8 +933,8 @@ impl BinaryFission {
 impl Action for BinaryFission {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of

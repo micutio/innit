@@ -1,7 +1,7 @@
 use crate::entity::act::Move;
 use crate::entity::act::PickUpItem;
 use crate::entity::genetics::{DnaType, GRAY_CODE_WIDTH};
-use crate::game::game_state::GameState;
+use crate::game::State;
 
 #[test]
 fn test_dna_encoding() {
@@ -82,7 +82,7 @@ fn test_dna_encoding() {
 /// Test dna encoding and decoding by performing a 'round trip'
 #[test]
 fn test_dna_de_encoding() {
-    let mut state = GameState::new(0);
+    let mut state = State::new(0);
     let raw_dna = state.gene_library.dna_from_size(&mut state.rng, false, 10);
     let (_, _, _, d) = state.gene_library.dna_to_traits(DnaType::Nucleus, &raw_dna);
     let traits: Vec<String> = d.simplified.iter().map(|t| t.trait_name.clone()).collect();

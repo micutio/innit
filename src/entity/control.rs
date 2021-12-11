@@ -1,7 +1,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
-use crate::game::objects::GameObjects;
-use crate::game::game_state::GameState;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -17,8 +17,8 @@ pub enum Controller {
 pub trait Ai: AiClone + Debug {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action>;
 }

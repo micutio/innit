@@ -1,8 +1,8 @@
 use crate::entity::act::*;
 use crate::entity::control::Controller::Player;
-use crate::game::game_state::GameState;
+use crate::game::State;
 use crate::game::innit_env;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
 use crate::game::position::Position;
 use crate::game::WORLD_WIDTH;
 use crate::ui::game_input::PlayerAction::PrimaryAction;
@@ -96,8 +96,8 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
 // - receptor matching or not
 // - virus RNA or DNA
 fn get_names_under_mouse(
-    state: &GameState,
-    objects: &mut GameObjects,
+    state: &State,
+    objects: &mut ObjectStore,
     mouse: Position,
 ) -> Vec<ToolTip> {
     let mut tooltips: Vec<ToolTip> = vec![];
@@ -127,8 +127,8 @@ fn get_names_under_mouse(
 /// Check whether the user has given inputs either via mouse or keyboard. Also update any input-
 /// dependent UI elements, like hover-tooltips etc.
 pub fn read_input(
-    state: &mut GameState,
-    objects: &mut GameObjects,
+    state: &mut State,
+    objects: &mut ObjectStore,
     hud: &mut Hud,
     ctx: &mut Rltk,
 ) -> PlayerInput {

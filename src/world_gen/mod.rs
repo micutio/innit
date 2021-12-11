@@ -6,8 +6,8 @@ pub mod rogue;
 
 use crate::entity::{ai, control, Object};
 use crate::game;
-use crate::game::game_state::GameState;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
 use crate::raws;
 use serde::{Deserialize, Serialize};
 
@@ -19,8 +19,8 @@ pub trait WorldGen {
     /// allow for intermediate visualisation of the world generation process.
     fn make_world(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
         object_templates: &[raws::object_template::ObjectTemplate],
     ) -> game::RunState;

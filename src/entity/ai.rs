@@ -8,8 +8,8 @@ use crate::entity::act::{Action, Target, TargetCategory};
 use crate::entity::act::{InjectRnaVirus, Move, Pass, ProduceVirion};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
-use crate::game::game_state::GameState;
-use crate::game::objects::GameObjects;
+use crate::game::State;
+use crate::game::objects::ObjectStore;
 use crate::util::rng::RngExtended;
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
@@ -26,8 +26,8 @@ pub struct AiPassive;
 impl Ai for AiPassive {
     fn act(
         &mut self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
         Box::new(Pass::default())
@@ -49,8 +49,8 @@ impl AiRandom {
 impl Ai for AiRandom {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.
@@ -151,8 +151,8 @@ pub struct AiRandomWalk;
 impl Ai for AiRandomWalk {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // try and find some empty adjacent cells that can be walked to
@@ -190,8 +190,8 @@ impl AiVirus {
 impl Ai for AiVirus {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // if there is an adjacent cell, attempt to infect it
@@ -276,8 +276,8 @@ impl AiForceVirusProduction {
 impl Ai for AiForceVirusProduction {
     fn act(
         &mut self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         if let Some(t) = self.turns_active {
@@ -301,8 +301,8 @@ pub struct AiTile;
 impl Ai for AiTile {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.

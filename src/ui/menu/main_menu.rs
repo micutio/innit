@@ -1,6 +1,6 @@
-use crate::game::objects::GameObjects;
-use crate::game::game_state::GameState;
+use crate::game::objects::ObjectStore;
 use crate::game::RunState;
+use crate::game::State;
 use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Copy, Clone, Debug)]
@@ -14,8 +14,8 @@ pub enum MainMenuItem {
 
 impl MenuItem for MainMenuItem {
     fn process(
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _menu: &mut Menu<MainMenuItem>,
         item: &MainMenuItem,
     ) -> RunState {

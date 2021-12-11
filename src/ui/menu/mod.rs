@@ -2,16 +2,16 @@ pub mod choose_action_menu;
 pub mod game_over_menu;
 pub mod main_menu;
 
-use crate::game::game_state::GameState;
+use crate::game::State;
 use crate::game::{RunState, HUD_CON, HUD_CON_Z, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::hud::{ToolTip, UiItem};
-use crate::{game::objects::GameObjects, ui::palette};
+use crate::{game::objects::ObjectStore, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
     fn process(
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         menu: &mut Menu<Self>,
         item: &Self,
     ) -> RunState;

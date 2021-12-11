@@ -10,9 +10,9 @@ pub use self::hereditary::*;
 pub use self::inventory::*;
 
 use crate::entity::object::Object;
-use crate::game::game_state::GameState;
-use crate::game::objects::GameObjects;
+use crate::game::objects::ObjectStore;
 use crate::game::position::Position;
+use crate::game::State;
 pub use hereditary::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -23,8 +23,8 @@ use std::fmt::Debug;
 pub trait Action: ActionClone + Debug {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult;
 

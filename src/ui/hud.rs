@@ -11,7 +11,7 @@
 
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
-use crate::game::game_state::GameState;
+use crate::game::State;
 use crate::game::{
     self, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH,
 };
@@ -435,7 +435,7 @@ impl Hud {
     }
 }
 
-pub fn render_gui(state: &GameState, hud: &mut Hud, _ctx: &mut Rltk, player: &Object) {
+pub fn render_gui(state: &State, hud: &mut Hud, _ctx: &mut Rltk, player: &Object) {
     hud.update_ui_items(player);
     let mut draw_batch = DrawBatch::new();
     let fg_hud = palette().hud_fg;
@@ -669,7 +669,7 @@ fn render_inventory(hud: &Hud, player: &Object, layout: Rect, draw_batch: &mut D
         });
 }
 
-fn render_log(state: &GameState, layout: Rect, draw_batch: &mut DrawBatch) {
+fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
     let fg_log = palette().hud_fg;
     let bg_log_header = palette().hud_bg_dna;
 

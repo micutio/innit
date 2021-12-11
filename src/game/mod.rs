@@ -2,13 +2,13 @@
 //! the game loop is executed.
 
 pub mod game_env;
-pub mod game_state;
 pub mod msg;
 pub mod objects;
 pub mod position;
+mod state;
 
-pub use game_state::GameState;
-pub use objects::GameObjects;
+pub use objects::ObjectStore;
+pub use state::State;
 
 use crate::entity::act;
 use crate::entity::control;
@@ -100,8 +100,8 @@ impl Display for RunState {
 }
 
 pub struct Game {
-    state: GameState,
-    objects: GameObjects,
+    state: State,
+    objects: ObjectStore,
     run_state: Option<RunState>,
     // world generation state start
     spawns: Vec<raws::spawn::Spawn>,
@@ -123,8 +123,8 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let state = GameState::new(1);
-        let objects = GameObjects::new();
+        let state = State::new(1);
+        let objects = ObjectStore::new();
 
         Game {
             state,
@@ -146,7 +146,7 @@ impl Game {
         }
     }
 
-    fn reset(&mut self, state: GameState, objects: GameObjects) {
+    fn reset(&mut self, state: State, objects: ObjectStore) {
         self.state = state;
         self.objects = objects;
 
@@ -156,12 +156,12 @@ impl Game {
     }
 
     /// Create a new game by instantiating the game engine, game state and object vector.
-    fn new_game() -> (GameState, GameObjects) {
+    fn new_game() -> (State, ObjectStore) {
         // create game state holding game-relevant information
-        let state = GameState::new(1);
+        let state = State::new(1);
 
         // initialise game object vector
-        let mut objects = GameObjects::new();
+        let mut objects = ObjectStore::new();
         objects.blank_world();
 
         // prepare world generation
@@ -274,7 +274,7 @@ impl Game {
 /// Load an existing savegame and instantiates GameState & Objects
 /// from which the game is resumed in the game loop.
 #[cfg(not(target_arch = "wasm32"))]
-fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
+fn load_game() -> Result<(State, ObjectStore), Box<dyn Error>> {
     // TODO: Add proper UI error output if any of this fails!
     if let Some(mut save_file) = dirs::data_local_dir() {
         save_file.push("innit");
@@ -282,7 +282,7 @@ fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
         let mut file = File::open(save_file)?;
         let mut json_save_state = String::new();
         file.read_to_string(&mut json_save_state)?;
-        let result = serde_json::from_str::<(GameState, GameObjects)>(&json_save_state)?;
+        let result = serde_json::from_str::<(State, ObjectStore)>(&json_save_state)?;
         Ok(result)
     } else {
         error!("CANNOT ACCESS SYSTEM DATA DIR");
@@ -293,13 +293,13 @@ fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
 /// Dummy game loading function for building innit with WebAssembly.
 /// In this case loading is disabled and attempted use will simply redirect to the main menu.
 #[cfg(target_arch = "wasm32")]
-fn load_game() -> Result<(GameState, GameObjects), Box<dyn Error>> {
+fn load_game() -> Result<(State, ObjectStore), Box<dyn Error>> {
     Err("game loading not available in the web version".into())
 }
 
 /// Serialize and store GameState and Objects into a JSON file.
 #[cfg(not(target_arch = "wasm32"))]
-fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Error>> {
+fn save_game(state: &State, objects: &ObjectStore) -> Result<(), Box<dyn Error>> {
     if let Some(mut env_data) = dirs::data_local_dir() {
         env_data.push("innit");
         fs::create_dir_all(&env_data)?;
@@ -320,7 +320,7 @@ fn save_game(state: &GameState, objects: &GameObjects) -> Result<(), Box<dyn Err
 /// Dummy file for saving the game state.
 /// Attempted use will do nothing when built with WebAssembly.
 #[cfg(target_arch = "wasm32")]
-fn save_game(_state: &GameState, _objects: &GameObjects) -> Result<(), Box<dyn Error>> {
+fn save_game(_state: &State, _objects: &ObjectStore) -> Result<(), Box<dyn Error>> {
     Err("game saving not available in the web version".into())
 }
 
@@ -623,8 +623,8 @@ impl Rltk_GameState for Game {
 }
 
 pub fn handle_meta_actions(
-    state: &mut GameState,
-    objects: &mut GameObjects,
+    state: &mut State,
+    objects: &mut ObjectStore,
     ctx: &mut Rltk,
     action: game_input::UiAction,
 ) -> RunState {
@@ -766,8 +766,8 @@ fn get_available_actions(obj: &mut object::Object, targets: &[act::TargetCategor
 }
 
 fn create_genome_manipulator(
-    state: &mut GameState,
-    objects: &mut GameObjects,
+    state: &mut State,
+    objects: &mut ObjectStore,
 ) -> Option<genome_editor::GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
         // NOTE: In the future editor features could be read from the plasmid.

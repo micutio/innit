@@ -1,9 +1,9 @@
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
-use crate::game::game_state::GameState;
 use crate::game::innit_env;
+use crate::game::State;
 use crate::world_gen::Tile;
-use crate::{entity::act::Move, game::objects::GameObjects};
+use crate::{entity::act::Move, game::objects::ObjectStore};
 
 #[test]
 fn test_random_ai() {
@@ -112,17 +112,17 @@ fn test_random_ai() {
     }
 }
 
-fn _create_minimal_world() -> ((i32, i32), GameState, GameObjects) {
+fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
     use crate::entity::ai::AiRandom;
     use crate::entity::object::Object;
     use crate::game::{WORLD_HEIGHT, WORLD_WIDTH};
 
     // create game state holding game-relevant information
     let level = 1;
-    let state = GameState::new(level);
+    let state = State::new(level);
 
     // create blank game world
-    let mut objects = GameObjects::new();
+    let mut objects = ObjectStore::new();
     objects.blank_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
