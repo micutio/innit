@@ -4,11 +4,11 @@
 pub mod world_gen_organic;
 pub mod world_gen_rogue;
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
 use crate::entity::ai::AiTile;
 use crate::entity::control::Controller;
 use crate::entity::object::Object;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::GameState;
 use crate::game::RunState;
 use crate::raws::object_template::ObjectTemplate;
 use crate::raws::spawn::Spawn;

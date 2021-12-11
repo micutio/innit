@@ -1,10 +1,7 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::innit_env;
-use crate::entity::action::*;
-use crate::entity::genetics::GeneLibrary;
-use crate::entity::object::Object;
-use crate::entity::player::PLAYER;
-use crate::util::game_rng::{GameRng, RngExtended};
+use crate::entity::action::{self, Action};
+use crate::entity::{genetics, player, Object};
+use crate::game::game_objects::GameObjects;
+use crate::util::rng;
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
@@ -73,18 +70,18 @@ pub enum ObjectFeedback {
 /// file and thus persistent data. No volatile data is allowed here.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct GameState {
-    pub rng: GameRng,
+    pub rng: rng::GameRng,
     pub log: Log,
     pub turn: u128,
     pub dungeon_level: u32,
-    pub gene_library: GeneLibrary,
+    pub gene_library: genetics::GeneLibrary,
     pub obj_idx: usize,    // current object index
     pub player_idx: usize, // current player index
 }
 
 impl GameState {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if innit_env().is_using_fixed_seed {
+        let rng_seed = if super::innit_env().is_using_fixed_seed {
             0
         } else {
             rand::thread_rng().next_u64()
@@ -92,13 +89,13 @@ impl GameState {
 
         GameState {
             // create the list of game messages and their colours, starts empty
-            rng: GameRng::new_from_u64_seed(rng_seed),
+            rng: rng::GameRng::new_from_u64_seed(rng_seed),
             log: Log::new(),
             turn: 0,
             dungeon_level: level,
-            gene_library: GeneLibrary::new(),
+            gene_library: genetics::GeneLibrary::new(),
             obj_idx: 0,
-            player_idx: PLAYER,
+            player_idx: player::PLAYER,
         }
     }
 
@@ -221,12 +218,12 @@ impl GameState {
     ) -> ObjectFeedback {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => match callback {
+            action::ActionResult::Success { callback } => match callback {
                 ObjectFeedback::NoFeedback => ObjectFeedback::NoFeedback,
                 _ => callback,
             },
-            ActionResult::Failure => ObjectFeedback::NoFeedback, // TODO: How to handle fails?
-            ActionResult::Consequence {
+            action::ActionResult::Failure => ObjectFeedback::NoFeedback, // TODO: How to handle fails?
+            action::ActionResult::Consequence {
                 callback,
                 follow_up,
             } => {
@@ -264,7 +261,7 @@ impl GameState {
             return;
         }
 
-        if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
+        if rng::RngExtended::flip_with_prob(&mut self.rng, 1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
             let gene_width = 3;
             let trait_count = actor.dna.raw.len() / gene_width as usize;
@@ -275,7 +272,7 @@ impl GameState {
             let old_gene = actor.dna.raw[position];
             let old_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
             // ^ = bitwise exclusive or
-            let new_gene = old_gene ^ self.rng.random_bit();
+            let new_gene = old_gene ^ rng::RngExtended::random_bit(&mut self.rng);
             // Replace the modified gene in the dna. The change will become effectual once the
             // cell procreates or "reincarnates".
             actor.dna.raw[position] = new_gene;
@@ -365,7 +362,7 @@ impl GameState {
                 objects.get_vector_mut().remove(self.obj_idx);
             }
             // if the "main" player is dead, the game is over
-            if self.obj_idx == PLAYER {
+            if self.obj_idx == player::PLAYER {
                 *process_result = ObjectFeedback::GameOver;
             }
         } else {

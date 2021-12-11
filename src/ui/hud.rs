@@ -9,7 +9,7 @@
 //!     - energy
 //!     - receptor and whether it's matching with us
 
-use crate::core::game_state::{GameState, MsgClass};
+use crate::game::game_state::{GameState, MsgClass};
 use crate::entity::genetics::TraitFamily;
 use crate::entity::object::Object;
 use crate::game::{HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH, SIDE_PANEL_HEIGHT, SIDE_PANEL_WIDTH};

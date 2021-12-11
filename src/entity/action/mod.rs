@@ -6,9 +6,9 @@
 pub(crate) mod hereditary;
 pub(crate) mod inventory;
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, ObjectFeedback};
-use crate::core::position::Position;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::{GameState, ObjectFeedback};
+use crate::game::position::Position;
 use crate::entity::action::hereditary::*;
 use crate::entity::object::Object;
 use serde::{Deserialize, Serialize};

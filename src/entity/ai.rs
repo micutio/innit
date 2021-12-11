@@ -4,13 +4,13 @@
 
 // internal imports
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::GameState;
 use crate::entity::action::hereditary::{ActInjectRnaVirus, ActMove, ActPass, ActProduceVirion};
 use crate::entity::action::{Action, Target, TargetCategory};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
-use crate::util::game_rng::RngExtended;
+use crate::util::rng::RngExtended;
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;

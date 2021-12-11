@@ -1,7 +1,7 @@
 //! This module contains actions that are automatically available to all objects with an inventory.
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
 use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
 use crate::entity::object::Object;
 use serde::{Deserialize, Serialize};

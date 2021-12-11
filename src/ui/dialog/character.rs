@@ -1,5 +1,5 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::GameState;
 use crate::ui::dialog::InfoBox;
 
 pub fn character_screen(state: &GameState, objects: &GameObjects) -> InfoBox {

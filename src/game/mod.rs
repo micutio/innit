@@ -1,36 +1,34 @@
 //! The top level representation of the game. Here the major game components are constructed and
 //! the game loop is executed.
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
-use crate::core::innit_env;
-use crate::core::world::world_gen_organic::OrganicsWorldGenerator;
-use crate::core::world::WorldGen;
-use crate::entity::action::hereditary::ActPass;
-use crate::entity::action::inventory::ActDropItem;
-use crate::entity::action::{Action, Target, TargetCategory};
-use crate::entity::control::Controller;
-use crate::entity::genetics::{DnaType, TraitFamily, GENOME_LEN};
-use crate::entity::object::Object;
-use crate::entity::player::PlayerCtrl;
-use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::Spawn;
-use crate::raws::{load_object_templates, load_spawns};
-use crate::ui::custom::genome_editor::{GenomeEditingState, GenomeEditor};
-use crate::ui::dialog::character::character_screen;
-use crate::ui::dialog::controls::controls_screen;
-use crate::ui::dialog::InfoBox;
-use crate::ui::frontend::render_world;
-use crate::ui::game_input::{read_input, PlayerInput, UiAction};
-use crate::ui::hud::{render_gui, Hud};
-use crate::ui::menu::choose_action_menu::{choose_action_menu, ActionCategory, ActionItem};
-use crate::ui::menu::game_over_menu::{game_over_menu, GameOverMenuItem};
-use crate::ui::menu::main_menu::{main_menu, MainMenuItem};
-use crate::ui::menu::{Menu, MenuItem};
+pub mod game_env;
+pub mod game_objects;
+pub mod game_state;
+pub mod position;
+
+pub use game_objects::GameObjects;
+pub use game_state::GameState;
+
+use crate::entity::action;
+use crate::entity::control;
+use crate::entity::genetics;
+use crate::entity::object;
+use crate::entity::player;
+use crate::game::game_state::MessageLog;
+use crate::raws;
+use crate::ui::custom::genome_editor;
+use crate::ui::dialog;
+use crate::ui::frontend;
+use crate::ui::game_input;
+use crate::ui::hud;
+use crate::ui::menu;
 use crate::ui::palette;
 use crate::ui::particles;
-use crate::ui::rex_assets::RexAssets;
-use crate::util::timer::{time_from, Timer};
+use crate::ui::rex_assets;
+use crate::util::timer;
+use crate::world;
+use crate::world::WorldGen;
+
 use core::fmt;
 use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, Rltk};
 use std::error::Error;
@@ -39,6 +37,16 @@ use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 #[cfg(not(target_arch = "wasm32"))]
 use std::io::{Read, Write};
+
+use std::sync::{Mutex, MutexGuard};
+
+lazy_static! {
+    static ref GAME_ENV: Mutex<game_env::GameEnv> = Mutex::new(game_env::GameEnv::new());
+}
+
+pub fn innit_env<'a>() -> MutexGuard<'a, game_env::GameEnv> {
+    GAME_ENV.lock().unwrap()
+}
 
 // environment constraints
 // game window
@@ -62,13 +70,13 @@ pub const MENU_WIDTH: i32 = 20;
 
 #[derive(Debug)]
 pub enum RunState {
-    MainMenu(Menu<MainMenuItem>),
+    MainMenu(menu::Menu<menu::main_menu::MainMenuItem>),
     NewGame,
     LoadGame,
-    ChooseActionMenu(Menu<ActionItem>),
-    GameOver(Menu<GameOverMenuItem>),
-    InfoBox(InfoBox),
-    GenomeEditing(GenomeEditor),
+    ChooseActionMenu(menu::Menu<menu::choose_action_menu::ActionItem>),
+    GameOver(menu::Menu<menu::game_over_menu::GameOverMenuItem>),
+    InfoBox(dialog::InfoBox),
+    GenomeEditing(genome_editor::GenomeEditor),
     Ticking,
     CheckInput,
     WorldGen,
@@ -96,19 +104,21 @@ pub struct Game {
     objects: GameObjects,
     run_state: Option<RunState>,
     // world generation state start
-    spawns: Vec<Spawn>,
-    object_templates: Vec<ObjectTemplate>,
+    spawns: Vec<raws::spawn::Spawn>,
+    object_templates: Vec<raws::object_template::ObjectTemplate>,
     // world_generator = RogueWorldGenerator::new();
-    world_generator: OrganicsWorldGenerator,
+    world_generator: world::world_gen_organic::OrganicsWorldGenerator,
     // world generation state end
-    hud: Hud,
+    hud: hud::Hud,
     re_render: bool,
-    rex_assets: RexAssets,
+    rex_assets: rex_assets::RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
     mouse_workaround: bool,
     /// Keep track of the time to warn if the game runs too slow.
     slowest_tick: u128,
+    /// Keep track of how long it usually takes to render: highest and lowest
+    render_time: (u128, u128),
 }
 
 impl Game {
@@ -121,17 +131,18 @@ impl Game {
             objects,
             // spawns: load_spawns(),
             // object_templates: load_object_templates(),
-            run_state: Some(RunState::MainMenu(main_menu())),
-            spawns: load_spawns(),
-            object_templates: load_object_templates(),
+            run_state: Some(RunState::MainMenu(menu::main_menu::main_menu())),
+            spawns: raws::load_spawns(),
+            object_templates: raws::load_object_templates(),
 
             // let mut world_generator : RogueWorldGenerator::new(),
-            world_generator: OrganicsWorldGenerator::new(),
-            hud: Hud::new(),
+            world_generator: world::world_gen_organic::OrganicsWorldGenerator::new(),
+            hud: hud::Hud::new(),
             re_render: false,
-            rex_assets: RexAssets::new(),
+            rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
+            render_time: (0, 0),
         }
     }
 
@@ -222,17 +233,17 @@ impl Game {
                             "Energy Store".to_string(),
                         ],
                     );
-                    let player = Object::new()
+                    let player = object::Object::new()
                         .position(new_x, new_y)
                         .living(true)
                         .visualize("You", '@', (255, 255, 255, 255))
                         .physical(true, false, true)
-                        .control(Controller::Player(PlayerCtrl::new()))
+                        .control(control::Controller::Player(player::PlayerCtrl::new()))
                         .genome(
                             0.99,
                             self.state
                                 .gene_library
-                                .dna_to_traits(DnaType::Nucleus, &dna),
+                                .dna_to_traits(genetics::DnaType::Nucleus, &dna),
                         );
 
                     trace!("created player object {}", player);
@@ -242,7 +253,7 @@ impl Game {
                     trace!("player dna: {:?}", player.dna);
                     trace!(
                         "player default action: {:?}",
-                        player.get_primary_action(Target::Center).to_text()
+                        player.get_primary_action(action::Target::Center).to_text()
                     );
 
                     self.objects.set_player(player);
@@ -250,7 +261,7 @@ impl Game {
                     // a warm welcoming message
                     self.state.log.add(
                         "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-                        MsgClass::Story,
+                        game_state::MsgClass::Story,
                     );
                 }
             }
@@ -319,7 +330,7 @@ impl Rltk_GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut Rltk) {
-        let mut timer = Timer::new("game loop");
+        let mut timer = timer::Timer::new("game loop");
         // mouse workaround
         if ctx.left_click {
             if self.mouse_workaround {
@@ -331,6 +342,7 @@ impl Rltk_GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
+            let mut render_timer = timer::Timer::new("render");
             // println!(
             //     "{}, {}, {}",
             //     self.re_render, self.hud.require_refresh, self.state.log.is_changed
@@ -341,15 +353,20 @@ impl Rltk_GameState for Game {
             // if self.re_render || self.hud.require_refresh {
             ctx.set_active_console(WORLD_CON);
             ctx.cls();
-            render_world(&mut self.objects, ctx);
+            frontend::render_world(&mut self.objects, ctx);
             // }
 
             ctx.set_active_console(HUD_CON);
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
-                render_gui(&self.state, &mut self.hud, ctx, &player);
+                hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
             }
-
+            // record the time it took to render everything for
+            let render_elapsed = render_timer.stop_silent();
+            self.render_time = (
+                self.render_time.0.min(render_elapsed),
+                self.render_time.1.max(render_elapsed),
+            );
             // switch off any triggers
             self.re_render = false;
             self.state.log.is_changed = false;
@@ -357,7 +374,7 @@ impl Rltk_GameState for Game {
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
-        trace!("updating particles");
+        // TODO: move particle render routine into separate function
         ctx.set_active_console(PAR_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
@@ -387,9 +404,12 @@ impl Rltk_GameState for Game {
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
-                    Some(option) => {
-                        MainMenuItem::process(&mut self.state, &mut self.objects, instance, &option)
-                    }
+                    Some(option) => <menu::main_menu::MainMenuItem as menu::MenuItem>::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    ),
                     None => RunState::MainMenu(instance.clone()),
                 }
             }
@@ -405,19 +425,26 @@ impl Rltk_GameState for Game {
                 let bg = palette().hud_bg;
                 ctx.print_color_centered_at(SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
-                    Some(option) => GameOverMenuItem::process(
-                        &mut self.state,
-                        &mut self.objects,
-                        instance,
-                        &option,
-                    ),
+                    Some(option) => {
+                        <menu::game_over_menu::GameOverMenuItem as menu::MenuItem>::process(
+                            &mut self.state,
+                            &mut self.objects,
+                            instance,
+                            &option,
+                        )
+                    }
                     None => RunState::GameOver(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
                     self.re_render = true;
-                    ActionItem::process(&mut self.state, &mut self.objects, instance, &option)
+                    <menu::choose_action_menu::ActionItem as menu::MenuItem>::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    )
                 }
                 None => RunState::ChooseActionMenu(instance.clone()),
             },
@@ -429,15 +456,19 @@ impl Rltk_GameState for Game {
                 // be printed to the log.
                 'processing: loop {
                     feedback = self.state.process_object(&mut self.objects);
-                    if feedback != ObjectFeedback::NoFeedback || self.state.log.is_changed {
+                    if feedback != game_state::ObjectFeedback::NoFeedback
+                        || self.state.log.is_changed
+                    {
                         break 'processing;
                     }
                 }
 
                 trace!("process feedback in RunState::Ticking: {:#?}", feedback);
                 match feedback {
-                    ObjectFeedback::GameOver => RunState::GameOver(game_over_menu()),
-                    ObjectFeedback::Render => {
+                    game_state::ObjectFeedback::GameOver => {
+                        RunState::GameOver(menu::game_over_menu::game_over_menu())
+                    }
+                    game_state::ObjectFeedback::Render => {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
                         // } else {
@@ -445,7 +476,7 @@ impl Rltk_GameState for Game {
                         RunState::Ticking
                         // }
                     }
-                    ObjectFeedback::GenomeManipulator => {
+                    game_state::ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
                             create_genome_manipulator(&mut self.state, &mut self.objects)
                         {
@@ -454,7 +485,7 @@ impl Rltk_GameState for Game {
                             RunState::CheckInput
                         }
                     }
-                    ObjectFeedback::UpdateHud => {
+                    game_state::ObjectFeedback::UpdateHud => {
                         self.hud.require_refresh = true;
                         RunState::Ticking
                     }
@@ -473,16 +504,17 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::CheckInput => {
-                match read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
-                    PlayerInput::MetaInput(meta_action) => {
+                match game_input::read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx)
+                {
+                    game_input::PlayerInput::MetaInput(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
                         handle_meta_actions(&mut self.state, &mut self.objects, ctx, meta_action)
                     }
-                    PlayerInput::PlayInput(in_game_action) => {
+                    game_input::PlayerInput::PlayInput(in_game_action) => {
                         trace!("inject in-game action {:#?} to player", in_game_action);
                         if let Some(ref mut player) = self.objects[self.state.player_idx] {
                             use crate::ui::game_input::PlayerAction::*;
-                            let a: Option<Box<dyn Action>> = match in_game_action {
+                            let a: Option<Box<dyn action::Action>> = match in_game_action {
                                 PrimaryAction(dir) => Some(player.get_primary_action(dir)),
                                 SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
                                 Quick1Action => Some(player.get_quick1_action()),
@@ -503,12 +535,14 @@ impl Rltk_GameState for Game {
                                 DropItem(idx) => {
                                     trace!("PlayInput DROP_ITEM");
                                     if player.inventory.items.len() > idx {
-                                        Some(Box::new(ActDropItem::new(idx as i32)))
+                                        Some(Box::new(action::inventory::ActDropItem::new(
+                                            idx as i32,
+                                        )))
                                     } else {
                                         None
                                     }
                                 }
-                                PassTurn => Some(Box::new(ActPass::default())),
+                                PassTurn => Some(Box::new(action::hereditary::ActPass::default())),
                             };
                             player.set_next_action(a);
                             RunState::Ticking
@@ -516,7 +550,7 @@ impl Rltk_GameState for Game {
                             RunState::Ticking
                         }
                     }
-                    PlayerInput::Undefined => {
+                    game_input::PlayerInput::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
                         // checking for input
                         if innit_env().is_spectating {
@@ -528,7 +562,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::GenomeEditing(genome_editor) => match genome_editor.state {
-                GenomeEditingState::Done => {
+                genome_editor::GenomeEditingState::Done => {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                     }
@@ -549,7 +583,7 @@ impl Rltk_GameState for Game {
                 // start new game
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
-                self.world_generator = OrganicsWorldGenerator::new();
+                self.world_generator = world::world_gen_organic::OrganicsWorldGenerator::new();
                 RunState::WorldGen
             }
             RunState::LoadGame => {
@@ -560,7 +594,7 @@ impl Rltk_GameState for Game {
                         self.re_render = true;
                         RunState::Ticking
                     }
-                    Err(_e) => RunState::MainMenu(main_menu()),
+                    Err(_e) => RunState::MainMenu(menu::main_menu::main_menu()),
                 }
             }
             RunState::WorldGen => {
@@ -584,7 +618,7 @@ impl Rltk_GameState for Game {
         // keep time and emit warning if a tick takes longer than half a second
         let tick_elapsed = timer.stop_silent();
         if tick_elapsed > 500_000_000 {
-            warn!("game loop took {}", time_from(tick_elapsed));
+            warn!("game loop took {}", timer::time_to_str(tick_elapsed));
         }
         self.slowest_tick = self.slowest_tick.max(tick_elapsed);
 
@@ -596,37 +630,40 @@ pub fn handle_meta_actions(
     state: &mut GameState,
     objects: &mut GameObjects,
     ctx: &mut Rltk,
-    action: UiAction,
+    action: game_input::UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
+    use game_input::UiAction;
     match action {
         UiAction::ExitGameLoop => {
             match save_game(&state, &objects) {
                 Ok(()) => {}
                 Err(_e) => {} // TODO: Create some message visible in the main menu
             }
-            RunState::MainMenu(main_menu())
+            RunState::MainMenu(menu::main_menu::main_menu())
         }
-        UiAction::CharacterScreen => RunState::InfoBox(character_screen(state, objects)),
+        UiAction::CharacterScreen => {
+            RunState::InfoBox(dialog::character::character_screen(state, objects))
+        }
         UiAction::ChoosePrimaryAction => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(
                     player,
                     &[
-                        TargetCategory::Any,
-                        TargetCategory::EmptyObject,
-                        TargetCategory::BlockingObject,
+                        action::TargetCategory::Any,
+                        action::TargetCategory::EmptyObject,
+                        action::TargetCategory::BlockingObject,
                     ],
                 );
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
-                        ActionCategory::Primary,
+                        menu::choose_action_menu::ActionCategory::Primary,
                     ))
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
+                        game_state::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -639,20 +676,20 @@ pub fn handle_meta_actions(
                 let action_items = get_available_actions(
                     player,
                     &[
-                        TargetCategory::Any,
-                        TargetCategory::EmptyObject,
-                        TargetCategory::BlockingObject,
+                        action::TargetCategory::Any,
+                        action::TargetCategory::EmptyObject,
+                        action::TargetCategory::BlockingObject,
                     ],
                 );
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
-                        ActionCategory::Secondary,
+                        menu::choose_action_menu::ActionCategory::Secondary,
                     ))
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
+                        game_state::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -662,16 +699,16 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick1Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[TargetCategory::None]);
+                let action_items = get_available_actions(player, &[action::TargetCategory::None]);
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
-                        ActionCategory::Quick1,
+                        menu::choose_action_menu::ActionCategory::Quick1,
                     ))
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
+                        game_state::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -681,16 +718,16 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick2Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[TargetCategory::None]);
+                let action_items = get_available_actions(player, &[action::TargetCategory::None]);
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
                         action_items,
-                        ActionCategory::Quick2,
+                        menu::choose_action_menu::ActionCategory::Quick2,
                     ))
                 } else {
                     state.log.add(
                         "You have no actions available! Try modifying your genome.",
-                        MsgClass::Alert,
+                        game_state::MsgClass::Alert,
                     );
                     RunState::Ticking
                 }
@@ -705,7 +742,7 @@ pub fn handle_meta_actions(
                 RunState::CheckInput
             }
         }
-        UiAction::Help => RunState::InfoBox(controls_screen()),
+        UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
         UiAction::SetFont(x) => {
             ctx.set_active_console(WORLD_CON);
             ctx.set_active_font(x, false);
@@ -721,7 +758,10 @@ pub fn handle_meta_actions(
     }
 }
 
-fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<String> {
+fn get_available_actions(
+    obj: &mut object::Object,
+    targets: &[action::TargetCategory],
+) -> Vec<String> {
     obj.actuators
         .actions
         .iter()
@@ -735,10 +775,10 @@ fn get_available_actions(obj: &mut Object, targets: &[TargetCategory]) -> Vec<St
 fn create_genome_manipulator(
     state: &mut GameState,
     objects: &mut GameObjects,
-) -> Option<GenomeEditor> {
+) -> Option<genome_editor::GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
         // NOTE: In the future editor features could be read from the plasmid.
-        let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
+        let genome_editor = genome_editor::GenomeEditor::new(player.dna.clone(), 1);
         Some(genome_editor)
     } else {
         None

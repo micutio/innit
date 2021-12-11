@@ -1,4 +1,4 @@
-use crate::core::game_state::GameState;
+use crate::game::game_state::GameState;
 use crate::entity::action::hereditary::ActMove;
 use crate::entity::action::inventory::ActPickUpItem;
 use crate::entity::genetics::{DnaType, GRAY_CODE_WIDTH};

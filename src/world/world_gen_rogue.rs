@@ -1,13 +1,9 @@
-use crate::core::game_state::GameState;
-use crate::core::position::Position;
-use crate::core::world::{Tile, WorldGen};
-use crate::core::{game_objects::GameObjects, innit_env};
 use crate::entity::object::Object;
-use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
-use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::Spawn;
+use crate::game::{self, game_objects::GameObjects, game_state::GameState, innit_env};
+use crate::raws;
 use crate::ui::menu::main_menu::main_menu;
 use crate::ui::palette;
+use crate::world::{Tile, WorldGen};
 use rand::Rng;
 use std::{cmp, thread, time};
 
@@ -38,9 +34,9 @@ impl WorldGen for RogueWorldGenerator {
         &mut self,
         state: &mut GameState,
         objects: &mut GameObjects,
-        spawns: &[Spawn],
-        object_templates: &[ObjectTemplate],
-    ) -> RunState {
+        spawns: &[raws::spawn::Spawn],
+        object_templates: &[raws::object_template::ObjectTemplate],
+    ) -> game::RunState {
         // fill the world with `unblocked` tiles
         // create rooms randomly
 
@@ -50,8 +46,8 @@ impl WorldGen for RogueWorldGenerator {
             let h = state.rng.gen_range(ROOM_MIN_SIZE..=ROOM_MAX_SIZE);
 
             // random position without exceeding the boundaries of the map
-            let x = state.rng.gen_range(0..WORLD_WIDTH - w);
-            let y = state.rng.gen_range(0..WORLD_HEIGHT - h);
+            let x = state.rng.gen_range(0..game::WORLD_WIDTH - w);
+            let y = state.rng.gen_range(0..game::WORLD_HEIGHT - h);
 
             // create room and store in vector
             let new_room = Rect::new(x, y, w, h);
@@ -100,7 +96,7 @@ impl WorldGen for RogueWorldGenerator {
                 thread::sleep(ten_millis);
             }
         }
-        RunState::MainMenu(main_menu())
+        game::RunState::MainMenu(main_menu())
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -137,8 +133,8 @@ fn create_v_tunnel(objects: &mut GameObjects, y1: i32, y2: i32, x: i32) {
 fn place_objects(
     state: &mut GameState,
     objects: &mut GameObjects,
-    _spawns: &[Spawn],
-    _object_templates: &[ObjectTemplate],
+    _spawns: &[raws::spawn::Spawn],
+    _object_templates: &[raws::object_template::ObjectTemplate],
 ) {
     // use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -157,10 +153,10 @@ fn place_objects(
     let num_npc = state.rng.gen_range(0..npc_count);
     for _ in 0..num_npc {
         // choose random spot for this monster
-        let x = state.rng.gen_range(0 + 1..WORLD_WIDTH);
-        let y = state.rng.gen_range(0 + 1..WORLD_HEIGHT);
+        let x = state.rng.gen_range(0 + 1..game::WORLD_WIDTH);
+        let y = state.rng.gen_range(0 + 1..game::WORLD_HEIGHT);
 
-        if !objects.is_pos_occupied(&Position::new(x, y)) {
+        if !objects.is_pos_occupied(&game::position::Position::new(x, y)) {
             // let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
             let monster = Object::new()
                 .position(x, y)

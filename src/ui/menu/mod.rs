@@ -2,10 +2,10 @@ pub mod choose_action_menu;
 pub mod game_over_menu;
 pub mod main_menu;
 
-use crate::core::game_state::GameState;
+use crate::game::game_state::GameState;
 use crate::game::{RunState, HUD_CON, HUD_CON_Z, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::ui::hud::{ToolTip, UiItem};
-use crate::{core::game_objects::GameObjects, ui::palette};
+use crate::{game::game_objects::GameObjects, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {

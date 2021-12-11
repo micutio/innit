@@ -1,9 +1,9 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
-use crate::core::innit_env;
-use crate::core::position::Position;
+use crate::game::game_objects::GameObjects;
+use crate::game::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
+use crate::game::innit_env;
+use crate::game::position::Position;
 use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
 use crate::entity::ai::{AiForceVirusProduction, AiTile, AiVirus};
 use crate::entity::control::Controller;

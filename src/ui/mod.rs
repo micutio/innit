@@ -10,7 +10,7 @@ pub mod rex_assets;
 
 use std::sync::{Mutex, MutexGuard};
 
-use crate::core::position::Position;
+use crate::game::position::Position;
 use crate::ui::color_palette::{ColorPalette, PALETTE_DEFAULT};
 use crate::ui::particle::{Particle, ParticleBuilder, ParticleSystem};
 

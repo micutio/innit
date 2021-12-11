@@ -5,3 +5,5 @@ pub mod genetics;
 pub mod inventory;
 pub mod object;
 pub mod player;
+
+pub use object::Object;

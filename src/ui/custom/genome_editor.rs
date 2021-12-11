@@ -6,8 +6,8 @@ they have a plasmid that allows this.
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{RunState, HUD_CON, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::rand::Rng;
-use crate::util::game_rng::RngExtended;
-use crate::{core::game_state::GameState, ui::palette};
+use crate::util::rng::RngExtended;
+use crate::{game::game_state::GameState, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
 use std::ops::Add;
 

@@ -35,8 +35,8 @@ use crate::entity::action::hereditary::{
 use crate::entity::action::inventory::ActPickUpItem;
 use crate::entity::action::Action;
 use crate::entity::genetics::DnaType::Nucleoid;
-use crate::util::game_rng::GameRng;
 use crate::util::generate_gray_code;
+use crate::util::rng::GameRng;
 use core::fmt;
 use rand::distributions::WeightedIndex;
 use rand::prelude::{Distribution, SliceRandom};

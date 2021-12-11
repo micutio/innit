@@ -1,9 +1,9 @@
-use crate::core::game_state::GameState;
-use crate::core::innit_env;
-use crate::core::world::Tile;
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
-use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActMove};
+use crate::game::game_state::GameState;
+use crate::game::innit_env;
+use crate::world::Tile;
+use crate::{entity::action::hereditary::ActMove, game::game_objects::GameObjects};
 
 #[test]
 fn test_random_ai() {

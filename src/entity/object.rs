@@ -1,16 +1,16 @@
-use crate::core::position::Position;
-use crate::core::world::Tile;
-use crate::entity::action::*;
-use crate::entity::control::*;
-use crate::entity::genetics::GeneticTrait;
-use crate::entity::genetics::{Actuators, Dna, DnaType, Processors, Sensors};
+use crate::entity::action;
+use crate::entity::action::Action;
+use crate::entity::control;
+use crate::entity::genetics;
 use crate::entity::inventory::Inventory;
-use crate::ui::hud::ToolTip;
-use crate::{core::game_objects::GameObjects, entity::action::hereditary::ActPass};
-use crate::{
-    core::game_state::{GameState, Log, MessageLog, MsgClass},
-    entity::action::inventory::ActDropItem,
-};
+use crate::game;
+use crate::game::game_state::MessageLog;
+use crate::game::position::Position;
+use crate::game::GameObjects;
+use crate::game::GameState;
+use crate::ui::hud;
+use crate::world;
+
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
@@ -37,12 +37,12 @@ pub struct Object {
     pub pos: Position,
     pub visual: Visual,
     pub physics: Physics,
-    pub tile: Option<Tile>,
-    pub control: Option<Controller>,
-    pub dna: Dna,
-    pub sensors: Sensors,
-    pub processors: Processors,
-    pub actuators: Actuators,
+    pub tile: Option<world::Tile>,
+    pub control: Option<control::Controller>,
+    pub dna: genetics::Dna,
+    pub sensors: genetics::Sensors,
+    pub processors: genetics::Processors,
+    pub actuators: genetics::Actuators,
     pub inventory: Inventory,
     pub item: Option<InventoryItem>,
 }
@@ -125,12 +125,12 @@ impl Object {
             gene_stability: 1.0,
             tile: None,
             control: None,
-            dna: Dna::new(),
+            dna: genetics::Dna::new(),
             visual: Visual::new(),
             physics: Physics::new(),
-            sensors: Sensors::new(),
-            processors: Processors::new(),
-            actuators: Actuators::new(),
+            sensors: genetics::Sensors::new(),
+            processors: genetics::Processors::new(),
+            actuators: genetics::Actuators::new(),
             inventory: Inventory::new(),
             item: None,
         }
@@ -174,7 +174,12 @@ impl Object {
     pub fn genome(
         mut self,
         stability: f64,
-        (sensors, processors, actuators, dna): (Sensors, Processors, Actuators, Dna),
+        (sensors, processors, actuators, dna): (
+            genetics::Sensors,
+            genetics::Processors,
+            genetics::Actuators,
+            genetics::Dna,
+        ),
     ) -> Object {
         self.gene_stability = stability;
         self.set_genome(sensors, processors, actuators, dna);
@@ -192,7 +197,7 @@ impl Object {
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
     pub fn tile_explored(mut self, is_explored: bool) -> Object {
-        self.tile = Some(Tile {
+        self.tile = Some(world::Tile {
             is_explored,
             morphogen: 0.0,
         });
@@ -200,12 +205,12 @@ impl Object {
     }
 
     /// Transform the object into an NPC or player. Part of the builder pattern.
-    pub fn control(mut self, controller: Controller) -> Object {
+    pub fn control(mut self, controller: control::Controller) -> Object {
         self.control = Some(controller);
         self
     }
 
-    pub fn control_opt(mut self, controller: Option<Controller>) -> Object {
+    pub fn control_opt(mut self, controller: Option<control::Controller>) -> Object {
         self.control = controller;
         self
     }
@@ -240,7 +245,7 @@ impl Object {
     }
 
     pub fn is_player(&self) -> bool {
-        if let Some(Controller::Player(_)) = self.control {
+        if let Some(control::Controller::Player(_)) = self.control {
             true
         } else {
             false
@@ -248,21 +253,21 @@ impl Object {
     }
 
     /// Transform the object into an NPC or player. Part of the builder pattern.
-    pub fn set_control(mut self, controller: Controller, log: &mut Log) {
+    pub fn set_control(mut self, controller: control::Controller, log: &mut game::game_state::Log) {
         match controller {
-            Controller::Npc(_) => {
+            control::Controller::Npc(_) => {
                 if self.is_player() {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
-                        MsgClass::Alert,
+                        game::game_state::MsgClass::Alert,
                     );
                 }
             }
-            Controller::Player(_) => {
-                if let Some(Controller::Npc(_)) = self.control {
+            control::Controller::Player(_) => {
+                if let Some(control::Controller::Npc(_)) = self.control {
                     log.add(
                         format!("You gained control over {}", &self.visual.name),
-                        MsgClass::Alert,
+                        game::game_state::MsgClass::Alert,
                     );
                 }
             }
@@ -280,10 +285,10 @@ impl Object {
     /// Set the object's current dna and resulting super traits.
     pub fn set_genome(
         &mut self,
-        sensors: Sensors,
-        processors: Processors,
-        actuators: Actuators,
-        dna: Dna,
+        sensors: genetics::Sensors,
+        processors: genetics::Processors,
+        actuators: genetics::Actuators,
+        dna: genetics::Dna,
     ) {
         self.sensors = sensors;
         self.processors = processors;
@@ -291,7 +296,7 @@ impl Object {
         self.dna = dna;
 
         // update default action
-        if let Some(Controller::Player(ref mut ctrl)) = &mut self.control {
+        if let Some(control::Controller::Player(ref mut ctrl)) = &mut self.control {
             if let Some(def_action) = self
                 .actuators
                 .actions
@@ -338,10 +343,10 @@ impl Object {
         let mut controller_opt = self.control.take();
         let next_action: Option<Box<dyn Action>>;
         match controller_opt {
-            Some(Controller::Npc(ref mut boxed_ai)) => {
+            Some(control::Controller::Npc(ref mut boxed_ai)) => {
                 next_action = Some(boxed_ai.act(state, objects, self));
             }
-            Some(Controller::Player(ref mut player_ctrl)) => {
+            Some(control::Controller::Player(ref mut player_ctrl)) => {
                 next_action = player_ctrl.next_action.take();
             }
             None => next_action = None,
@@ -356,7 +361,7 @@ impl Object {
     /// Inject the next action this object will take into the object.
     pub fn set_next_action(&mut self, next_action: Option<Box<dyn Action>>) {
         let mut controller = self.control.take();
-        if let Some(Controller::Player(ref mut ctrl)) = controller {
+        if let Some(control::Controller::Player(ref mut ctrl)) = controller {
             ctrl.next_action = next_action;
         }
         self.control = controller;
@@ -364,7 +369,7 @@ impl Object {
 
     pub fn set_primary_action(&mut self, new_primary_action: Box<dyn Action>) {
         let mut controller = self.control.take();
-        if let Some(Controller::Player(ref mut ctrl)) = controller {
+        if let Some(control::Controller::Player(ref mut ctrl)) = controller {
             ctrl.primary_action = new_primary_action;
         }
         self.control = controller;
@@ -372,7 +377,7 @@ impl Object {
 
     pub fn set_secondary_action(&mut self, new_secondary_action: Box<dyn Action>) {
         let mut controller = self.control.take();
-        if let Some(Controller::Player(ref mut ctrl)) = controller {
+        if let Some(control::Controller::Player(ref mut ctrl)) = controller {
             ctrl.secondary_action = new_secondary_action;
         }
         self.control = controller;
@@ -380,7 +385,7 @@ impl Object {
 
     pub fn set_quick1_action(&mut self, new_quick1_action: Box<dyn Action>) {
         let mut controller = self.control.take();
-        if let Some(Controller::Player(ref mut ctrl)) = controller {
+        if let Some(control::Controller::Player(ref mut ctrl)) = controller {
             ctrl.quick1_action = new_quick1_action;
         }
         self.control = controller;
@@ -388,14 +393,14 @@ impl Object {
 
     pub fn set_quick2_action(&mut self, new_quick2_action: Box<dyn Action>) {
         let mut controller = self.control.take();
-        if let Some(Controller::Player(ref mut ctrl)) = controller {
+        if let Some(control::Controller::Player(ref mut ctrl)) = controller {
             ctrl.quick2_action = new_quick2_action;
         }
         self.control = controller;
     }
 
     pub fn has_next_action(&self) -> bool {
-        if let Some(Controller::Player(ctrl)) = &self.control {
+        if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.next_action.is_some()
         } else {
             false
@@ -404,41 +409,41 @@ impl Object {
 
     // NOTE: Consider moving the player-action-related methods into PlayerCtrl.
 
-    pub fn get_primary_action(&self, target: Target) -> Box<dyn Action> {
+    pub fn get_primary_action(&self, target: action::Target) -> Box<dyn Action> {
         // Some(def_action.clone())
-        if let Some(Controller::Player(ctrl)) = &self.control {
+        if let Some(control::Controller::Player(ctrl)) = &self.control {
             let mut action_clone = ctrl.primary_action.clone();
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(ActPass::default())
+            Box::new(action::hereditary::ActPass::default())
         }
     }
 
-    pub fn get_secondary_action(&self, target: Target) -> Box<dyn Action> {
+    pub fn get_secondary_action(&self, target: action::Target) -> Box<dyn Action> {
         // Some(def_action.clone())
-        if let Some(Controller::Player(ctrl)) = &self.control {
+        if let Some(control::Controller::Player(ctrl)) = &self.control {
             let mut action_clone = ctrl.secondary_action.clone();
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(ActPass::default())
+            Box::new(action::hereditary::ActPass::default())
         }
     }
 
     pub fn get_quick1_action(&self) -> Box<dyn Action> {
-        if let Some(Controller::Player(ctrl)) = &self.control {
+        if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick1_action.clone()
         } else {
-            Box::new(ActPass::default())
+            Box::new(action::hereditary::ActPass::default())
         }
     }
 
     pub fn get_quick2_action(&self) -> Box<dyn Action> {
-        if let Some(Controller::Player(ctrl)) = &self.control {
+        if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick2_action.clone()
         } else {
-            Box::new(ActPass::default())
+            Box::new(action::hereditary::ActPass::default())
         }
     }
 
@@ -459,20 +464,29 @@ impl Object {
         // add action to drop it
         self.inventory
             .inv_actions
-            .push(Box::new(ActDropItem::new(new_idx as i32)));
+            .push(Box::new(action::inventory::ActDropItem::new(
+                new_idx as i32,
+            )));
     }
 
     pub fn remove_from_inventory(&mut self, index: usize) -> Object {
         self.inventory.items.remove(index)
     }
 
-    pub fn set_dna(&mut self, new_dna: Dna) {
+    pub fn set_dna(&mut self, new_dna: genetics::Dna) {
         self.dna = new_dna;
     }
 
     /// Retrieve the genetic traits and actions of this object's dna combined with those of all
     /// plasmid-type items in the inventory
-    pub fn get_combined_dna(&self) -> Vec<(&Sensors, &Processors, &Actuators, &Dna)> {
+    pub fn get_combined_dna(
+        &self,
+    ) -> Vec<(
+        &genetics::Sensors,
+        &genetics::Processors,
+        &genetics::Actuators,
+        &genetics::Dna,
+    )> {
         let mut combined_dna = Vec::new();
         // append own dna first
         combined_dna.push((&self.sensors, &self.processors, &self.actuators, &self.dna));
@@ -480,9 +494,14 @@ impl Object {
             .inventory
             .items
             .iter()
-            .filter(|o| o.dna.dna_type == DnaType::Plasmid)
+            .filter(|o| o.dna.dna_type == genetics::DnaType::Plasmid)
             .map(|o| (&o.sensors, &o.processors, &o.actuators, &o.dna))
-            .collect::<Vec<(&Sensors, &Processors, &Actuators, &Dna)>>();
+            .collect::<Vec<(
+                &genetics::Sensors,
+                &genetics::Processors,
+                &genetics::Actuators,
+                &genetics::Dna,
+            )>>();
         combined_dna.append(&mut inventory_dna);
 
         combined_dna
@@ -490,7 +509,7 @@ impl Object {
 
     /// Retrieve the genetic traits and actions of this object's dna combined with those of all
     /// plasmid-type items in the inventory
-    pub fn get_combined_simplified_dna(&self) -> Vec<&GeneticTrait> {
+    pub fn get_combined_simplified_dna(&self) -> Vec<&genetics::GeneticTrait> {
         let mut combined_dna = Vec::new();
         self.dna
             .simplified
@@ -500,7 +519,7 @@ impl Object {
         self.inventory
             .items
             .iter()
-            .filter(|o| o.dna.dna_type == DnaType::Plasmid)
+            .filter(|o| o.dna.dna_type == genetics::DnaType::Plasmid)
             .for_each(|o| {
                 o.dna
                     .simplified
@@ -511,7 +530,7 @@ impl Object {
         combined_dna
     }
 
-    pub fn generate_tooltip(&self, other: &Object) -> ToolTip {
+    pub fn generate_tooltip(&self, other: &Object) -> hud::ToolTip {
         // show whether both objects have matching receptors
         let receptor_match = if self
             .processors
@@ -527,10 +546,10 @@ impl Object {
         // tiles have reduced information (might change in the future) since they are static
         if self.tile.is_some() {
             return if !self.physics.is_blocking {
-                ToolTip::no_header(vec![])
+                hud::ToolTip::no_header(vec![])
             } else {
                 let attributes = vec![("receptors:".to_string(), receptor_match)];
-                ToolTip::new(self.visual.name.clone(), attributes)
+                hud::ToolTip::new(self.visual.name.clone(), attributes)
             };
         }
 
@@ -558,6 +577,6 @@ impl Object {
             ),
             ("receptors:".to_string(), receptor_match),
         ];
-        ToolTip::new(header, attributes)
+        hud::ToolTip::new(header, attributes)
     }
 }
