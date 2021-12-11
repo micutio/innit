@@ -512,15 +512,6 @@ impl Object {
     }
 
     pub fn generate_tooltip(&self, other: &Object) -> ToolTip {
-        // tiles don't need a header
-        if self.tile.is_some() {
-            return if !self.physics.is_blocking {
-                ToolTip::no_header(vec![])
-            } else {
-                ToolTip::header_only(self.visual.name.clone())
-            };
-        }
-
         // show whether both objects have matching receptors
         let receptor_match = if self
             .processors
@@ -532,6 +523,16 @@ impl Object {
         } else {
             "no match".to_string()
         };
+
+        // tiles have reduced information (might change in the future) since they are static
+        if self.tile.is_some() {
+            return if !self.physics.is_blocking {
+                ToolTip::no_header(vec![])
+            } else {
+                let attributes = vec![("receptors:".to_string(), receptor_match)];
+                ToolTip::new(self.visual.name.clone(), attributes)
+            };
+        }
 
         let header = self.visual.name.clone();
         let attributes: Vec<(String, String)> = vec![

@@ -111,13 +111,6 @@ impl Action for ActMove {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
-        if owner.physics.is_visible {
-            debug!(
-                "target position {:#?}, blocked: {}",
-                target_pos,
-                &objects.is_pos_blocked(&target_pos)
-            );
-        }
         if !&objects.is_pos_blocked(&target_pos) {
             owner.pos.set(target_pos.x, target_pos.y);
             let callback = if owner.physics.is_visible {
@@ -358,7 +351,7 @@ impl Action for ActInjectRnaVirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_by_pos(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
@@ -395,9 +388,8 @@ impl Action for ActInjectRnaVirus {
                 // The virus becomes an empty shell after successfully transmitting its dna.
                 owner.dna.raw.clear();
                 // The virus 'dies' symbolically.
-                owner.alive = false;
+                owner.die(state, objects);
                 // Funny, because it's still debated as to whether viruses are alive to begin.
-
                 true
             } else {
                 false
@@ -493,7 +485,7 @@ impl Action for ActInjectRetrovirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_non_tile_by_pos(&target_pos) {
             // check whether the virus can attach to the object
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
@@ -545,13 +537,16 @@ impl Action for ActInjectRetrovirus {
                 // The virus becomes an empty shell after successfully transmitting its dna.
                 owner.dna.raw.clear();
                 // The virus 'dies' symbolically...
-                owner.alive = false;
+                owner.die(state, objects);
                 // ..because it's still debated as to whether viruses are alive to begin with.
+
+                let msg = format!(
+                    "{} has infected {} with retrovirus dna",
+                    owner.visual.name, target.visual.name
+                );
+                debug!("{}", msg);
                 if owner.physics.is_visible {
-                    state.log.add(
-                        format!("A virus has infected {}!", target.visual.name),
-                        MsgClass::Alert,
-                    );
+                    state.log.add(msg, MsgClass::Alert);
                     // play a little particle effect
                     let fg = palette().hud_fg_bar_health;
                     let bg = palette().col_transparent;
@@ -829,7 +824,7 @@ impl Action for ActKillSwitch {
 
             _ => {
                 let t_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-                if let Some((index, Some(mut target))) = objects.extract_entity_by_pos(&t_pos) {
+                if let Some((index, Some(mut target))) = objects.extract_non_tile_by_pos(&t_pos) {
                     // kill switches of other cells can only be activated if they have both
                     // a) the killswitch gene
                     // b) a matching receptor that the owner can use to connect to the target

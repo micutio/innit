@@ -198,16 +198,29 @@ impl Game {
                 if !innit_env().is_spectating {
                     // create object representing the player
                     let (new_x, new_y) = self.world_generator.get_player_start_pos();
-                    let dna = self.state.gene_library.dna_from_distribution(
+                    // let dna = self.state.gene_library.dna_from_distribution(
+                    //     &mut self.state.rng,
+                    //     &[3, 2, 5],
+                    //     &[
+                    //         TraitFamily::Sensing,
+                    //         TraitFamily::Processing,
+                    //         TraitFamily::Actuating,
+                    //     ],
+                    //     false,
+                    //     GENOME_LEN,
+                    // );
+                    let dna = self.state.gene_library.dna_from_trait_strs(
                         &mut self.state.rng,
-                        &[3, 2, 5],
                         &[
-                            TraitFamily::Sensing,
-                            TraitFamily::Processing,
-                            TraitFamily::Actuating,
+                            "Move".to_string(),
+                            "Receptor".to_string(),
+                            "Optical Sensor".to_string(),
+                            "Optical Sensor".to_string(),
+                            "Optical Sensor".to_string(),
+                            "Energy Store".to_string(),
+                            "Energy Store".to_string(),
+                            "Energy Store".to_string(),
                         ],
-                        false,
-                        GENOME_LEN,
                     );
                     let player = Object::new()
                         .position(new_x, new_y)

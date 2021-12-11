@@ -159,7 +159,7 @@ impl GameObjects {
         }
     }
 
-    pub fn extract_entity_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+    pub fn extract_non_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         if let Some(i) = self.obj_vec.iter().position(|opt| {
             if let Some(obj) = opt {
                 obj.pos.is_equal(pos) && obj.tile.is_none()
