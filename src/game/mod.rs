@@ -32,7 +32,7 @@ use crate::world_gen;
 use crate::world_gen::WorldGen;
 
 use core::fmt;
-use rltk::{GameState as Rltk_GameState, Rltk};
+use rltk;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 #[cfg(not(target_arch = "wasm32"))]
@@ -296,12 +296,12 @@ fn save_game(_state: &State, _objects: &ObjectStore) -> Result<(), Box<dyn Error
     Err("game saving not available in the web version".into())
 }
 
-impl Rltk_GameState for Game {
+impl rltk::GameState for Game {
     /// Central function of the game.
     /// - process player input
     /// - render game world
     /// - let NPCs take their turn
-    fn tick(&mut self, ctx: &mut Rltk) {
+    fn tick(&mut self, ctx: &mut rltk::Rltk) {
         let mut timer = timer::Timer::new("game loop");
         // mouse workaround
         if ctx.left_click {
@@ -585,7 +585,7 @@ fn set_player_action(
 fn run_meta_action(
     state: &mut State,
     objects: &mut ObjectStore,
-    ctx: &mut Rltk,
+    ctx: &mut rltk::Rltk,
     action: input::UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
