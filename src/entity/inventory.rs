@@ -1,4 +1,4 @@
-use crate::entity::{action::Action, object::Object};
+use crate::entity::{act::Action, object::Object};
 
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,22 @@ impl Inventory {
         Inventory {
             items: Vec::new(),
             inv_actions: Vec::new(),
+        }
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone)]
+pub struct Item {
+    pub description: String,
+    pub use_action: Option<Box<dyn Action>>,
+}
+
+impl Item {
+    pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
+        Item {
+            description: descr.into(),
+            use_action,
         }
     }
 }

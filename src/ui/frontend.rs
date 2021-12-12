@@ -1,22 +1,26 @@
-use crate::core::innit_env;
-use crate::core::position::Position;
-use crate::core::world::is_explored;
-use crate::entity::object::Object;
-use crate::game::{WORLD_CON_Z, WORLD_HEIGHT, WORLD_WIDTH};
-use crate::util::timer::{time_from, Timer};
-use crate::{core::game_objects::GameObjects, ui::palette};
-use rltk::{field_of_view, to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, RGB, RGBA};
+use crate::entity::Object;
+use crate::game::{self, position::Position, ObjectStore};
+use crate::ui;
+use crate::util::timer;
+use crate::world_gen;
 
-pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
+use rltk;
+
+pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     // time rendering method for profiling purposes
-    let mut timer = Timer::new("render world");
-    let mut draw_batch = DrawBatch::new();
-    let world_col = palette().world_bg;
+    let mut timer = timer::Timer::new("render world");
+    let mut draw_batch = rltk::DrawBatch::new();
+    let world_col = ui::palette().world_bg;
 
     draw_batch.fill_region(
-        Rect::with_size(0, 0, WORLD_WIDTH - 1, WORLD_HEIGHT - 1),
-        ColorPair::new(world_col, world_col),
-        to_cp437(' '),
+        rltk::Rect::with_size(
+            0,
+            0,
+            game::consts::WORLD_WIDTH - 1,
+            game::consts::WORLD_HEIGHT - 1,
+        ),
+        rltk::ColorPair::new(world_col, world_col),
+        rltk::to_cp437(' '),
     );
 
     update_visibility(objects);
@@ -27,10 +31,10 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
         .flatten()
         .filter(|o| {
             // Is there a better way than using `and_then`?
-            innit_env().is_debug_mode
+            game::env().is_debug_mode
                 || o.physics.is_visible
                 || o.physics.is_always_visible
-                || (o.tile.is_some() && *o.tile.as_ref().and_then(is_explored).unwrap())
+                || (o.tile.is_some() && *o.tile.as_ref().and_then(world_gen::is_explored).unwrap())
         })
         .collect();
 
@@ -39,25 +43,25 @@ pub fn render_world(objects: &mut GameObjects, _ctx: &mut Rltk) {
     // draw the objects in the list
     for object in &to_draw {
         draw_batch.set(
-            Point::new(object.pos.x, object.pos.y),
-            ColorPair::new(object.visual.fg_color, object.visual.bg_color),
-            to_cp437(object.visual.glyph),
+            rltk::Point::new(object.pos.x, object.pos.y),
+            rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),
+            rltk::to_cp437(object.visual.glyph),
         );
     }
 
     let elapsed = timer.stop_silent();
-    info!("render world in {}", time_from(elapsed));
+    info!("render world in {}", timer::format(elapsed));
 
-    draw_batch.submit(WORLD_CON_Z).unwrap()
+    draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
 }
 
-fn update_visibility(objects: &mut GameObjects) {
+fn update_visibility(objects: &mut ObjectStore) {
     // in debug mode everything is visible
-    if innit_env().is_debug_mode {
-        let bwft = palette().world_bg_wall_fov_true;
-        let bgft = palette().world_bg_ground_fov_true;
-        let fwft = palette().world_fg_wall_fov_true;
-        let fgft = palette().world_fg_ground_fov_true;
+    if game::env().is_debug_mode {
+        let bwft = ui::palette().world_bg_wall_fov_true;
+        let bgft = ui::palette().world_bg_ground_fov_true;
+        let fwft = ui::palette().world_fg_wall_fov_true;
+        let fgft = ui::palette().world_fg_ground_fov_true;
         objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
             // o.physics.is_visible = true;
             if o.tile.is_some() {
@@ -82,8 +86,12 @@ fn update_visibility(objects: &mut GameObjects) {
         .collect();
 
     // set all objects invisible by default
-    let mut dist_map: Vec<f32> =
-        vec![f32::MAX; (WORLD_HEIGHT * WORLD_WIDTH) as usize + WORLD_WIDTH as usize];
+    let mut dist_map: Vec<f32> = vec![
+        f32::MAX;
+        (game::consts::WORLD_HEIGHT * game::consts::WORLD_WIDTH)
+            as usize
+            + game::consts::WORLD_WIDTH as usize
+    ];
     for object_opt in objects.get_vector_mut() {
         if let Some(object) = object_opt {
             object.physics.is_visible = false;
@@ -92,8 +100,13 @@ fn update_visibility(objects: &mut GameObjects) {
     }
 
     for (pos, range) in player_positions {
-        let mut visible_pos = field_of_view(pos.into(), range, objects);
-        visible_pos.retain(|p| p.x >= 0 && p.x < WORLD_WIDTH && p.y >= 0 && p.y < WORLD_HEIGHT);
+        let mut visible_pos = rltk::field_of_view(pos.into(), range, objects);
+        visible_pos.retain(|p| {
+            p.x >= 0
+                && p.x < game::consts::WORLD_WIDTH
+                && p.y >= 0
+                && p.y < game::consts::WORLD_HEIGHT
+        });
 
         for object_opt in objects.get_vector_mut() {
             if let Some(object) = object_opt {
@@ -113,19 +126,20 @@ fn update_visual(
     player_pos: Position,
     dist_map: &mut Vec<f32>,
 ) {
+    use rltk::{RGB, RGBA};
     // go through all tiles and set their background color
-    let bwft = RGB::from(RGBA::from(palette().world_bg_wall_fov_true));
-    let bwff = RGB::from(RGBA::from(palette().world_bg_wall_fov_false));
-    let bgft = RGB::from(RGBA::from(palette().world_bg_ground_fov_true));
-    let bgff = RGB::from(RGBA::from(palette().world_bg_ground_fov_false));
-    let fwft = RGB::from(RGBA::from(palette().world_fg_wall_fov_true));
-    let fwff = RGB::from(RGBA::from(palette().world_fg_wall_fov_false));
-    let fgft = RGB::from(RGBA::from(palette().world_fg_ground_fov_true));
-    let fgff = RGB::from(RGBA::from(palette().world_fg_ground_fov_false));
+    let bwft = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
+    let bwff = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
+    let bgft = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_true));
+    let bgff = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_false));
+    let fwft = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_true));
+    let fwff = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_false));
+    let fgft = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_true));
+    let fgff = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_false));
 
     let wall = object.physics.is_blocking_sight;
 
-    let idx = object.pos.y as usize * (WORLD_WIDTH as usize) + object.pos.x as usize;
+    let idx = object.pos.y as usize * (game::consts::WORLD_WIDTH as usize) + object.pos.x as usize;
     if idx >= dist_map.len() {
         panic!("Invalid object index!");
     }
@@ -153,7 +167,7 @@ fn update_visual(
         if object.physics.is_visible {
             tile.is_explored = true;
         }
-        if tile.is_explored || innit_env().is_debug_mode {
+        if tile.is_explored || game::env().is_debug_mode {
             // show explored tiles only (any visible tile is explored already)
             object.visual.fg_color = (
                 (tile_color_fg.r * 255.0) as u8,

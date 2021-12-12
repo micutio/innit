@@ -18,18 +18,14 @@ extern crate rltk;
 extern crate serde;
 extern crate serde_json;
 
-mod core;
 mod entity;
 mod game;
 mod raws;
 mod test;
 mod ui;
 mod util;
+mod world_gen;
 
-use crate::core::innit_env;
-use crate::game::Game;
-use crate::game::{SCREEN_HEIGHT, SCREEN_WIDTH};
-use rltk::RltkBuilder;
 use std::env;
 
 rltk::embedded_resource!(FONT_8X8_CHEEPICUS, "../resources/fonts/Cheepicus_8x8.png");
@@ -63,6 +59,8 @@ rltk::embedded_resource!(
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
 // Check [https://bfnightly.bracketproductions.com/rustbook/webbuild.html] for building as WASM.
 
+const VERSION: &str = "0.04";
+
 pub fn main() -> rltk::BError {
     println!(
         r#"
@@ -84,13 +82,13 @@ pub fn main() -> rltk::BError {
     debug!("args: {:?}", args);
     for arg in args {
         if arg.eq("-d") || arg.eq("--debug") {
-            innit_env().set_debug_mode(true);
+            game::env().set_debug_mode(true);
         }
         if arg.eq("-s") || arg.eq("--seeding") {
-            innit_env().set_rng_seeding(true);
+            game::env().set_rng_seeding(true);
         }
         if arg.eq("--spectate") {
-            innit_env().set_spectating(true);
+            game::env().set_spectating(true);
         }
     }
 
@@ -112,8 +110,8 @@ pub fn main() -> rltk::BError {
     let font_12x12_rex_paint = "fonts/rex_paint_12x12.png";
     let font_14x14_rex_paint = "fonts/rex_paint_14x14.png";
     let font_16x16_rex_paint = "fonts/rex_paint_16x16.png";
-    let mut context = RltkBuilder::new()
-        .with_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+    let mut context = rltk::RltkBuilder::new()
+        .with_dimensions(game::consts::SCREEN_WIDTH, game::consts::SCREEN_HEIGHT)
         .with_font(font_8x8_cheepicus, 8, 8)
         .with_font(font_12x12_cheepicus, 12, 12)
         .with_font(font_14x14_cheepicus, 14, 14)
@@ -123,15 +121,27 @@ pub fn main() -> rltk::BError {
         .with_font(font_14x14_rex_paint, 14, 14)
         .with_font(font_16x16_rex_paint, 16, 16)
         .with_advanced_input(true)
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // world layer
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // hud layer
-        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT, font_8x8_cheepicus) // particles layer
-        .with_title("Innit alpha v0.0.4")
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // world layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // hud layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_8x8_cheepicus,
+        ) // particles layer
+        .with_title(format!("Innit alpha v{}", VERSION))
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
         .with_vsync(true)
         .build()?;
 
     context.set_active_font(0, true);
-    rltk::main_loop(context, Game::new())
+    rltk::main_loop(context, game::Game::new())
 }

@@ -1,8 +1,7 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::entity::action::Action;
+use crate::entity::act::{self, Action};
 use crate::entity::object::Object;
-use crate::entity::player::PlayerCtrl;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -11,15 +10,15 @@ use std::fmt::Debug;
 #[derive(Clone, Debug)]
 pub enum Controller {
     Npc(Box<dyn Ai>),
-    Player(PlayerCtrl),
+    Player(Player),
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde(tag = "type"))]
 pub trait Ai: AiClone + Debug {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action>;
 }
@@ -40,5 +39,27 @@ where
 impl Clone for Box<dyn Ai> {
     fn clone(&self) -> Self {
         self.clone_ai()
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Clone, Debug)]
+pub struct Player {
+    pub primary_action: Box<dyn Action>,
+    pub secondary_action: Box<dyn Action>,
+    pub quick1_action: Box<dyn Action>,
+    pub quick2_action: Box<dyn Action>,
+    pub next_action: Option<Box<dyn Action>>,
+}
+
+impl Player {
+    pub fn new() -> Self {
+        Player {
+            primary_action: Box::new(act::Pass::default()),
+            secondary_action: Box::new(act::Pass::default()),
+            quick1_action: Box::new(act::Pass::default()),
+            quick2_action: Box::new(act::Pass::default()),
+            next_action: None,
+        }
     }
 }

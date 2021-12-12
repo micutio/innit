@@ -4,13 +4,13 @@
 
 // internal imports
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::entity::action::hereditary::{ActInjectRnaVirus, ActMove, ActPass, ActProduceVirion};
-use crate::entity::action::{Action, Target, TargetCategory};
+use crate::entity::act::{Action, Target, TargetCategory};
+use crate::entity::act::{InjectRnaVirus, Move, Pass, ProduceVirion};
 use crate::entity::control::{Ai, Controller};
 use crate::entity::object::Object;
-use crate::util::game_rng::RngExtended;
+use crate::game::State;
+use crate::game::objects::ObjectStore;
+use crate::util::rng::RngExtended;
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -26,11 +26,11 @@ pub struct AiPassive;
 impl Ai for AiPassive {
     fn act(
         &mut self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(ActPass::default())
+        Box::new(Pass::default())
     }
 }
 
@@ -49,8 +49,8 @@ impl AiRandom {
 impl Ai for AiRandom {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.
@@ -58,7 +58,7 @@ impl Ai for AiRandom {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(ActPass::default());
+            return Box::new(Pass::default());
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -139,7 +139,7 @@ impl Ai for AiRandom {
             }
             boxed_action
         } else {
-            Box::new(ActPass::default())
+            Box::new(Pass::default())
         }
     }
 }
@@ -151,8 +151,8 @@ pub struct AiRandomWalk;
 impl Ai for AiRandomWalk {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // try and find some empty adjacent cells that can be walked to
@@ -168,11 +168,11 @@ impl Ai for AiRandomWalk {
             .collect::<Vec<&Object>>()
             .choose(&mut state.rng)
         {
-            let mut action = Box::new(ActMove::new());
+            let mut action = Box::new(Move::new());
             action.set_target(Target::from_pos(&owner.pos, &t.pos));
             action
         } else {
-            Box::new(ActPass::default())
+            Box::new(Pass::default())
         }
     }
 }
@@ -190,8 +190,8 @@ impl AiVirus {
 impl Ai for AiVirus {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // if there is an adjacent cell, attempt to infect it
@@ -211,7 +211,7 @@ impl Ai for AiVirus {
             .choose(&mut state.rng)
         {
             assert!(!owner.dna.raw.is_empty());
-            return Box::new(ActInjectRnaVirus::new(
+            return Box::new(InjectRnaVirus::new(
                 Target::from_pos(&owner.pos, &target.pos),
                 owner.dna.raw.clone(),
             ));
@@ -228,14 +228,14 @@ impl Ai for AiVirus {
                 .collect::<Vec<&Object>>()
                 .choose(&mut state.rng)
             {
-                let mut action = Box::new(ActMove::new());
+                let mut action = Box::new(Move::new());
                 action.set_target(Target::from_pos(&owner.pos, &t.pos));
                 return action;
             }
         }
 
         // if nothing else sticks, just pass
-        return Box::new(ActPass::default());
+        return Box::new(Pass::default());
     }
 }
 
@@ -276,21 +276,21 @@ impl AiForceVirusProduction {
 impl Ai for AiForceVirusProduction {
     fn act(
         &mut self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         if let Some(t) = self.turns_active {
             if self.current_turn == t {
                 if let Some(original_ai) = self.original_ai.take() {
                     owner.control.replace(original_ai);
-                    return Box::new(ActPass::update());
+                    return Box::new(Pass::update());
                 }
             } else {
                 self.current_turn += 1;
             }
         }
-        Box::new(ActProduceVirion::new(self.rna.clone()))
+        Box::new(ProduceVirion::new(self.rna.clone()))
     }
 }
 
@@ -301,8 +301,8 @@ pub struct AiTile;
 impl Ai for AiTile {
     fn act(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
         // If the object doesn't have any action, return a pass.
@@ -310,7 +310,7 @@ impl Ai for AiTile {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(ActPass::default());
+            return Box::new(Pass::default());
         }
 
         if owner.processors.life_elapsed >= owner.processors.life_expectancy {
@@ -357,6 +357,6 @@ impl Ai for AiTile {
                 }
             }
         }
-        Box::new(ActPass::default())
+        Box::new(Pass::default())
     }
 }

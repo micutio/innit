@@ -1,20 +1,42 @@
 use serde::{Deserialize, Serialize};
 
-use crate::entity::genetics::DnaType;
-use crate::entity::object::Physics;
+use crate::entity::genetics;
+use crate::entity::object;
 /// Struct for spawning objects that requires an internal state.
+/// Templates can be created from game data serialised with JSON.
+///
+/// Example:
+/// ```
+/// use crate::entity::genetics;
+/// use crate::entity::object;
+/// ObjectTemplate {
+///     npc: "Virus".to_string(),
+///     glyph: 'v',
+///     physics: object::Physics {
+///         is_blocking: true,
+///         is_blocking_sight: true,
+///         is_always_visible: false,
+///         is_visible: false,
+///     },
+///     color: (90, 255, 0, 255),
+///     item: None,
+///     controller: Some("AI_VIRUS".to_string()),
+///     dna_type: genetics::DnaType::Rna,
+///     dna_template: DnaTemplate::Random { genome_len: 10 },
+///     stability: 0.75,
+/// }
+/// ```
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ObjectTemplate {
     pub npc: String,
     pub glyph: char,
-    pub physics: Physics,
+    pub physics: object::Physics,
     pub color: (u8, u8, u8, u8),
-    pub item: Option<InvItem>,
+    pub item: Option<ItemTemplate>,
     pub controller: Option<String>,
-    pub dna_type: DnaType,
+    pub dna_type: genetics::DnaType,
     pub dna_template: DnaTemplate,
     pub stability: f64,
-    // pub dna_transitions: Vec<Transition<DnaTemplate>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -34,7 +56,7 @@ pub enum DnaTemplate {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct InvItem {
+pub struct ItemTemplate {
     pub name: String,
     pub action: String,
 }
@@ -44,7 +66,7 @@ impl ObjectTemplate {
         vec![ObjectTemplate {
             npc: "Virus".to_string(),
             glyph: 'v',
-            physics: Physics {
+            physics: object::Physics {
                 is_blocking: true,
                 is_blocking_sight: true,
                 is_always_visible: false,
@@ -53,7 +75,7 @@ impl ObjectTemplate {
             color: (90, 255, 0, 255),
             item: None,
             controller: Some("AI_VIRUS".to_string()),
-            dna_type: DnaType::Rna,
+            dna_type: genetics::DnaType::Rna,
             dna_template: DnaTemplate::Random { genome_len: 10 },
             stability: 0.75,
         }]

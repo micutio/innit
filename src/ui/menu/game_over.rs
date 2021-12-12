@@ -1,8 +1,5 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::game::RunState;
-use crate::ui::menu::main_menu::main_menu;
-use crate::ui::menu::{Menu, MenuItem};
+use crate::game::{self, ObjectStore, State};
+use crate::ui::menu::{self, Menu, MenuItem};
 
 #[derive(Copy, Clone, Debug)]
 pub enum GameOverMenuItem {
@@ -12,19 +9,19 @@ pub enum GameOverMenuItem {
 
 impl MenuItem for GameOverMenuItem {
     fn process(
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _menu: &mut Menu<GameOverMenuItem>,
         item: &GameOverMenuItem,
-    ) -> RunState {
+    ) -> game::RunState {
         match item {
             GameOverMenuItem::Credits => unimplemented!(),
-            GameOverMenuItem::ReturnToMain => RunState::MainMenu(main_menu()),
+            GameOverMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
 
-pub fn game_over_menu() -> Menu<GameOverMenuItem> {
+pub fn new() -> Menu<GameOverMenuItem> {
     Menu::new(vec![
         (GameOverMenuItem::Credits, "Credits".to_string()),
         (

@@ -1,6 +1,6 @@
 //! Utilites contains useful functions that are unrelated to any of the main game modules.
 
-pub mod game_rng;
+pub mod rng;
 pub mod timer;
 
 pub fn generate_gray_code(n: u8) -> Vec<u8> {

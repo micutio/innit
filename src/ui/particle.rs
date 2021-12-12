@@ -1,13 +1,15 @@
 //! This module contains the particle/animation system
 
-use rltk::{PointF, Rltk, RGBA};
+use crate::game;
+
+use rltk;
 
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
 pub struct Particle {
-    pub pos: PointF,
-    pub col_fg: RGBA,
-    pub col_bg: RGBA,
+    pub pos: rltk::PointF,
+    pub col_fg: rltk::RGBA,
+    pub col_bg: rltk::RGBA,
     pub glyph: char,
     /// Lifetime of the particle, given in [ms]
     pub lifetime: f32,
@@ -29,12 +31,12 @@ impl Particle {
     ) -> Self
     where
         NumT: TryInto<f32>,
-        RgbT: Into<RGBA>,
+        RgbT: Into<rltk::RGBA>,
     {
         Particle {
             // For some reason the y-coordinate needs to be adjusted by 1 for the particle to be
             // correct, no idea why.
-            pos: PointF::new(
+            pos: rltk::PointF::new(
                 x.try_into().ok().unwrap_or(0.0),
                 y.try_into().ok().unwrap_or(0.0) + 1.0,
             ),
@@ -49,14 +51,14 @@ impl Particle {
 }
 
 pub struct ParticleBuilder {
-    pos: PointF,
-    col_fg: RGBA,
-    col_bg: RGBA,
+    pos: rltk::PointF,
+    col_fg: rltk::RGBA,
+    col_bg: rltk::RGBA,
     glyph: char,
     lifetime: f32,
     start_delay: f32,
-    end_pos: Option<PointF>,
-    end_col: Option<(RGBA, RGBA)>,
+    end_pos: Option<rltk::PointF>,
+    end_col: Option<(rltk::RGBA, rltk::RGBA)>,
     scale: Option<((f32, f32), (f32, f32))>,
 }
 
@@ -71,10 +73,10 @@ impl ParticleBuilder {
     ) -> Self
     where
         NumT: TryInto<f32>,
-        RgbT: Into<RGBA>,
+        RgbT: Into<rltk::RGBA>,
     {
         ParticleBuilder {
-            pos: PointF::new(
+            pos: rltk::PointF::new(
                 x.try_into().ok().unwrap_or(0.0),
                 y.try_into().ok().unwrap_or(0.0),
             ),
@@ -95,14 +97,14 @@ impl ParticleBuilder {
     }
 
     pub fn with_moving_to<NumT: TryInto<f32>>(mut self, x: NumT, y: NumT) -> Self {
-        self.end_pos = Some(PointF::new(
+        self.end_pos = Some(rltk::PointF::new(
             x.try_into().ok().unwrap_or(0.0),
             y.try_into().ok().unwrap_or(0.0),
         ));
         self
     }
 
-    pub fn with_end_color<T: Into<RGBA>>(mut self, col_fg: T, col_bg: T) -> Self {
+    pub fn with_end_color<T: Into<rltk::RGBA>>(mut self, col_fg: T, col_bg: T) -> Self {
         self.end_col = Some((col_fg.into(), col_bg.into()));
         self
     }
@@ -118,21 +120,21 @@ impl ParticleBuilder {
 
         // if we have multiple particles, then render one per frame
         if self.end_pos.is_some() || self.end_col.is_some() {
-            let pos_start = PointF::new(self.pos.x as f32, self.pos.y as f32);
+            let pos_start = rltk::PointF::new(self.pos.x as f32, self.pos.y as f32);
 
             let mut t = 0.0;
             while t < self.lifetime {
                 let progress = t / self.lifetime;
                 let pos = self.end_pos.map_or(pos_start, |pos_end| {
-                    PointF::new(
+                    rltk::PointF::new(
                         pos_start.x + (progress * (pos_end.x as f32 - pos_start.x)),
                         pos_start.y + (progress * (pos_end.y as f32 - pos_start.y)),
                     )
                 });
                 let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
                     (
-                        RGBA::from(self.col_fg).lerp(c.0, progress),
-                        RGBA::from(self.col_fg).lerp(c.1, progress),
+                        rltk::RGBA::from(self.col_fg).lerp(c.0, progress),
+                        rltk::RGBA::from(self.col_fg).lerp(c.1, progress),
                     )
                 });
                 let scale = self.scale.map_or((1.0, 1.0), |(start_sc, end_sc)| {
@@ -170,9 +172,28 @@ impl ParticleSystem {
         }
     }
 
+    pub fn render(&self, ctx: &mut rltk::Rltk) {
+        ctx.set_active_console(game::consts::PAR_CON);
+        ctx.cls();
+        let mut draw_batch = rltk::DrawBatch::new();
+        for particle in &self.particles {
+            if particle.start_delay <= 0.0 {
+                draw_batch.set_fancy(
+                    particle.pos,
+                    1,
+                    rltk::Degrees::new(0.0),
+                    particle.scale.into(),
+                    rltk::ColorPair::new(particle.col_fg, particle.col_bg),
+                    rltk::to_cp437(particle.glyph),
+                );
+            }
+        }
+        draw_batch.submit(game::consts::PAR_CON_Z).unwrap();
+    }
+
     /// Advance the particle lifetimes and cull all those that have expired.
     /// Returns `true` if some particles expired in this call.
-    pub fn update(&mut self, ctx: &Rltk) -> bool {
+    pub fn update(&mut self, ctx: &rltk::Rltk) -> bool {
         let start_size: usize = self.particles.len();
         self.particles.iter_mut().for_each(|p| {
             if p.start_delay > 0.0 {

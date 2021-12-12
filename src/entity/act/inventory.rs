@@ -1,23 +1,24 @@
 //! This module contains actions that are automatically available to all objects with an inventory.
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
-use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
-use crate::entity::object::Object;
+use crate::entity::act::{self, Action};
+use crate::entity::Object;
+use crate::game::msg::MessageLog;
+use crate::game::{self, ObjectStore, State};
+
 use serde::{Deserialize, Serialize};
 
 /// Pick up an item and store it in the inventory.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActPickUpItem;
+pub struct PickUpItem;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActPickUpItem {
+impl Action for PickUpItem {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
-    ) -> ActionResult {
+    ) -> act::ActionResult {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
             // do stuff with object
             if target_obj.item.is_some() {
@@ -28,36 +29,38 @@ impl Action for ActPickUpItem {
                             "{} picked up a {}",
                             owner.visual.name, &target_obj.visual.name
                         ),
-                        MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     owner.add_to_inventory(target_obj);
 
                     // keep the object vector neat and tidy
                     objects.get_vector_mut().remove(index);
 
-                    return ActionResult::Success {
-                        callback: ObjectFeedback::NoFeedback,
+                    return act::ActionResult::Success {
+                        callback: act::ObjectFeedback::NoFeedback,
                     };
                 } else {
-                    state.log.add("Your inventory is full!", MsgClass::Info);
+                    state
+                        .log
+                        .add("Your inventory is full!", game::msg::MsgClass::Info);
                 }
             }
             //else {
             // otherwise put it back into the world
             //}
             objects.replace(index, target_obj);
-            ActionResult::Failure
+            act::ActionResult::Failure
         } else {
-            ActionResult::Failure
+            act::ActionResult::Failure
         }
     }
 
-    fn set_target(&mut self, _t: Target) {}
+    fn set_target(&mut self, _t: act::Target) {}
 
     fn set_level(&mut self, _lvl: i32) {}
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
+    fn get_target_category(&self) -> act::TargetCategory {
+        act::TargetCategory::None
     }
 
     fn get_level(&self) -> i32 {
@@ -79,30 +82,30 @@ impl Action for ActPickUpItem {
 
 /// Drop an item from the owner's inventory. The action level determines the item slot.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActDropItem {
+pub struct DropItem {
     lvl: i32,
 }
 
-impl ActDropItem {
+impl DropItem {
     pub fn new(lvl: i32) -> Self {
-        ActDropItem { lvl }
+        DropItem { lvl }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActDropItem {
+impl Action for DropItem {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
-    ) -> ActionResult {
+    ) -> act::ActionResult {
         // make sure there is an item at slot [self.lvl]
         if owner.inventory.items.len() > self.lvl as usize {
             let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
-                MsgClass::Info,
+                game::msg::MsgClass::Info,
             );
             // set the item to be dropped at the same position as the player
             item.pos.set(owner.pos.x, owner.pos.y);
@@ -114,22 +117,22 @@ impl Action for ActDropItem {
                     || action.get_level() != self.get_level()
             });
 
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
+            act::ActionResult::Success {
+                callback: act::ObjectFeedback::NoFeedback,
             }
         } else {
-            ActionResult::Failure
+            act::ActionResult::Failure
         }
     }
 
-    fn set_target(&mut self, _t: Target) {}
+    fn set_target(&mut self, _t: act::Target) {}
 
     fn set_level(&mut self, lvl: i32) {
         self.lvl = lvl;
     }
 
-    fn get_target_category(&self) -> TargetCategory {
-        TargetCategory::None
+    fn get_target_category(&self) -> act::TargetCategory {
+        act::TargetCategory::None
     }
 
     fn get_level(&self) -> i32 {

@@ -1,17 +1,14 @@
 //! The world generation module contains the trait that all world generators have to implement to
 //! be changeably used to create the game environments.
 
-pub mod world_gen_organic;
-pub mod world_gen_rogue;
+pub mod ca;
+pub mod rogue;
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::GameState;
-use crate::entity::ai::AiTile;
-use crate::entity::control::Controller;
-use crate::entity::object::Object;
-use crate::game::RunState;
-use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::Spawn;
+use crate::entity::{ai, control, Object};
+use crate::game;
+use crate::game::objects::ObjectStore;
+use crate::game::State;
+use crate::raws;
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -22,11 +19,11 @@ pub trait WorldGen {
     /// allow for intermediate visualisation of the world generation process.
     fn make_world(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
-        spawns: &[Spawn],
-        object_templates: &[ObjectTemplate],
-    ) -> RunState;
+        state: &mut State,
+        objects: &mut ObjectStore,
+        spawns: &[raws::spawn::Spawn],
+        object_templates: &[raws::template::ObjectTemplate],
+    ) -> game::RunState;
 
     /// Returns the position of where the player was placed.
     fn get_player_start_pos(&self) -> (i32, i32);
@@ -57,7 +54,7 @@ impl Tile {
             .visualize("wall tile", '◘', (255, 255, 255, 255))
             .physical(true, true, is_visible)
             .tile_explored(is_visible)
-            .control(Controller::Npc(Box::new(AiTile)))
+            .control(control::Controller::Npc(Box::new(ai::AiTile)))
     }
 }
 

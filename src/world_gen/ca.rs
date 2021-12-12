@@ -1,40 +1,25 @@
-use crate::core::game_state::GameState;
-use crate::core::world::WorldGen;
-use crate::core::{game_objects::GameObjects, innit_env};
-use crate::entity::action::action_from_string;
-use crate::entity::ai::AiRandom;
-use crate::entity::ai::AiRandomWalk;
-use crate::entity::ai::AiVirus;
-use crate::entity::ai::{AiPassive, AiTile};
-use crate::entity::control::Controller;
-use crate::entity::genetics::DnaType;
-use crate::entity::genetics::TraitFamily;
-use crate::entity::object::InventoryItem;
-use crate::entity::object::Object;
-use crate::entity::player::PlayerCtrl;
-use crate::game::{RunState, WORLD_HEIGHT, WORLD_WIDTH};
-use crate::raws::object_template::DnaTemplate;
-use crate::raws::object_template::ObjectTemplate;
-use crate::raws::spawn::{from_dungeon_level, Spawn};
-use crate::util::game_rng::RngExtended;
-
-use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
+use crate::entity::Object;
+use crate::entity::{act, ai, control, genetics, inventory};
+use crate::game::{self, ObjectStore, State};
+use crate::raws;
+use crate::util::rng::RngExtended;
+use crate::world_gen::WorldGen;
 
 const CA_CYCLES: i32 = 150;
 
 /// The organics world generator attempts to create organ-like environments e.g., long snaking
 /// blood vessels, branching fractal-like lungs, spongy tissue and more.
-// TODO: Rename into world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
+// TODO: Rename into game::consts::world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
 //       once we have more than one CA variant.
-pub struct OrganicsWorldGenerator {
+pub struct CaBased {
     player_start: (i32, i32),
     ca_cycle_count: i32,
-    ca: Option<Simulation<CaCell>>,
+    ca: Option<casim::ca::Simulation<CaCell>>,
 }
 
-impl OrganicsWorldGenerator {
+impl CaBased {
     pub fn new() -> Self {
-        OrganicsWorldGenerator {
+        CaBased {
             player_start: (0, 0),
             ca_cycle_count: 0,
             ca: None,
@@ -42,19 +27,22 @@ impl OrganicsWorldGenerator {
     }
 }
 
-impl WorldGen for OrganicsWorldGenerator {
+impl WorldGen for CaBased {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
-        spawns: &[Spawn],
-        object_templates: &[ObjectTemplate],
-    ) -> RunState {
+        state: &mut State,
+        objects: &mut ObjectStore,
+        spawns: &[raws::spawn::Spawn],
+        object_templates: &[raws::template::ObjectTemplate],
+    ) -> game::RunState {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
             self.ca = Some(make_ca(state));
-            self.player_start = (WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+            self.player_start = (
+                game::consts::WORLD_WIDTH / 2,
+                game::consts::WORLD_HEIGHT / 2,
+            );
         }
 
         // step 2: use cellular automaton to fill in and smooth out
@@ -78,21 +66,21 @@ impl WorldGen for OrganicsWorldGenerator {
                                 tile.physics.is_blocking_sight = true;
                                 tile.visual.glyph = '◘';
                                 tile.visual.name = "wall tile".into();
-                                tile.control = Some(Controller::Npc(Box::new(AiTile)));
+                                tile.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
                             }
                         }
                     }
                 }
             }
             self.ca_cycle_count += 1;
-            if innit_env().is_debug_mode {
-                return RunState::WorldGen;
+            if game::env().is_debug_mode {
+                return game::RunState::WorldGen;
             }
         }
 
         // world gen done, now insert objects
         place_objects(state, objects, spawns, object_templates);
-        RunState::Ticking
+        game::RunState::Ticking
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
@@ -132,23 +120,24 @@ impl Default for CellState {
 }
 
 /// Create a cellular automaton from the tiles of the game world.
-fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
+fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
     // init cells
-    let mut cells = vec![CaCell::default(); (WORLD_WIDTH * WORLD_HEIGHT) as usize];
-    let mid_x = WORLD_WIDTH / 2;
-    let mid_y = WORLD_HEIGHT / 2;
+    let mut cells =
+        vec![CaCell::default(); (game::consts::WORLD_WIDTH * game::consts::WORLD_HEIGHT) as usize];
+    let mid_x = game::consts::WORLD_WIDTH / 2;
+    let mid_y = game::consts::WORLD_HEIGHT / 2;
     // let max_dist =
-    //     f64::sqrt((WORLD_WIDTH * WORLD_WIDTH) as f64 + (WORLD_HEIGHT * WORLD_HEIGHT) as f64);
-    let max_dist = i32::max(WORLD_WIDTH, WORLD_HEIGHT) as f64;
-    for y in 0..WORLD_HEIGHT {
-        for x in 0..WORLD_WIDTH {
-            let idx = coord_to_idx(WORLD_WIDTH, x, y);
+    //     f64::sqrt((game::consts::WORLD_WIDTH * game::consts::WORLD_WIDTH) as f64 + (game::consts::WORLD_HEIGHT * game::consts::WORLD_HEIGHT) as f64);
+    let max_dist = i32::max(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT) as f64;
+    for y in 0..game::consts::WORLD_HEIGHT {
+        for x in 0..game::consts::WORLD_WIDTH {
+            let idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, x, y);
             let cell = &mut cells[idx];
             // let dist_to_mid =
             //     f64::sqrt(f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0));
             // let morphogen = 1.0 - f64::min((dist_to_mid * 2.0) / max_dist, 0.01);
-            let dist_to_x_border = i32::min(x, WORLD_WIDTH - x);
-            let dist_to_y_border = i32::min(y, WORLD_HEIGHT - y);
+            let dist_to_x_border = i32::min(x, game::consts::WORLD_WIDTH - x);
+            let dist_to_y_border = i32::min(y, game::consts::WORLD_HEIGHT - y);
             let min_dist_border = i32::min(dist_to_x_border, dist_to_y_border);
 
             let morphogen = (((min_dist_border * 2) as f64 / max_dist) * 0.20) + 0.50;
@@ -163,13 +152,13 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
         }
     }
 
-    let mid_idx = coord_to_idx(WORLD_WIDTH, mid_x, mid_y);
+    let mid_idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, mid_x, mid_y);
     cells[mid_idx].state = CellState::BURNING;
 
     // transition function
     // 1. propagate fire between burning and green cells
     // 2. slowly diffuse morphogen if there is a gradient between the cell and its neighbors
-    let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
+    let trans_fn = move |cell: &mut CaCell, neigh_it: casim::ca::Neighborhood<CaCell>| {
         let mut is_fire_near = false;
         let mut neigh_count = 0;
         let mut neigh_morphogen = 0.0;
@@ -214,20 +203,20 @@ fn make_ca(state: &mut GameState) -> Simulation<CaCell> {
         }
     };
 
-    Simulation::from_cells(
-        WORLD_WIDTH,
-        WORLD_HEIGHT,
+    casim::ca::Simulation::from_cells(
+        game::consts::WORLD_WIDTH,
+        game::consts::WORLD_HEIGHT,
         trans_fn,
-        VON_NEUMAN_NEIGHBORHOOD,
+        casim::ca::VON_NEUMAN_NEIGHBORHOOD,
         cells,
     )
 }
 
 fn place_objects(
-    state: &mut GameState,
-    objects: &mut GameObjects,
-    spawns: &[Spawn],
-    object_templates: &[ObjectTemplate],
+    state: &mut State,
+    objects: &mut ObjectStore,
+    spawns: &[raws::spawn::Spawn],
+    object_templates: &[raws::template::ObjectTemplate],
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -240,7 +229,7 @@ fn place_objects(
         .map(|s| {
             (
                 &s.npc,
-                from_dungeon_level(&s.spawn_transitions, state.dungeon_level),
+                raws::spawn::from_dungeon_level(&s.spawn_transitions, state.dungeon_level),
             )
         })
         .collect();
@@ -262,13 +251,14 @@ fn place_objects(
             let npc_type = npc_chances[npc_dist.sample(&mut state.rng)].0;
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
                 // assign controller
+                use control::Controller;
                 let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
                     match ctrl.as_str() {
-                        "player" => Some(Controller::Player(PlayerCtrl::new())),
-                        "AiPassive" => Some(Controller::Npc(Box::new(AiPassive))),
-                        "AiRandom" => Some(Controller::Npc(Box::new(AiRandom::new()))),
-                        "AiRandomWalk" => Some(Controller::Npc(Box::new(AiRandomWalk))),
-                        "AiVirus" => Some(Controller::Npc(Box::new(AiVirus::new()))),
+                        "player" => Some(Controller::Player(control::Player::new())),
+                        "AiPassive" => Some(Controller::Npc(Box::new(ai::AiPassive))),
+                        "AiRandom" => Some(Controller::Npc(Box::new(ai::AiRandom::new()))),
+                        "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::AiRandomWalk))),
+                        "AiVirus" => Some(Controller::Npc(Box::new(ai::AiVirus::new()))),
                         s => {
                             error! {"Unknown controller type '{}'", s};
                             // Controller::Npc(Box::new(AiPassive))
@@ -280,10 +270,11 @@ fn place_objects(
                 };
 
                 // generate DNA, either probabilistically or from a template
+                use raws::template::DnaTemplate;
                 let raw_dna = match &template.dna_template {
                     DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
                         &mut state.rng,
-                        template.dna_type == DnaType::Rna,
+                        template.dna_type == genetics::DnaType::Rna,
                         *genome_len,
                     ),
                     DnaTemplate::Distributed {
@@ -295,11 +286,11 @@ fn place_objects(
                         &mut state.rng,
                         &[*s_rate, *p_rate, *a_rate],
                         &[
-                            TraitFamily::Sensing,
-                            TraitFamily::Processing,
-                            TraitFamily::Actuating,
+                            genetics::TraitFamily::Sensing,
+                            genetics::TraitFamily::Processing,
+                            genetics::TraitFamily::Actuating,
                         ],
-                        template.dna_type == DnaType::Rna,
+                        template.dna_type == genetics::DnaType::Rna,
                         *genome_len,
                     ),
                     DnaTemplate::Defined { traits } => state
@@ -312,7 +303,7 @@ fn place_objects(
                     let action_instance = if item.action.is_empty() {
                         None
                     } else {
-                        match action_from_string(item.action.as_ref()) {
+                        match act::action_from_string(item.action.as_ref()) {
                             Ok(action) => Some(action.clone()),
                             Err(msg) => {
                                 error!("error getting action from string: {}", msg);
@@ -320,7 +311,7 @@ fn place_objects(
                             }
                         }
                     };
-                    Some(InventoryItem::new(&item.name, action_instance))
+                    Some(inventory::Item::new(&item.name, action_instance))
                 } else {
                     None
                 };

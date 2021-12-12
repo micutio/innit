@@ -1,20 +1,19 @@
-pub mod choose_action_menu;
-pub mod game_over_menu;
-pub mod main_menu;
+pub mod choose_action;
+pub mod game_over;
+pub mod main;
 
-use crate::core::game_state::GameState;
-use crate::game::{RunState, HUD_CON, HUD_CON_Z, MENU_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{self, State};
 use crate::ui::hud::{ToolTip, UiItem};
-use crate::{core::game_objects::GameObjects, ui::palette};
+use crate::{game::objects::ObjectStore, ui::palette};
 use rltk::{to_cp437, ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode};
 
 pub trait MenuItem: Clone {
     fn process(
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         menu: &mut Menu<Self>,
         item: &Self,
-    ) -> RunState;
+    ) -> game::RunState;
 }
 
 /// Non-click-away-able window menu.
@@ -28,9 +27,9 @@ pub struct Menu<T: MenuItem> {
 impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
         let menu_height = item_vec.len() as i32 + 2;
-        let x1 = (SCREEN_WIDTH / 2) - (MENU_WIDTH / 2);
-        let y1 = (SCREEN_HEIGHT / 2) - (menu_height / 2);
-        let x2 = x1 + MENU_WIDTH;
+        let x1 = (game::consts::SCREEN_WIDTH / 2) - (game::consts::MENU_WIDTH / 2);
+        let y1 = (game::consts::SCREEN_HEIGHT / 2) - (menu_height / 2);
+        let x2 = x1 + game::consts::MENU_WIDTH;
         let y2 = y1 + menu_height - 1;
         let items: Vec<UiItem<T>> = item_vec
             .iter()
@@ -41,7 +40,7 @@ impl<T: MenuItem> Menu<T> {
                     enum_item,
                     text,
                     ToolTip::header_only(""),
-                    Rect::with_size(x1 + 1, y1 + 1 + i as i32, MENU_WIDTH - 2, 1),
+                    Rect::with_size(x1 + 1, y1 + 1 + i as i32, game::consts::MENU_WIDTH - 2, 1),
                     ColorPair::new((0, 0, 0), (0, 0, 0)),
                 )
             })
@@ -54,7 +53,7 @@ impl<T: MenuItem> Menu<T> {
     }
 
     fn render(&self, ctx: &mut Rltk) {
-        ctx.set_active_console(HUD_CON);
+        ctx.set_active_console(game::consts::HUD_CON);
         ctx.cls();
         let mut draw_batch = DrawBatch::new();
         let bg_menu = palette().hud_bg;
@@ -72,7 +71,7 @@ impl<T: MenuItem> Menu<T> {
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }
 
-        draw_batch.submit(HUD_CON_Z).unwrap();
+        draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
 
     /// Main menu of the game.

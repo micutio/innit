@@ -1,104 +1,43 @@
-use crate::core::game_objects::GameObjects;
-use crate::core::innit_env;
-use crate::entity::action::*;
-use crate::entity::genetics::GeneLibrary;
-use crate::entity::object::Object;
-use crate::entity::player::PLAYER;
-use crate::util::game_rng::{GameRng, RngExtended};
+use crate::entity::act::{self, Action};
+use crate::entity::{genetics, Object};
+use crate::game::msg::MessageLog;
+use crate::game::{consts, msg, ObjectStore};
+use crate::util::rng;
+
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
-
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub enum MsgClass {
-    Info,
-    Action,
-    Alert,
-    Story,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Log {
-    pub is_changed: bool,
-    pub messages: Vec<(String, MsgClass)>,
-}
-
-impl Log {
-    pub fn new() -> Self {
-        Log {
-            is_changed: false,
-            messages: Vec::new(),
-        }
-    }
-}
-
-/// The message log can add text from any string collection.
-pub trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass);
-}
-
-impl MessageLog for Log {
-    /// Push a message into the log under two conditions:
-    /// - either the log is empty
-    /// - or the last message is not identical to the new message
-    fn add<T: Into<String>>(&mut self, msg: T, class: MsgClass) {
-        if self.messages.is_empty() {
-            self.messages.push((msg.into(), class));
-            self.is_changed = true;
-            return;
-        }
-
-        if let Some(recent_msg) = self.messages.last() {
-            let msg_str = msg.into();
-            if !recent_msg.0.eq(&msg_str) {
-                self.messages.push((msg_str, class));
-                self.is_changed = true;
-            }
-        }
-    }
-}
-
-/// Results from processing an objects action for that turn, in ascending rank.
-#[derive(PartialEq, Debug)]
-pub enum ObjectFeedback {
-    NoAction,   // object did not act and is still pondering its turn
-    NoFeedback, // action completed, but requires no visual feedback
-    Render,
-    UpdateHud,
-    GenomeManipulator,
-    GameOver, // "main" player died
-}
 
 /// The game state struct contains all information necessary to represent the current state of the
 /// game, EXCEPT the object vector. Each field in this struct is serialised and written to the save
 /// file and thus persistent data. No volatile data is allowed here.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct GameState {
-    pub rng: GameRng,
-    pub log: Log,
+pub struct State {
+    pub rng: rng::GameRng,
+    pub log: msg::Log,
     pub turn: u128,
     pub dungeon_level: u32,
-    pub gene_library: GeneLibrary,
+    pub gene_library: genetics::GeneLibrary,
     pub obj_idx: usize,    // current object index
     pub player_idx: usize, // current player index
 }
 
-impl GameState {
+impl State {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if innit_env().is_using_fixed_seed {
+        let rng_seed = if super::env().is_using_fixed_seed {
             0
         } else {
             rand::thread_rng().next_u64()
         };
 
-        GameState {
+        State {
             // create the list of game messages and their colours, starts empty
-            rng: GameRng::new_from_u64_seed(rng_seed),
-            log: Log::new(),
+            rng: rng::GameRng::new_from_u64_seed(rng_seed),
+            log: msg::Log::new(),
             turn: 0,
             dungeon_level: level,
-            gene_library: GeneLibrary::new(),
+            gene_library: genetics::GeneLibrary::new(),
             obj_idx: 0,
-            player_idx: PLAYER,
+            player_idx: consts::PLAYER,
         }
     }
 
@@ -106,7 +45,7 @@ impl GameState {
         self.obj_idx == self.player_idx
     }
 
-    pub fn player_energy_full(&self, objects: &GameObjects) -> bool {
+    pub fn player_energy_full(&self, objects: &ObjectStore) -> bool {
         if let Some(player) = &objects[self.player_idx] {
             player.processors.energy == player.processors.energy_storage
         } else {
@@ -115,7 +54,7 @@ impl GameState {
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
-    pub fn process_object(&mut self, objects: &mut GameObjects) -> ObjectFeedback {
+    pub fn process_object(&mut self, objects: &mut ObjectStore) -> act::ObjectFeedback {
         // unpack object to process its next action
         if let Some(mut actor) = objects.extract_by_index(self.obj_idx) {
             // Object takes the turn, which has three phases:
@@ -142,7 +81,7 @@ impl GameState {
                 let can_rest = actor.processors.energy == actor.processors.energy_storage;
                 if !actor.has_next_action() && can_rest {
                     objects.replace(self.obj_idx, actor);
-                    return ObjectFeedback::NoAction;
+                    return act::ObjectFeedback::NoAction;
                 }
             }
 
@@ -174,22 +113,22 @@ impl GameState {
 
             // increase object index and turn counter
             self.conclude_advance_turn(objects.get_obj_count());
-            ObjectFeedback::Render
+            act::ObjectFeedback::Render
         }
     }
 
-    fn take_turn(&mut self, objects: &mut GameObjects, actor: &mut Object) -> ObjectFeedback {
+    fn take_turn(&mut self, objects: &mut ObjectStore, actor: &mut Object) -> act::ObjectFeedback {
         if actor.control.is_none() {
-            return ObjectFeedback::NoFeedback;
+            return act::ObjectFeedback::NoFeedback;
         }
 
         if actor.processors.energy < actor.processors.energy_storage {
             // if not enough energy available try to replenish energy via metabolising
             actor.metabolize();
             if self.is_players_turn() {
-                return ObjectFeedback::Render;
+                return act::ObjectFeedback::Render;
             } else {
-                return ObjectFeedback::NoFeedback;
+                return act::ObjectFeedback::NoFeedback;
             }
         }
 
@@ -199,9 +138,11 @@ impl GameState {
                 trace!("next action: {}", next_action.get_identifier());
             }
             if next_action.get_energy_cost() > actor.processors.energy_storage {
-                self.log
-                    .add("You don't have enough energy for that!", MsgClass::Info);
-                ObjectFeedback::NoFeedback
+                self.log.add(
+                    "You don't have enough energy for that!",
+                    msg::MsgClass::Info,
+                );
+                act::ObjectFeedback::NoFeedback
             } else {
                 actor.processors.energy -= next_action.get_energy_cost();
                 self.process_action(objects, actor, next_action)
@@ -215,29 +156,29 @@ impl GameState {
     /// Process an action of the given object.
     fn process_action(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: &mut Object,
         action: Box<dyn Action>,
-    ) -> ObjectFeedback {
+    ) -> act::ObjectFeedback {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
-            ActionResult::Success { callback } => match callback {
-                ObjectFeedback::NoFeedback => ObjectFeedback::NoFeedback,
+            act::ActionResult::Success { callback } => match callback {
+                act::ObjectFeedback::NoFeedback => act::ObjectFeedback::NoFeedback,
                 _ => callback,
             },
-            ActionResult::Failure => ObjectFeedback::NoFeedback, // TODO: How to handle fails?
-            ActionResult::Consequence {
+            act::ActionResult::Failure => act::ObjectFeedback::NoFeedback, // TODO: How to handle fails?
+            act::ActionResult::Consequence {
                 callback,
                 follow_up,
             } => {
                 let consequence_feedback = self.process_action(objects, actor, follow_up);
                 match (&callback, &consequence_feedback) {
-                    (ObjectFeedback::NoFeedback, _) => consequence_feedback,
-                    (ObjectFeedback::NoAction, _) => consequence_feedback,
-                    (ObjectFeedback::GameOver, _) => callback,
-                    (ObjectFeedback::Render, _) => callback,
-                    (ObjectFeedback::UpdateHud, _) => callback,
-                    (ObjectFeedback::GenomeManipulator, _) => callback,
+                    (act::ObjectFeedback::NoFeedback, _) => consequence_feedback,
+                    (act::ObjectFeedback::NoAction, _) => consequence_feedback,
+                    (act::ObjectFeedback::GameOver, _) => callback,
+                    (act::ObjectFeedback::Render, _) => callback,
+                    (act::ObjectFeedback::UpdateHud, _) => callback,
+                    (act::ObjectFeedback::GenomeManipulator, _) => callback,
                 }
             }
         }
@@ -248,7 +189,7 @@ impl GameState {
             actor.actuators.hp -= 1;
             if actor.is_player() {
                 self.log
-                    .add("You're overloaded! Taking damage...", MsgClass::Alert);
+                    .add("You're overloaded! Taking damage...", msg::MsgClass::Alert);
             }
         }
     }
@@ -264,7 +205,7 @@ impl GameState {
             return;
         }
 
-        if self.rng.flip_with_prob(1.0 - actor.gene_stability) {
+        if rng::RngExtended::flip_with_prob(&mut self.rng, 1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
             let gene_width = 3;
             let trait_count = actor.dna.raw.len() / gene_width as usize;
@@ -275,7 +216,7 @@ impl GameState {
             let old_gene = actor.dna.raw[position];
             let old_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
             // ^ = bitwise exclusive or
-            let new_gene = old_gene ^ self.rng.random_bit();
+            let new_gene = old_gene ^ rng::RngExtended::random_bit(&mut self.rng);
             // Replace the modified gene in the dna. The change will become effectual once the
             // cell procreates or "reincarnates".
             actor.dna.raw[position] = new_gene;
@@ -312,12 +253,12 @@ impl GameState {
                         "Gene {} mutated from {} to {}",
                         gene_no, old_trait_name, new_trait_name
                     ),
-                    MsgClass::Alert,
+                    msg::MsgClass::Alert,
                 );
             } else if actor.physics.is_visible {
                 self.log.add(
                     format!("Mutation occurred in {}!", actor.visual.name),
-                    MsgClass::Info,
+                    msg::MsgClass::Info,
                 );
             }
         }
@@ -325,9 +266,9 @@ impl GameState {
 
     fn conclude_ageing(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: &mut Object,
-        process_result: &mut ObjectFeedback,
+        process_result: &mut act::ObjectFeedback,
     ) {
         if actor.actuators.hp == 0 {
             actor.die(self, objects);
@@ -336,8 +277,8 @@ impl GameState {
             // the hud should be updated to show the new lifetime of the player unless already
             // something render-worthy happened
             if actor.is_player() {
-                if let ObjectFeedback::NoFeedback = process_result {
-                    *process_result = ObjectFeedback::UpdateHud
+                if let act::ObjectFeedback::NoFeedback = process_result {
+                    *process_result = act::ObjectFeedback::UpdateHud
                 };
             }
         }
@@ -345,14 +286,14 @@ impl GameState {
 
     fn conclude_recycle_obj(
         &mut self,
-        objects: &mut GameObjects,
+        objects: &mut ObjectStore,
         actor: Object,
-        process_result: &mut ObjectFeedback,
+        process_result: &mut act::ObjectFeedback,
     ) {
         if !actor.alive {
             if actor.physics.is_visible {
                 self.log
-                    .add(format!("{} died!", actor.visual.name), MsgClass::Alert);
+                    .add(format!("{} died!", actor.visual.name), msg::MsgClass::Alert);
                 debug!("{} died!", actor.visual.name);
             }
 
@@ -365,8 +306,8 @@ impl GameState {
                 objects.get_vector_mut().remove(self.obj_idx);
             }
             // if the "main" player is dead, the game is over
-            if self.obj_idx == PLAYER {
-                *process_result = ObjectFeedback::GameOver;
+            if self.obj_idx == consts::PLAYER {
+                *process_result = act::ObjectFeedback::GameOver;
             }
         } else {
             objects[self.obj_idx].replace(actor);

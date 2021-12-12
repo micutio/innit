@@ -1,54 +1,51 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::core::game_objects::GameObjects;
-use crate::core::game_state::{GameState, MessageLog, MsgClass, ObjectFeedback};
-use crate::core::innit_env;
-use crate::core::position::Position;
-use crate::entity::action::{Action, ActionResult, Target, TargetCategory};
-use crate::entity::ai::{AiForceVirusProduction, AiTile, AiVirus};
-use crate::entity::control::Controller;
-use crate::entity::genetics::DnaType;
-use crate::entity::genetics::TraitFamily;
-use crate::entity::object::Object;
-use crate::entity::player::PlayerCtrl;
-use crate::ui::particle::ParticleBuilder;
-use crate::ui::{palette, register_particle, register_particles};
+use crate::entity::act::*;
+use crate::entity::ai;
+use crate::entity::control;
+use crate::entity::genetics;
+use crate::entity::Object;
+use crate::game;
+use crate::game::msg::MessageLog;
+use crate::game::position::Position;
+use crate::game::{ObjectStore, State};
+use crate::ui::{self, particle};
 use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActPass {
+pub struct Pass {
     force_redraw: bool,
 }
 
-impl ActPass {
+impl Pass {
     pub fn update() -> Self {
-        ActPass { force_redraw: true }
+        Pass { force_redraw: true }
     }
 }
 
-impl Default for ActPass {
+impl Default for Pass {
     fn default() -> Self {
-        ActPass {
+        Pass {
             force_redraw: false,
         }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActPass {
+impl Action for Pass {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> ActionResult {
         // play a little particle effect
-        // let fg = palette().hud_fg_dna_sensor;
-        // let bg = palette().world_bg_ground_fov_true;
+        // let fg = ui::palette().hud_fg_dna_sensor;
+        // let bg = ui::palette().world_bg_ground_fov_true;
         // Disable particle effect for now. It's a bit spammy.
         // if owner.physics.is_visible {
-        //     register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
+        //     ui::register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         // }
 
         let callback = if self.force_redraw {
@@ -87,15 +84,15 @@ impl Action for ActPass {
 
 /// Move an object
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActMove {
+pub struct Move {
     lvl: i32,
     direction: Target,
 }
 
-impl ActMove {
+impl Move {
     // TODO: use level
     pub fn new() -> Self {
-        ActMove {
+        Move {
             lvl: 0,
             direction: Target::Center,
         }
@@ -103,11 +100,11 @@ impl ActMove {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActMove {
+impl Action for Move {
     fn perform(
         &self,
-        _state: &mut GameState,
-        objects: &mut GameObjects,
+        _state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
@@ -156,30 +153,30 @@ impl Action for ActMove {
 
 /// Focus on increased energy production for this turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActRepairStructure {
+pub struct RepairStructure {
     lvl: i32,
 }
 
-impl ActRepairStructure {
+impl RepairStructure {
     pub fn new() -> Self {
-        ActRepairStructure { lvl: 0 }
+        RepairStructure { lvl: 0 }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActRepairStructure {
+impl Action for RepairStructure {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         owner.actuators.hp = i32::min(owner.actuators.hp + (self.lvl * 2), owner.actuators.max_hp);
         if owner.physics.is_visible {
-            register_particle(
+            ui::register_particle(
                 owner.pos,
                 (50, 255, 50, 180),
-                palette().col_transparent,
+                ui::palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
                 (1.0, 1.0),
@@ -219,14 +216,14 @@ impl Action for ActRepairStructure {
 
 /// Attack another object.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActAttack {
+pub struct Attack {
     lvl: i32,
     target: Target,
 }
 
-impl ActAttack {
+impl Attack {
     pub fn new() -> Self {
-        ActAttack {
+        Attack {
             lvl: 0,
             target: Target::Center,
         }
@@ -234,11 +231,11 @@ impl ActAttack {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActAttack {
+impl Action for Attack {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         // get coords of self position plus direction
@@ -263,13 +260,13 @@ impl Action for ActAttack {
                             "{} attacked {} for {} damage",
                             &owner.visual.name, &t.visual.name, self.lvl
                         ),
-                        MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // show particle effect
-                    register_particle(
+                    ui::register_particle(
                         t.pos,
                         (200, 10, 10, 180),
-                        palette().col_transparent,
+                        ui::palette().col_transparent,
                         'x',
                         250.0,
                         (1.0, 1.0),
@@ -282,7 +279,9 @@ impl Action for ActAttack {
             }
             None => {
                 if owner.is_player() {
-                    state.log.add("Nothing to attack here", MsgClass::Info);
+                    state
+                        .log
+                        .add("Nothing to attack here", game::msg::MsgClass::Info);
                 }
                 ActionResult::Failure
             }
@@ -324,15 +323,15 @@ impl Action for ActAttack {
 /// permanently changing the cell's DNA.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActInjectRnaVirus {
+pub struct InjectRnaVirus {
     lvl: i32,
     target: Target,
     rna: Vec<u8>,
 }
 
-impl ActInjectRnaVirus {
+impl InjectRnaVirus {
     pub fn new(target: Target, dna: Vec<u8>) -> Self {
-        ActInjectRnaVirus {
+        InjectRnaVirus {
             lvl: 0,
             target,
             rna: dna,
@@ -341,13 +340,13 @@ impl ActInjectRnaVirus {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActInjectRnaVirus {
+impl Action for InjectRnaVirus {
     // TODO: Find a way to get the position of this gene within the dna, to parse the complete
     //       virus dna
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
@@ -360,8 +359,8 @@ impl Action for ActInjectRnaVirus {
                 .receptors
                 .iter()
                 .any(|e| owner.processors.receptors.contains(e))
-                && (target.dna.dna_type == DnaType::Nucleus
-                    || target.dna.dna_type == DnaType::Nucleoid)
+                && (target.dna.dna_type == genetics::DnaType::Nucleus
+                    || target.dna.dna_type == genetics::DnaType::Nucleoid)
             {
                 if target.is_player()
                     || target.physics.is_visible
@@ -373,12 +372,13 @@ impl Action for ActInjectRnaVirus {
                             "{0} has infected {1} with virus RNA. {1} is forced to produce virions",
                             owner.visual.name, target.visual.name
                         ),
-                        MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
                 let original_ai = target.control.take();
+                // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
-                    Controller::Npc(Box::new(AiForceVirusProduction::new_duration(
+                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
                         original_ai,
                         4,
                         Some(owner.dna.raw.clone()),
@@ -405,7 +405,7 @@ impl Action for ActInjectRnaVirus {
                             "{} injected virus RNA into {}",
                             owner.visual.name, target_name
                         ),
-                        MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                     debug!(
                         "{} injected virus RNA into {}",
@@ -460,14 +460,14 @@ impl Action for ActInjectRnaVirus {
 /// as into the cell's DNA where it can permanently reside and switch between dormant and active.
 /// #[derive(Debug, Serialize, Deserialize, Clone)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActInjectRetrovirus {
+pub struct InjectRetrovirus {
     lvl: i32,
     target: Target,
 }
 
-impl ActInjectRetrovirus {
+impl InjectRetrovirus {
     pub fn _new() -> Self {
-        ActInjectRetrovirus {
+        InjectRetrovirus {
             lvl: 0,
             target: Target::Center,
         }
@@ -475,13 +475,13 @@ impl ActInjectRetrovirus {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActInjectRetrovirus {
+impl Action for InjectRetrovirus {
     // TODO: Allow for various levels of 'aggression', e.g.: forcing lysis, apoptosis or just
     //       cyclic activity
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
@@ -490,7 +490,9 @@ impl Action for ActInjectRetrovirus {
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
 
-            if target.dna.dna_type == DnaType::Nucleus || target.dna.dna_type == DnaType::Nucleoid {
+            if target.dna.dna_type == genetics::DnaType::Nucleus
+                || target.dna.dna_type == genetics::DnaType::Nucleoid
+            {
                 // FAIL: target is not an actual cell, merely another virus or plasmid
                 if owner.physics.is_visible {
                     state.log.add(
@@ -498,12 +500,12 @@ impl Action for ActInjectRetrovirus {
                             "A virus has tried to infect {} but it is not a cell!",
                             target.visual.name
                         ),
-                        MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // play a little particle effect
-                    let fg = palette().col_acc3;
-                    let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    let fg = ui::palette().col_acc3;
+                    let bg = ui::palette().col_transparent;
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -513,12 +515,12 @@ impl Action for ActInjectRetrovirus {
                             "A virus has tried to infect {} but cannot find matching receptor!",
                             target.visual.name
                         ),
-                        MsgClass::Info,
+                        game::msg::MsgClass::Info,
                     );
                     // play a little particle effect
-                    let fg = palette().col_acc3;
-                    let bg = palette().col_transparent;
-                    register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    let fg = ui::palette().col_acc3;
+                    let bg = ui::palette().col_transparent;
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -546,11 +548,11 @@ impl Action for ActInjectRetrovirus {
                 );
                 debug!("{}", msg);
                 if owner.physics.is_visible {
-                    state.log.add(msg, MsgClass::Alert);
+                    state.log.add(msg, game::msg::MsgClass::Alert);
                     // play a little particle effect
-                    let fg = palette().hud_fg_bar_health;
-                    let bg = palette().col_transparent;
-                    register_particle(
+                    let fg = ui::palette().hud_fg_bar_health;
+                    let bg = ui::palette().col_transparent;
+                    ui::register_particle(
                         owner.pos.into(),
                         fg,
                         bg,
@@ -607,23 +609,23 @@ impl Action for ActInjectRetrovirus {
 /// If `virus_rna` is `None`, the object will look for a retrovirus sequence within its own dna to
 /// use to initialise the new virion.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActProduceVirion {
+pub struct ProduceVirion {
     lvl: i32,
     virus_rna: Option<Vec<u8>>,
 }
 
-impl ActProduceVirion {
+impl ProduceVirion {
     pub fn new(virus_rna: Option<Vec<u8>>) -> Self {
-        ActProduceVirion { lvl: 0, virus_rna }
+        ProduceVirion { lvl: 0, virus_rna }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActProduceVirion {
+impl Action for ProduceVirion {
     fn perform(
         &self,
-        state: &mut GameState,
-        _objects: &mut GameObjects,
+        state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         match &self.virus_rna {
@@ -633,17 +635,22 @@ impl Action for ActProduceVirion {
                 if owner.physics.is_visible || owner.is_player() {
                     state.log.add(
                         format!("{} is forced to produce virions", owner.visual.name),
-                        MsgClass::Alert,
+                        game::msg::MsgClass::Alert,
                     );
                 }
                 owner.inventory.items.push(
                     Object::new()
                         .position(owner.pos.x, owner.pos.y)
                         .living(true)
-                        .visualize("virus", 'v', palette().entity_virus)
+                        .visualize("virus", 'v', ui::palette().entity_virus)
                         .physical(true, false, false)
-                        .genome(0.75, state.gene_library.dna_to_traits(DnaType::Rna, dna))
-                        .control(Controller::Npc(Box::new(AiVirus {}))),
+                        .genome(
+                            0.75,
+                            state
+                                .gene_library
+                                .dna_to_traits(genetics::DnaType::Rna, dna),
+                        )
+                        .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
                 );
             }
             None => {
@@ -652,12 +659,12 @@ impl Action for ActProduceVirion {
                     .dna
                     .simplified
                     .iter()
-                    .position(|x| x.trait_family == TraitFamily::Ltr);
+                    .position(|x| x.trait_family == genetics::TraitFamily::Ltr);
                 let p1 = owner
                     .dna
                     .simplified
                     .iter()
-                    .rposition(|x| x.trait_family == TraitFamily::Ltr);
+                    .rposition(|x| x.trait_family == genetics::TraitFamily::Ltr);
                 if let (Some(a), Some(b)) = (p0, p1) {
                     if a != b {
                         let dna_from_seq =
@@ -666,15 +673,15 @@ impl Action for ActProduceVirion {
                             Object::new()
                                 .position(owner.pos.x, owner.pos.y)
                                 .living(true)
-                                .visualize("virus", 'v', palette().entity_virus)
+                                .visualize("virus", 'v', ui::palette().entity_virus)
                                 .physical(true, false, false)
                                 .genome(
                                     0.75,
                                     state
                                         .gene_library
-                                        .dna_to_traits(DnaType::Rna, &dna_from_seq),
+                                        .dna_to_traits(genetics::DnaType::Rna, &dna_from_seq),
                                 )
-                                .control(Controller::Npc(Box::new(AiVirus {}))),
+                                .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
                             // TODO: Separate Ai for retroviruses?
                         );
                     }
@@ -714,22 +721,22 @@ impl Action for ActProduceVirion {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActEditGenome {
+pub struct EditGenome {
     lvl: i32,
 }
 
-impl ActEditGenome {
+impl EditGenome {
     pub fn new() -> Self {
-        ActEditGenome { lvl: 0 }
+        EditGenome { lvl: 0 }
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActEditGenome {
+impl Action for EditGenome {
     fn perform(
         &self,
-        _state: &mut GameState,
-        _objects: &mut GameObjects,
+        _state: &mut State,
+        _objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         let callback = if owner.is_player() {
@@ -770,14 +777,14 @@ impl Action for ActEditGenome {
 /// Ability for a cell to trigger its own killswitch. It can also trigger someone else's killswitch
 /// provided that cell also has a killswitch and a matching receptor.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActKillSwitch {
+pub struct KillSwitch {
     target: Target,
     lvl: i32,
 }
 
-impl ActKillSwitch {
+impl KillSwitch {
     pub fn new() -> Self {
-        ActKillSwitch {
+        KillSwitch {
             target: Target::Center,
             lvl: 0,
         }
@@ -785,11 +792,11 @@ impl ActKillSwitch {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActKillSwitch {
+impl Action for KillSwitch {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         match self.target {
@@ -797,10 +804,10 @@ impl Action for ActKillSwitch {
                 // play a little particle effect
                 if owner.physics.is_visible {
                     let fg = (255, 10, 90, 180);
-                    let bg = palette().col_transparent;
+                    let bg = ui::palette().col_transparent;
 
-                    register_particles(
-                        ParticleBuilder::new(
+                    ui::register_particles(
+                        particle::ParticleBuilder::new(
                             owner.pos.x as f32,
                             owner.pos.y as f32,
                             fg,
@@ -841,10 +848,10 @@ impl Action for ActKillSwitch {
                     if has_killswitch && has_matching_receptor {
                         if target.physics.is_visible {
                             let fg = (255, 10, 90, 180);
-                            let bg = palette().col_transparent;
+                            let bg = ui::palette().col_transparent;
 
-                            register_particles(
-                                ParticleBuilder::new(
+                            ui::register_particles(
+                                particle::ParticleBuilder::new(
                                     target.pos.x as f32,
                                     target.pos.y as f32,
                                     fg,
@@ -908,14 +915,14 @@ impl Action for ActKillSwitch {
 /// affected by mutation. The target here can be any empty tile to place the child object.
 /// In case of a tile cell replicating, it will replace the empty tile with a wall tile instead.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActBinaryFission {
+pub struct BinaryFission {
     target: Target,
     lvl: i32,
 }
 
-impl ActBinaryFission {
+impl BinaryFission {
     pub fn new() -> Self {
-        ActBinaryFission {
+        BinaryFission {
             target: Target::Center,
             lvl: 0,
         }
@@ -923,11 +930,11 @@ impl ActBinaryFission {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Action for ActBinaryFission {
+impl Action for BinaryFission {
     fn perform(
         &self,
-        state: &mut GameState,
-        objects: &mut GameObjects,
+        state: &mut State,
+        objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
         // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of
@@ -945,7 +952,7 @@ impl Action for ActBinaryFission {
                             t.physics.is_blocking_sight = true;
                             t.visual.glyph = '◘';
                             t.visual.name = "wall tile".into();
-                            t.control = Some(Controller::Npc(Box::new(AiTile)));
+                            t.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
                             // insert (mutated) genome
                             t.set_dna(owner.dna.clone());
                             t.update_genome_from_dna(state);
@@ -954,9 +961,9 @@ impl Action for ActBinaryFission {
                             // play a little particle effect
                             if t.physics.is_visible {
                                 // cover up the new cell as long as the creation particles play
-                                let t_fg = palette().world_bg;
-                                let t_bg = palette().world_bg;
-                                register_particle(
+                                let t_fg = ui::palette().world_bg;
+                                let t_bg = ui::palette().world_bg;
+                                ui::register_particle(
                                     t.pos,
                                     t_fg,
                                     t_bg,
@@ -966,8 +973,8 @@ impl Action for ActBinaryFission {
                                 );
                                 let fg = owner.visual.fg_color;
                                 let bg = owner.visual.bg_color;
-                                register_particles(
-                                    ParticleBuilder::new(
+                                ui::register_particles(
+                                    particle::ParticleBuilder::new(
                                         owner.pos.x as f32,
                                         owner.pos.y as f32,
                                         fg,
@@ -993,9 +1000,11 @@ impl Action for ActBinaryFission {
                         // create a new object
                         let child_ctrl = match &owner.control {
                             Some(ctrl) => match ctrl {
-                                Controller::Npc(ai) => Some(Controller::Npc(ai.clone())),
-                                Controller::Player(_) => {
-                                    Some(Controller::Player(PlayerCtrl::new()))
+                                control::Controller::Npc(ai) => {
+                                    Some(control::Controller::Npc(ai.clone()))
+                                }
+                                control::Controller::Player(_) => {
+                                    Some(control::Controller::Player(control::Player::new()))
                                 }
                             },
                             None => None,
@@ -1022,15 +1031,22 @@ impl Action for ActBinaryFission {
                             // cover up the new cell as long as the creation particles play
                             let t_fg = t.visual.fg_color;
                             let t_bg = t.visual.bg_color;
-                            register_particle(t.pos, t_fg, t_bg, t.visual.glyph, 600.0, (1.0, 1.0));
+                            ui::register_particle(
+                                t.pos,
+                                t_fg,
+                                t_bg,
+                                t.visual.glyph,
+                                600.0,
+                                (1.0, 1.0),
+                            );
                             let fg = owner.visual.fg_color;
                             let bg = owner.visual.bg_color;
                             let start_x =
                                 owner.pos.x as f32 + ((t.pos.x - owner.pos.x) as f32 * 0.5);
                             let start_y =
                                 owner.pos.y as f32 + ((t.pos.y - owner.pos.y) as f32 * 0.5);
-                            register_particles(
-                                ParticleBuilder::new(
+                            ui::register_particles(
+                                particle::ParticleBuilder::new(
                                     start_x,
                                     start_y,
                                     fg,
@@ -1051,7 +1067,7 @@ impl Action for ActBinaryFission {
 
             // finally place the 'child' cell into the world
             if let Some(child) = child_obj {
-                let callback = if child.physics.is_visible && !innit_env().is_debug_mode {
+                let callback = if child.physics.is_visible && !game::env().is_debug_mode {
                     ObjectFeedback::Render
                 } else {
                     ObjectFeedback::NoFeedback

@@ -4,11 +4,12 @@ they have a plasmid that allows this.
 */
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
-use crate::game::{RunState, HUD_CON, HUD_CON_Z, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game::{self, ObjectStore, State};
 use crate::rand::Rng;
-use crate::util::game_rng::RngExtended;
-use crate::{core::game_state::GameState, ui::palette};
-use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk, VirtualKeyCode};
+use crate::ui;
+use crate::util::rng::RngExtended;
+
+use rltk;
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
@@ -27,7 +28,7 @@ pub enum GenomeEditingState {
 
 #[derive(Debug)]
 struct EditFunction {
-    layout: Rect,
+    layout: rltk::Rect,
     is_enabled: bool,
     state: GenomeEditingState,
     idx: usize,
@@ -36,7 +37,7 @@ struct EditFunction {
 
 impl EditFunction {
     fn new(
-        layout: Rect,
+        layout: rltk::Rect,
         is_enabled: bool,
         state: GenomeEditingState,
         idx: usize,
@@ -54,14 +55,14 @@ impl EditFunction {
 
 #[derive(Debug, Clone)]
 struct GeneItem {
-    layout: Rect,
+    layout: rltk::Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
     color: (u8, u8, u8, u8),
 }
 
 impl GeneItem {
-    fn new(layout: Rect, gene_idx: usize, color: (u8, u8, u8, u8)) -> Self {
+    fn new(layout: rltk::Rect, gene_idx: usize, color: (u8, u8, u8, u8)) -> Self {
         GeneItem {
             layout,
             gene_idx,
@@ -79,7 +80,7 @@ impl GeneItem {
 ///   - values and additional info about the trait
 #[derive(Debug)]
 pub struct GenomeEditor {
-    layout: Rect,
+    layout: rltk::Rect,
     gene_selection_locked: bool,
     /// Not all plasmids offer the same capabilities.
     /// The used plasmid determines which operations the genome editor can perform.
@@ -114,7 +115,7 @@ impl GenomeEditor {
                 let len: i32 = (s.len() + 3) as i32;
                 let is_enabled = enabled_functions.contains(e);
                 let item = EditFunction::new(
-                    Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
+                    rltk::Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
                     is_enabled,
                     *e,
                     idx,
@@ -130,14 +131,14 @@ impl GenomeEditor {
         func_width += edit_functions.len() as i32 * 2 + 2;
         let total_width = func_width.max(dna.simplified.len() as i32 + 2);
         let total_height = 16;
-        let layout = Rect::with_size(
-            (SCREEN_WIDTH / 2) - (total_width / 2),
-            (SCREEN_HEIGHT / 2) - (total_height / 2),
+        let layout = rltk::Rect::with_size(
+            (game::consts::SCREEN_WIDTH / 2) - (total_width / 2),
+            (game::consts::SCREEN_HEIGHT / 2) - (total_height / 2),
             total_width,
             total_height,
         );
 
-        let layout_top_row = Rect::with_size(layout.x1, layout.y1 + TOP_ROW_Y_OFFSET, 0, 0);
+        let layout_top_row = rltk::Rect::with_size(layout.x1, layout.y1 + TOP_ROW_Y_OFFSET, 0, 0);
         for mut item in &mut edit_functions {
             item.layout = item.layout.add(layout_top_row);
         }
@@ -160,9 +161,9 @@ impl GenomeEditor {
 
     fn build_gene_items(dna: &Dna, start_x: i32, y: i32) -> Vec<GeneItem> {
         let mut x = start_x;
-        let cyan = palette().hud_fg_dna_processor;
-        let magenta = palette().hud_fg_dna_actuator;
-        let yellow = palette().hud_fg_dna_sensor;
+        let cyan = ui::palette().hud_fg_dna_processor;
+        let magenta = ui::palette().hud_fg_dna_actuator;
+        let yellow = ui::palette().hud_fg_dna_sensor;
         dna.simplified
             .iter()
             .enumerate()
@@ -174,14 +175,14 @@ impl GenomeEditor {
                     TraitFamily::Junk(_) => (100, 100, 100, 255), // TODO: coloring
                     TraitFamily::Ltr => (255, 255, 255, 255),     // TODO: coloring
                 };
-                let item = GeneItem::new(Rect::with_size(x, y, 1, 1), idx, col);
+                let item = GeneItem::new(rltk::Rect::with_size(x, y, 1, 1), idx, col);
                 x += 1;
                 item
             })
             .collect()
     }
 
-    pub fn display(self, game_state: &mut GameState, ctx: &mut Rltk) -> RunState {
+    pub fn display(self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
         // 1. render everything
         self.render(game_state, ctx);
 
@@ -189,64 +190,68 @@ impl GenomeEditor {
         self.read_input(game_state, ctx)
     }
 
-    fn render(&self, game_state: &mut GameState, ctx: &mut Rltk) {
-        ctx.set_active_console(HUD_CON);
+    fn render(&self, game_state: &mut State, ctx: &mut rltk::Rltk) {
+        ctx.set_active_console(game::consts::HUD_CON);
         ctx.cls();
-        let mut draw_batch = DrawBatch::new();
-        let hud_fg = palette().hud_fg;
-        let hud_fg_hl = palette().hud_fg_highlight;
-        let hud_guide = palette().hud_fg_highlight;
-        let hud_bg_active = palette().hud_bg_active;
-        let hud_fg_inactive = palette().hud_fg_inactive;
-        let hud_fg_border = palette().hud_fg_border;
-        let hud_bg = palette().hud_bg;
+        let mut draw_batch = rltk::DrawBatch::new();
+        let hud_fg = ui::palette().hud_fg;
+        let hud_fg_hl = ui::palette().hud_fg_highlight;
+        let hud_guide = ui::palette().hud_fg_highlight;
+        let hud_bg_active = ui::palette().hud_bg_active;
+        let hud_fg_inactive = ui::palette().hud_fg_inactive;
+        let hud_fg_border = ui::palette().hud_fg_border;
+        let hud_bg = ui::palette().hud_bg;
         // draw window border
-        draw_batch.fill_region(self.layout, ColorPair::new(hud_fg, hud_bg), to_cp437(' '));
-        draw_batch.draw_hollow_box(self.layout, ColorPair::new(hud_fg_border, hud_bg));
+        draw_batch.fill_region(
+            self.layout,
+            rltk::ColorPair::new(hud_fg, hud_bg),
+            rltk::to_cp437(' '),
+        );
+        draw_batch.draw_hollow_box(self.layout, rltk::ColorPair::new(hud_fg_border, hud_bg));
 
         // draw title
         draw_batch.print_color(
-            Point::new(self.layout.x1 + 2, self.layout.y1),
+            rltk::Point::new(self.layout.x1 + 2, self.layout.y1),
             " Genome Manipulation ",
-            ColorPair::new(hud_fg_border, hud_bg),
+            rltk::ColorPair::new(hud_fg_border, hud_bg),
         );
 
         if self.state == GenomeEditingState::ChooseFunction {
             draw_batch.fill_region(
-                Rect::with_size(
+                rltk::Rect::with_size(
                     self.layout.x1 + 1,
                     self.layout.y1 + TOP_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
                     0,
                 ),
-                ColorPair::new(hud_fg, hud_bg_active),
-                to_cp437(' '),
+                rltk::ColorPair::new(hud_fg, hud_bg_active),
+                rltk::to_cp437(' '),
             );
         } else if self.state == GenomeEditingState::ChooseGene {
             draw_batch.fill_region(
-                Rect::with_size(
+                rltk::Rect::with_size(
                     self.layout.x1 + 1,
                     self.layout.y1 + MID_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
                     0,
                 ),
-                ColorPair::new(hud_fg, hud_bg_active),
-                to_cp437(' '),
+                rltk::ColorPair::new(hud_fg, hud_bg_active),
+                rltk::to_cp437(' '),
             );
         }
 
         // draw 'functions'
         draw_batch.print_color(
-            Point::new(self.layout.x1 + 1, self.layout.y1 + TOP_ROW_Y_OFFSET),
+            rltk::Point::new(self.layout.x1 + 1, self.layout.y1 + TOP_ROW_Y_OFFSET),
             "Functions",
-            ColorPair::new(hud_fg, hud_bg),
+            rltk::ColorPair::new(hud_fg, hud_bg),
         );
 
         // draw 'DNA'
         draw_batch.print_color(
-            Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET),
+            rltk::Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET),
             "DNA",
-            ColorPair::new(hud_fg, hud_bg),
+            rltk::ColorPair::new(hud_fg, hud_bg),
         );
 
         for item in &self.edit_functions {
@@ -269,24 +274,24 @@ impl GenomeEditor {
             };
 
             draw_batch.fill_region(
-                Rect::with_size(
+                rltk::Rect::with_size(
                     item.layout.x1,
                     item.layout.y1,
                     item.layout.width(),
                     item.layout.height() - 1,
                 ),
-                ColorPair::new(fg_col, bg_col),
-                to_cp437(' '),
+                rltk::ColorPair::new(fg_col, bg_col),
+                rltk::to_cp437(' '),
             );
             draw_batch.print_color(
-                Point::new(item.layout.x1 + 1, item.layout.y1),
+                rltk::Point::new(item.layout.x1 + 1, item.layout.y1),
                 (item.idx + 1).to_string(),
-                ColorPair::new(fg_col, bg_col),
+                rltk::ColorPair::new(fg_col, bg_col),
             );
             draw_batch.print_color(
-                Point::new(item.layout.x1 + 3, item.layout.y1),
+                rltk::Point::new(item.layout.x1 + 3, item.layout.y1),
                 item.title.to_string(),
-                ColorPair::new(fg_col, bg_col),
+                rltk::ColorPair::new(fg_col, bg_col),
             );
         }
 
@@ -306,29 +311,30 @@ impl GenomeEditor {
             draw_batch.print_color(
                 item.layout.center(),
                 c,
-                ColorPair::new(item.color, bg_color),
+                rltk::ColorPair::new(item.color, bg_color),
             );
         }
 
         // draw line between gene and info box
         let item_layout = self.gene_items.get(self.selected_gene).unwrap().layout;
-        let connect_start = Point::new(item_layout.x1, item_layout.y1 + 1);
-        let connect_end = Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET + 2);
+        let connect_start = rltk::Point::new(item_layout.x1, item_layout.y1 + 1);
+        let connect_end =
+            rltk::Point::new(self.layout.x1 + 1, self.layout.y1 + MID_ROW_Y_OFFSET + 2);
 
         if connect_start.x == connect_end.x {
-            draw_batch.print_color(connect_end, "│", ColorPair::new(hud_guide, hud_bg));
+            draw_batch.print_color(connect_end, "│", rltk::ColorPair::new(hud_guide, hud_bg));
         } else {
             draw_batch.print_color(
-                Point::new(connect_start.x, connect_end.y),
+                rltk::Point::new(connect_start.x, connect_end.y),
                 "┘",
-                ColorPair::new(hud_guide, hud_bg),
+                rltk::ColorPair::new(hud_guide, hud_bg),
             );
-            draw_batch.print_color(connect_end, "┌", ColorPair::new(hud_guide, hud_bg));
+            draw_batch.print_color(connect_end, "┌", rltk::ColorPair::new(hud_guide, hud_bg));
             for i in 1..(connect_start.x - connect_end.x) {
                 draw_batch.print_color(
-                    Point::new(connect_end.x + i, connect_end.y),
+                    rltk::Point::new(connect_end.x + i, connect_end.y),
                     "─",
-                    ColorPair::new(hud_guide, hud_bg),
+                    rltk::ColorPair::new(hud_guide, hud_bg),
                 );
             }
         }
@@ -336,9 +342,9 @@ impl GenomeEditor {
         // draw genome info box
         if let Some(gene_item) = self.gene_items.get(self.selected_gene) {
             if let Some(genome) = self.player_dna.simplified.get(gene_item.gene_idx) {
-                let col_hl = ColorPair::new(hud_fg_hl, hud_bg);
-                let col_guide = ColorPair::new(hud_guide, hud_bg);
-                let color = ColorPair::new(hud_fg, hud_bg);
+                let col_hl = rltk::ColorPair::new(hud_fg_hl, hud_bg);
+                let col_guide = rltk::ColorPair::new(hud_guide, hud_bg);
+                let color = rltk::ColorPair::new(hud_fg, hud_bg);
                 let name_header = "trait name:";
                 let family_header = "trait family:";
                 let action_header = "action:";
@@ -350,27 +356,27 @@ impl GenomeEditor {
                     genome.trait_name.clone()
                 };
                 draw_batch.print_color(
-                    Point::new(connect_end.x, connect_end.y + 1),
+                    rltk::Point::new(connect_end.x, connect_end.y + 1),
                     "├",
                     col_guide,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x, connect_end.y + 2),
+                    rltk::Point::new(connect_end.x, connect_end.y + 2),
                     "├",
                     col_guide,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x, connect_end.y + 3),
+                    rltk::Point::new(connect_end.x, connect_end.y + 3),
                     "├",
                     col_guide,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x, connect_end.y + 4),
+                    rltk::Point::new(connect_end.x, connect_end.y + 4),
                     "├",
                     col_guide,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x, connect_end.y + 5),
+                    rltk::Point::new(connect_end.x, connect_end.y + 5),
                     "└",
                     col_guide,
                 );
@@ -381,55 +387,55 @@ impl GenomeEditor {
                     .unwrap() as i32
                     + 3;
                 draw_batch.print_color(
-                    Point::new(connect_end.x + 2, connect_end.y + 1),
+                    rltk::Point::new(connect_end.x + 2, connect_end.y + 1),
                     name_header,
                     col_hl,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + spacing, connect_end.y + 1),
+                    rltk::Point::new(connect_end.x + spacing, connect_end.y + 1),
                     trait_name,
                     color,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + 2, connect_end.y + 2),
+                    rltk::Point::new(connect_end.x + 2, connect_end.y + 2),
                     family_header,
                     col_hl,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + spacing, connect_end.y + 2),
+                    rltk::Point::new(connect_end.x + spacing, connect_end.y + 2),
                     &genome.trait_family,
                     color,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + 2, connect_end.y + 3),
+                    rltk::Point::new(connect_end.x + 2, connect_end.y + 3),
                     action_header,
                     col_hl,
                 );
                 if let Some(action) = &genome.action {
                     draw_batch.print_color(
-                        Point::new(connect_end.x + spacing, connect_end.y + 3),
+                        rltk::Point::new(connect_end.x + spacing, connect_end.y + 3),
                         format!("{}", action.get_identifier(),),
                         color,
                     );
                 } else {
                     draw_batch.print_color(
-                        Point::new(connect_end.x + spacing, connect_end.y + 3),
+                        rltk::Point::new(connect_end.x + spacing, connect_end.y + 3),
                         "none",
                         color,
                     );
                 }
                 draw_batch.print_color(
-                    Point::new(connect_end.x + 2, connect_end.y + 4),
+                    rltk::Point::new(connect_end.x + 2, connect_end.y + 4),
                     attribute_header,
                     col_hl,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + spacing, connect_end.y + 4),
+                    rltk::Point::new(connect_end.x + spacing, connect_end.y + 4),
                     format!("{:#?}", genome.attribute),
                     color,
                 );
                 draw_batch.print_color(
-                    Point::new(connect_end.x + 2, connect_end.y + 5),
+                    rltk::Point::new(connect_end.x + 2, connect_end.y + 5),
                     code_header,
                     col_hl,
                 );
@@ -445,7 +451,7 @@ impl GenomeEditor {
                             .join("");
 
                         draw_batch.print_color(
-                            Point::new(connect_end.x + spacing, connect_end.y + 5),
+                            rltk::Point::new(connect_end.x + spacing, connect_end.y + 5),
                             format!("{:#?}", gene_str),
                             color,
                         );
@@ -458,52 +464,53 @@ impl GenomeEditor {
         let info_x = self.layout.x1 + 1;
         let info_y = self.layout.y2 - 3;
         draw_batch.print_color(
-            Point::new(info_x, info_y),
+            rltk::Point::new(info_x, info_y),
             "↑/↓ - flip between functions/DNA",
-            ColorPair::new(hud_fg, hud_bg),
+            rltk::ColorPair::new(hud_fg, hud_bg),
         );
         draw_batch.print_color(
-            Point::new(info_x, info_y + 1),
+            rltk::Point::new(info_x, info_y + 1),
             "←/→ - choose function/gene",
-            ColorPair::new(hud_fg, hud_bg),
+            rltk::ColorPair::new(hud_fg, hud_bg),
         );
         draw_batch.print_color(
-            Point::new(info_x, info_y + 2),
+            rltk::Point::new(info_x, info_y + 2),
             "return - use function",
-            ColorPair::new(hud_fg, hud_bg),
+            rltk::ColorPair::new(hud_fg, hud_bg),
         );
 
-        draw_batch.submit(HUD_CON_Z).unwrap();
+        draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
 
-    fn read_input(mut self, game_state: &mut GameState, ctx: &mut Rltk) -> RunState {
+    fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
         // wait for user input
         // a) keyboard input
         // if we have a key activity, process and return immediately
+        use rltk::VirtualKeyCode::*;
         use GenomeEditingState::*;
         if let Some(key) = ctx.key {
             match key {
-                VirtualKeyCode::Up => {
+                Up => {
                     if let ChooseGene = self.state {
                         self.state = ChooseFunction
                     }
                 }
-                VirtualKeyCode::Down => {
+                Down => {
                     if let ChooseFunction = self.state {
                         self.state = ChooseGene
                     }
                 }
-                VirtualKeyCode::Key1 => return self.do_action(game_state, 0),
-                VirtualKeyCode::Key2 => return self.do_action(game_state, 1),
-                VirtualKeyCode::Key3 => return self.do_action(game_state, 2),
-                VirtualKeyCode::Key4 => return self.do_action(game_state, 3),
-                VirtualKeyCode::Key5 => return self.do_action(game_state, 4),
-                VirtualKeyCode::Key6 => return self.do_action(game_state, 5),
-                VirtualKeyCode::Key7 => return self.do_action(game_state, 6),
-                VirtualKeyCode::Key8 => return self.do_action(game_state, 7),
-                VirtualKeyCode::Key9 => return self.do_action(game_state, 8),
-                VirtualKeyCode::Key0 => return self.do_action(game_state, 9),
-                VirtualKeyCode::Left => match self.state {
+                Key1 => return self.do_action(game_state, 0),
+                Key2 => return self.do_action(game_state, 1),
+                Key3 => return self.do_action(game_state, 2),
+                Key4 => return self.do_action(game_state, 3),
+                Key5 => return self.do_action(game_state, 4),
+                Key6 => return self.do_action(game_state, 5),
+                Key7 => return self.do_action(game_state, 6),
+                Key8 => return self.do_action(game_state, 7),
+                Key9 => return self.do_action(game_state, 8),
+                Key0 => return self.do_action(game_state, 9),
+                Left => match self.state {
                     GenomeEditingState::Move => {
                         // if selected is leftmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
@@ -537,7 +544,7 @@ impl GenomeEditor {
                     }
                     _ => {}
                 },
-                VirtualKeyCode::Right => match self.state {
+                Right => match self.state {
                     GenomeEditingState::Move => {
                         // if selected is rightmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
@@ -570,20 +577,20 @@ impl GenomeEditor {
                     }
                     _ => {}
                 },
-                VirtualKeyCode::Return => {
+                Return => {
                     // use dummy value, this function will call itself with the correct value.
                     return match self.state {
-                        ChooseGene => RunState::GenomeEditing(self),
+                        ChooseGene => game::RunState::GenomeEditing(self),
                         _ => {
                             let function_idx: usize = self.selected_function;
                             self.do_action(game_state, function_idx)
                         }
                     };
                 }
-                VirtualKeyCode::Escape => return RunState::CheckInput,
+                Escape => return game::RunState::CheckInput,
                 _ => {}
             }
-            return RunState::GenomeEditing(self);
+            return game::RunState::GenomeEditing(self);
         }
 
         // b) mouse input
@@ -671,10 +678,10 @@ impl GenomeEditor {
             }
         }
 
-        RunState::GenomeEditing(self)
+        game::RunState::GenomeEditing(self)
     }
 
-    fn do_action(mut self, game_state: &mut GameState, active_idx: usize) -> RunState {
+    fn do_action(mut self, game_state: &mut State, active_idx: usize) -> game::RunState {
         if let Some(item) = self.edit_functions.get(active_idx) {
             self.selected_function = item.idx;
             use GenomeEditingState::*;
@@ -740,12 +747,12 @@ impl GenomeEditor {
                 Done => {
                     // apply changed genome to player
                     self.state = Done;
-                    return RunState::GenomeEditing(self);
+                    return game::RunState::GenomeEditing(self);
                 }
                 _ => {}
             }
         }
-        RunState::GenomeEditing(self)
+        game::RunState::GenomeEditing(self)
     }
 
     /// Decrease the plasmid charge and update the UI accordingly
@@ -766,7 +773,7 @@ impl GenomeEditor {
     }
 
     /// Re-build the player dna from the current simplified representation.
-    fn regenerate_dna(&mut self, game_state: &mut GameState) {
+    fn regenerate_dna(&mut self, game_state: &mut State) {
         let bit_vec = game_state
             .gene_library
             .dna_from_traits(self.player_dna.simplified.as_slice());
@@ -779,5 +786,15 @@ impl GenomeEditor {
             self.layout.x1 + 1,
             self.layout.y1 + MID_ROW_Y_OFFSET + 1,
         );
+    }
+}
+
+pub fn try_create(state: &mut State, objects: &mut ObjectStore) -> Option<GenomeEditor> {
+    if let Some(ref mut player) = objects[state.player_idx] {
+        // NOTE: In the future editor features could be read from the plasmid.
+        let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
+        Some(genome_editor)
+    } else {
+        None
     }
 }

@@ -1,4 +1,13 @@
 use serde::{Deserialize, Serialize};
+use std::sync::{Mutex, MutexGuard};
+
+lazy_static! {
+    static ref GAME_ENV: Mutex<GameEnv> = Mutex::new(GameEnv::new());
+}
+
+pub fn env<'a>() -> MutexGuard<'a, GameEnv> {
+    GAME_ENV.lock().unwrap()
+}
 
 #[derive(Clone, Copy, Serialize, Deserialize, Default)]
 pub struct GameEnv {

@@ -1,7 +1,8 @@
-pub mod action;
+pub mod act;
 pub mod ai;
 pub mod control;
 pub mod genetics;
 pub mod inventory;
 pub mod object;
-pub mod player;
+
+pub use object::Object;
