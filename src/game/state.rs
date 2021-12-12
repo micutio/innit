@@ -270,7 +270,7 @@ impl State {
         actor: &mut Object,
         process_result: &mut act::ObjectFeedback,
     ) {
-        if actor.actuators.hp == 0 {
+        if actor.actuators.hp <= 0 {
             actor.die(self, objects);
         } else {
             actor.processors.life_elapsed += 1;

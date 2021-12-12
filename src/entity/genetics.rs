@@ -268,7 +268,7 @@ impl Actuators {
             actions: Vec::new(),
             max_hp: 1,
             hp: 1,
-            volume: 5,
+            volume: 2,
         }
     }
 }
