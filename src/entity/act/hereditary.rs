@@ -377,6 +377,7 @@ impl Action for InjectRnaVirus {
                     );
                 }
                 let original_ai = target.control.take();
+                // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
                     control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
                         original_ai,

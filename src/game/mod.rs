@@ -32,7 +32,7 @@ use crate::world_gen;
 use crate::world_gen::WorldGen;
 
 use core::fmt;
-use rltk::{to_cp437, ColorPair, Degrees, DrawBatch, GameState as Rltk_GameState, Rltk};
+use rltk::{GameState as Rltk_GameState, Rltk};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 #[cfg(not(target_arch = "wasm32"))]
@@ -347,22 +347,7 @@ impl Rltk_GameState for Game {
 
         // The particles need to be queried each cycle to activate and cull them in time.
         // TODO: move particle render routine into separate function
-        ctx.set_active_console(consts::PAR_CON);
-        ctx.cls();
-        let mut draw_batch = DrawBatch::new();
-        for particle in &particles().particles {
-            if particle.start_delay <= 0.0 {
-                draw_batch.set_fancy(
-                    particle.pos,
-                    1,
-                    Degrees::new(0.0),
-                    particle.scale.into(),
-                    ColorPair::new(particle.col_fg, particle.col_bg),
-                    to_cp437(particle.glyph),
-                );
-            }
-        }
-        draw_batch.submit(consts::PAR_CON_Z).unwrap();
+        particles().render(ctx);
         self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
