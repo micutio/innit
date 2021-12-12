@@ -1,5 +1,4 @@
-use crate::game::objects::ObjectStore;
-use crate::game::State;
+use crate::game::{ObjectStore, State};
 use crate::ui::dialog::InfoBox;
 
 pub fn character_screen(state: &State, objects: &ObjectStore) -> InfoBox {

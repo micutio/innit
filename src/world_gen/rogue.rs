@@ -35,7 +35,7 @@ impl WorldGen for RogueWorldGenerator {
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::object_template::ObjectTemplate],
+        object_templates: &[raws::template::ObjectTemplate],
     ) -> game::RunState {
         // fill the world with `unblocked` tiles
         // create rooms randomly
@@ -134,7 +134,7 @@ fn place_objects(
     state: &mut State,
     objects: &mut ObjectStore,
     _spawns: &[raws::spawn::Spawn],
-    _object_templates: &[raws::object_template::ObjectTemplate],
+    _object_templates: &[raws::template::ObjectTemplate],
 ) {
     // use rand::distributions::WeightedIndex;
     use rand::prelude::*;

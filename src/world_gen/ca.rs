@@ -34,7 +34,7 @@ impl WorldGen for CaBased {
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::object_template::ObjectTemplate],
+        object_templates: &[raws::template::ObjectTemplate],
     ) -> game::RunState {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
@@ -216,7 +216,7 @@ fn place_objects(
     state: &mut State,
     objects: &mut ObjectStore,
     spawns: &[raws::spawn::Spawn],
-    object_templates: &[raws::object_template::ObjectTemplate],
+    object_templates: &[raws::template::ObjectTemplate],
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -270,7 +270,7 @@ fn place_objects(
                 };
 
                 // generate DNA, either probabilistically or from a template
-                use raws::object_template::DnaTemplate;
+                use raws::template::DnaTemplate;
                 let raw_dna = match &template.dna_template {
                     DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
                         &mut state.rng,

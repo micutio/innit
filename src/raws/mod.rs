@@ -1,9 +1,8 @@
-pub(crate) mod object_template;
-pub(crate) mod spawn;
+pub mod spawn;
+pub mod template;
 
 use spawn::Spawn;
-
-use crate::raws::object_template::ObjectTemplate;
+use template::ObjectTemplate;
 
 rltk::embedded_resource!(SPAWN_RAW, "../../raws/spawns.json");
 rltk::embedded_resource!(OBJECT_RAW, "../../raws/objects.json");

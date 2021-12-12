@@ -77,7 +77,7 @@ pub struct Game {
     run_state: Option<RunState>,
     // world generation state start
     spawns: Vec<raws::spawn::Spawn>,
-    object_templates: Vec<raws::object_template::ObjectTemplate>,
+    object_templates: Vec<raws::template::ObjectTemplate>,
     // world_generator = RogueWorldGenerator::new();
     world_generator: world_gen::ca::CaBased,
     // world generation state end
