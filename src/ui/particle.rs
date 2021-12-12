@@ -1,8 +1,8 @@
 //! This module contains the particle/animation system
 
-use rltk;
+use crate::game;
 
-use crate::game::consts;
+use rltk;
 
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
@@ -173,7 +173,7 @@ impl ParticleSystem {
     }
 
     pub fn render(&self, ctx: &mut rltk::Rltk) {
-        ctx.set_active_console(consts::PAR_CON);
+        ctx.set_active_console(game::consts::PAR_CON);
         ctx.cls();
         let mut draw_batch = rltk::DrawBatch::new();
         for particle in &self.particles {
@@ -188,7 +188,7 @@ impl ParticleSystem {
                 );
             }
         }
-        draw_batch.submit(consts::PAR_CON_Z).unwrap();
+        draw_batch.submit(game::consts::PAR_CON_Z).unwrap();
     }
 
     /// Advance the particle lifetimes and cull all those that have expired.
