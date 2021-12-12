@@ -577,4 +577,15 @@ impl Object {
         ];
         hud::ToolTip::new(header, attributes)
     }
+
+    pub fn get_available_actions(&self, targets: &[act::TargetCategory]) -> Vec<String> {
+        self.actuators
+            .actions
+            .iter()
+            .chain(self.processors.actions.iter())
+            .chain(self.sensors.actions.iter())
+            .filter(|a| targets.contains(&a.get_target_category()))
+            .map(|a| a.get_identifier())
+            .collect()
+    }
 }

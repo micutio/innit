@@ -1,5 +1,5 @@
 use crate::entity::Object;
-use crate::game::{self, objects::ObjectStore, position::Position};
+use crate::game::{self, position::Position, ObjectStore};
 use crate::ui;
 use crate::util::timer;
 use crate::world_gen;
@@ -50,7 +50,7 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     }
 
     let elapsed = timer.stop_silent();
-    info!("render world in {}", timer::time_to_str(elapsed));
+    info!("render world in {}", timer::format(elapsed));
 
     draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
 }

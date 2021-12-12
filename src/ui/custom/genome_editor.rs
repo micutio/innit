@@ -4,7 +4,7 @@ they have a plasmid that allows this.
 */
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
-use crate::game::{self, State};
+use crate::game::{self, ObjectStore, State};
 use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
@@ -786,5 +786,15 @@ impl GenomeEditor {
             self.layout.x1 + 1,
             self.layout.y1 + MID_ROW_Y_OFFSET + 1,
         );
+    }
+}
+
+pub fn try_create(state: &mut State, objects: &mut ObjectStore) -> Option<GenomeEditor> {
+    if let Some(ref mut player) = objects[state.player_idx] {
+        // NOTE: In the future editor features could be read from the plasmid.
+        let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
+        Some(genome_editor)
+    } else {
+        None
     }
 }

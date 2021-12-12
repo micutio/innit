@@ -4,16 +4,17 @@ use crate::game::objects::ObjectStore;
 use crate::game::position::Position;
 use crate::game::State;
 use crate::game::{self, env};
-use crate::ui::game_input::PlayerAction::PrimaryAction;
-use crate::ui::game_input::PlayerInput::{MetaInput, PlayInput};
 use crate::ui::hud::{Hud, HudItem, ToolTip};
+use crate::ui::input::PlayerAction::PrimaryAction;
+use crate::ui::input::PlayerInput::{Game, Meta};
+
 use rltk::prelude::INPUT;
 use rltk::{BEvent, Point, Rltk, VirtualKeyCode};
 
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
-    MetaInput(UiAction),
-    PlayInput(PlayerAction),
+    Meta(UiAction),
+    Game(PlayerAction),
     Undefined,
 }
 
@@ -49,39 +50,39 @@ fn key_to_action(key: VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
     use self::UiAction::*;
     match (key, ctrl, shift) {
         // letters
-        (VirtualKeyCode::A, false, false) => PlayInput(SecondaryAction(West)),
-        (VirtualKeyCode::C, false, false) => MetaInput(CharacterScreen),
-        (VirtualKeyCode::D, false, false) => PlayInput(SecondaryAction(East)),
-        (VirtualKeyCode::E, false, false) => PlayInput(Quick2Action),
-        (VirtualKeyCode::E, false, true) => MetaInput(ChooseQuick2Action),
+        (VirtualKeyCode::A, false, false) => Game(SecondaryAction(West)),
+        (VirtualKeyCode::C, false, false) => Meta(CharacterScreen),
+        (VirtualKeyCode::D, false, false) => Game(SecondaryAction(East)),
+        (VirtualKeyCode::E, false, false) => Game(Quick2Action),
+        (VirtualKeyCode::E, false, true) => Meta(ChooseQuick2Action),
         (VirtualKeyCode::G, false, false) => {
             if env().is_debug_mode {
-                MetaInput(GenomeEditor)
+                Meta(GenomeEditor)
             } else {
                 Undefined
             }
         }
-        (VirtualKeyCode::P, false, true) => MetaInput(ChoosePrimaryAction),
-        (VirtualKeyCode::Q, false, false) => PlayInput(Quick1Action),
-        (VirtualKeyCode::Q, false, true) => MetaInput(ChooseQuick1Action),
-        (VirtualKeyCode::S, false, false) => PlayInput(SecondaryAction(South)),
-        (VirtualKeyCode::S, false, true) => MetaInput(ChooseSecondaryAction),
-        (VirtualKeyCode::W, false, false) => PlayInput(SecondaryAction(North)),
-        (VirtualKeyCode::Up, false, false) => PlayInput(PrimaryAction(North)),
-        (VirtualKeyCode::Down, false, false) => PlayInput(PrimaryAction(South)),
-        (VirtualKeyCode::Left, false, false) => PlayInput(PrimaryAction(West)),
-        (VirtualKeyCode::Right, false, false) => PlayInput(PrimaryAction(East)),
-        (VirtualKeyCode::Space, false, false) => PlayInput(PassTurn),
-        (VirtualKeyCode::Escape, false, false) => MetaInput(ExitGameLoop),
-        (VirtualKeyCode::F1, false, false) => MetaInput(Help),
-        (VirtualKeyCode::Key1, false, false) => MetaInput(SetFont(0)),
-        (VirtualKeyCode::Key2, false, false) => MetaInput(SetFont(1)),
-        (VirtualKeyCode::Key3, false, false) => MetaInput(SetFont(2)),
-        (VirtualKeyCode::Key4, false, false) => MetaInput(SetFont(3)),
-        (VirtualKeyCode::Key5, false, false) => MetaInput(SetFont(4)),
-        (VirtualKeyCode::Key6, false, false) => MetaInput(SetFont(5)),
-        (VirtualKeyCode::Key7, false, false) => MetaInput(SetFont(6)),
-        (VirtualKeyCode::Key8, false, false) => MetaInput(SetFont(7)),
+        (VirtualKeyCode::P, false, true) => Meta(ChoosePrimaryAction),
+        (VirtualKeyCode::Q, false, false) => Game(Quick1Action),
+        (VirtualKeyCode::Q, false, true) => Meta(ChooseQuick1Action),
+        (VirtualKeyCode::S, false, false) => Game(SecondaryAction(South)),
+        (VirtualKeyCode::S, false, true) => Meta(ChooseSecondaryAction),
+        (VirtualKeyCode::W, false, false) => Game(SecondaryAction(North)),
+        (VirtualKeyCode::Up, false, false) => Game(PrimaryAction(North)),
+        (VirtualKeyCode::Down, false, false) => Game(PrimaryAction(South)),
+        (VirtualKeyCode::Left, false, false) => Game(PrimaryAction(West)),
+        (VirtualKeyCode::Right, false, false) => Game(PrimaryAction(East)),
+        (VirtualKeyCode::Space, false, false) => Game(PassTurn),
+        (VirtualKeyCode::Escape, false, false) => Meta(ExitGameLoop),
+        (VirtualKeyCode::F1, false, false) => Meta(Help),
+        (VirtualKeyCode::Key1, false, false) => Meta(SetFont(0)),
+        (VirtualKeyCode::Key2, false, false) => Meta(SetFont(1)),
+        (VirtualKeyCode::Key3, false, false) => Meta(SetFont(2)),
+        (VirtualKeyCode::Key4, false, false) => Meta(SetFont(3)),
+        (VirtualKeyCode::Key5, false, false) => Meta(SetFont(4)),
+        (VirtualKeyCode::Key6, false, false) => Meta(SetFont(5)),
+        (VirtualKeyCode::Key7, false, false) => Meta(SetFont(6)),
+        (VirtualKeyCode::Key8, false, false) => Meta(SetFont(7)),
         _ => Undefined,
     }
 }
@@ -125,7 +126,7 @@ fn get_names_under_mouse(
 
 /// Check whether the user has given inputs either via mouse or keyboard. Also update any input-
 /// dependent UI elements, like hover-tooltips etc.
-pub fn read_input(
+pub fn read(
     state: &mut State,
     objects: &mut ObjectStore,
     hud: &mut Hud,
@@ -165,9 +166,9 @@ pub fn read_input(
             if let Some(player) = &objects[state.player_idx] {
                 if let Some(Player(ctrl)) = &player.control {
                     if let TargetCategory::Any = ctrl.primary_action.get_target_category() {
-                        return PlayInput(PrimaryAction(Target::from_pos(&player.pos, &mouse)));
+                        return Game(PrimaryAction(Target::from_pos(&player.pos, &mouse)));
                     } else if player.pos.is_adjacent(&mouse) {
-                        return PlayInput(PrimaryAction(Target::from_pos(&player.pos, &mouse)));
+                        return Game(PrimaryAction(Target::from_pos(&player.pos, &mouse)));
                     }
                 }
             }
@@ -183,17 +184,17 @@ pub fn read_input(
         {
             return if is_clicked {
                 match item.item_enum {
-                    HudItem::PrimaryAction => MetaInput(UiAction::ChoosePrimaryAction),
-                    HudItem::SecondaryAction => MetaInput(UiAction::ChooseSecondaryAction),
-                    HudItem::Quick1Action => MetaInput(UiAction::ChooseQuick1Action),
-                    HudItem::Quick2Action => MetaInput(UiAction::ChooseQuick2Action),
+                    HudItem::PrimaryAction => Meta(UiAction::ChoosePrimaryAction),
+                    HudItem::SecondaryAction => Meta(UiAction::ChooseSecondaryAction),
+                    HudItem::Quick1Action => Meta(UiAction::ChooseQuick1Action),
+                    HudItem::Quick2Action => Meta(UiAction::ChooseQuick2Action),
                     HudItem::DnaItem => PlayerInput::Undefined, // no action when clicked
                     HudItem::BarItem => PlayerInput::Undefined, // no action when clicked
                     HudItem::UseInventory { idx } => {
-                        PlayerInput::PlayInput(PlayerAction::UseInventoryItem(idx))
+                        PlayerInput::Game(PlayerAction::UseInventoryItem(idx))
                     }
                     HudItem::DropInventory { idx } => {
-                        PlayerInput::PlayInput(PlayerAction::DropItem(idx))
+                        PlayerInput::Game(PlayerAction::DropItem(idx))
                     }
                 }
             } else {

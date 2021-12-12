@@ -21,8 +21,8 @@ use crate::raws;
 use crate::ui::custom::genome_editor;
 use crate::ui::dialog;
 use crate::ui::frontend;
-use crate::ui::game_input;
 use crate::ui::hud;
+use crate::ui::input;
 use crate::ui::menu;
 use crate::ui::palette;
 use crate::ui::particles;
@@ -178,7 +178,7 @@ impl Game {
                     &self.state.gene_library,
                 );
 
-                if !env::env().is_spectating {
+                if !env().is_spectating {
                     // create object representing the player
                     let (new_x, new_y) = self.world_generator.get_player_start_pos();
                     // let dna = self.state.gene_library.dna_from_distribution(
@@ -429,7 +429,7 @@ impl Rltk_GameState for Game {
                     }
                     act::ObjectFeedback::GenomeManipulator => {
                         if let Some(genome_editor) =
-                            create_genome_manipulator(&mut self.state, &mut self.objects)
+                            genome_editor::try_create(&mut self.state, &mut self.objects)
                         {
                             RunState::GenomeEditing(genome_editor)
                         } else {
@@ -443,8 +443,7 @@ impl Rltk_GameState for Game {
                     // if there is no reason to re-render, check whether we're waiting on user input
                     _ => {
                         if self.state.is_players_turn()
-                            && (self.state.player_energy_full(&self.objects)
-                                || env::env().is_spectating)
+                            && (self.state.player_energy_full(&self.objects) || env().is_spectating)
                         {
                             RunState::CheckInput
                         } else {
@@ -455,54 +454,20 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::CheckInput => {
-                match game_input::read_input(&mut self.state, &mut self.objects, &mut self.hud, ctx)
-                {
-                    game_input::PlayerInput::MetaInput(meta_action) => {
+                use input::PlayerInput;
+                match input::read(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
+                    PlayerInput::Meta(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
-                        handle_meta_actions(&mut self.state, &mut self.objects, ctx, meta_action)
+                        run_meta_action(&mut self.state, &mut self.objects, ctx, meta_action)
                     }
-                    game_input::PlayerInput::PlayInput(in_game_action) => {
-                        trace!("inject in-game action {:#?} to player", in_game_action);
-                        if let Some(ref mut player) = self.objects[self.state.player_idx] {
-                            use crate::ui::game_input::PlayerAction::*;
-                            let a: Option<Box<dyn act::Action>> = match in_game_action {
-                                PrimaryAction(dir) => Some(player.get_primary_action(dir)),
-                                SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
-                                Quick1Action => Some(player.get_quick1_action()),
-                                Quick2Action => Some(player.get_quick2_action()),
-                                UseInventoryItem(idx) => {
-                                    trace!("PlayInput USE_ITEM");
-                                    let inventory_object = &player.inventory.items.remove(idx);
-                                    player.inventory.inv_actions.retain(|a| {
-                                        a.get_identifier() != "drop item"
-                                            || a.get_level() == idx as i32
-                                    });
-                                    if let Some(item) = &inventory_object.item {
-                                        item.use_action.clone()
-                                    } else {
-                                        None
-                                    }
-                                }
-                                DropItem(idx) => {
-                                    trace!("PlayInput DROP_ITEM");
-                                    if player.inventory.items.len() > idx {
-                                        Some(Box::new(act::DropItem::new(idx as i32)))
-                                    } else {
-                                        None
-                                    }
-                                }
-                                PassTurn => Some(Box::new(act::Pass::default())),
-                            };
-                            player.set_next_action(a);
-                            RunState::Ticking
-                        } else {
-                            RunState::Ticking
-                        }
+                    PlayerInput::Game(game_action) => {
+                        trace!("inject in-game action {:#?} to player", game_action);
+                        set_player_action(&mut self.state, &mut self.objects, game_action)
                     }
-                    game_input::PlayerInput::Undefined => {
+                    PlayerInput::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
                         // checking for input
-                        if env::env().is_spectating {
+                        if env().is_spectating {
                             RunState::Ticking
                         } else {
                             RunState::CheckInput
@@ -547,7 +512,7 @@ impl Rltk_GameState for Game {
                 }
             }
             RunState::WorldGen => {
-                if env::env().is_debug_mode {
+                if env().is_debug_mode {
                     self.re_render = true;
                 }
                 self.world_gen()
@@ -567,7 +532,7 @@ impl Rltk_GameState for Game {
         // keep time and emit warning if a tick takes longer than half a second
         let tick_elapsed = timer.stop_silent();
         if tick_elapsed > 500_000_000 {
-            warn!("game loop took {}", timer::time_to_str(tick_elapsed));
+            warn!("game loop running slow: {}", timer::format(tick_elapsed));
         }
         self.slowest_tick = self.slowest_tick.max(tick_elapsed);
 
@@ -575,14 +540,56 @@ impl Rltk_GameState for Game {
     }
 }
 
-pub fn handle_meta_actions(
+fn set_player_action(
+    state: &mut State,
+    objects: &mut ObjectStore,
+    in_game_action: input::PlayerAction,
+) -> RunState {
+    if let Some(ref mut player) = objects[state.player_idx] {
+        use crate::ui::input::PlayerAction::*;
+        let a: Option<Box<dyn act::Action>> = match in_game_action {
+            PrimaryAction(dir) => Some(player.get_primary_action(dir)),
+            SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
+            Quick1Action => Some(player.get_quick1_action()),
+            Quick2Action => Some(player.get_quick2_action()),
+            UseInventoryItem(idx) => {
+                trace!("PlayInput USE_ITEM");
+                let inventory_object = &player.inventory.items.remove(idx);
+                player
+                    .inventory
+                    .inv_actions
+                    .retain(|a| a.get_identifier() != "drop item" || a.get_level() == idx as i32);
+                if let Some(item) = &inventory_object.item {
+                    item.use_action.clone()
+                } else {
+                    None
+                }
+            }
+            DropItem(idx) => {
+                trace!("PlayInput DROP_ITEM");
+                if player.inventory.items.len() > idx {
+                    Some(Box::new(act::DropItem::new(idx as i32)))
+                } else {
+                    None
+                }
+            }
+            PassTurn => Some(Box::new(act::Pass::default())),
+        };
+        player.set_next_action(a);
+        RunState::Ticking
+    } else {
+        RunState::Ticking
+    }
+}
+
+fn run_meta_action(
     state: &mut State,
     objects: &mut ObjectStore,
     ctx: &mut Rltk,
-    action: game_input::UiAction,
+    action: input::UiAction,
 ) -> RunState {
     debug!("received action {:?}", action);
-    use game_input::UiAction;
+    use input::UiAction;
     match action {
         UiAction::ExitGameLoop => {
             match save_game(&state, &objects) {
@@ -596,14 +603,11 @@ pub fn handle_meta_actions(
         }
         UiAction::ChoosePrimaryAction => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(
-                    player,
-                    &[
-                        act::TargetCategory::Any,
-                        act::TargetCategory::EmptyObject,
-                        act::TargetCategory::BlockingObject,
-                    ],
-                );
+                let action_items = player.get_available_actions(&[
+                    act::TargetCategory::Any,
+                    act::TargetCategory::EmptyObject,
+                    act::TargetCategory::BlockingObject,
+                ]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
@@ -622,14 +626,11 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseSecondaryAction => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(
-                    player,
-                    &[
-                        act::TargetCategory::Any,
-                        act::TargetCategory::EmptyObject,
-                        act::TargetCategory::BlockingObject,
-                    ],
-                );
+                let action_items = player.get_available_actions(&[
+                    act::TargetCategory::Any,
+                    act::TargetCategory::EmptyObject,
+                    act::TargetCategory::BlockingObject,
+                ]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
@@ -648,7 +649,7 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick1Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[act::TargetCategory::None]);
+                let action_items = player.get_available_actions(&[act::TargetCategory::None]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
@@ -667,7 +668,7 @@ pub fn handle_meta_actions(
         }
         UiAction::ChooseQuick2Action => {
             if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = get_available_actions(player, &[act::TargetCategory::None]);
+                let action_items = player.get_available_actions(&[act::TargetCategory::None]);
                 if !action_items.is_empty() {
                     RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
@@ -685,7 +686,7 @@ pub fn handle_meta_actions(
             }
         }
         UiAction::GenomeEditor => {
-            if let Some(genome_editor) = create_genome_manipulator(state, objects) {
+            if let Some(genome_editor) = genome_editor::try_create(state, objects) {
                 RunState::GenomeEditing(genome_editor)
             } else {
                 RunState::CheckInput
@@ -704,29 +705,5 @@ pub fn handle_meta_actions(
             // ctx.cls();
             RunState::CheckInput
         }
-    }
-}
-
-fn get_available_actions(obj: &mut object::Object, targets: &[act::TargetCategory]) -> Vec<String> {
-    obj.actuators
-        .actions
-        .iter()
-        .chain(obj.processors.actions.iter())
-        .chain(obj.sensors.actions.iter())
-        .filter(|a| targets.contains(&a.get_target_category()))
-        .map(|a| a.get_identifier())
-        .collect()
-}
-
-fn create_genome_manipulator(
-    state: &mut State,
-    objects: &mut ObjectStore,
-) -> Option<genome_editor::GenomeEditor> {
-    if let Some(ref mut player) = objects[state.player_idx] {
-        // NOTE: In the future editor features could be read from the plasmid.
-        let genome_editor = genome_editor::GenomeEditor::new(player.dna.clone(), 1);
-        Some(genome_editor)
-    } else {
-        None
     }
 }

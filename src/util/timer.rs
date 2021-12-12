@@ -60,7 +60,7 @@ impl Drop for Timer {
     }
 }
 
-pub fn time_to_str(mut t: u128) -> String {
+pub fn format(mut t: u128) -> String {
     let nanos = t % 1000;
     t /= 1000;
     let micros = t % 1000;
