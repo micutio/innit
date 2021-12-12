@@ -22,6 +22,26 @@
             "preLaunchTask": "cargo build debug",
         },
         {
+            "name": "debug, spectate",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/innit",
+            "args": [
+                "--debug",
+                "--spectate"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "innit=debug",
+                "RUST_BACKTRACE": "full",
+            },
+            "stopOnEntry": false,
+            "sourceLanguages": [
+                "rust"
+            ],
+            "preLaunchTask": "cargo build debug",
+        },
+        {
             "name": "trace",
             "type": "lldb",
             "request": "launch",
