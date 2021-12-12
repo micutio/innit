@@ -1,6 +1,4 @@
-use crate::game::objects::ObjectStore;
-use crate::game::RunState;
-use crate::game::State;
+use crate::game::{self, ObjectStore, State};
 use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Copy, Clone, Debug)]
@@ -18,16 +16,16 @@ impl MenuItem for MainMenuItem {
         _objects: &mut ObjectStore,
         _menu: &mut Menu<MainMenuItem>,
         item: &MainMenuItem,
-    ) -> RunState {
+    ) -> game::RunState {
         match item {
-            MainMenuItem::NewGame => RunState::NewGame,
-            MainMenuItem::Resume => RunState::LoadGame,
+            MainMenuItem::NewGame => game::RunState::NewGame,
+            MainMenuItem::Resume => game::RunState::LoadGame,
             MainMenuItem::Quit => quit(),
         }
     }
 }
 
-pub fn main_menu() -> Menu<MainMenuItem> {
+pub fn new() -> Menu<MainMenuItem> {
     Menu::new(vec![
         (MainMenuItem::NewGame, "New Game".to_string()),
         (MainMenuItem::Resume, "Resume Last Game".to_string()),
@@ -36,7 +34,7 @@ pub fn main_menu() -> Menu<MainMenuItem> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn quit() -> RunState {
+fn quit() -> game::RunState {
     std::process::exit(0)
 }
 

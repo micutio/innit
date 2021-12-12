@@ -42,11 +42,11 @@ use std::io::{Read, Write};
 
 #[derive(Debug)]
 pub enum RunState {
-    MainMenu(menu::Menu<menu::main_menu::MainMenuItem>),
+    MainMenu(menu::Menu<menu::main::MainMenuItem>),
     NewGame,
     LoadGame,
-    ChooseActionMenu(menu::Menu<menu::choose_action_menu::ActionItem>),
-    GameOver(menu::Menu<menu::game_over_menu::GameOverMenuItem>),
+    ChooseActionMenu(menu::Menu<menu::choose_action::ActionItem>),
+    GameOver(menu::Menu<menu::game_over::GameOverMenuItem>),
     InfoBox(dialog::InfoBox),
     GenomeEditing(genome_editor::GenomeEditor),
     Ticking,
@@ -103,7 +103,7 @@ impl Game {
             objects,
             // spawns: load_spawns(),
             // object_templates: load_object_templates(),
-            run_state: Some(RunState::MainMenu(menu::main_menu::main_menu())),
+            run_state: Some(RunState::MainMenu(menu::main::new())),
             spawns: raws::load_spawns(),
             object_templates: raws::load_object_templates(),
 
@@ -361,7 +361,7 @@ impl Rltk_GameState for Game {
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
-                    Some(option) => <menu::main_menu::MainMenuItem as menu::MenuItem>::process(
+                    Some(option) => <menu::main::MainMenuItem as menu::MenuItem>::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -382,21 +382,19 @@ impl Rltk_GameState for Game {
                 let bg = palette().hud_bg;
                 ctx.print_color_centered_at(consts::SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
-                    Some(option) => {
-                        <menu::game_over_menu::GameOverMenuItem as menu::MenuItem>::process(
-                            &mut self.state,
-                            &mut self.objects,
-                            instance,
-                            &option,
-                        )
-                    }
+                    Some(option) => <menu::game_over::GameOverMenuItem as menu::MenuItem>::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    ),
                     None => RunState::GameOver(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
                     self.re_render = true;
-                    <menu::choose_action_menu::ActionItem as menu::MenuItem>::process(
+                    <menu::choose_action::ActionItem as menu::MenuItem>::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -420,9 +418,7 @@ impl Rltk_GameState for Game {
 
                 trace!("process feedback in RunState::Ticking: {:#?}", feedback);
                 match feedback {
-                    act::ObjectFeedback::GameOver => {
-                        RunState::GameOver(menu::game_over_menu::game_over_menu())
-                    }
+                    act::ObjectFeedback::GameOver => RunState::GameOver(menu::game_over::new()),
                     act::ObjectFeedback::Render => {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
@@ -547,7 +543,7 @@ impl Rltk_GameState for Game {
                         self.re_render = true;
                         RunState::Ticking
                     }
-                    Err(_e) => RunState::MainMenu(menu::main_menu::main_menu()),
+                    Err(_e) => RunState::MainMenu(menu::main::new()),
                 }
             }
             RunState::WorldGen => {
@@ -593,7 +589,7 @@ pub fn handle_meta_actions(
                 Ok(()) => {}
                 Err(_e) => {} // TODO: Create some message visible in the main menu
             }
-            RunState::MainMenu(menu::main_menu::main_menu())
+            RunState::MainMenu(menu::main::new())
         }
         UiAction::CharacterScreen => {
             RunState::InfoBox(dialog::character::character_screen(state, objects))
@@ -609,9 +605,9 @@ pub fn handle_meta_actions(
                     ],
                 );
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
-                        menu::choose_action_menu::ActionCategory::Primary,
+                        menu::choose_action::ActionCategory::Primary,
                     ))
                 } else {
                     state.log.add(
@@ -635,9 +631,9 @@ pub fn handle_meta_actions(
                     ],
                 );
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
-                        menu::choose_action_menu::ActionCategory::Secondary,
+                        menu::choose_action::ActionCategory::Secondary,
                     ))
                 } else {
                     state.log.add(
@@ -654,9 +650,9 @@ pub fn handle_meta_actions(
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[act::TargetCategory::None]);
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
-                        menu::choose_action_menu::ActionCategory::Quick1,
+                        menu::choose_action::ActionCategory::Quick1,
                     ))
                 } else {
                     state.log.add(
@@ -673,9 +669,9 @@ pub fn handle_meta_actions(
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = get_available_actions(player, &[act::TargetCategory::None]);
                 if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action_menu::choose_action_menu(
+                    RunState::ChooseActionMenu(menu::choose_action::new(
                         action_items,
-                        menu::choose_action_menu::ActionCategory::Quick2,
+                        menu::choose_action::ActionCategory::Quick2,
                     ))
                 } else {
                     state.log.add(

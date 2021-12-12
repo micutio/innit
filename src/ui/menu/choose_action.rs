@@ -1,6 +1,4 @@
-use crate::game::objects::ObjectStore;
-use crate::game::RunState;
-use crate::game::State;
+use crate::game::{self, ObjectStore, State};
 use crate::ui::menu::{Menu, MenuItem};
 
 #[derive(Clone, Copy, Debug)]
@@ -29,7 +27,7 @@ impl MenuItem for ActionItem {
         objects: &mut ObjectStore,
         _menu: &mut Menu<ActionItem>,
         item: &ActionItem,
-    ) -> RunState {
+    ) -> game::RunState {
         if let Some(ref mut object) = objects[state.player_idx] {
             let action_opt = object.match_action(&item.id);
 
@@ -43,14 +41,11 @@ impl MenuItem for ActionItem {
             }
         }
 
-        RunState::Ticking
+        game::RunState::Ticking
     }
 }
 
-pub fn choose_action_menu(
-    available_actions: Vec<String>,
-    category: ActionCategory,
-) -> Menu<ActionItem> {
+pub fn new(available_actions: Vec<String>, category: ActionCategory) -> Menu<ActionItem> {
     let items: Vec<(ActionItem, String)> = available_actions
         .iter()
         .cloned()

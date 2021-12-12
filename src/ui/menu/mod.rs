@@ -1,6 +1,6 @@
-pub mod choose_action_menu;
-pub mod game_over_menu;
-pub mod main_menu;
+pub mod choose_action;
+pub mod game_over;
+pub mod main;
 
 use crate::game::{self, State};
 use crate::ui::hud::{ToolTip, UiItem};

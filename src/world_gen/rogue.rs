@@ -1,7 +1,7 @@
 use crate::entity::object::Object;
 use crate::game::{self, env, ObjectStore, State};
 use crate::raws;
-use crate::ui::menu::main_menu::main_menu;
+use crate::ui::menu::main::new;
 use crate::ui::palette;
 use crate::world_gen::{Tile, WorldGen};
 use rand::Rng;
@@ -96,7 +96,7 @@ impl WorldGen for RogueWorldGenerator {
                 thread::sleep(ten_millis);
             }
         }
-        game::RunState::MainMenu(main_menu())
+        game::RunState::MainMenu(new())
     }
 
     fn get_player_start_pos(&self) -> (i32, i32) {
