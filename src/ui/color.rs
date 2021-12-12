@@ -1,5 +1,5 @@
-pub struct ColorPalette {
-    // base color palette
+/// The Innit color palette defines all colored elements commonly used in the game.
+pub struct Palette {
     /// Main color, used as base for the UI and the world, probably.
     pub col_main: (u8, u8, u8, u8),
     /// Main complementary color
@@ -57,7 +57,7 @@ pub struct ColorPalette {
     pub entity_bacteria: (u8, u8, u8, u8),
 }
 
-pub const PALETTE_DEFAULT: ColorPalette = ColorPalette {
+pub const DEFAULT_PALETTE: Palette = Palette {
     // base color palette
     /// Main color, used as base for the UI and the world, probably.
     col_main: (124, 8, 59, 255),
