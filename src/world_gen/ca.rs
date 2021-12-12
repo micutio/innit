@@ -1,11 +1,9 @@
-use crate::entity::object::{self, Object};
-use crate::entity::{act, ai, control, genetics};
+use crate::entity::Object;
+use crate::entity::{act, ai, control, genetics, inventory};
 use crate::game::{self, ObjectStore, State};
 use crate::raws;
 use crate::util::rng::RngExtended;
 use crate::world_gen::WorldGen;
-
-use casim::ca::{coord_to_idx, Neighborhood, Simulation, VON_NEUMAN_NEIGHBORHOOD};
 
 const CA_CYCLES: i32 = 150;
 
@@ -16,7 +14,7 @@ const CA_CYCLES: i32 = 150;
 pub struct CaBased {
     player_start: (i32, i32),
     ca_cycle_count: i32,
-    ca: Option<Simulation<CaCell>>,
+    ca: Option<casim::ca::Simulation<CaCell>>,
 }
 
 impl CaBased {
@@ -122,7 +120,7 @@ impl Default for CellState {
 }
 
 /// Create a cellular automaton from the tiles of the game world.
-fn make_ca(state: &mut State) -> Simulation<CaCell> {
+fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
     // init cells
     let mut cells =
         vec![CaCell::default(); (game::consts::WORLD_WIDTH * game::consts::WORLD_HEIGHT) as usize];
@@ -133,7 +131,7 @@ fn make_ca(state: &mut State) -> Simulation<CaCell> {
     let max_dist = i32::max(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT) as f64;
     for y in 0..game::consts::WORLD_HEIGHT {
         for x in 0..game::consts::WORLD_WIDTH {
-            let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+            let idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, x, y);
             let cell = &mut cells[idx];
             // let dist_to_mid =
             //     f64::sqrt(f64::powf((mid_x - x) as f64, 2.0) + f64::powf((mid_y - y) as f64, 2.0));
@@ -154,13 +152,13 @@ fn make_ca(state: &mut State) -> Simulation<CaCell> {
         }
     }
 
-    let mid_idx = coord_to_idx(game::consts::WORLD_WIDTH, mid_x, mid_y);
+    let mid_idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, mid_x, mid_y);
     cells[mid_idx].state = CellState::BURNING;
 
     // transition function
     // 1. propagate fire between burning and green cells
     // 2. slowly diffuse morphogen if there is a gradient between the cell and its neighbors
-    let trans_fn = move |cell: &mut CaCell, neigh_it: Neighborhood<CaCell>| {
+    let trans_fn = move |cell: &mut CaCell, neigh_it: casim::ca::Neighborhood<CaCell>| {
         let mut is_fire_near = false;
         let mut neigh_count = 0;
         let mut neigh_morphogen = 0.0;
@@ -205,11 +203,11 @@ fn make_ca(state: &mut State) -> Simulation<CaCell> {
         }
     };
 
-    Simulation::from_cells(
+    casim::ca::Simulation::from_cells(
         game::consts::WORLD_WIDTH,
         game::consts::WORLD_HEIGHT,
         trans_fn,
-        VON_NEUMAN_NEIGHBORHOOD,
+        casim::ca::VON_NEUMAN_NEIGHBORHOOD,
         cells,
     )
 }
@@ -313,7 +311,7 @@ fn place_objects(
                             }
                         }
                     };
-                    Some(object::InventoryItem::new(&item.name, action_instance))
+                    Some(inventory::Item::new(&item.name, action_instance))
                 } else {
                     None
                 };

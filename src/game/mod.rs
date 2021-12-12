@@ -548,10 +548,10 @@ fn set_player_action(
     if let Some(ref mut player) = objects[state.player_idx] {
         use crate::ui::input::PlayerAction::*;
         let a: Option<Box<dyn act::Action>> = match in_game_action {
-            PrimaryAction(dir) => Some(player.get_primary_action(dir)),
-            SecondaryAction(dir) => Some(player.get_secondary_action(dir)),
-            Quick1Action => Some(player.get_quick1_action()),
-            Quick2Action => Some(player.get_quick2_action()),
+            Primary(dir) => Some(player.get_primary_action(dir)),
+            Secondary(dir) => Some(player.get_secondary_action(dir)),
+            Quick1 => Some(player.get_quick1_action()),
+            Quick2 => Some(player.get_quick2_action()),
             UseInventoryItem(idx) => {
                 trace!("PlayInput USE_ITEM");
                 let inventory_object = &player.inventory.items.remove(idx);
@@ -601,7 +601,7 @@ fn run_meta_action(
         UiAction::CharacterScreen => {
             RunState::InfoBox(dialog::character::character_screen(state, objects))
         }
-        UiAction::ChoosePrimaryAction => {
+        UiAction::ChoosePrimary => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = player.get_available_actions(&[
                     act::TargetCategory::Any,
@@ -624,7 +624,7 @@ fn run_meta_action(
                 RunState::Ticking
             }
         }
-        UiAction::ChooseSecondaryAction => {
+        UiAction::ChooseSecondary => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = player.get_available_actions(&[
                     act::TargetCategory::Any,
@@ -647,7 +647,7 @@ fn run_meta_action(
                 RunState::Ticking
             }
         }
-        UiAction::ChooseQuick1Action => {
+        UiAction::ChooseQuick1 => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = player.get_available_actions(&[act::TargetCategory::None]);
                 if !action_items.is_empty() {
@@ -666,7 +666,7 @@ fn run_meta_action(
                 RunState::Ticking
             }
         }
-        UiAction::ChooseQuick2Action => {
+        UiAction::ChooseQuick2 => {
             if let Some(ref mut player) = objects[state.player_idx] {
                 let action_items = player.get_available_actions(&[act::TargetCategory::None]);
                 if !action_items.is_empty() {
