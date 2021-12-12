@@ -21,3 +21,19 @@ impl Inventory {
         }
     }
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone)]
+pub struct Item {
+    pub description: String,
+    pub use_action: Option<Box<dyn Action>>,
+}
+
+impl Item {
+    pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
+        Item {
+            description: descr.into(),
+            use_action,
+        }
+    }
+}

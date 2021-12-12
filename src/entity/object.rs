@@ -2,7 +2,7 @@ use crate::entity::act;
 use crate::entity::act::Action;
 use crate::entity::control;
 use crate::entity::genetics;
-use crate::entity::inventory::Inventory;
+use crate::entity::inventory;
 use crate::game;
 use crate::game::msg::MessageLog;
 use crate::game::position::Position;
@@ -14,38 +14,6 @@ use crate::world_gen;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
-
-/// An Object represents the base structure for all entities in the game.
-/// Most of the object components are organized in their own
-///
-/// ```Option<ComponentType>```
-///
-/// fields.
-/// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
-/// other hand, nearly all optional components are determined by the object's genome, except
-/// _next_action_.
-///
-/// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
-/// attributes pertaining to their specific domain as well as performable actions which are
-/// influenced or amplified by certain attributes.
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-#[derive(Debug, Default)]
-pub struct Object {
-    // TODO: Add antigen-markers
-    pub alive: bool,
-    pub gene_stability: f64,
-    pub pos: Position,
-    pub visual: Visual,
-    pub physics: Physics,
-    pub tile: Option<world_gen::Tile>,
-    pub control: Option<control::Controller>,
-    pub dna: genetics::Dna,
-    pub sensors: genetics::Sensors,
-    pub processors: genetics::Processors,
-    pub actuators: genetics::Actuators,
-    pub inventory: Inventory,
-    pub item: Option<InventoryItem>,
-}
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Visual {
@@ -85,35 +53,36 @@ impl Physics {
     }
 }
 
+/// An Object represents the base structure for all entities in the game.
+/// Most of the object components are organized in their own
+///
+/// ```Option<ComponentType>```
+///
+/// fields.
+/// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
+/// other hand, nearly all optional components are determined by the object's genome, except
+/// _next_action_.
+///
+/// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
+/// attributes pertaining to their specific domain as well as performable actions which are
+/// influenced or amplified by certain attributes.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-#[derive(Debug, Default, Clone)]
-pub struct InventoryItem {
-    pub description: String,
-    pub use_action: Option<Box<dyn Action>>,
-}
-
-impl InventoryItem {
-    pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
-        InventoryItem {
-            description: descr.into(),
-            use_action,
-        }
-    }
-}
-
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} [{}] at ({},{}), alive: {}, energy: {}",
-            self.visual.name,
-            self.visual.glyph,
-            self.pos.x,
-            self.pos.y,
-            self.alive,
-            self.processors.energy
-        )
-    }
+#[derive(Debug, Default)]
+pub struct Object {
+    // TODO: Add antigen-markers
+    pub alive: bool,
+    pub gene_stability: f64,
+    pub pos: Position,
+    pub visual: Visual,
+    pub physics: Physics,
+    pub tile: Option<world_gen::Tile>,
+    pub control: Option<control::Controller>,
+    pub dna: genetics::Dna,
+    pub sensors: genetics::Sensors,
+    pub processors: genetics::Processors,
+    pub actuators: genetics::Actuators,
+    pub inventory: inventory::Inventory,
+    pub item: Option<inventory::Item>,
 }
 
 impl Object {
@@ -131,7 +100,7 @@ impl Object {
             sensors: genetics::Sensors::new(),
             processors: genetics::Processors::new(),
             actuators: genetics::Actuators::new(),
-            inventory: Inventory::new(),
+            inventory: inventory::Inventory::new(),
             item: None,
         }
     }
@@ -189,7 +158,7 @@ impl Object {
     }
 
     /// Turn the object into a collectible item. Part of the builder pattern.
-    pub fn inventory_item(mut self, item: InventoryItem) -> Object {
+    pub fn inventory_item(mut self, item: inventory::Item) -> Object {
         self.item = Some(item);
         self
     }
@@ -216,7 +185,7 @@ impl Object {
     }
 
     /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
-    pub fn itemize(mut self, item: Option<InventoryItem>) -> Object {
+    pub fn itemize(mut self, item: Option<inventory::Item>) -> Object {
         self.item = item;
         self
     }
@@ -587,5 +556,20 @@ impl Object {
             .filter(|a| targets.contains(&a.get_target_category()))
             .map(|a| a.get_identifier())
             .collect()
+    }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} [{}] at ({},{}), alive: {}, energy: {}",
+            self.visual.name,
+            self.visual.glyph,
+            self.pos.x,
+            self.pos.y,
+            self.alive,
+            self.processors.energy
+        )
     }
 }
