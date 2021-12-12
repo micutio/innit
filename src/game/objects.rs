@@ -1,11 +1,11 @@
-use crate::entity::genetics::{DnaType, GeneLibrary, GENOME_LEN};
-use crate::entity::object::Object;
+use crate::entity::{genetics, Object};
 use crate::game;
 use crate::game::position::Position;
-use crate::game::world_gen::Tile;
+use crate::game::world_gen;
 use crate::rand::Rng;
-use crate::util::rng::GameRng;
-use rltk::{Algorithm2D, BaseMap, Point};
+use crate::util::rng;
+
+use rltk;
 use std::ops::{Index, IndexMut};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -52,20 +52,28 @@ impl ObjectStore {
                 // debug!("placing tile at ({}, {})", x, y);
                 self.obj_vec
                     [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(Tile::wall(x, y, false));
+                    .replace(world_gen::Tile::wall(x, y, false));
             }
         }
     }
 
-    pub fn _set_tile_dna_random(&mut self, rng: &mut GameRng, gene_library: &GeneLibrary) {
+    pub fn _set_tile_dna_random(
+        &mut self,
+        rng: &mut rng::GameRng,
+        gene_library: &genetics::GeneLibrary,
+    ) {
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
                 // debug!("setting tile dna at ({}, {})", x, y);
                 if let Some(tile) = &mut self.obj_vec
                     [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
-                    let (sensors, processors, actuators, dna) =
-                        gene_library.new_genetics(rng, DnaType::Nucleus, false, GENOME_LEN);
+                    let (sensors, processors, actuators, dna) = gene_library.new_genetics(
+                        rng,
+                        genetics::DnaType::Nucleus,
+                        false,
+                        genetics::GENOME_LEN,
+                    );
                     tile.set_genome(sensors, processors, actuators, dna);
                 }
             }
@@ -74,9 +82,9 @@ impl ObjectStore {
 
     pub fn set_tile_dna(
         &mut self,
-        rng: &mut GameRng,
+        rng: &mut rng::GameRng,
         traits: Vec<String>,
-        gene_library: &GeneLibrary,
+        gene_library: &genetics::GeneLibrary,
     ) {
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
@@ -84,7 +92,7 @@ impl ObjectStore {
                     [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
                 {
                     let (sensors, processors, actuators, dna) = gene_library.dna_to_traits(
-                        DnaType::Nucleus,
+                        genetics::DnaType::Nucleus,
                         &gene_library.dna_from_trait_strs(rng, &traits),
                     );
                     tile.set_genome(sensors, processors, actuators, dna);
@@ -283,7 +291,7 @@ impl IndexMut<usize> for ObjectStore {
     }
 }
 
-impl BaseMap for ObjectStore {
+impl rltk::BaseMap for ObjectStore {
     fn is_opaque(&self, idx: usize) -> bool {
         if idx > 0 && idx < self.obj_vec.len() {
             if let Some(o) = &self.obj_vec[idx] {
@@ -298,28 +306,28 @@ impl BaseMap for ObjectStore {
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
         let w = game::consts::WORLD_WIDTH as usize;
-        let p1 = Point::new(idx1 % w, idx1 / w);
-        let p2 = Point::new(idx2 % w, idx2 / w);
+        let p1 = rltk::Point::new(idx1 % w, idx1 / w);
+        let p2 = rltk::Point::new(idx2 % w, idx2 / w);
         rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
     }
 }
 
-impl Algorithm2D for ObjectStore {
+impl rltk::Algorithm2D for ObjectStore {
     /// Convert a Point (x/y) to an array index.
-    fn point2d_to_index(&self, pt: Point) -> usize {
+    fn point2d_to_index(&self, pt: rltk::Point) -> usize {
         (pt.y as usize * (game::consts::WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)
     }
 
     /// Convert an array index to a point. Defaults to an index based on an array
-    fn index_to_point2d(&self, idx: usize) -> Point {
-        Point::new(
+    fn index_to_point2d(&self, idx: usize) -> rltk::Point {
+        rltk::Point::new(
             (idx - 1) as i32 % game::consts::WORLD_WIDTH,
             (idx - 1) as i32 / game::consts::WORLD_WIDTH,
         )
     }
 
-    fn dimensions(&self) -> Point {
-        Point::new(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT)
+    fn dimensions(&self) -> rltk::Point {
+        rltk::Point::new(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT)
     }
 }
 

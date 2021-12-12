@@ -1,4 +1,4 @@
-use rltk::Point;
+use rltk;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone, Copy)]
@@ -7,14 +7,14 @@ pub struct Position {
     pub y: i32,
 }
 
-impl Into<Point> for Position {
-    fn into(self) -> Point {
-        Point::new(self.x, self.y)
+impl Into<rltk::Point> for Position {
+    fn into(self) -> rltk::Point {
+        rltk::Point::new(self.x, self.y)
     }
 }
 
-impl From<Point> for Position {
-    fn from(p: Point) -> Self {
+impl From<rltk::Point> for Position {
+    fn from(p: rltk::Point) -> Self {
         Position { x: p.x, y: p.y }
     }
 }

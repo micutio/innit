@@ -4,12 +4,11 @@ use crate::entity::act::*;
 use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
-use crate::entity::object::Object;
+use crate::entity::Object;
 use crate::game;
 use crate::game::msg::MessageLog;
 use crate::game::position::Position;
-use crate::game::ObjectStore;
-use crate::game::State;
+use crate::game::{ObjectStore, State};
 use crate::ui::{self, particle};
 use serde::{Deserialize, Serialize};
 

@@ -10,10 +10,9 @@ pub use self::hereditary::*;
 pub use self::inventory::*;
 
 use crate::entity::object::Object;
-use crate::game::objects::ObjectStore;
 use crate::game::position::Position;
-use crate::game::State;
-pub use hereditary::*;
+use crate::game::{ObjectStore, State};
+
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 

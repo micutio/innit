@@ -59,6 +59,8 @@ rltk::embedded_resource!(
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
 // Check [https://bfnightly.bracketproductions.com/rustbook/webbuild.html] for building as WASM.
 
+const VERSION: &str = "0.04";
+
 pub fn main() -> rltk::BError {
     println!(
         r#"
@@ -134,7 +136,7 @@ pub fn main() -> rltk::BError {
             game::consts::SCREEN_HEIGHT,
             font_8x8_cheepicus,
         ) // particles layer
-        .with_title("Innit alpha v0.0.4")
+        .with_title(format!("Innit alpha v{}", VERSION))
         .with_fps_cap(60.0)
         // .with_automatic_console_resize(true)
         .with_vsync(true)

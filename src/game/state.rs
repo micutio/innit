@@ -1,8 +1,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::msg::MessageLog;
-use crate::game::objects::ObjectStore;
-use crate::game::{consts, msg};
+use crate::game::{consts, msg, ObjectStore};
 use crate::util::rng;
 
 use rand::{Rng, RngCore};

@@ -29,12 +29,11 @@
 //! - Should attributes be fix on trait level or full-on generic as list of attribute objects?
 //! - How to best model synergies and anti-synergies across traits?
 
+use crate::entity::act;
 use crate::entity::act::Action;
-use crate::entity::act::PickUpItem;
-use crate::entity::act::{Attack, BinaryFission, KillSwitch, Move, RepairStructure};
-use crate::entity::genetics::DnaType::Nucleoid;
-use crate::util::generate_gray_code;
-use crate::util::rng::GameRng;
+use crate::entity::genetics;
+use crate::util;
+
 use core::fmt;
 use rand::distributions::WeightedIndex;
 use rand::prelude::{Distribution, SliceRandom};
@@ -136,19 +135,19 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "Move",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(Move::new())),
+            Some(Box::new(act::Move::new())),
         ),
         GeneticTrait::new(
             "Attack",
             Actuating,
             TraitAttribute::None,
-            Some(Box::new(Attack::new())),
+            Some(Box::new(act::Attack::new())),
         ),
         GeneticTrait::new(
             "Binary Fission",
             TraitFamily::Actuating,
             TraitAttribute::None,
-            Some(Box::new(BinaryFission::new())),
+            Some(Box::new(act::BinaryFission::new())),
         ),
         GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
         GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
@@ -172,14 +171,14 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             "Repair Structure",
             Processing,
             TraitAttribute::Hp,
-            Some(Box::new(RepairStructure::new())),
+            Some(Box::new(act::RepairStructure::new())),
         ),
         GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
         GeneticTrait::new(
             "Kill Switch",
             TraitFamily::Processing,
             TraitAttribute::None,
-            Some(Box::new(KillSwitch::new())),
+            Some(Box::new(act::KillSwitch::new())),
         ),
         GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
     ]
@@ -315,7 +314,7 @@ pub struct Dna {
 impl Dna {
     pub fn new() -> Dna {
         Dna {
-            dna_type: Nucleoid,
+            dna_type: genetics::DnaType::Nucleoid,
             raw: Vec::new(),
             simplified: Vec::new(),
         }
@@ -351,7 +350,7 @@ impl GeneLibrary {
     pub fn new() -> Self {
         let trait_vec: Vec<GeneticTrait> = create_trait_list();
         let trait_count = trait_vec.len();
-        let gray_code = generate_gray_code(GRAY_CODE_WIDTH);
+        let gray_code = util::generate_gray_code(GRAY_CODE_WIDTH);
         let gray_to_trait: HashMap<u8, String> = trait_vec
             .iter()
             .enumerate()
@@ -377,7 +376,7 @@ impl GeneLibrary {
     /// Generate a new random binary DNA code from a given length and possibly with LTR markers.
     pub fn dna_from_size(
         &self,
-        rng: &mut GameRng,
+        rng: &mut util::rng::GameRng,
         has_ltr: bool,
         avg_genome_len: usize,
     ) -> Vec<u8> {
@@ -485,7 +484,7 @@ impl GeneLibrary {
     }
 
     /// Encode a vector of genetic trait names into binary DNA code.
-    pub fn dna_from_trait_strs(&self, rng: &mut GameRng, traits: &[String]) -> Vec<u8> {
+    pub fn dna_from_trait_strs(&self, rng: &mut util::rng::GameRng, traits: &[String]) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
@@ -510,7 +509,7 @@ impl GeneLibrary {
     /// Generate a new binary DNA code from a given weighted distribution of trait families.
     pub fn dna_from_distribution(
         &self,
-        rng: &mut GameRng,
+        rng: &mut util::rng::GameRng,
         weights: &[u8],
         choices: &[TraitFamily],
         has_ltr: bool,
@@ -573,7 +572,7 @@ impl GeneLibrary {
     /// Combine *dna_from_size()* and *decode_dna()* into a single function call.
     pub fn new_genetics(
         &self,
-        rng: &mut GameRng,
+        rng: &mut util::rng::GameRng,
         dna_type: DnaType,
         has_ltr: bool,
         avg_genome_len: usize,
@@ -799,7 +798,7 @@ impl TraitBuilder {
         if matches!(self.dna.dna_type, DnaType::Nucleoid)
             || matches!(self.dna.dna_type, DnaType::Nucleus)
         {
-            self.actuators.actions.push(Box::new(PickUpItem))
+            self.actuators.actions.push(Box::new(act::PickUpItem))
         }
 
         (self.sensors, self.processors, self.actuators, self.dna)
