@@ -89,8 +89,6 @@ pub struct Game {
     mouse_workaround: bool,
     /// Keep track of the time to warn if the game runs too slow.
     slowest_tick: u128,
-    /// Keep track of how long it usually takes to render: highest and lowest
-    render_time: (u128, u128),
 }
 
 impl Game {
@@ -114,7 +112,6 @@ impl Game {
             rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
-            render_time: (0, 0),
         }
     }
 
@@ -314,31 +311,18 @@ impl rltk::GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
-            let mut render_timer = timer::Timer::new("render");
-            // println!(
-            //     "{}, {}, {}",
-            //     self.re_render, self.hud.require_refresh, self.state.log.is_changed
-            // );
             ctx.set_active_console(consts::HUD_CON);
             ctx.cls();
 
-            // if self.re_render || self.hud.require_refresh {
             ctx.set_active_console(consts::WORLD_CON);
             ctx.cls();
             frontend::render_world(&mut self.objects, ctx);
-            // }
 
             ctx.set_active_console(consts::HUD_CON);
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
             }
-            // record the time it took to render everything for
-            let render_elapsed = render_timer.stop_silent();
-            self.render_time = (
-                self.render_time.0.min(render_elapsed),
-                self.render_time.1.max(render_elapsed),
-            );
             // switch off any triggers
             self.re_render = false;
             self.state.log.is_changed = false;

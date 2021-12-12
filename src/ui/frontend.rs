@@ -50,7 +50,7 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     }
 
     let elapsed = timer.stop_silent();
-    info!("render world in {}", timer::format(elapsed));
+    trace!("render world in {}", timer::format(elapsed));
 
     draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
 }
