@@ -205,11 +205,13 @@ impl Ai for AiVirus {
             owner.die(state, objects);
             return Box::new(act::Pass::default());
         }
+
         // if there is an adjacent cell, attempt to infect it
         if let Some(target) = objects
-            .get_vector()
-            .iter()
+            .get_neighborhood_tiles(owner.pos)
+            .into_iter()
             .flatten()
+            .chain(objects.get_non_tiles().iter().flatten())
             .filter(|obj| {
                 owner.pos.is_adjacent(&obj.pos)
                     && obj.physics.is_blocking

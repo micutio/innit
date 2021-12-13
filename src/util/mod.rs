@@ -3,6 +3,8 @@
 pub mod rng;
 pub mod timer;
 
+pub use timer::Timer;
+
 pub fn generate_gray_code(n: u8) -> Vec<u8> {
     let base: u8 = 2;
     let code_len: u8 = base.pow(u32::from(n));
