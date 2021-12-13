@@ -4,13 +4,12 @@
 
 // internal imports
 
-use crate::entity::act::{Action, Target, TargetCategory};
-use crate::entity::act::{InjectRnaVirus, Move, Pass, ProduceVirion};
-use crate::entity::control::{Ai, Controller};
-use crate::entity::object::Object;
-use crate::game::State;
-use crate::game::objects::ObjectStore;
+use crate::entity::act::{self, Action};
+use crate::entity::control::{self, Ai};
+use crate::entity::Object;
+use crate::game::{ObjectStore, State};
 use crate::util::rng::RngExtended;
+
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -30,7 +29,7 @@ impl Ai for AiPassive {
         _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(Pass::default())
+        Box::new(act::Pass::default())
     }
 }
 
@@ -58,7 +57,7 @@ impl Ai for AiRandom {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(Pass::default());
+            return Box::new(act::Pass::default());
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -75,26 +74,26 @@ impl Ai for AiRandom {
             .collect();
 
         let mut valid_targets = vec![
-            TargetCategory::None,
-            TargetCategory::Any,
-            TargetCategory::EmptyObject,
-            TargetCategory::BlockingObject,
+            act::TargetCategory::None,
+            act::TargetCategory::Any,
+            act::TargetCategory::EmptyObject,
+            act::TargetCategory::BlockingObject,
         ];
 
         // options:
         // a) targets empty => only None a.k.a self
         if adjacent_targets.is_empty() {
-            valid_targets.retain(|t| *t == TargetCategory::None);
+            valid_targets.retain(|t| *t == act::TargetCategory::None);
         }
 
         // b) no empty targets available
         if !adjacent_targets.iter().any(|t| !t.physics.is_blocking) {
-            valid_targets.retain(|t| *t != TargetCategory::EmptyObject)
+            valid_targets.retain(|t| *t != act::TargetCategory::EmptyObject)
         }
 
         // d) no blocking targets available => remove blocking from selection
         if !adjacent_targets.iter().any(|t| t.physics.is_blocking) {
-            valid_targets.retain(|t| *t != TargetCategory::BlockingObject);
+            valid_targets.retain(|t| *t != act::TargetCategory::BlockingObject);
         }
 
         // dbg!("valid targets: {:?}", &valid_targets);
@@ -112,34 +111,34 @@ impl Ai for AiRandom {
         if let Some(a) = possible_actions.choose(&mut state.rng) {
             let mut boxed_action = a.clone_action();
             match boxed_action.get_target_category() {
-                TargetCategory::None => boxed_action.set_target(Target::Center),
-                TargetCategory::BlockingObject => {
+                act::TargetCategory::None => boxed_action.set_target(act::Target::Center),
+                act::TargetCategory::BlockingObject => {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| at.physics.is_blocking)
                         .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
-                TargetCategory::EmptyObject => {
+                act::TargetCategory::EmptyObject => {
                     if let Some(target_obj) = adjacent_targets
                         .iter()
                         .filter(|at| !at.physics.is_blocking)
                         .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
-                TargetCategory::Any => {
+                act::TargetCategory::Any => {
                     if let Some(target_obj) = adjacent_targets.choose(&mut state.rng) {
-                        boxed_action.set_target(Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
                     }
                 }
             }
             boxed_action
         } else {
-            Box::new(Pass::default())
+            Box::new(act::Pass::default())
         }
     }
 }
@@ -168,11 +167,11 @@ impl Ai for AiRandomWalk {
             .collect::<Vec<&Object>>()
             .choose(&mut state.rng)
         {
-            let mut action = Box::new(Move::new());
-            action.set_target(Target::from_pos(&owner.pos, &t.pos));
+            let mut action = Box::new(act::Move::new());
+            action.set_target(act::Target::from_pos(&owner.pos, &t.pos));
             action
         } else {
-            Box::new(Pass::default())
+            Box::new(act::Pass::default())
         }
     }
 }
@@ -194,6 +193,18 @@ impl Ai for AiVirus {
         objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> Box<dyn Action> {
+        // Check whether we're surrounded by wall tiles:
+        // If that's the case, die to avoid ending up with unreachable virions deep inside the wall
+        // tile tissue.
+        if !objects
+            .get_neighborhood_tiles(owner.pos)
+            .into_iter()
+            .flatten()
+            .any(|t| !t.physics.is_blocking)
+        {
+            owner.die(state, objects);
+            return Box::new(act::Pass::default());
+        }
         // if there is an adjacent cell, attempt to infect it
         if let Some(target) = objects
             .get_vector()
@@ -211,8 +222,8 @@ impl Ai for AiVirus {
             .choose(&mut state.rng)
         {
             assert!(!owner.dna.raw.is_empty());
-            return Box::new(InjectRnaVirus::new(
-                Target::from_pos(&owner.pos, &target.pos),
+            return Box::new(act::InjectRnaVirus::new(
+                act::Target::from_pos(&owner.pos, &target.pos),
                 owner.dna.raw.clone(),
             ));
         }
@@ -228,21 +239,21 @@ impl Ai for AiVirus {
                 .collect::<Vec<&Object>>()
                 .choose(&mut state.rng)
             {
-                let mut action = Box::new(Move::new());
-                action.set_target(Target::from_pos(&owner.pos, &t.pos));
+                let mut action = Box::new(act::Move::new());
+                action.set_target(act::Target::from_pos(&owner.pos, &t.pos));
                 return action;
             }
         }
 
         // if nothing else sticks, just pass
-        return Box::new(Pass::default());
+        return Box::new(act::Pass::default());
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct AiForceVirusProduction {
-    original_ai: Option<Controller>,
+    original_ai: Option<control::Controller>,
     turns_active: Option<i32>,
     current_turn: i32,
     rna: Option<Vec<u8>>,
@@ -250,7 +261,7 @@ pub struct AiForceVirusProduction {
 
 impl AiForceVirusProduction {
     pub fn new_duration(
-        original_ai: Option<Controller>,
+        original_ai: Option<control::Controller>,
         duration_turns: i32,
         rna: Option<Vec<u8>>,
     ) -> Self {
@@ -262,7 +273,7 @@ impl AiForceVirusProduction {
         }
     }
 
-    fn _new_forever(original_ai: Option<Controller>, rna: Option<Vec<u8>>) -> Self {
+    fn _new_forever(original_ai: Option<control::Controller>, rna: Option<Vec<u8>>) -> Self {
         AiForceVirusProduction {
             original_ai,
             turns_active: None,
@@ -284,13 +295,13 @@ impl Ai for AiForceVirusProduction {
             if self.current_turn == t {
                 if let Some(original_ai) = self.original_ai.take() {
                     owner.control.replace(original_ai);
-                    return Box::new(Pass::update());
+                    return Box::new(act::Pass::update());
                 }
             } else {
                 self.current_turn += 1;
             }
         }
-        Box::new(ProduceVirion::new(self.rna.clone()))
+        Box::new(act::ProduceVirion::new(self.rna.clone()))
     }
 }
 
@@ -310,7 +321,7 @@ impl Ai for AiTile {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(Pass::default());
+            return Box::new(act::Pass::default());
         }
 
         if owner.processors.life_elapsed >= owner.processors.life_expectancy {
@@ -321,7 +332,7 @@ impl Ai for AiTile {
                 .find(|a| a.get_identifier().eq("killswitch"))
             {
                 let mut killswitch_action = killswitch.clone_action();
-                killswitch_action.set_target(Target::Center);
+                killswitch_action.set_target(act::Target::Center);
                 return killswitch_action;
             }
         } else {
@@ -350,13 +361,13 @@ impl Ai for AiTile {
                     if let Some(target_tile) = &target.tile {
                         if state.rng.flip_with_prob(target_tile.morphogen / 2.0) {
                             let mut fission = fission_action.clone_action();
-                            fission.set_target(Target::from_pos(&owner.pos, &target.pos));
+                            fission.set_target(act::Target::from_pos(&owner.pos, &target.pos));
                             return fission;
                         }
                     }
                 }
             }
         }
-        Box::new(Pass::default())
+        Box::new(act::Pass::default())
     }
 }

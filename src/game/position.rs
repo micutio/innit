@@ -47,9 +47,9 @@ impl Position {
     }
 
     pub fn is_adjacent(&self, other: &Position) -> bool {
-        (other.x - self.x).abs() <= 1
-            && (other.y - self.y).abs() <= 1
-            && ((other.x - self.x) - (other.y - self.y)).abs() == 1
+        let delta_x = (other.x - self.x).abs();
+        let delta_y = (other.y - self.y).abs();
+        delta_x <= 1 && delta_y <= 1 && delta_x + delta_y == 1
     }
 
     pub fn offset(&self, other: &Position) -> (i32, i32) {
