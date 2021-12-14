@@ -7,7 +7,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::control::{self, Ai};
 use crate::entity::Object;
-use crate::game::{ObjectStore, State};
+use crate::game::{self, ObjectStore, State};
 use crate::util::rng::RngExtended;
 
 use rand::seq::{IteratorRandom, SliceRandom};
@@ -232,17 +232,24 @@ impl Ai for AiVirus {
 
         // if there is no target to infect, try a random walk instead
         if state.rng.flip_with_prob(0.1) {
-            if let Some(t) = objects
-                .get_vector()
+            let blocking_entity_pos: Vec<game::Position> = objects
+                .get_non_tiles()
                 .iter()
                 .flatten()
-                .filter(|obj| owner.pos.is_adjacent(&obj.pos) && !objects.is_pos_occupied(&obj.pos))
-                // .filter_map(|o| o.as_ref())
-                .collect::<Vec<&Object>>()
-                .choose(&mut state.rng)
-            {
+                .filter(|obj| obj.physics.is_blocking)
+                .map(|obj| obj.pos)
+                .collect();
+            let target_position = objects
+                .get_neighborhood_tiles(owner.pos)
+                .into_iter()
+                .flatten()
+                .filter(|obj| !obj.physics.is_blocking && blocking_entity_pos.contains(&obj.pos))
+                .map(|obj| obj.pos)
+                .choose(&mut state.rng);
+
+            if let Some(target_pos) = target_position {
                 let mut action = Box::new(act::Move::new());
-                action.set_target(act::Target::from_pos(&owner.pos, &t.pos));
+                action.set_target(act::Target::from_pos(&owner.pos, &target_pos));
                 return action;
             }
         }

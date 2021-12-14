@@ -32,7 +32,7 @@ impl Position {
         self.x == other.x && self.y == other.y
     }
 
-    pub fn is_eq(&self, x: i32, y: i32) -> bool {
+    pub fn _is_eq(&self, x: i32, y: i32) -> bool {
         self.x == x && self.y == y
     }
 

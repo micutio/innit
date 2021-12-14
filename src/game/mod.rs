@@ -10,6 +10,7 @@ mod state;
 
 pub use env::env;
 pub use objects::ObjectStore;
+pub use position::Position;
 pub use state::State;
 
 use crate::entity::act;
