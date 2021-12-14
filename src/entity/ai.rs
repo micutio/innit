@@ -243,7 +243,7 @@ impl Ai for AiVirus {
                 .get_neighborhood_tiles(owner.pos)
                 .into_iter()
                 .flatten()
-                .filter(|obj| !obj.physics.is_blocking && blocking_entity_pos.contains(&obj.pos))
+                .filter(|obj| !obj.physics.is_blocking && !blocking_entity_pos.contains(&obj.pos))
                 .map(|obj| obj.pos)
                 .choose(&mut state.rng);
 
