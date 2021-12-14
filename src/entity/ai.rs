@@ -207,20 +207,44 @@ impl Ai for AiVirus {
         }
 
         // if there is an adjacent cell, attempt to infect it
+        // println!("neighborhood START");
         if let Some(target) = objects
             .get_neighborhood_tiles(owner.pos)
             .into_iter()
             .flatten()
-            .chain(objects.get_non_tiles().iter().flatten())
+            // .inspect(|n| {
+            //     println!(
+            //         "neighbor tile {} pos({},{})",
+            //         n.visual.name, n.pos.x, n.pos.y
+            //     )
+            // })
+            .chain(
+                objects
+                    .get_non_tiles()
+                    .iter()
+                    .flatten()
+                    .filter(|obj| owner.pos.is_adjacent(&obj.pos))
+                    // .inspect(|n| {
+                    //     println!(
+                    //         "neighbor entity {} pos({},{})",
+                    //         n.visual.name, n.pos.x, n.pos.y
+                    //     )
+                    // }),
+            )
             .filter(|obj| {
-                owner.pos.is_adjacent(&obj.pos)
-                    && obj.physics.is_blocking
+                obj.physics.is_blocking
                     && obj
                         .processors
                         .receptors
                         .iter()
                         .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
             })
+            // .inspect(|n| {
+            //     println!(
+            //         "filtered object {} pos({},{})",
+            //         n.visual.name, n.pos.x, n.pos.y
+            //     )
+            // })
             .choose(&mut state.rng)
         {
             assert!(!owner.dna.raw.is_empty());
@@ -229,15 +253,18 @@ impl Ai for AiVirus {
                 owner.dna.raw.clone(),
             ));
         }
+        // println!("neighborhood END");
 
         // if there is no target to infect, try a random walk instead
         if state.rng.flip_with_prob(0.1) {
+            // println!("RANDOM WALK START");
             let blocking_entity_pos: Vec<game::Position> = objects
                 .get_non_tiles()
                 .iter()
                 .flatten()
-                .filter(|obj| obj.physics.is_blocking)
+                .filter(|obj| obj.physics.is_blocking && obj.pos.is_adjacent(&owner.pos))
                 .map(|obj| obj.pos)
+                // .inspect(|p| println!("blocking_entity pos: {},{}", p.x, p.y))
                 .collect();
             let target_position = objects
                 .get_neighborhood_tiles(owner.pos)
@@ -245,9 +272,12 @@ impl Ai for AiVirus {
                 .flatten()
                 .filter(|obj| !obj.physics.is_blocking && !blocking_entity_pos.contains(&obj.pos))
                 .map(|obj| obj.pos)
+                // .inspect(|p| println!("available target: {},{}", p.x, p.y))
                 .choose(&mut state.rng);
+            // print!("RANDOM WALK END");
 
             if let Some(target_pos) = target_position {
+                // println!(" WITH TARGET: {},{}", target_pos.x, target_pos.y);
                 let mut action = Box::new(act::Move::new());
                 action.set_target(act::Target::from_pos(&owner.pos, &target_pos));
                 return action;
