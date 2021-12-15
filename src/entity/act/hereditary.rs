@@ -630,7 +630,12 @@ impl Action for ProduceVirion {
     ) -> ActionResult {
         match &self.virus_rna {
             Some(dna) => {
-                debug!("#{} produces virion", owner.visual.name);
+                trace!(
+                    "{} at ({},{}) produces virion",
+                    owner.visual.name,
+                    owner.pos.x,
+                    owner.pos.y
+                );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {
                     state.log.add(
@@ -953,6 +958,7 @@ impl Action for BinaryFission {
                             t.visual.glyph = '◘';
                             t.visual.name = "wall tile".into();
                             t.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
+                            t.alive = true;
                             // insert (mutated) genome
                             t.set_dna(owner.dna.clone());
                             t.update_genome_from_dna(state);

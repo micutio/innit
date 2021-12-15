@@ -221,9 +221,11 @@ impl State {
             // cell procreates or "reincarnates".
             actor.dna.raw[position] = new_gene;
             let new_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
-            debug!(
+            trace!(
                 "{} flipping gene {:08b} to {:08b}",
-                actor.visual.name, old_gene, new_gene
+                actor.visual.name,
+                old_gene,
+                new_gene
             );
 
             if actor.is_player() {

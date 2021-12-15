@@ -6,7 +6,7 @@
 
 use crate::entity::act::{self, Action};
 use crate::entity::control::{self, Ai};
-use crate::entity::Object;
+use crate::entity::{genetics, Object};
 use crate::game::{self, ObjectStore, State};
 use crate::util::rng::RngExtended;
 
@@ -232,12 +232,18 @@ impl Ai for AiVirus {
                     // }),
             )
             .filter(|obj| {
-                obj.physics.is_blocking
-                    && obj
-                        .processors
-                        .receptors
-                        .iter()
-                        .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
+                let is_blocking = obj.physics.is_blocking;
+                let is_not_virus = obj.dna.dna_type != genetics::DnaType::Rna;
+                let is_receptor_match = obj
+                    .processors
+                    .receptors
+                    .iter()
+                    .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
+                // println!(
+                //     "{} IS BLOCKING: {}, IS RECEPTOR MATCH: {}, IS NOT VIRUS: {}",
+                //     owner.visual.name, is_blocking, is_receptor_match, is_not_virus
+                // );
+                is_blocking && is_not_virus && is_receptor_match
             })
             // .inspect(|n| {
             //     println!(
