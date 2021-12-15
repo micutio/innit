@@ -141,13 +141,9 @@ impl ObjectStore {
     }
 
     pub fn extract_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self
-            .obj_vec
-            .iter()
-            .flatten()
-            .position(|o| o.pos.is_equal(pos))
-        {
-            Some((i, self.extract_by_index(i)))
+        let idx = position_to_index(pos.x, pos.y);
+        if idx < self.obj_vec.len() {
+            Some((idx, self.extract_by_index(idx)))
         } else {
             None
         }

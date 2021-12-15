@@ -13,8 +13,8 @@ pub fn env<'a>() -> MutexGuard<'a, GameEnv> {
 pub struct GameEnv {
     /// if true: run innit in debug mode
     pub is_debug_mode: bool,
-    /// if true: use random seed for reproducible random number generation
-    pub is_using_fixed_seed: bool,
+    /// optional fixed rng seed
+    pub seed: Option<u64>,
     /// if trie: do not create a player object
     pub is_spectating: bool,
 }
@@ -23,7 +23,7 @@ impl GameEnv {
     pub fn new() -> Self {
         GameEnv {
             is_debug_mode: false,
-            is_using_fixed_seed: false,
+            seed: None,
             is_spectating: false,
         }
     }
@@ -32,8 +32,8 @@ impl GameEnv {
         self.is_debug_mode = debug_mode;
     }
 
-    pub fn set_rng_seeding(&mut self, use_fixed_seed: bool) {
-        self.is_using_fixed_seed = use_fixed_seed;
+    pub fn set_seed(&mut self, seed_param: u64) {
+        self.seed = Some(seed_param);
     }
 
     pub fn set_spectating(&mut self, spectate_only: bool) {

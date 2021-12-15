@@ -1,7 +1,7 @@
 use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::msg::MessageLog;
-use crate::game::{consts, msg, ObjectStore};
+use crate::game::{self, consts, msg, ObjectStore};
 use crate::util::rng;
 
 use rand::{Rng, RngCore};
@@ -23,11 +23,13 @@ pub struct State {
 
 impl State {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if super::env().is_using_fixed_seed {
-            0
+        let rng_seed = if let Some(seed_param) = game::env().seed {
+            seed_param
         } else {
             rand::thread_rng().next_u64()
         };
+
+        info!("using rng seed: {}", rng_seed);
 
         State {
             // create the list of game messages and their colours, starts empty
@@ -186,6 +188,10 @@ impl State {
 
     fn conclude_overload(&mut self, actor: &mut Object) {
         if actor.inventory.items.len() as i32 > actor.actuators.volume {
+            // println!(
+            //     "{} at ({},{}) is overloaded to the point of damage",
+            //     actor.visual.name, actor.pos.x, actor.pos.y
+            // );
             actor.actuators.hp -= 1;
             if actor.is_player() {
                 self.log
@@ -197,6 +203,10 @@ impl State {
     fn conclude_mutate(&mut self, actor: &mut Object) {
         if actor.tile.is_some() && !actor.physics.is_blocking {
             // no need to mutate empty tiles
+            return;
+        }
+
+        if !actor.alive {
             return;
         }
 

@@ -212,24 +212,12 @@ impl Ai for AiVirus {
             .get_neighborhood_tiles(owner.pos)
             .into_iter()
             .flatten()
-            // .inspect(|n| {
-            //     println!(
-            //         "neighbor tile {} pos({},{})",
-            //         n.visual.name, n.pos.x, n.pos.y
-            //     )
-            // })
             .chain(
                 objects
                     .get_non_tiles()
                     .iter()
                     .flatten()
-                    .filter(|obj| owner.pos.is_adjacent(&obj.pos))
-                    // .inspect(|n| {
-                    //     println!(
-                    //         "neighbor entity {} pos({},{})",
-                    //         n.visual.name, n.pos.x, n.pos.y
-                    //     )
-                    // }),
+                    .filter(|obj| owner.pos.is_adjacent(&obj.pos)),
             )
             .filter(|obj| {
                 let is_blocking = obj.physics.is_blocking;
@@ -239,25 +227,12 @@ impl Ai for AiVirus {
                     .receptors
                     .iter()
                     .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
-                // println!(
-                //     "{} IS BLOCKING: {}, IS RECEPTOR MATCH: {}, IS NOT VIRUS: {}",
-                //     owner.visual.name, is_blocking, is_receptor_match, is_not_virus
-                // );
                 is_blocking && is_not_virus && is_receptor_match
             })
-            // .inspect(|n| {
-            //     println!(
-            //         "filtered object {} pos({},{})",
-            //         n.visual.name, n.pos.x, n.pos.y
-            //     )
-            // })
             .choose(&mut state.rng)
         {
-            assert!(!owner.dna.raw.is_empty());
-            return Box::new(act::InjectRnaVirus::new(
-                act::Target::from_pos(&owner.pos, &target.pos),
-                owner.dna.raw.clone(),
-            ));
+            let target_dir = act::Target::from_pos(&owner.pos, &target.pos);
+            return Box::new(act::InjectRnaVirus::new(target_dir, owner.dna.raw.clone()));
         }
         // println!("neighborhood END");
 

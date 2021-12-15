@@ -28,7 +28,9 @@
             "program": "${workspaceFolder}/target/debug/innit",
             "args": [
                 "--debug",
-                "--spectate"
+                "--spectate",
+                "--seed",
+                "7276100364092730142"
             ],
             "cwd": "${workspaceFolder}",
             "env": {

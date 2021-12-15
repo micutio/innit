@@ -407,9 +407,10 @@ impl Action for InjectRnaVirus {
                         ),
                         game::msg::MsgClass::Alert,
                     );
-                    debug!(
+                    trace!(
                         "{} injected virus RNA into {}",
-                        owner.visual.name, target_name
+                        owner.visual.name,
+                        target_name
                     );
                 }
                 return ActionResult::Success {
@@ -630,12 +631,10 @@ impl Action for ProduceVirion {
     ) -> ActionResult {
         match &self.virus_rna {
             Some(dna) => {
-                trace!(
-                    "{} at ({},{}) produces virion",
-                    owner.visual.name,
-                    owner.pos.x,
-                    owner.pos.y
-                );
+                // println!(
+                //     "{} at ({},{}) produces virion",
+                //     owner.visual.name, owner.pos.x, owner.pos.y
+                // );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {
                     state.log.add(

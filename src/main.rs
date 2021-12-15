@@ -80,15 +80,30 @@ pub fn main() -> rltk::BError {
     // parse program arguments
     let args: Vec<String> = env::args().collect();
     debug!("args: {:?}", args);
-    for arg in args {
-        if arg.eq("-d") || arg.eq("--debug") {
-            game::env().set_debug_mode(true);
-        }
-        if arg.eq("-s") || arg.eq("--seeding") {
-            game::env().set_rng_seeding(true);
-        }
-        if arg.eq("--spectate") {
-            game::env().set_spectating(true);
+    for i in 0..args.len() {
+        if let Some(arg) = args.get(i) {
+            if arg.eq("-d") || arg.eq("--debug") {
+                game::env().set_debug_mode(true);
+            }
+            if arg.eq("-s") || arg.eq("--seed") {
+                // try get next argument to retrieve the seed number
+                if i + 1 == args.len() {
+                    info!("no seed parameter provided, fall back to use '0' instead");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let seed = match next_arg.parse::<u64>() {
+                        Ok(n) => n,
+                        Err(_) => {
+                            info!("no numerical seed parameter provided, fall back to use '0' instead");
+                            0
+                        }
+                    };
+                    game::env().set_seed(seed);
+                }
+            }
+            if arg.eq("--spectate") {
+                game::env().set_spectating(true);
+            }
         }
     }
 
