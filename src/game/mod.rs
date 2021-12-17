@@ -262,6 +262,170 @@ impl Game {
             }
         }
     }
+
+    /// Use the `input::PlayerAction` enum to determine where to retrieve the player's next action.
+    fn set_player_action(&mut self, in_game_action: input::PlayerAction) -> RunState {
+        if let Some(ref mut player) = self.objects[self.state.player_idx] {
+            use crate::ui::input::PlayerAction::*;
+            let a: Option<Box<dyn act::Action>> = match in_game_action {
+                Primary(dir) => Some(player.get_primary_action(dir)),
+                Secondary(dir) => Some(player.get_secondary_action(dir)),
+                Quick1 => Some(player.get_quick1_action()),
+                Quick2 => Some(player.get_quick2_action()),
+                UseInventoryItem(idx) => {
+                    trace!("PlayInput USE_ITEM");
+                    let inventory_object = &player.inventory.items.remove(idx);
+                    player.inventory.inv_actions.retain(|a| {
+                        a.get_identifier() != "drop item" || a.get_level() == idx as i32
+                    });
+                    if let Some(item) = &inventory_object.item {
+                        item.use_action.clone()
+                    } else {
+                        None
+                    }
+                }
+                DropItem(idx) => {
+                    trace!("PlayInput DROP_ITEM");
+                    if player.inventory.items.len() > idx {
+                        Some(Box::new(act::DropItem::new(idx as i32)))
+                    } else {
+                        None
+                    }
+                }
+                PassTurn => Some(Box::new(act::Pass::default())),
+            };
+            player.set_next_action(a);
+            RunState::Ticking
+        } else {
+            RunState::Ticking
+        }
+    }
+
+    /// Perform a meta action, i.e.: the player using the game UI without directly affecting the
+    /// game state.
+    fn run_meta_action(&mut self, ctx: &mut rltk::Rltk, action: input::UiAction) -> RunState {
+        debug!("received action {:?}", action);
+        use input::UiAction;
+        match action {
+            UiAction::ExitGameLoop => {
+                match save_game(&self.state, &self.objects) {
+                    Ok(()) => {}
+                    Err(_e) => {} // TODO: Create some message visible in the main menu
+                }
+                RunState::MainMenu(menu::main::new())
+            }
+            UiAction::CharacterScreen => RunState::InfoBox(dialog::character::character_screen(
+                &self.state,
+                &self.objects,
+            )),
+            UiAction::ChoosePrimary => {
+                if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                    let action_items = player.get_available_actions(&[
+                        act::TargetCategory::Any,
+                        act::TargetCategory::EmptyObject,
+                        act::TargetCategory::BlockingObject,
+                    ]);
+                    if !action_items.is_empty() {
+                        RunState::ChooseActionMenu(menu::choose_action::new(
+                            action_items,
+                            menu::choose_action::ActionCategory::Primary,
+                        ))
+                    } else {
+                        self.state.log.add(
+                            "You have no actions available! Try modifying your genome.",
+                            msg::MsgClass::Alert,
+                        );
+                        RunState::Ticking
+                    }
+                } else {
+                    RunState::Ticking
+                }
+            }
+            UiAction::ChooseSecondary => {
+                if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                    let action_items = player.get_available_actions(&[
+                        act::TargetCategory::Any,
+                        act::TargetCategory::EmptyObject,
+                        act::TargetCategory::BlockingObject,
+                    ]);
+                    if !action_items.is_empty() {
+                        RunState::ChooseActionMenu(menu::choose_action::new(
+                            action_items,
+                            menu::choose_action::ActionCategory::Secondary,
+                        ))
+                    } else {
+                        self.state.log.add(
+                            "You have no actions available! Try modifying your genome.",
+                            msg::MsgClass::Alert,
+                        );
+                        RunState::Ticking
+                    }
+                } else {
+                    RunState::Ticking
+                }
+            }
+            UiAction::ChooseQuick1 => {
+                if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                    let action_items = player.get_available_actions(&[act::TargetCategory::None]);
+                    if !action_items.is_empty() {
+                        RunState::ChooseActionMenu(menu::choose_action::new(
+                            action_items,
+                            menu::choose_action::ActionCategory::Quick1,
+                        ))
+                    } else {
+                        self.state.log.add(
+                            "You have no actions available! Try modifying your genome.",
+                            msg::MsgClass::Alert,
+                        );
+                        RunState::Ticking
+                    }
+                } else {
+                    RunState::Ticking
+                }
+            }
+            UiAction::ChooseQuick2 => {
+                if let Some(ref mut player) = self.objects[self.state.player_idx] {
+                    let action_items = player.get_available_actions(&[act::TargetCategory::None]);
+                    if !action_items.is_empty() {
+                        RunState::ChooseActionMenu(menu::choose_action::new(
+                            action_items,
+                            menu::choose_action::ActionCategory::Quick2,
+                        ))
+                    } else {
+                        self.state.log.add(
+                            "You have no actions available! Try modifying your genome.",
+                            msg::MsgClass::Alert,
+                        );
+                        RunState::Ticking
+                    }
+                } else {
+                    RunState::Ticking
+                }
+            }
+            UiAction::GenomeEditor => {
+                if let Some(genome_editor) =
+                    genome_editor::try_create(&mut self.state, &mut self.objects)
+                {
+                    RunState::GenomeEditing(genome_editor)
+                } else {
+                    RunState::CheckInput
+                }
+            }
+            UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
+            UiAction::SetFont(x) => {
+                ctx.set_active_console(consts::WORLD_CON);
+                ctx.set_active_font(x, false);
+                // ctx.cls();
+                ctx.set_active_console(consts::HUD_CON);
+                ctx.set_active_font(x, false);
+                // ctx.cls();
+                ctx.set_active_console(consts::PAR_CON);
+                ctx.set_active_font(x, false);
+                // ctx.cls();
+                RunState::CheckInput
+            }
+        }
+    }
 }
 
 /// Load an existing savegame and instantiates GameState & Objects
@@ -466,11 +630,11 @@ impl rltk::GameState for Game {
                 match input::read(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
                     PlayerInput::Meta(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
-                        run_meta_action(&mut self.state, &mut self.objects, ctx, meta_action)
+                        self.run_meta_action(ctx, meta_action)
                     }
                     PlayerInput::Game(game_action) => {
                         trace!("inject in-game action {:#?} to player", game_action);
-                        set_player_action(&mut self.state, &mut self.objects, game_action)
+                        self.set_player_action(game_action)
                     }
                     PlayerInput::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
@@ -554,173 +718,5 @@ impl rltk::GameState for Game {
         }
 
         rltk::render_draw_buffer(ctx).unwrap()
-    }
-}
-
-fn set_player_action(
-    state: &mut State,
-    objects: &mut ObjectStore,
-    in_game_action: input::PlayerAction,
-) -> RunState {
-    if let Some(ref mut player) = objects[state.player_idx] {
-        use crate::ui::input::PlayerAction::*;
-        let a: Option<Box<dyn act::Action>> = match in_game_action {
-            Primary(dir) => Some(player.get_primary_action(dir)),
-            Secondary(dir) => Some(player.get_secondary_action(dir)),
-            Quick1 => Some(player.get_quick1_action()),
-            Quick2 => Some(player.get_quick2_action()),
-            UseInventoryItem(idx) => {
-                trace!("PlayInput USE_ITEM");
-                let inventory_object = &player.inventory.items.remove(idx);
-                player
-                    .inventory
-                    .inv_actions
-                    .retain(|a| a.get_identifier() != "drop item" || a.get_level() == idx as i32);
-                if let Some(item) = &inventory_object.item {
-                    item.use_action.clone()
-                } else {
-                    None
-                }
-            }
-            DropItem(idx) => {
-                trace!("PlayInput DROP_ITEM");
-                if player.inventory.items.len() > idx {
-                    Some(Box::new(act::DropItem::new(idx as i32)))
-                } else {
-                    None
-                }
-            }
-            PassTurn => Some(Box::new(act::Pass::default())),
-        };
-        player.set_next_action(a);
-        RunState::Ticking
-    } else {
-        RunState::Ticking
-    }
-}
-
-fn run_meta_action(
-    state: &mut State,
-    objects: &mut ObjectStore,
-    ctx: &mut rltk::Rltk,
-    action: input::UiAction,
-) -> RunState {
-    debug!("received action {:?}", action);
-    use input::UiAction;
-    match action {
-        UiAction::ExitGameLoop => {
-            match save_game(&state, &objects) {
-                Ok(()) => {}
-                Err(_e) => {} // TODO: Create some message visible in the main menu
-            }
-            RunState::MainMenu(menu::main::new())
-        }
-        UiAction::CharacterScreen => {
-            RunState::InfoBox(dialog::character::character_screen(state, objects))
-        }
-        UiAction::ChoosePrimary => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = player.get_available_actions(&[
-                    act::TargetCategory::Any,
-                    act::TargetCategory::EmptyObject,
-                    act::TargetCategory::BlockingObject,
-                ]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action::new(
-                        action_items,
-                        menu::choose_action::ActionCategory::Primary,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        msg::MsgClass::Alert,
-                    );
-                    RunState::Ticking
-                }
-            } else {
-                RunState::Ticking
-            }
-        }
-        UiAction::ChooseSecondary => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = player.get_available_actions(&[
-                    act::TargetCategory::Any,
-                    act::TargetCategory::EmptyObject,
-                    act::TargetCategory::BlockingObject,
-                ]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action::new(
-                        action_items,
-                        menu::choose_action::ActionCategory::Secondary,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        msg::MsgClass::Alert,
-                    );
-                    RunState::Ticking
-                }
-            } else {
-                RunState::Ticking
-            }
-        }
-        UiAction::ChooseQuick1 => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = player.get_available_actions(&[act::TargetCategory::None]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action::new(
-                        action_items,
-                        menu::choose_action::ActionCategory::Quick1,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        msg::MsgClass::Alert,
-                    );
-                    RunState::Ticking
-                }
-            } else {
-                RunState::Ticking
-            }
-        }
-        UiAction::ChooseQuick2 => {
-            if let Some(ref mut player) = objects[state.player_idx] {
-                let action_items = player.get_available_actions(&[act::TargetCategory::None]);
-                if !action_items.is_empty() {
-                    RunState::ChooseActionMenu(menu::choose_action::new(
-                        action_items,
-                        menu::choose_action::ActionCategory::Quick2,
-                    ))
-                } else {
-                    state.log.add(
-                        "You have no actions available! Try modifying your genome.",
-                        msg::MsgClass::Alert,
-                    );
-                    RunState::Ticking
-                }
-            } else {
-                RunState::Ticking
-            }
-        }
-        UiAction::GenomeEditor => {
-            if let Some(genome_editor) = genome_editor::try_create(state, objects) {
-                RunState::GenomeEditing(genome_editor)
-            } else {
-                RunState::CheckInput
-            }
-        }
-        UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
-        UiAction::SetFont(x) => {
-            ctx.set_active_console(consts::WORLD_CON);
-            ctx.set_active_font(x, false);
-            // ctx.cls();
-            ctx.set_active_console(consts::HUD_CON);
-            ctx.set_active_font(x, false);
-            // ctx.cls();
-            ctx.set_active_console(consts::PAR_CON);
-            ctx.set_active_font(x, false);
-            // ctx.cls();
-            RunState::CheckInput
-        }
     }
 }
