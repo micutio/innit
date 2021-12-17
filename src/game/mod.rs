@@ -28,6 +28,7 @@ use crate::ui::menu;
 use crate::ui::palette;
 use crate::ui::particles;
 use crate::ui::rex_assets;
+use crate::util;
 use crate::util::timer;
 use crate::world_gen;
 use crate::world_gen::WorldGen;
@@ -73,6 +74,8 @@ impl Display for RunState {
 }
 
 pub struct Game {
+    tick_timer: util::Timer,
+    turn_timer: util::Timer,
     state: State,
     objects: ObjectStore,
     run_state: Option<RunState>,
@@ -96,13 +99,20 @@ impl Game {
     pub fn new() -> Self {
         let state = State::new(1);
         let objects = ObjectStore::new();
+        let run_state = if env().is_spectating {
+            RunState::NewGame
+        } else {
+            RunState::MainMenu(menu::main::new())
+        };
 
         Game {
+            tick_timer: util::Timer::new("tick timer"),
+            turn_timer: util::Timer::new("turn timer"),
             state,
             objects,
             // spawns: load_spawns(),
             // object_templates: load_object_templates(),
-            run_state: Some(RunState::MainMenu(menu::main::new())),
+            run_state: Some(run_state),
             spawns: raws::load_spawns(),
             object_templates: raws::load_object_templates(),
 
@@ -239,6 +249,19 @@ impl Game {
 
         new_runstate
     }
+
+    /// Check whether there is a turn limit and if so, whether it has been reached.
+    fn check_turn_limit(&self) {
+        if let Some(turn_limit) = env().turn_limit {
+            if self.state.turn > turn_limit {
+                warn!(
+                    "turn limit of {} has been reached, closing game",
+                    turn_limit
+                );
+                std::process::exit(0);
+            }
+        }
+    }
 }
 
 /// Load an existing savegame and instantiates GameState & Objects
@@ -300,7 +323,6 @@ impl rltk::GameState for Game {
     /// - render game world
     /// - let NPCs take their turn
     fn tick(&mut self, ctx: &mut rltk::Rltk) {
-        let mut timer = timer::Timer::new("game loop");
         // mouse workaround
         if ctx.left_click {
             if self.mouse_workaround {
@@ -336,6 +358,7 @@ impl rltk::GameState for Game {
         self.re_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
+        let current_turn = self.state.turn;
         new_run_state = match new_run_state {
             RunState::MainMenu(ref mut instance) => {
                 self.state.log.is_changed = false;
@@ -483,6 +506,8 @@ impl rltk::GameState for Game {
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
                 self.world_generator = world_gen::ca::CaBased::new();
+                self.tick_timer = util::Timer::new("tick timer");
+                self.turn_timer = util::Timer::new("turn timer");
                 RunState::WorldGen
             }
             RunState::LoadGame => {
@@ -514,12 +539,19 @@ impl rltk::GameState for Game {
             &format!("FPS: {}", ctx.fps),
         );
 
+        self.check_turn_limit();
+
         // keep time and emit warning if a tick takes longer than half a second
-        let tick_elapsed = timer.stop_silent();
-        if tick_elapsed > 500_000_000 {
+        let tick_elapsed = self.tick_timer.lap_silent();
+        if tick_elapsed > 50_000_000 {
             warn!("game loop running slow: {}", timer::format(tick_elapsed));
         }
         self.slowest_tick = self.slowest_tick.max(tick_elapsed);
+
+        if current_turn != self.state.turn {
+            self.turn_timer.lap();
+            info!("new turn {}", self.state.turn);
+        }
 
         rltk::render_draw_buffer(ctx).unwrap()
     }

@@ -4,6 +4,7 @@ use instant::Instant;
 
 pub struct Timer {
     start_t: Instant,
+    lap_t: Instant,
     is_running: bool,
     msg: &'static str,
 }
@@ -12,13 +13,22 @@ impl Timer {
     pub fn new(msg: &'static str) -> Self {
         Timer {
             start_t: Instant::now(),
+            lap_t: Instant::now(),
             is_running: true,
             msg,
         }
     }
 
-    pub fn _lap(&mut self) {
-        self.summary("currently", self.start_t.elapsed().as_nanos());
+    pub fn lap(&mut self) -> u128 {
+        let elapsed = self.lap_t.elapsed().as_nanos();
+        self.summary("complete lap", elapsed);
+        self.lap_t = Instant::now();
+        elapsed
+    }
+    pub fn lap_silent(&mut self) -> u128 {
+        let elapsed = self.lap_t.elapsed().as_nanos();
+        self.lap_t = Instant::now();
+        elapsed
     }
 
     pub fn stop(&mut self) -> u128 {

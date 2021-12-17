@@ -327,9 +327,10 @@ impl State {
     }
 
     fn conclude_advance_turn(&mut self, obj_count: usize) {
-        self.obj_idx = (self.obj_idx + 1) % obj_count;
-        if self.obj_idx == 0 {
+        let next_obj_idx = (self.obj_idx + 1) % obj_count;
+        if next_obj_idx < self.obj_idx {
             self.turn += 1;
         }
+        self.obj_idx = next_obj_idx;
     }
 }

@@ -101,6 +101,22 @@ pub fn main() -> rltk::BError {
                     game::env().set_seed(seed);
                 }
             }
+            if arg.eq("-t") || arg.eq("--turns") {
+                // try get next argument to retrieve the seed number
+                if i + 1 == args.len() {
+                    info!("Option '-t | --turns' requires an integer parameter!");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let turn_limit = match next_arg.parse::<u128>() {
+                        Ok(n) => n,
+                        Err(_) => {
+                            info!("no numerical seed parameter provided, fall back to use '0' instead");
+                            0
+                        }
+                    };
+                    game::env().set_turn_limit(turn_limit);
+                }
+            }
             if arg.eq("--spectate") {
                 game::env().set_spectating(true);
             }

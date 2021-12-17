@@ -15,6 +15,8 @@ pub struct GameEnv {
     pub is_debug_mode: bool,
     /// optional fixed rng seed
     pub seed: Option<u64>,
+    /// optional turn limit
+    pub turn_limit: Option<u128>,
     /// if trie: do not create a player object
     pub is_spectating: bool,
 }
@@ -24,6 +26,7 @@ impl GameEnv {
         GameEnv {
             is_debug_mode: false,
             seed: None,
+            turn_limit: None,
             is_spectating: false,
         }
     }
@@ -34,6 +37,10 @@ impl GameEnv {
 
     pub fn set_seed(&mut self, seed_param: u64) {
         self.seed = Some(seed_param);
+    }
+
+    pub fn set_turn_limit(&mut self, limit: u128) {
+        self.turn_limit = Some(limit);
     }
 
     pub fn set_spectating(&mut self, spectate_only: bool) {
