@@ -195,12 +195,12 @@ impl ObjectStore {
         }
     }
 
-    pub fn replace(&mut self, index: usize, object: Object) {
+    pub fn replace(&mut self, index: usize, mut object: Object) {
         let item = self.obj_vec.get_mut(index);
         match item {
             Some(obj) => {
                 // debug!("replace object {} @ index {}", object.visual.name, index);
-                let _is_moved = obj.pos.update();
+                let _is_moved = object.pos.update();
                 // TODO: use 'is_moved' to update a spatial index
                 obj.replace(object);
             }

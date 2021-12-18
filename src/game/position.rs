@@ -46,7 +46,7 @@ impl Position {
         }
     }
 
-    pub fn from(pos: &Position) -> Self {
+    pub fn from_pos(pos: &Position) -> Self {
         Position {
             x: pos.x,
             y: pos.y,
@@ -94,7 +94,7 @@ impl Position {
     /// Return `true` if the position has changed since the last update, `false` otherwise.
     /// To be used by the `crate::game::ObjectStore`
     pub fn update(&mut self) -> bool {
-        let is_changed = self.x != self.last_x || self.y != self.last_x;
+        let is_changed = self.x != self.last_x || self.y != self.last_y;
         if is_changed {
             self.last_x = self.x;
             self.last_y = self.y;

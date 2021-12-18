@@ -32,13 +32,13 @@ fn test_adjacent() {
     assert!(!pos_1.is_adjacent(&pos_14));
 }
 
+#[test]
 fn test_move_update() {
     use crate::game::Position;
 
-    let start_1 = Position::from_xy(1, 2);
+    let mut start_1 = Position::from_xy(1, 2);
     let end_1 = Position::from_xy(5, 6);
     start_1.move_to_xy(5, 6);
-    assert_ne!(start_1, end_1);
     start_1.update();
     assert_eq!(start_1, end_1);
 }

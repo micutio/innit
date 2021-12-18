@@ -147,13 +147,10 @@ pub fn read(
     let is_clicked: bool = ctx.left_click;
 
     // 2) update hovered objects
-    hud.update_tooltips(
-        rltk::Point::from((mouse.x, mouse.y)),
-        get_names_under_mouse(state, objects, mouse),
-    );
+    hud.update_tooltips(mouse.into(), get_names_under_mouse(state, objects, mouse));
 
     // 3) if mouse is hovering over world
-    if mouse.x < game::consts::WORLD_WIDTH {
+    if mouse.x() < game::consts::WORLD_WIDTH {
         // 3b) check whether a mouse button has been pressed for player action
         if is_clicked {
             // get clicked cell, check if it is adjacent to player, perform primary action
@@ -180,7 +177,7 @@ pub fn read(
         if let Some(item) = hud
             .items
             .iter()
-            .find(|i| i.layout.point_in_rect(rltk::Point::new(mouse.x, mouse.y)))
+            .find(|i| i.layout.point_in_rect(mouse.into()))
         {
             return if is_clicked {
                 match item.item_enum {

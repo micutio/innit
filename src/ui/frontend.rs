@@ -43,7 +43,7 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     // draw the objects in the list
     for object in &to_draw {
         draw_batch.set(
-            rltk::Point::new(object.pos.x, object.pos.y),
+            object.pos.into(),
             rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),
             rltk::to_cp437(object.visual.glyph),
         );
@@ -139,7 +139,8 @@ fn update_visual(
 
     let wall = object.physics.is_blocking_sight;
 
-    let idx = object.pos.y as usize * (game::consts::WORLD_WIDTH as usize) + object.pos.x as usize;
+    let idx =
+        object.pos.y() as usize * (game::consts::WORLD_WIDTH as usize) + object.pos.x() as usize;
     if idx >= dist_map.len() {
         panic!("Invalid object index!");
     }

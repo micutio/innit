@@ -113,7 +113,7 @@ impl Object {
 
     /// Set the object's position in the world. Part of the builder pattern.
     pub fn position(mut self, pos: &Position) -> Object {
-        self.pos = Position::from(pos);
+        self.pos = Position::from_pos(pos);
         self
     }
 
