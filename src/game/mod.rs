@@ -517,7 +517,6 @@ impl rltk::GameState for Game {
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
-        // TODO: move particle render routine into separate function
         particles().render(ctx);
         self.re_render = particles().update(ctx);
 

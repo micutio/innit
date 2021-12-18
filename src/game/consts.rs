@@ -18,4 +18,4 @@ pub const PAR_CON_Z: usize = 20000;
 
 pub const MENU_WIDTH: i32 = 20;
 
-pub const PLAYER: usize = 0; // player object reference, index of the object vector
+pub const PLAYER: usize = (WORLD_WIDTH * WORLD_HEIGHT) as usize; // player object reference, index of the object vector

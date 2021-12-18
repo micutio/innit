@@ -57,8 +57,3 @@ impl Tile {
             .control(control::Controller::Npc(Box::new(ai::AiTile)))
     }
 }
-
-/// For use in lambdas.
-pub fn is_explored(tile: &Tile) -> Option<&bool> {
-    Some(&tile.is_explored)
-}

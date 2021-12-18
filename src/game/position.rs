@@ -63,14 +63,6 @@ impl Position {
         self.y
     }
 
-    pub fn last_x(&self) -> i32 {
-        self.last_x
-    }
-
-    pub fn last_y(&self) -> i32 {
-        self.last_y
-    }
-
     pub fn is_equal(&self, other: &Position) -> bool {
         self.x == other.x && self.y == other.y
     }
@@ -99,15 +91,22 @@ impl Position {
         self.y = p.y;
     }
 
-    /// Return `true` if the position has changed since the last update, `false` otherwise.
+    /// Return previous position if the it has changed since the last update, `None` otherwise.
     /// To be used by the `crate::game::ObjectStore`
-    pub fn update(&mut self) -> bool {
+    pub fn update(&mut self) -> Option<(i32, i32)> {
         let is_changed = self.x != self.last_x || self.y != self.last_y;
+        let result = if is_changed {
+            Some((self.last_x, self.last_y))
+        } else {
+            None
+        };
+
         if is_changed {
             self.last_x = self.x;
             self.last_y = self.y;
         }
-        is_changed
+
+        result
     }
 
     pub fn is_adjacent(&self, other: &Position) -> bool {
