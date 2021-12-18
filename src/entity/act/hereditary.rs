@@ -350,7 +350,7 @@ impl Action for InjectRnaVirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_by_pos(&target_pos) {
+        if let Some((index, Some(mut target))) = objects.extract_with_idx(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
@@ -633,7 +633,9 @@ impl Action for ProduceVirion {
             Some(dna) => {
                 // println!(
                 //     "{} at ({},{}) produces virion",
-                //     owner.visual.name, owner.pos.x, owner.pos.y
+                //     owner.visual.name,
+                //     owner.pos.x(),
+                //     owner.pos.y()
                 // );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {

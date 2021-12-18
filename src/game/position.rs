@@ -60,7 +60,15 @@ impl Position {
     }
 
     pub fn y(&self) -> i32 {
-        self.x
+        self.y
+    }
+
+    pub fn last_x(&self) -> i32 {
+        self.last_x
+    }
+
+    pub fn last_y(&self) -> i32 {
+        self.last_y
     }
 
     pub fn is_equal(&self, other: &Position) -> bool {
