@@ -156,10 +156,10 @@ fn place_objects(
         let x = state.rng.gen_range(0 + 1..game::consts::WORLD_WIDTH);
         let y = state.rng.gen_range(0 + 1..game::consts::WORLD_HEIGHT);
 
-        if !objects.is_pos_occupied(&game::position::Position::new(x, y)) {
+        if !objects.is_pos_occupied(&game::position::Position::from_xy(x, y)) {
             // let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;
             let monster = Object::new()
-                .position(x, y)
+                .position_xy(x, y)
                 .living(true)
                 .visualize("Virus", 'v', palette().entity_virus)
                 .physical(true, false, false)

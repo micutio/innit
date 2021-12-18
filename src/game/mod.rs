@@ -214,7 +214,7 @@ impl Game {
                         ],
                     );
                     let player = object::Object::new()
-                        .position(new_x, new_y)
+                        .position_xy(new_x, new_y)
                         .living(true)
                         .visualize("You", '@', (255, 255, 255, 255))
                         .physical(true, false, true)

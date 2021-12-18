@@ -318,7 +318,7 @@ fn place_objects(
 
                 // finally cobble everything together and insert the new object into the world
                 let new_npc = Object::new()
-                    .position(t.pos.x, t.pos.y)
+                    .position(&t.pos)
                     .living(true)
                     .visualize(template.npc.as_str(), template.glyph, template.color)
                     .physical(

@@ -10,7 +10,7 @@ pub use self::hereditary::*;
 pub use self::inventory::*;
 
 use crate::entity::object::Object;
-use crate::game::position::Position;
+use crate::game::Position;
 use crate::game::{ObjectStore, State};
 
 use serde::{Deserialize, Serialize};
@@ -120,11 +120,11 @@ pub enum Target {
 impl Target {
     fn to_pos(&self) -> Position {
         match self {
-            Target::North => Position::new(0, -1),
-            Target::South => Position::new(0, 1),
-            Target::East => Position::new(1, 0),
-            Target::West => Position::new(-1, 0),
-            Target::Center => Position::new(0, 0),
+            Target::North => Position::from_xy(0, -1),
+            Target::South => Position::from_xy(0, 1),
+            Target::East => Position::from_xy(1, 0),
+            Target::West => Position::from_xy(-1, 0),
+            Target::Center => Position::from_xy(0, 0),
         }
     }
 

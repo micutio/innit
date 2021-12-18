@@ -40,7 +40,7 @@ pub struct Tile {
 impl Tile {
     pub fn floor(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
-            .position(x, y)
+            .position_xy(x, y)
             .living(true)
             .visualize("empty tile", '·', (255, 255, 255, 255))
             .physical(false, false, is_visible)
@@ -49,7 +49,7 @@ impl Tile {
 
     pub fn wall(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
-            .position(x, y)
+            .position_xy(x, y)
             .living(true)
             .visualize("wall tile", '◘', (255, 255, 255, 255))
             .physical(true, true, is_visible)

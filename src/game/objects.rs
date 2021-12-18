@@ -1,7 +1,7 @@
 use crate::entity::{genetics, Object};
 use crate::game;
-use crate::game::position::Position;
 use crate::game::world_gen;
+use crate::game::Position;
 use crate::rand::Rng;
 use crate::util::rng;
 
@@ -141,7 +141,7 @@ impl ObjectStore {
     }
 
     pub fn extract_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        let idx = position_to_index(pos.x, pos.y);
+        let idx = position_to_index(pos.x(), pos.y());
         if idx < self.obj_vec.len() {
             Some((idx, self.extract_by_index(idx)))
         } else {
@@ -200,6 +200,8 @@ impl ObjectStore {
         match item {
             Some(obj) => {
                 // debug!("replace object {} @ index {}", object.visual.name, index);
+                let _is_moved = obj.pos.update();
+                // TODO: use 'is_moved' to update a spatial index
                 obj.replace(object);
             }
             None => {
@@ -358,8 +360,8 @@ impl<'a> Iterator for Neighborhood<'a> {
             None
         } else {
             while self.count < self.bounds.len() {
-                let x = self.bounds[self.count].0 + self.cell_pos.x;
-                let y = self.bounds[self.count].1 + self.cell_pos.y;
+                let x = self.bounds[self.count].0 + self.cell_pos.x();
+                let y = self.bounds[self.count].1 + self.cell_pos.y();
 
                 self.count += 1;
 
@@ -383,8 +385,7 @@ fn position_to_index(x: i32, y: i32) -> usize {
 
 /// Convert an array index to a point. Defaults to an index based on an array
 fn _index_to_position(idx: usize) -> Position {
-    Position::new(
-        (idx - 1) as i32 % game::consts::WORLD_WIDTH,
-        (idx - 1) as i32 / game::consts::WORLD_WIDTH,
-    )
+    let x = (idx - 1) as i32 % game::consts::WORLD_WIDTH;
+    let y = (idx - 1) as i32 / game::consts::WORLD_WIDTH;
+    Position::from_xy(x, y)
 }

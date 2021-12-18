@@ -5,8 +5,8 @@ use crate::entity::genetics;
 use crate::entity::inventory;
 use crate::game;
 use crate::game::msg::MessageLog;
-use crate::game::position::Position;
 use crate::game::ObjectStore;
+use crate::game::Position;
 use crate::game::State;
 use crate::ui::hud;
 use crate::world_gen;
@@ -89,7 +89,7 @@ impl Object {
     /// The Object constructor uses the builder pattern.
     pub fn new() -> Self {
         Object {
-            pos: Position::new(0, 0),
+            pos: Position::from_xy(0, 0),
             alive: false,
             gene_stability: 1.0,
             tile: None,
@@ -106,8 +106,14 @@ impl Object {
     }
 
     /// Set the object's position in the world. Part of the builder pattern.
-    pub fn position(mut self, x: i32, y: i32) -> Object {
-        self.pos = Position::new(x, y);
+    pub fn position_xy(mut self, x: i32, y: i32) -> Object {
+        self.pos = Position::from_xy(x, y);
+        self
+    }
+
+    /// Set the object's position in the world. Part of the builder pattern.
+    pub fn position(mut self, pos: &Position) -> Object {
+        self.pos = Position::from(pos);
         self
     }
 
@@ -194,7 +200,7 @@ impl Object {
     pub fn die(&mut self, _state: &mut State, objects: &mut ObjectStore) {
         // empty inventory into this objects' current position
         for mut o in self.inventory.items.drain(..) {
-            o.pos.set(self.pos.x, self.pos.y);
+            o.pos.move_to(&self.pos);
             objects.push(o);
         }
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
@@ -525,7 +531,7 @@ impl Object {
         let attributes: Vec<(String, String)> = vec![
             (
                 "position".to_string(),
-                format!("{}, {}", self.pos.x, self.pos.y),
+                format!("{}, {}", self.pos.x(), self.pos.y()),
             ),
             (
                 "hp:".to_string(),
@@ -567,8 +573,8 @@ impl fmt::Display for Object {
             "{} [{}] at ({},{}), alive: {}, energy: {}",
             self.visual.name,
             self.visual.glyph,
-            self.pos.x,
-            self.pos.y,
+            self.pos.x(),
+            self.pos.y(),
             self.alive,
             self.processors.energy
         )

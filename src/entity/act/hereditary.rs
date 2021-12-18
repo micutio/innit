@@ -7,7 +7,7 @@ use crate::entity::genetics;
 use crate::entity::Object;
 use crate::game;
 use crate::game::msg::MessageLog;
-use crate::game::position::Position;
+use crate::game::Position;
 use crate::game::{ObjectStore, State};
 use crate::ui::{self, particle};
 use serde::{Deserialize, Serialize};
@@ -109,7 +109,7 @@ impl Action for Move {
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
         if !&objects.is_pos_blocked(&target_pos) {
-            owner.pos.set(target_pos.x, target_pos.y);
+            owner.pos.move_to(&target_pos);
             let callback = if owner.physics.is_visible {
                 ObjectFeedback::Render
             } else {
@@ -644,7 +644,7 @@ impl Action for ProduceVirion {
                 }
                 owner.inventory.items.push(
                     Object::new()
-                        .position(owner.pos.x, owner.pos.y)
+                        .position(&owner.pos)
                         .living(true)
                         .visualize("virus", 'v', ui::palette().entity_virus)
                         .physical(true, false, false)
@@ -675,7 +675,7 @@ impl Action for ProduceVirion {
                             state.gene_library.dna_from_traits(&owner.dna.simplified);
                         owner.inventory.items.push(
                             Object::new()
-                                .position(owner.pos.x, owner.pos.y)
+                                .position(&owner.pos)
                                 .living(true)
                                 .visualize("virus", 'v', ui::palette().entity_virus)
                                 .physical(true, false, false)
@@ -812,8 +812,8 @@ impl Action for KillSwitch {
 
                     ui::register_particles(
                         particle::ParticleBuilder::new(
-                            owner.pos.x as f32,
-                            owner.pos.y as f32,
+                            owner.pos.x() as f32,
+                            owner.pos.y() as f32,
                             fg,
                             bg,
                             owner.visual.glyph,
@@ -856,8 +856,8 @@ impl Action for KillSwitch {
 
                             ui::register_particles(
                                 particle::ParticleBuilder::new(
-                                    target.pos.x as f32,
-                                    target.pos.y as f32,
+                                    target.pos.x() as f32,
+                                    target.pos.y() as f32,
                                     fg,
                                     bg,
                                     target.visual.glyph,
@@ -947,7 +947,7 @@ impl Action for BinaryFission {
         let is_pos_available = !objects.is_pos_occupied(&target_pos);
 
         if is_pos_available {
-            let child_obj = match objects.get_tile_at(target_pos.x, target_pos.y) {
+            let child_obj = match objects.get_tile_at(target_pos.x(), target_pos.y()) {
                 Some(t) => {
                     if owner.tile.is_some() && owner.physics.is_blocking {
                         if !t.physics.is_blocking {
@@ -980,14 +980,14 @@ impl Action for BinaryFission {
                                 let bg = owner.visual.bg_color;
                                 ui::register_particles(
                                     particle::ParticleBuilder::new(
-                                        owner.pos.x as f32,
-                                        owner.pos.y as f32,
+                                        owner.pos.x() as f32,
+                                        owner.pos.y() as f32,
                                         fg,
                                         bg,
                                         owner.visual.glyph,
                                         600.0,
                                     )
-                                    .with_moving_to(t.pos.x as f32, t.pos.y as f32)
+                                    .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
                                     .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
                                     .with_scale((0.0, 0.0), (1.0, 1.0)),
                                 )
@@ -1015,7 +1015,7 @@ impl Action for BinaryFission {
                             None => None,
                         };
                         let mut child = Object::new()
-                            .position(t.pos.x, t.pos.y)
+                            .position(&t.pos)
                             .living(true)
                             .visualize(
                                 owner.visual.name.as_str(),
@@ -1047,9 +1047,9 @@ impl Action for BinaryFission {
                             let fg = owner.visual.fg_color;
                             let bg = owner.visual.bg_color;
                             let start_x =
-                                owner.pos.x as f32 + ((t.pos.x - owner.pos.x) as f32 * 0.5);
+                                owner.pos.x() as f32 + ((t.pos.x() - owner.pos.x()) as f32 * 0.5);
                             let start_y =
-                                owner.pos.y as f32 + ((t.pos.y - owner.pos.y) as f32 * 0.5);
+                                owner.pos.y() as f32 + ((t.pos.y() - owner.pos.y()) as f32 * 0.5);
                             ui::register_particles(
                                 particle::ParticleBuilder::new(
                                     start_x,
@@ -1059,7 +1059,7 @@ impl Action for BinaryFission {
                                     child.visual.glyph,
                                     600.0,
                                 )
-                                .with_moving_to(t.pos.x as f32, t.pos.y as f32)
+                                .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
                                 .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
                                 .with_scale((0.0, 0.0), (1.0, 1.0)),
                             )

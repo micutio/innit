@@ -108,7 +108,7 @@ impl Action for DropItem {
                 game::msg::MsgClass::Info,
             );
             // set the item to be dropped at the same position as the player
-            item.pos.set(owner.pos.x, owner.pos.y);
+            item.pos.move_to(&owner.pos);
             objects.get_vector_mut().push(Some(item));
 
             // Remove this action from the inventory.

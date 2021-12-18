@@ -30,7 +30,7 @@ fn test_random_ai() {
 
     // Set up monsters
     let virus_north = Object::new()
-        .position(p_x, p_y - 1)
+        .position_xy(p_x, p_y - 1)
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
@@ -43,7 +43,7 @@ fn test_random_ai() {
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
     let virus_east = Object::new()
-        .position(p_x + 1, p_y)
+        .position_xy(p_x + 1, p_y)
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
@@ -56,7 +56,7 @@ fn test_random_ai() {
         .control(Controller::Npc(Box::new(AiVirus::new())));
 
     let virus_south = Object::new()
-        .position(p_x, p_y + 1)
+        .position_xy(p_x, p_y + 1)
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
@@ -85,7 +85,7 @@ fn test_random_ai() {
     }
 
     let virus_west = Object::new()
-        .position(p_x - 1, p_y)
+        .position_xy(p_x - 1, p_y)
         .living(true)
         .visualize("Virus", 'v', palette().entity_virus)
         .physical(true, false, false)
@@ -145,7 +145,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
         .replace(Tile::floor(p_x, p_y + 1, env().is_debug_mode));
 
     let player = Object::new()
-        .position(p_x, p_y)
+        .position_xy(p_x, p_y)
         .living(true)
         // .visualize("player", '@', colors::WHITE)
         .physical(true, false, false)
