@@ -110,12 +110,11 @@ impl State {
             // return the result of our action
             process_result
         } else {
-            // panic!("no object at index {}", self.obj_idx);
-            // objects.get_vector_mut().remove(self.obj_idx);
+            trace!("no object at index {}, skipping its turn", self.obj_idx);
 
             // increase object index and turn counter
             self.conclude_advance_turn(objects.get_obj_count());
-            act::ObjectFeedback::Render
+            act::ObjectFeedback::NoFeedback
         }
     }
 
@@ -309,8 +308,7 @@ impl State {
                 debug!("{} died!", actor.visual.name);
             }
 
-            // if the dead object is a player then keep it in the world,
-            // otherwise remove it.
+            // If the dead object is a player then keep it in the world, otherwise remove it.
             // NOTE: Maybe keep dead material around for scavenging.
             if actor.is_player() {
                 objects[self.obj_idx].replace(actor);
