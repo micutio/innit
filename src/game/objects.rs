@@ -119,7 +119,21 @@ impl ObjectStore {
 
     pub fn push(&mut self, object: Object) {
         trace!("adding {} to game objects", object.visual.name);
+        // update occupation map, if the object is not a tile
+        if object.tile.is_none() && object.physics.is_blocking {
+            let idx = coord_to_idx(game::consts::WORLD_WIDTH, object.pos.x(), object.pos.y());
+            self.occupation[idx] += 1;
+        }
         self.objects.push(Some(object));
+    }
+
+    /// Remove an object from the world. If the object is not a tile, the occupation map will be
+    /// updated.
+    pub fn remove(&mut self, idx: usize, object: &Object) {
+        if object.tile.is_none() && object.physics.is_blocking {
+            self.occupation[idx] -= 1;
+        }
+        self.objects.remove(idx);
     }
 
     pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
@@ -135,7 +149,7 @@ impl ObjectStore {
         }
     }
 
-    /// Extract and object with the given position and return both the object and index of it.
+    /// Extract a blocking object with the given position and return both the object and its index.
     pub fn extract_blocking_with_idx(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         let idx = coord_to_idx(game::consts::WORLD_WIDTH, pos.x(), pos.y());
         if self.occupation[idx] == 0 {
@@ -199,7 +213,7 @@ impl ObjectStore {
                 // debug!("replace object {} @ index {}", object.visual.name, index);
                 let last_xy = object.pos.update();
                 // record position changes of non-tiles for efficient occupation queries
-                if object.tile.is_none() {
+                if object.tile.is_none() && object.physics.is_blocking {
                     if let Some((last_x, last_y)) = last_xy {
                         let last_idx = coord_to_idx(game::consts::WORLD_WIDTH, last_x, last_y);
                         let this_idx =
