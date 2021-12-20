@@ -350,7 +350,8 @@ impl Action for InjectRnaVirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_with_idx(&target_pos) {
+        // TODO: extract with index is non-deterministic, extract by something else
+        if let Some((index, Some(mut target))) = objects.extract_blocking_with_idx(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses

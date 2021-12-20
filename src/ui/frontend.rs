@@ -1,8 +1,7 @@
 use crate::entity::Object;
-use crate::game::{self, position::Position, ObjectStore};
+use crate::game::{self, ObjectStore, Position};
 use crate::ui;
 use crate::util::timer;
-use crate::world_gen;
 
 use rltk;
 
@@ -25,8 +24,9 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
 
     update_visibility(objects);
 
-    let mut to_draw: Vec<&Object> = objects
-        .get_vector()
+    // draw tiles first and then all other objects
+    objects
+        .get_tiles()
         .iter()
         .flatten()
         .filter(|o| {
@@ -34,14 +34,35 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
             game::env().is_debug_mode
                 || o.physics.is_visible
                 || o.physics.is_always_visible
-                || (o.tile.is_some() && *o.tile.as_ref().and_then(world_gen::is_explored).unwrap())
+                || if let Some(t) = &o.tile {
+                    t.is_explored
+                } else {
+                    false
+                }
+        })
+        .for_each(|tile_obj| {
+            draw_batch.set(
+                tile_obj.pos.into(),
+                rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
+                rltk::to_cp437(tile_obj.visual.glyph),
+            );
+        });
+
+    let mut objects_to_draw: Vec<&Object> = objects
+        .get_non_tiles()
+        .iter()
+        .flatten()
+        .filter(|o| {
+            // Is there a better way than using `and_then`?
+            game::env().is_debug_mode || o.physics.is_visible || o.physics.is_always_visible
         })
         .collect();
 
     // sort, so that non-blocking objects come first
-    to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
+    objects_to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
+
     // draw the objects in the list
-    for object in &to_draw {
+    for object in &objects_to_draw {
         draw_batch.set(
             object.pos.into(),
             rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),

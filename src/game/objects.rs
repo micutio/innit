@@ -41,20 +41,18 @@ impl ObjectStore {
     }
 
     pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
-        // offset by one because player is the first object
-        &mut self.objects[(y as usize * (game::consts::WORLD_WIDTH as usize) + x as usize) + 1]
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+        &mut self.objects[idx]
     }
 
-    /// Allocate enough space in the object vector to fit the player and all world tiles.
+    /// Allocate enough space in the object vector to fit all world tiles and some room to spare.
     pub fn blank_world(&mut self) {
         self.objects.clear();
-        self.objects.resize_with(self.world_tile_count + 1, || None);
+        self.objects.resize_with(self.world_tile_count * 2, || None);
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
-                // debug!("placing tile at ({}, {})", x, y);
-                self.objects
-                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
-                    .replace(world_gen::Tile::wall(x, y, false));
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+                self.objects[idx].replace(world_gen::Tile::wall(x, y, false));
             }
         }
     }
@@ -66,10 +64,8 @@ impl ObjectStore {
     ) {
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
-                // debug!("setting tile dna at ({}, {})", x, y);
-                if let Some(tile) = &mut self.objects
-                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
-                {
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+                if let Some(tile) = &mut self.objects[idx] {
                     let (sensors, processors, actuators, dna) = gene_library.new_genetics(
                         rng,
                         genetics::DnaType::Nucleus,
@@ -90,9 +86,8 @@ impl ObjectStore {
     ) {
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
-                if let Some(tile) = &mut self.objects
-                    [((y as usize) * (game::consts::WORLD_WIDTH as usize) + (x as usize)) + 1]
-                {
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+                if let Some(tile) = &mut self.objects[idx] {
                     let (sensors, processors, actuators, dna) = gene_library.dna_to_traits(
                         genetics::DnaType::Nucleus,
                         &gene_library.dna_from_trait_strs(rng, &traits),
@@ -100,10 +95,6 @@ impl ObjectStore {
                     tile.set_genome(sensors, processors, actuators, dna);
                     tile.processors.life_elapsed =
                         rng.gen_range(0..tile.processors.life_expectancy);
-                    // println!(
-                    //     "TILE AGE: {}/{}",
-                    //     tile.processors.life_elapsed, tile.processors.life_expectancy
-                    // );
                 }
             }
         }
@@ -119,6 +110,8 @@ impl ObjectStore {
             }
             None => {
                 trace!("setting player object {:?}", object);
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, object.pos.x(), object.pos.y());
+                self.occupation[idx] += 1;
                 self.objects[game::consts::PLAYER].replace(object);
             }
         }
@@ -126,7 +119,21 @@ impl ObjectStore {
 
     pub fn push(&mut self, object: Object) {
         trace!("adding {} to game objects", object.visual.name);
+        // update occupation map, if the object is not a tile
+        if object.tile.is_none() && object.physics.is_blocking {
+            let idx = coord_to_idx(game::consts::WORLD_WIDTH, object.pos.x(), object.pos.y());
+            self.occupation[idx] += 1;
+        }
         self.objects.push(Some(object));
+    }
+
+    /// Remove an object from the world. If the object is not a tile, the occupation map will be
+    /// updated.
+    pub fn remove(&mut self, idx: usize, object: &Object) {
+        if object.tile.is_none() && object.physics.is_blocking {
+            self.occupation[idx] -= 1;
+        }
+        self.objects.remove(idx);
     }
 
     pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
@@ -142,12 +149,13 @@ impl ObjectStore {
         }
     }
 
-    pub fn extract_with_idx(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        let idx = position_to_index(pos.x(), pos.y());
-        if idx < self.objects.len() {
+    /// Extract a blocking object with the given position and return both the object and its index.
+    pub fn extract_blocking_with_idx(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, pos.x(), pos.y());
+        if self.occupation[idx] == 0 {
             Some((idx, self.extract_by_index(idx)))
         } else {
-            None
+            self.extract_non_tile_by_pos(pos)
         }
     }
 
@@ -203,18 +211,16 @@ impl ObjectStore {
         match item {
             Some(obj) => {
                 // debug!("replace object {} @ index {}", object.visual.name, index);
-                let is_moved = object.pos.update();
+                let last_xy = object.pos.update();
                 // record position changes of non-tiles for efficient occupation queries
-                if is_moved && object.tile.is_none() {
-                    let last_idx = coord_to_idx(
-                        game::consts::WORLD_WIDTH,
-                        object.pos.last_x(),
-                        object.pos.last_y(),
-                    );
-                    self.occupation[last_idx] -= 1;
-                    let this_idx =
-                        coord_to_idx(game::consts::WORLD_WIDTH, object.pos.x(), object.pos.y());
-                    self.occupation[this_idx] += 1;
+                if object.tile.is_none() && object.physics.is_blocking {
+                    if let Some((last_x, last_y)) = last_xy {
+                        let last_idx = coord_to_idx(game::consts::WORLD_WIDTH, last_x, last_y);
+                        let this_idx =
+                            coord_to_idx(game::consts::WORLD_WIDTH, object.pos.x(), object.pos.y());
+                        self.occupation[last_idx] -= 1;
+                        self.occupation[this_idx] += 1;
+                    }
                 }
                 obj.replace(object);
             }
@@ -229,7 +235,7 @@ impl ObjectStore {
 
     /// Check whether there is an object, tile or not, blocking access to the given world coordinate
     pub fn is_pos_blocked(&self, p: &Position) -> bool {
-        let tile_idx = position_to_index(p.x(), p.y());
+        let tile_idx = coord_to_idx(game::consts::WORLD_WIDTH, p.x(), p.y());
         let is_blocking_tile = if let Some(obj) = &self.objects[tile_idx] {
             obj.physics.is_blocking
         } else {
@@ -266,8 +272,7 @@ impl ObjectStore {
 
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles(&self) -> &[Option<Object>] {
-        let start: usize = 1;
-        &self.objects[start..self.world_tile_count]
+        &self.objects[..self.world_tile_count]
     }
 
     pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
@@ -276,8 +281,7 @@ impl ObjectStore {
 
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
-        let start: usize = 1;
-        &mut self.objects[start..self.world_tile_count]
+        &mut self.objects[..self.world_tile_count]
     }
 
     /// Return a Vec slice with all objects that are not tiles in the world.
@@ -332,15 +336,13 @@ impl rltk::BaseMap for ObjectStore {
 impl rltk::Algorithm2D for ObjectStore {
     /// Convert a Point (x/y) to an array index.
     fn point2d_to_index(&self, pt: rltk::Point) -> usize {
-        (pt.y as usize * (game::consts::WORLD_WIDTH as usize) + pt.x as usize) + (1 as usize)
+        coord_to_idx(game::consts::WORLD_WIDTH, pt.x, pt.y)
     }
 
     /// Convert an array index to a point. Defaults to an index based on an array
     fn index_to_point2d(&self, idx: usize) -> rltk::Point {
-        rltk::Point::new(
-            (idx - 1) as i32 % game::consts::WORLD_WIDTH,
-            (idx - 1) as i32 / game::consts::WORLD_WIDTH,
-        )
+        let coord = _idx_to_coord(game::consts::WORLD_WIDTH as usize, idx);
+        rltk::Point::from_tuple(coord)
     }
 
     fn dimensions(&self) -> rltk::Point {
@@ -389,24 +391,12 @@ impl<'a> Iterator for Neighborhood<'a> {
                     && y >= 0
                     && y < game::consts::WORLD_HEIGHT
                 {
-                    return Some(&self.buffer[position_to_index(x, y)]);
+                    return Some(&self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)]);
                 }
             }
             None
         }
     }
-}
-
-/// Convert a Point (x/y) to an index in the object storage.
-fn position_to_index(x: i32, y: i32) -> usize {
-    (y as usize * (game::consts::WORLD_WIDTH as usize) + x as usize) + (1 as usize)
-}
-
-/// Convert an object storage index to a point.
-fn _index_to_position(idx: usize) -> Position {
-    let x = (idx - 1) as i32 % game::consts::WORLD_WIDTH;
-    let y = (idx - 1) as i32 / game::consts::WORLD_WIDTH;
-    Position::from_xy(x, y)
 }
 
 // Convert coordinate to an index in a vector.
