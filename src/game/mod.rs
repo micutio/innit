@@ -24,7 +24,7 @@ use crate::ui::dialog;
 use crate::ui::frontend;
 use crate::ui::hud;
 use crate::ui::input;
-use crate::ui::menu;
+use crate::ui::menu::{self, MenuItem};
 use crate::ui::palette;
 use crate::ui::particles;
 use crate::ui::rex_assets;
@@ -49,6 +49,7 @@ pub enum RunState {
     LoadGame,
     ChooseActionMenu(menu::Menu<menu::choose_action::ActionItem>),
     GameOver(menu::Menu<menu::game_over::GameOverMenuItem>),
+    WinScreen(menu::Menu<menu::game_won::GameWonMenuItem>),
     InfoBox(dialog::InfoBox),
     GenomeEditing(genome_editor::GenomeEditor),
     Ticking,
@@ -64,6 +65,7 @@ impl Display for RunState {
             RunState::LoadGame => write!(f, "LoadGame"),
             RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
             RunState::GameOver(_) => write!(f, "GameOver"),
+            RunState::WinScreen(_) => write!(f, "WinScreen"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
             RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
             RunState::Ticking => write!(f, "Ticking"),
@@ -143,14 +145,6 @@ impl Game {
         // initialise game object vector
         let mut objects = ObjectStore::new();
         objects.blank_world();
-
-        // prepare world generation
-        // load spawn and object templates from raw files
-        // let spawns = load_spawns();
-        // let object_templates = load_object_templates();
-
-        // // let mut world_generator = RogueWorldGenerator::new();
-        // let mut world_generator = CaBased::new();
 
         (state, objects)
     }
@@ -261,6 +255,17 @@ impl Game {
                 std::process::exit(0);
             }
         }
+    }
+
+    fn check_win_condition(&self) -> bool {
+        let has_game_started = self.state.turn > 0;
+        let has_no_pathogens_left = !self
+            .objects
+            .get_non_tiles()
+            .iter()
+            .flatten()
+            .any(|o| o.visual.name.to_lowercase().contains("virus"));
+        has_game_started && has_no_pathogens_left
     }
 
     /// Use the `input::PlayerAction` enum to determine where to retrieve the player's next action.
@@ -532,7 +537,7 @@ impl rltk::GameState for Game {
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
-                    Some(option) => <menu::main::MainMenuItem as menu::MenuItem>::process(
+                    Some(option) => menu::main::MainMenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -553,7 +558,7 @@ impl rltk::GameState for Game {
                 let bg = palette().hud_bg;
                 ctx.print_color_centered_at(consts::SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
-                    Some(option) => <menu::game_over::GameOverMenuItem as menu::MenuItem>::process(
+                    Some(option) => menu::game_over::GameOverMenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -562,10 +567,37 @@ impl rltk::GameState for Game {
                     None => RunState::GameOver(instance.clone()),
                 }
             }
+            RunState::WinScreen(ref mut instance) => {
+                self.state.log.is_changed = false;
+                self.hud.require_refresh = false;
+                self.re_render = false;
+                particles().particles.clear();
+                ctx.set_active_console(consts::WORLD_CON);
+                ctx.cls();
+                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                let fg = palette().hud_fg_dna_sensor;
+                let bg = palette().hud_bg;
+                ctx.print_color_centered_at(
+                    consts::SCREEN_WIDTH / 2,
+                    1,
+                    fg,
+                    bg,
+                    "SUCCESS - INFECTION HAS BEEN REPELLED!",
+                );
+                match instance.display(ctx) {
+                    Some(option) => menu::game_won::GameWonMenuItem::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    ),
+                    None => RunState::WinScreen(instance.clone()),
+                }
+            }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
                     self.re_render = true;
-                    <menu::choose_action::ActionItem as menu::MenuItem>::process(
+                    menu::choose_action::ActionItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -714,6 +746,14 @@ impl rltk::GameState for Game {
         if current_turn != self.state.turn {
             self.turn_timer.lap();
             info!("new turn {}", self.state.turn);
+
+            // Check whether the win condition is fulfilled and if so, override the run state to
+            // skip to the win screen.
+            let has_won = self.check_win_condition();
+            if has_won {
+                self.run_state
+                    .replace(RunState::WinScreen(menu::game_won::new()));
+            }
         }
 
         rltk::render_draw_buffer(ctx).unwrap()

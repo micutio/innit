@@ -1,5 +1,6 @@
 pub mod choose_action;
 pub mod game_over;
+pub mod game_won;
 pub mod main;
 
 use crate::game::{self, State};
