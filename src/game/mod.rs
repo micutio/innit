@@ -698,6 +698,8 @@ impl rltk::GameState for Game {
             },
             RunState::NewGame => {
                 // start new game
+                ctx.set_active_console(consts::WORLD_CON);
+                ctx.cls_bg(rltk::RGBA::new());
                 let (new_state, new_objects) = Game::new_game();
                 self.reset(new_state, new_objects);
                 self.world_generator = world_gen::ca::CaBased::new();

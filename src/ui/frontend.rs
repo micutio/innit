@@ -1,7 +1,7 @@
 use crate::entity::Object;
 use crate::game::{self, ObjectStore, Position};
-use crate::ui;
 use crate::util::timer;
+use crate::{ui, world_gen};
 
 use rltk;
 
@@ -9,18 +9,6 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     // time rendering method for profiling purposes
     let mut timer = timer::Timer::new("render world");
     let mut draw_batch = rltk::DrawBatch::new();
-    let world_col = ui::palette().world_bg;
-
-    draw_batch.fill_region(
-        rltk::Rect::with_size(
-            0,
-            0,
-            game::consts::WORLD_WIDTH - 1,
-            game::consts::WORLD_HEIGHT - 1,
-        ),
-        rltk::ColorPair::new(world_col, world_col),
-        rltk::to_cp437(' '),
-    );
 
     update_visibility(objects);
 
@@ -31,14 +19,27 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
         .flatten()
         .filter(|o| {
             // Is there a better way than using `and_then`?
-            game::env().is_debug_mode
-                || o.physics.is_visible
-                || o.physics.is_always_visible
-                || if let Some(t) = &o.tile {
-                    t.is_explored
-                } else {
+            let dbg = game::env().is_debug_mode;
+            let visible = o.physics.is_visible || o.physics.is_always_visible;
+            let valid_tile = if let Some(t) = &o.tile {
+                if let world_gen::TileType::Void = t.typ {
                     false
+                } else {
+                    true
                 }
+            } else {
+                false
+            };
+            let explored = if let Some(t) = &o.tile {
+                if let world_gen::TileType::Void = t.typ {
+                    false
+                } else {
+                    t.is_explored
+                }
+            } else {
+                false
+            };
+            valid_tile && (visible || dbg || explored)
         })
         .for_each(|tile_obj| {
             draw_batch.set(

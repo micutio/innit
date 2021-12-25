@@ -61,31 +61,19 @@ impl ObjectStore {
         let _timer = util::Timer::new("bresenham circle");
         let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
         let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;
+        let center_point = rltk::Point::new(center_x, center_y);
+
         let max_radius = center_x - 1;
         for r in 0..=max_radius {
-            for point in rltk::BresenhamCircle::new(rltk::Point::new(center_x, center_y), r) {
+            for point in rltk::BresenhamCircleNoDiag::new(center_point, r) {
                 let idx = coord_to_idx(game::consts::WORLD_WIDTH, point.x, point.y);
                 self.objects[idx].replace(world_gen::Tile::new_wall(point.x, point.y, false));
             }
         }
-    }
 
-    fn _bresen_sweep(&mut self) {
-        let _timer = util::Timer::new("bresenham sweep");
-        let center_x = game::consts::WORLD_WIDTH / 2;
-        let center_y = game::consts::WORLD_HEIGHT / 2;
-        let radius = center_x as f32 - 1.0;
-        let mut angle = rltk::Degrees::new(0.0);
-        let center_point = rltk::Point::new(center_x, center_y);
-        while angle.0 < 360.0 {
-            let end_point =
-                rltk::project_angle(rltk::Point::new(0, 0), radius, angle) + center_point;
-            for point in rltk::Bresenham::new(center_point, end_point) {
-                let idx = coord_to_idx(game::consts::WORLD_WIDTH, point.x, point.y);
-                self.objects[idx].replace(world_gen::Tile::new_wall(point.x, point.y, false));
-            }
-            angle.0 += 1.0;
-        }
+        // finally turn center point as well
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, center_x, center_y);
+        self.objects[idx].replace(world_gen::Tile::new_wall(center_x, center_y, false));
     }
 
     pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
