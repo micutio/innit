@@ -40,11 +40,6 @@ impl ObjectStore {
         }
     }
 
-    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
-        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
-        &mut self.objects[idx]
-    }
-
     /// Allocate enough space in the object vector to fit all world tiles and some room to spare.
     pub fn blank_world(&mut self) {
         self.objects.clear();
@@ -52,9 +47,14 @@ impl ObjectStore {
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
                 let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
-                self.objects[idx].replace(world_gen::Tile::wall(x, y, false));
+                self.objects[idx].replace(world_gen::Tile::new_wall(x, y, false));
             }
         }
+    }
+
+    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+        &mut self.objects[idx]
     }
 
     pub fn _set_tile_dna_random(

@@ -130,19 +130,19 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
     // make tiles near the player walkable
     objects
         .get_tile_at(p_x, p_y)
-        .replace(Tile::floor(p_x, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x + 1, p_y)
-        .replace(Tile::floor(p_x + 1, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x + 1, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x - 1, p_y)
-        .replace(Tile::floor(p_x - 1, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x - 1, p_y, env().is_debug_mode));
     objects
         .get_tile_at(p_x, p_y - 1)
-        .replace(Tile::floor(p_x, p_y - 1, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y - 1, env().is_debug_mode));
     objects
         .get_tile_at(p_x, p_y + 1)
-        .replace(Tile::floor(p_x, p_y + 1, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y + 1, env().is_debug_mode));
 
     let player = Object::new()
         .position_xy(p_x, p_y)

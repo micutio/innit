@@ -1,5 +1,6 @@
 use crate::entity::act;
 use crate::entity::act::Action;
+use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -171,8 +172,9 @@ impl Object {
 
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
-    pub fn tile_explored(mut self, is_explored: bool) -> Object {
+    pub fn tile(mut self, typ: world_gen::TileType, is_explored: bool) -> Object {
         self.tile = Some(world_gen::Tile {
+            typ,
             is_explored,
             morphogen: 0.0,
         });
@@ -196,6 +198,44 @@ impl Object {
         self
     }
 
+    /// Turn this object into a wall tile. Generally only use with objects that already are tiles.
+    pub fn into_wall_tile(&mut self) {
+        self.physics.is_blocking = true;
+        self.physics.is_blocking_sight = true;
+        self.visual.glyph = '◘';
+        self.visual.name = world_gen::TileType::Wall.as_str().into();
+        self.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Wall;
+        }
+    }
+
+    /// Turn this object into a floor tile. Generally only use with objects that already are tiles.
+    pub fn into_floor_tile(&mut self) {
+        self.physics.is_blocking = false;
+        self.physics.is_blocking_sight = false;
+        self.visual.glyph = '·';
+        self.visual.name = world_gen::TileType::Floor.as_str().into();
+        self.control = None;
+
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Floor;
+        }
+    }
+
+    /// Turn this object into a void tile. Generally only use with objects that already are tiles.
+    pub fn into_void_tile(&mut self) {
+        self.physics.is_blocking = true;
+        self.physics.is_blocking_sight = true;
+        self.visual.glyph = ' ';
+        self.visual.name = world_gen::TileType::Void.as_str().into();
+        self.control = None;
+
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Void;
+        }
+    }
+
     /// Perform necessary actions when object dies.
     pub fn die(&mut self, _state: &mut State, objects: &mut ObjectStore) {
         // empty inventory into this objects' current position
@@ -209,7 +249,7 @@ impl Object {
             self.physics.is_blocking = false;
             self.physics.is_blocking_sight = false;
             self.visual.glyph = '·';
-            self.visual.name = "empty tile".into();
+            self.visual.name = "floor tile".into();
             self.control = None;
         } else {
             self.alive = false;

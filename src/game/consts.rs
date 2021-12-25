@@ -1,9 +1,9 @@
 // environment constraints
 // game window
-pub const SCREEN_WIDTH: i32 = 100;
+pub const SCREEN_WIDTH: i32 = 80;
 pub const SCREEN_HEIGHT: i32 = 60;
 // world
-pub const WORLD_WIDTH: i32 = 80;
+pub const WORLD_WIDTH: i32 = 60;
 pub const WORLD_HEIGHT: i32 = 60;
 // sidebar
 pub const SIDE_PANEL_WIDTH: i32 = 20;
