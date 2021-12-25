@@ -123,7 +123,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
 
     // create blank game world
     let mut objects = ObjectStore::new();
-    objects.blank_world();
+    objects.blank_circle_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 

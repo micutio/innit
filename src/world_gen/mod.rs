@@ -55,6 +55,16 @@ pub struct Tile {
 }
 
 impl Tile {
+    pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
+        Object::new()
+            .position_xy(x, y)
+            .living(true)
+            .visualize(TileType::Wall.as_str(), '◘', (255, 255, 255, 255))
+            .physical(true, true, is_visible)
+            .tile(TileType::Wall, is_visible)
+            .control(control::Controller::Npc(Box::new(ai::AiTile)))
+    }
+
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position_xy(x, y)
@@ -64,13 +74,12 @@ impl Tile {
             .tile(TileType::Floor, is_visible)
     }
 
-    pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
+    pub fn new_void(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize(TileType::Wall.as_str(), '◘', (255, 255, 255, 255))
+            .visualize(TileType::Void.as_str(), ' ', (0, 0, 0, 0))
             .physical(true, true, is_visible)
-            .tile(TileType::Wall, is_visible)
-            .control(control::Controller::Npc(Box::new(ai::AiTile)))
+            .tile(TileType::Void, is_visible)
     }
 }

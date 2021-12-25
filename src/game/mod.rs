@@ -144,7 +144,7 @@ impl Game {
 
         // initialise game object vector
         let mut objects = ObjectStore::new();
-        objects.blank_world();
+        objects.blank_circle_world();
 
         (state, objects)
     }

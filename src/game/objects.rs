@@ -1,9 +1,9 @@
 use crate::entity::{genetics, Object};
-use crate::game;
 use crate::game::world_gen;
 use crate::game::Position;
 use crate::rand::Rng;
 use crate::util::rng;
+use crate::{game, util};
 
 use rltk;
 use std::ops::{Index, IndexMut};
@@ -41,14 +41,50 @@ impl ObjectStore {
     }
 
     /// Allocate enough space in the object vector to fit all world tiles and some room to spare.
-    pub fn blank_world(&mut self) {
+    pub fn blank_circle_world(&mut self) {
         self.objects.clear();
         self.objects.resize_with(self.world_tile_count * 2, || None);
+        // First carve out a circular world of wall tiles.
+        self.bresen_circle();
+        // Then fill the rest of world with void tiles.
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
                 let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
-                self.objects[idx].replace(world_gen::Tile::new_wall(x, y, false));
+                if self.objects[idx].is_none() {
+                    self.objects[idx].replace(world_gen::Tile::new_void(x, y, false));
+                }
             }
+        }
+    }
+
+    fn bresen_circle(&mut self) {
+        let _timer = util::Timer::new("bresenham circle");
+        let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
+        let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;
+        let max_radius = center_x - 1;
+        for r in 0..=max_radius {
+            for point in rltk::BresenhamCircle::new(rltk::Point::new(center_x, center_y), r) {
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, point.x, point.y);
+                self.objects[idx].replace(world_gen::Tile::new_wall(point.x, point.y, false));
+            }
+        }
+    }
+
+    fn _bresen_sweep(&mut self) {
+        let _timer = util::Timer::new("bresenham sweep");
+        let center_x = game::consts::WORLD_WIDTH / 2;
+        let center_y = game::consts::WORLD_HEIGHT / 2;
+        let radius = center_x as f32 - 1.0;
+        let mut angle = rltk::Degrees::new(0.0);
+        let center_point = rltk::Point::new(center_x, center_y);
+        while angle.0 < 360.0 {
+            let end_point =
+                rltk::project_angle(rltk::Point::new(0, 0), radius, angle) + center_point;
+            for point in rltk::Bresenham::new(center_point, end_point) {
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, point.x, point.y);
+                self.objects[idx].replace(world_gen::Tile::new_wall(point.x, point.y, false));
+            }
+            angle.0 += 1.0;
         }
     }
 

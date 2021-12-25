@@ -1,9 +1,9 @@
 use crate::entity::Object;
 use crate::entity::{act, ai, control, genetics, inventory};
 use crate::game::{self, ObjectStore, State};
-use crate::raws;
 use crate::util::rng::RngExtended;
 use crate::world_gen::WorldGen;
+use crate::{raws, world_gen};
 
 const CA_CYCLES: i32 = 150;
 
@@ -56,9 +56,13 @@ impl WorldGen for CaBased {
                             // TODO: Create constants for morphogen cutoffs and min morphogens
                             t.morphogen = cell.morphogen;
                             if t.morphogen < 0.3 {
-                                tile_obj.into_floor_tile();
+                                if let world_gen::TileType::Wall = t.typ {
+                                    tile_obj.into_floor_tile()
+                                }
                             } else {
-                                tile_obj.into_wall_tile();
+                                if let world_gen::TileType::Floor = t.typ {
+                                    tile_obj.into_wall_tile()
+                                }
                             }
                         }
                     }
