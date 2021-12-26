@@ -267,6 +267,18 @@ impl Object {
         }
     }
 
+    pub fn is_void(&self) -> bool {
+        if let Some(t) = &self.tile {
+            if let world_gen::TileType::Void = t.typ {
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
     /// Transform the object into an NPC or player. Part of the builder pattern.
     pub fn set_control(mut self, controller: control::Controller, log: &mut game::msg::Log) {
         match controller {
