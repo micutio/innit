@@ -451,6 +451,18 @@ pub fn render_gui(state: &State, hud: &mut Hud, _ctx: &mut Rltk, player: &Object
         rltk::to_cp437(' '),
     );
 
+    // draw bottom line
+    draw_batch.fill_region(
+        Rect::with_exact(
+            7,
+            game::consts::SCREEN_HEIGHT - 1,
+            game::consts::SCREEN_WIDTH - 1,
+            game::consts::SCREEN_HEIGHT - 1,
+        ),
+        ColorPair::new(fg_hud, bg_hud),
+        rltk::to_cp437(' '),
+    );
+
     render_dna_region(&mut draw_batch);
     render_bars(player, &mut draw_batch);
     render_action_fields(player, hud, &mut draw_batch);
