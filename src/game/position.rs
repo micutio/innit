@@ -129,6 +129,8 @@ impl Position {
 
     /// Return distance of this object to a given coordinate.
     pub fn distance(&self, other: &Position) -> f32 {
-        (((other.x - self.x).pow(2) + (other.y - self.y).pow(2)) as f32).sqrt()
+        let dx = (other.x - self.x) as f32;
+        let dy = (other.y - self.y) as f32;
+        f32::sqrt(dx * dx + dy * dy)
     }
 }

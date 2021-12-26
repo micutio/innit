@@ -1,55 +1,27 @@
 use crate::entity::Object;
 use crate::game::{self, ObjectStore, Position};
-use crate::util::timer;
+use crate::util;
 use crate::{ui, world_gen};
 
 use rltk;
 
 pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     // time rendering method for profiling purposes
-    let mut timer = timer::Timer::new("render world");
+    let mut timer = util::Timer::new("render world");
     let mut draw_batch = rltk::DrawBatch::new();
 
     update_visibility(objects);
 
     // draw tiles first and then all other objects
-    objects
-        .get_tiles()
-        .iter()
-        .flatten()
-        .filter(|o| {
-            // Is there a better way than using `and_then`?
-            let dbg = game::env().is_debug_mode;
-            let visible = o.physics.is_visible || o.physics.is_always_visible;
-            let valid_tile = if let Some(t) = &o.tile {
-                if let world_gen::TileType::Void = t.typ {
-                    false
-                } else {
-                    true
-                }
-            } else {
-                false
-            };
-            let explored = if let Some(t) = &o.tile {
-                if let world_gen::TileType::Void = t.typ {
-                    false
-                } else {
-                    t.is_explored
-                }
-            } else {
-                false
-            };
-            valid_tile && (visible || dbg || explored)
-        })
-        .for_each(|tile_obj| {
-            draw_batch.set(
-                tile_obj.pos.into(),
-                rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
-                rltk::to_cp437(tile_obj.visual.glyph),
-            );
-        });
+    objects.get_tiles().iter().flatten().for_each(|tile_obj| {
+        draw_batch.set(
+            tile_obj.pos.into(),
+            rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
+            rltk::to_cp437(tile_obj.visual.glyph),
+        );
+    });
 
-    let mut objects_to_draw: Vec<&Object> = objects
+    let (blocking_obj, non_blocking_obj): (Vec<&Object>, Vec<&Object>) = objects
         .get_non_tiles()
         .iter()
         .flatten()
@@ -57,13 +29,17 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
             // Is there a better way than using `and_then`?
             game::env().is_debug_mode || o.physics.is_visible || o.physics.is_always_visible
         })
-        .collect();
+        .partition(|o| o.physics.is_blocking);
 
-    // sort, so that non-blocking objects come first
-    objects_to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
-
-    // draw the objects in the list
-    for object in &objects_to_draw {
+    // draw both non-blocking and blocking objects
+    for object in &non_blocking_obj {
+        draw_batch.set(
+            object.pos.into(),
+            rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),
+            rltk::to_cp437(object.visual.glyph),
+        );
+    }
+    for object in &blocking_obj {
         draw_batch.set(
             object.pos.into(),
             rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),
@@ -72,7 +48,7 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     }
 
     let elapsed = timer.stop_silent();
-    trace!("render world in {}", timer::format(elapsed));
+    trace!("render world in {}", util::timer::format(elapsed));
 
     draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
 }
@@ -85,8 +61,11 @@ fn update_visibility(objects: &mut ObjectStore) {
         let fwft = ui::palette().world_fg_wall_fov_true;
         let fgft = ui::palette().world_fg_ground_fov_true;
         objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
-            // o.physics.is_visible = true;
-            if o.tile.is_some() {
+            o.physics.is_visible = true;
+            if let Some(t) = &o.tile {
+                if let world_gen::TileType::Void = t.typ {
+                    return;
+                }
                 if o.physics.is_blocking_sight {
                     o.visual.fg_color = fwft;
                     o.visual.bg_color = bwft;
@@ -148,8 +127,14 @@ fn update_visual(
     player_pos: Position,
     dist_map: &mut Vec<f32>,
 ) {
+    if let Some(t) = &object.tile {
+        if let world_gen::TileType::Void = t.typ {
+            return;
+        }
+    }
+
     use rltk::{RGB, RGBA};
-    // go through all tiles and set their background color
+    // default tile foreground and background colors
     let bwft = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
     let bwff = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
     let bgft = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_true));
@@ -186,30 +171,19 @@ fn update_visual(
         ),
     };
 
-    if let Some(tile) = &mut object.tile {
-        if object.physics.is_visible {
-            tile.is_explored = true;
-        }
-        if tile.is_explored || game::env().is_debug_mode {
-            // show explored tiles only (any visible tile is explored already)
-            object.visual.fg_color = (
-                (tile_color_fg.r * 255.0) as u8,
-                (tile_color_fg.g * 255.0) as u8,
-                (tile_color_fg.b * 255.0) as u8,
-                255 as u8,
-            );
-            object.visual.bg_color = (
-                (tile_color_bg.r * 255.0) as u8,
-                (tile_color_bg.g * 255.0) as u8,
-                (tile_color_bg.b * 255.0) as u8,
-                255 as u8,
-            );
-        }
-    } else {
-        object.visual.bg_color = (
-            (tile_color_bg.r * 255.0) as u8,
-            (tile_color_bg.g * 255.0) as u8,
-            (tile_color_bg.b * 255.0) as u8,
+    object.visual.bg_color = (
+        (tile_color_bg.r * 255.0) as u8,
+        (tile_color_bg.g * 255.0) as u8,
+        (tile_color_bg.b * 255.0) as u8,
+        255 as u8,
+    );
+
+    // if we're dealing with a tile, then change foreground color also
+    if object.tile.is_some() {
+        object.visual.fg_color = (
+            (tile_color_fg.r * 255.0) as u8,
+            (tile_color_fg.g * 255.0) as u8,
+            (tile_color_fg.b * 255.0) as u8,
             255 as u8,
         );
     }

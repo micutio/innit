@@ -29,7 +29,7 @@ impl Visual {
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            fg_color: (255, 255, 255, 255),
+            fg_color: (0, 0, 0, 255),
             bg_color: (0, 0, 0, 255),
         }
     }
@@ -172,10 +172,9 @@ impl Object {
 
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
-    pub fn tile(mut self, typ: world_gen::TileType, is_explored: bool) -> Object {
+    pub fn tile(mut self, typ: world_gen::TileType) -> Object {
         self.tile = Some(world_gen::Tile {
             typ,
-            is_explored,
             morphogen: 0.0,
         });
         self

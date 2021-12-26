@@ -50,7 +50,6 @@ impl TileType {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Tile {
     pub typ: TileType,
-    pub is_explored: bool,
     pub morphogen: f64, // growth protein that controls where walls can 'grow'
 }
 
@@ -61,7 +60,7 @@ impl Tile {
             .living(true)
             .visualize(TileType::Wall.as_str(), '◘', (255, 255, 255, 255))
             .physical(true, true, is_visible)
-            .tile(TileType::Wall, is_visible)
+            .tile(TileType::Wall)
             .control(control::Controller::Npc(Box::new(ai::AiTile)))
     }
 
@@ -71,15 +70,15 @@ impl Tile {
             .living(true)
             .visualize(TileType::Floor.as_str(), '·', (255, 255, 255, 255))
             .physical(false, false, is_visible)
-            .tile(TileType::Floor, is_visible)
+            .tile(TileType::Floor)
     }
 
     pub fn new_void(x: i32, y: i32, is_visible: bool) -> Object {
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize(TileType::Void.as_str(), 'x', (0, 0, 0, 0))
+            .visualize(TileType::Void.as_str(), '█', (0, 0, 0, 255))
             .physical(true, true, is_visible)
-            .tile(TileType::Void, is_visible)
+            .tile(TileType::Void)
     }
 }
