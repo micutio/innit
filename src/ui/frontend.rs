@@ -13,13 +13,18 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
     update_visibility(objects);
 
     // draw tiles first and then all other objects
-    objects.get_tiles().iter().flatten().for_each(|tile_obj| {
-        draw_batch.set(
-            tile_obj.pos.into(),
-            rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
-            rltk::to_cp437(tile_obj.visual.glyph),
-        );
-    });
+    objects
+        .get_tiles()
+        .iter()
+        .flatten()
+        .filter(|o| !o.is_void())
+        .for_each(|tile_obj| {
+            draw_batch.set(
+                tile_obj.pos.into(),
+                rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
+                rltk::to_cp437(tile_obj.visual.glyph),
+            );
+        });
 
     let (blocking_obj, non_blocking_obj): (Vec<&Object>, Vec<&Object>) = objects
         .get_non_tiles()
