@@ -20,6 +20,7 @@ pub trait MenuItem: Clone {
 /// Non-click-away-able window menu.
 #[derive(Clone, Debug)]
 pub struct Menu<T: MenuItem> {
+    header: Option<String>,
     items: Vec<UiItem<T>>,
     selection: usize,
     layout: Rect,
@@ -31,7 +32,33 @@ impl<T: MenuItem> Menu<T> {
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
         let y2 = game::consts::SCREEN_HEIGHT - 1;
-        let items: Vec<UiItem<T>> = item_vec
+        let item_y = 0;
+        let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
+        Menu {
+            header: None,
+            items,
+            selection: 0,
+            layout: Rect::with_exact(x1, y1, x2, y2),
+        }
+    }
+
+    pub fn with_header(header: &str, item_vec: Vec<(T, String)>) -> Self {
+        let x1 = (game::consts::SCREEN_WIDTH - 1) - game::consts::MENU_WIDTH;
+        let y1 = 0;
+        let x2 = x1 + game::consts::MENU_WIDTH;
+        let y2 = game::consts::SCREEN_HEIGHT - 1;
+        let item_y = 2;
+        let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
+        Menu {
+            header: Some(header.into()),
+            items,
+            selection: 0,
+            layout: Rect::with_exact(x1, y1, x2, y2),
+        }
+    }
+
+    fn create_items(x1: i32, item_y: i32, item_vec: Vec<(T, String)>) -> Vec<UiItem<T>> {
+        item_vec
             .iter()
             .cloned()
             .enumerate()
@@ -40,16 +67,16 @@ impl<T: MenuItem> Menu<T> {
                     enum_item,
                     text,
                     ToolTip::header_only(""),
-                    Rect::with_size(x1 + 1, y1 + 1 + i as i32, game::consts::MENU_WIDTH - 2, 1),
+                    Rect::with_size(
+                        x1 + 1,
+                        item_y + 1 + i as i32,
+                        game::consts::MENU_WIDTH - 2,
+                        1,
+                    ),
                     ColorPair::new((0, 0, 0), (0, 0, 0)),
                 )
             })
-            .collect();
-        Menu {
-            items,
-            selection: 0,
-            layout: Rect::with_exact(x1, y1, x2, y2),
-        }
+            .collect()
     }
 
     fn render(&self, ctx: &mut Rltk) {
@@ -69,9 +96,18 @@ impl<T: MenuItem> Menu<T> {
             draw_batch.print_color(item.top_left_corner(), &item.text, color);
         }
 
-        // draw bottom line
         let fg_hud = palette().hud_fg;
         let bg_hud = palette().hud_bg;
+
+        if let Some(head) = &self.header {
+            draw_batch.print_color(
+                rltk::Point::new(self.layout.x1 + 1, 1),
+                head,
+                ColorPair::new(fg_hud, bg_hud),
+            );
+        }
+
+        // draw bottom line
         let btm_y = game::consts::SCREEN_HEIGHT - 1;
         draw_batch.fill_region(
             Rect::with_exact(

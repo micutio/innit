@@ -554,9 +554,6 @@ impl rltk::GameState for Game {
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
                 // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
-                let fg = palette().hud_fg_dna_sensor;
-                let bg = palette().hud_bg;
-                ctx.print_color_centered_at(consts::SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
                 match instance.display(ctx) {
                     Some(option) => menu::game_over::GameOverMenuItem::process(
                         &mut self.state,
@@ -575,15 +572,6 @@ impl rltk::GameState for Game {
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
                 // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
-                let fg = palette().hud_fg_dna_sensor;
-                let bg = palette().hud_bg;
-                ctx.print_color_centered_at(
-                    consts::SCREEN_WIDTH / 2,
-                    1,
-                    fg,
-                    bg,
-                    "SUCCESS - INFECTION HAS BEEN REPELLED!",
-                );
                 match instance.display(ctx) {
                     Some(option) => menu::game_won::GameWonMenuItem::process(
                         &mut self.state,

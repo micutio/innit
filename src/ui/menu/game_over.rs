@@ -22,11 +22,14 @@ impl MenuItem for GameOverMenuItem {
 }
 
 pub fn new() -> Menu<GameOverMenuItem> {
-    Menu::new(vec![
-        (GameOverMenuItem::Credits, "Credits".to_string()),
-        (
-            GameOverMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        ),
-    ])
+    Menu::with_header(
+        "Game Over",
+        vec![
+            (GameOverMenuItem::Credits, "Credits".to_string()),
+            (
+                GameOverMenuItem::ReturnToMain,
+                "Return to Main Menu".to_string(),
+            ),
+        ],
+    )
 }

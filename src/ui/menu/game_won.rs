@@ -22,11 +22,14 @@ impl MenuItem for GameWonMenuItem {
 }
 
 pub fn new() -> Menu<GameWonMenuItem> {
-    Menu::new(vec![
-        (GameWonMenuItem::Credits, "Credits".to_string()),
-        (
-            GameWonMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        ),
-    ])
+    Menu::with_header(
+        "SUCCESS - INFECTION REPELLED!",
+        vec![
+            (GameWonMenuItem::Credits, "Credits".to_string()),
+            (
+                GameWonMenuItem::ReturnToMain,
+                "Return to Main Menu".to_string(),
+            ),
+        ],
+    )
 }
