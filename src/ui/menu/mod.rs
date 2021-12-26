@@ -27,11 +27,10 @@ pub struct Menu<T: MenuItem> {
 
 impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
-        let menu_height = item_vec.len() as i32 + 2;
-        let x1 = (game::consts::SCREEN_WIDTH / 2) - (game::consts::MENU_WIDTH / 2);
-        let y1 = (game::consts::SCREEN_HEIGHT / 2) - (menu_height / 2);
+        let x1 = (game::consts::SCREEN_WIDTH - 1) - game::consts::MENU_WIDTH;
+        let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
-        let y2 = y1 + menu_height - 1;
+        let y2 = game::consts::SCREEN_HEIGHT - 1;
         let items: Vec<UiItem<T>> = item_vec
             .iter()
             .cloned()
@@ -59,10 +58,8 @@ impl<T: MenuItem> Menu<T> {
         let mut draw_batch = DrawBatch::new();
         let bg_menu = palette().hud_bg;
         let fg_menu = palette().hud_fg;
-        let fg_menu_border = palette().hud_fg_border;
         let fg_menu_highlight = palette().hud_fg_highlight;
         draw_batch.fill_region(self.layout, ColorPair::new(fg_menu, bg_menu), to_cp437(' '));
-        draw_batch.draw_hollow_box(self.layout, ColorPair::new(fg_menu_border, bg_menu));
         for (index, item) in self.items.iter().enumerate() {
             let color = if index == self.selection {
                 ColorPair::new(fg_menu_highlight, bg_menu)
