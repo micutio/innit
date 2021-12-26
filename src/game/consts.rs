@@ -6,7 +6,7 @@ pub const SCREEN_HEIGHT: i32 = 60;
 pub const WORLD_WIDTH: i32 = 60;
 pub const WORLD_HEIGHT: i32 = 60;
 // sidebar
-pub const SIDE_PANEL_WIDTH: i32 = 20;
+pub const SIDE_PANEL_WIDTH: i32 = 21;
 pub const SIDE_PANEL_HEIGHT: i32 = 60;
 // consoles
 pub const WORLD_CON: usize = 0;

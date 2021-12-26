@@ -318,7 +318,7 @@ impl Hud {
             let bg_color = if is_from_plasmid {
                 palette().hud_bg_tooltip
             } else {
-                palette().hud_bg
+                palette().hud_bg_dna
             };
 
             self.items.push(UiItem::new(
@@ -370,7 +370,7 @@ impl Hud {
             let bg_color = if is_from_plasmid {
                 palette().hud_bg_tooltip
             } else {
-                palette().hud_bg
+                palette().hud_bg_dna
             };
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
@@ -499,47 +499,50 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     let fg_hud = palette().hud_fg;
     let bg_bar = palette().hud_bg_bar;
     let bg_hud = palette().hud_bg;
-    let bg_hud_content = palette().hud_bg_content;
     let health = palette().hud_fg_bar_health;
     let energy = palette().hud_fg_bar_energy;
 
     let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
-    let bar_x = game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH + 1;
+    let bar_icon_x = (game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH) + 1;
+    let bar_x = bar_icon_x + 2;
     let bar_width = game::consts::SIDE_PANEL_WIDTH - 4;
+    let bar_ctr = bar_width / 2;
 
     // draw headers for bars
-    draw_batch.print_color(Point::new(bar_x, 2), '+', bar_icon_col);
-    draw_batch.print_color(Point::new(bar_x, 3), '√', bar_icon_col);
+    draw_batch.print_color(Point::new(bar_icon_x, 2), '+', bar_icon_col);
+    draw_batch.print_color(Point::new(bar_icon_x, 3), '√', bar_icon_col);
     // draw_batch.print_color(Point::new(bar_x, 4), '♥', bar_icon_col);
 
     // draw bars
     // - health bar
     draw_batch.bar_horizontal(
-        Point::new(bar_x + 2, 2),
+        Point::new(bar_x, 2),
         bar_width,
         player.actuators.hp,
         player.actuators.max_hp,
-        ColorPair::new(health, bg_hud_content),
+        ColorPair::new(health, bg_bar),
     );
-    draw_batch.print_centered_at(
-        Point::new(bar_x + 9, 2),
+    draw_batch.print_color_centered_at(
+        Point::new(bar_x + bar_ctr, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
+        ColorPair::new(fg_hud, health),
     );
     // - energy bar
     draw_batch.bar_horizontal(
-        Point::new(bar_x + 2, 3),
+        Point::new(bar_x, 3),
         bar_width,
         player.processors.energy,
         player.processors.energy_storage,
         ColorPair::new(energy, bg_bar),
     );
 
-    draw_batch.print_centered_at(
-        Point::new(bar_x + 9, 3),
+    draw_batch.print_color_centered_at(
+        Point::new(bar_x + bar_ctr, 3),
         format!(
             "{}/{}",
             player.processors.energy, player.processors.energy_storage
         ),
+        ColorPair::new(fg_hud, energy),
     );
     // - lifetime bar
     // disabled for now, because it has no useful functionality
