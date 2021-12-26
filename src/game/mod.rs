@@ -89,7 +89,7 @@ pub struct Game {
     // world generation state end
     hud: hud::Hud,
     re_render: bool,
-    rex_assets: rex_assets::RexAssets,
+    _rex_assets: rex_assets::RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
     mouse_workaround: bool,
@@ -122,7 +122,7 @@ impl Game {
             world_generator: world_gen::ca::CaBased::new(),
             hud: hud::Hud::new(),
             re_render: false,
-            rex_assets: rex_assets::RexAssets::new(),
+            _rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
         }
@@ -535,7 +535,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
-                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
                     Some(option) => menu::main::MainMenuItem::process(
                         &mut self.state,
@@ -553,7 +553,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
-                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 let fg = palette().hud_fg_dna_sensor;
                 let bg = palette().hud_bg;
                 ctx.print_color_centered_at(consts::SCREEN_WIDTH / 2, 1, fg, bg, "GAME OVER");
@@ -574,7 +574,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
-                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 let fg = palette().hud_fg_dna_sensor;
                 let bg = palette().hud_bg;
                 ctx.print_color_centered_at(
@@ -728,11 +728,13 @@ impl rltk::GameState for Game {
         self.run_state.replace(new_run_state);
 
         ctx.set_active_console(consts::HUD_CON);
+        let fps_fg = palette().hud_fg;
+        let fps_bg = palette().hud_bg;
         ctx.print_color(
-            1,
-            1,
-            (255, 255, 255),
-            (0, 0, 0),
+            0,
+            consts::SCREEN_HEIGHT - 1,
+            fps_fg,
+            fps_bg,
             &format!("FPS: {}", ctx.fps),
         );
 
