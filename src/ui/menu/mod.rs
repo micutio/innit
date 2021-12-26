@@ -72,15 +72,21 @@ impl<T: MenuItem> Menu<T> {
         // draw bottom line
         let fg_hud = palette().hud_fg;
         let bg_hud = palette().hud_bg;
+        let btm_y = game::consts::SCREEN_HEIGHT - 1;
         draw_batch.fill_region(
             Rect::with_exact(
                 7,
                 game::consts::SCREEN_HEIGHT - 1,
                 game::consts::SCREEN_WIDTH - 1,
-                game::consts::SCREEN_HEIGHT - 1,
+                btm_y,
             ),
             ColorPair::new(fg_hud, bg_hud),
             rltk::to_cp437(' '),
+        );
+        draw_batch.print_color(
+            rltk::Point::new(9, btm_y),
+            "Mobile Fluorescence Microscope",
+            ColorPair::new(fg_hud, bg_hud),
         );
         draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
