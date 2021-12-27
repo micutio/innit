@@ -502,6 +502,8 @@ impl rltk::GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.require_render || self.hud.require_refresh || self.state.log.is_changed {
+            let require_update_visibility =
+                !(self.hud.require_refresh || self.state.log.is_changed);
             self.state.log.is_changed = false;
             self.hud.require_refresh = false;
 
@@ -512,7 +514,7 @@ impl rltk::GameState for Game {
             ctx.set_active_console(consts::PAR_CON);
             ctx.cls();
 
-            frontend::render_world(&mut self.objects, ctx);
+            frontend::render_world(&mut self.objects, ctx, require_update_visibility);
 
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
