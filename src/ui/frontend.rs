@@ -5,10 +5,11 @@ use crate::{ui, world_gen};
 
 use rltk;
 
-pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
+pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::Rltk) {
     // time rendering method for profiling purposes
     let mut timer = util::Timer::new("render world");
     let mut draw_batch = rltk::DrawBatch::new();
+    ctx.set_active_console(game::consts::WORLD_CON);
 
     update_visibility(objects);
 
@@ -31,7 +32,6 @@ pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
         .iter()
         .flatten()
         .filter(|o| {
-            // Is there a better way than using `and_then`?
             game::env().is_debug_mode || o.physics.is_visible || o.physics.is_always_visible
         })
         .partition(|o| o.physics.is_blocking);

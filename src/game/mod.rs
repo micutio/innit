@@ -84,11 +84,10 @@ pub struct Game {
     // world generation state start
     spawns: Vec<raws::spawn::Spawn>,
     object_templates: Vec<raws::template::ObjectTemplate>,
-    // world_generator = RogueWorldGenerator::new();
     world_generator: world_gen::ca::CaBased,
     // world generation state end
     hud: hud::Hud,
-    re_render: bool,
+    require_render: bool,
     _rex_assets: rex_assets::RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
@@ -121,7 +120,7 @@ impl Game {
             // let mut world_generator : RogueWorldGenerator::new(),
             world_generator: world_gen::ca::CaBased::new(),
             hud: hud::Hud::new(),
-            re_render: false,
+            require_render: false,
             _rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
@@ -502,28 +501,29 @@ impl rltk::GameState for Game {
 
         // Render world and world only if there is any new information, otherwise save the
         // computation.
-        if self.re_render || self.hud.require_refresh || self.state.log.is_changed {
-            ctx.set_active_console(consts::HUD_CON);
-            ctx.cls();
+        if self.require_render || self.hud.require_refresh || self.state.log.is_changed {
+            self.state.log.is_changed = false;
+            self.hud.require_refresh = false;
 
             ctx.set_active_console(consts::WORLD_CON);
             ctx.cls();
+            ctx.set_active_console(consts::HUD_CON);
+            ctx.cls();
+            ctx.set_active_console(consts::PAR_CON);
+            ctx.cls();
+
             frontend::render_world(&mut self.objects, ctx);
 
-            ctx.set_active_console(consts::HUD_CON);
             if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
             }
-            // switch off any triggers
-            self.re_render = false;
-            self.state.log.is_changed = false;
-            self.hud.require_refresh = false
+
+            particles().render(ctx);
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
-        particles().render(ctx);
-        self.re_render = particles().update(ctx);
+        self.require_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
         let current_turn = self.state.turn;
@@ -531,7 +531,7 @@ impl rltk::GameState for Game {
             RunState::MainMenu(ref mut instance) => {
                 self.state.log.is_changed = false;
                 self.hud.require_refresh = false;
-                self.re_render = false;
+                self.require_render = false;
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
@@ -549,7 +549,7 @@ impl rltk::GameState for Game {
             RunState::GameOver(ref mut instance) => {
                 self.state.log.is_changed = false;
                 self.hud.require_refresh = false;
-                self.re_render = false;
+                self.require_render = false;
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
@@ -567,7 +567,7 @@ impl rltk::GameState for Game {
             RunState::WinScreen(ref mut instance) => {
                 self.state.log.is_changed = false;
                 self.hud.require_refresh = false;
-                self.re_render = false;
+                self.require_render = false;
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
@@ -584,7 +584,7 @@ impl rltk::GameState for Game {
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {
                 Some(option) => {
-                    self.re_render = true;
+                    self.require_render = true;
                     menu::choose_action::ActionItem::process(
                         &mut self.state,
                         &mut self.objects,
@@ -614,7 +614,7 @@ impl rltk::GameState for Game {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
                         // } else {
-                        self.re_render = true;
+                        self.require_render = true;
                         RunState::Ticking
                         // }
                     }
@@ -638,7 +638,7 @@ impl rltk::GameState for Game {
                         {
                             RunState::CheckInput
                         } else {
-                            self.re_render = false;
+                            self.require_render = false;
                             RunState::Ticking
                         }
                     }
@@ -671,7 +671,7 @@ impl rltk::GameState for Game {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                     }
-                    self.re_render = true;
+                    self.require_render = true;
                     RunState::CheckInput
                 }
 
@@ -680,7 +680,7 @@ impl rltk::GameState for Game {
             RunState::InfoBox(infobox) => match infobox.display(ctx) {
                 Some(infobox) => RunState::InfoBox(infobox),
                 None => {
-                    self.re_render = true;
+                    self.require_render = true;
                     RunState::Ticking
                 }
             },
@@ -700,7 +700,7 @@ impl rltk::GameState for Game {
                 match load_game() {
                     Ok((state, objects)) => {
                         self.reset(state, objects);
-                        self.re_render = true;
+                        self.require_render = true;
                         RunState::Ticking
                     }
                     Err(_e) => RunState::MainMenu(menu::main::new()),
@@ -708,7 +708,7 @@ impl rltk::GameState for Game {
             }
             RunState::WorldGen => {
                 if env().is_debug_mode {
-                    self.re_render = true;
+                    self.require_render = true;
                 }
                 self.world_gen()
             }

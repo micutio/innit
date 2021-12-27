@@ -438,7 +438,8 @@ impl Hud {
     }
 }
 
-pub fn render_gui(state: &State, hud: &mut Hud, _ctx: &mut Rltk, player: &Object) {
+pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut Rltk, player: &Object) {
+    ctx.set_active_console(game::consts::HUD_CON);
     hud.update_ui_items(player);
     let mut draw_batch = DrawBatch::new();
     let fg_hud = palette().hud_fg;

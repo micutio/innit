@@ -10,11 +10,11 @@ pub const SIDE_PANEL_WIDTH: i32 = 21;
 pub const SIDE_PANEL_HEIGHT: i32 = 60;
 // consoles
 pub const WORLD_CON: usize = 0;
-pub const WORLD_CON_Z: usize = 1000;
+pub const WORLD_CON_Z: usize = 0;
 pub const HUD_CON: usize = 1;
-pub const HUD_CON_Z: usize = 10000;
+pub const HUD_CON_Z: usize = 1000000;
 pub const PAR_CON: usize = 2;
-pub const PAR_CON_Z: usize = 20000;
+pub const PAR_CON_Z: usize = 2000000;
 
 pub const MENU_WIDTH: i32 = 20;
 
