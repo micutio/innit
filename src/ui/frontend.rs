@@ -21,27 +21,6 @@ pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::Rltk, vis_update:
     info!("render world in {}", util::timer::format(elapsed));
 }
 
-struct TileColorsU8 {
-    // bg wall fov true
-    pub bwt: (u8, u8, u8, u8),
-    // bg ground fov true
-    pub bgt: (u8, u8, u8, u8),
-    // fg wall fov true
-    pub fwt: (u8, u8, u8, u8),
-    // fg ground fov true
-    pub fgt: (u8, u8, u8, u8),
-}
-
-impl TileColorsU8 {
-    fn new() -> Self {
-        let bwt = ui::palette().world_bg_wall_fov_true;
-        let bgt = ui::palette().world_bg_ground_fov_true;
-        let fwt = ui::palette().world_fg_wall_fov_true;
-        let fgt = ui::palette().world_fg_ground_fov_true;
-        TileColorsU8 { bwt, bgt, fwt, fgt }
-    }
-}
-
 struct TileColorsRgb {
     // bg wall fov true
     pub bwt: rltk::RGB,
@@ -67,12 +46,12 @@ impl TileColorsRgb {
         // default tile foreground and background colors
         let bwt = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
         let bwf = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
-        let bgt = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_true));
-        let bgf = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_false));
+        let bgt = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_true));
+        let bgf = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_false));
         let fwt = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_true));
         let fwf = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_false));
-        let fgt = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_true));
-        let fgf = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_false));
+        let fgt = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_true));
+        let fgf = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_false));
         TileColorsRgb {
             bwt,
             bgt,
@@ -128,26 +107,6 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
     let mut draw_batch_nbl = rltk::DrawBatch::new();
     let mut draw_batch_blk = rltk::DrawBatch::new();
     let tc_rgb = TileColorsRgb::new();
-
-    // in debug mode everything is visible
-    // if game::env().is_debug_mode {
-    //     objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
-    //         o.physics.is_visible = true;
-    //         if let Some(t) = &o.tile {
-    //             if let world_gen::TileType::Void = t.typ {
-    //                 return;
-    //             }
-    //             if o.physics.is_blocking_sight {
-    //                 o.visual.fg_color = tcU8.fwt;
-    //                 o.visual.bg_color = tcU8.bwt;
-    //             } else {
-    //                 o.visual.fg_color = tcU8.fgt;
-    //                 o.visual.bg_color = tcU8.bgt;
-    //             }
-    //         }
-    //     });
-    //     return;
-    // }
 
     let player_views: Vec<(Position, i32)> = objects
         .get_non_tiles()

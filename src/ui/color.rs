@@ -43,12 +43,12 @@ pub struct Palette {
     pub world_bg: (u8, u8, u8, u8),
     pub world_bg_wall_fov_true: (u8, u8, u8, u8),
     pub world_bg_wall_fov_false: (u8, u8, u8, u8),
-    pub world_bg_ground_fov_true: (u8, u8, u8, u8),
-    pub world_bg_ground_fov_false: (u8, u8, u8, u8),
+    pub world_bg_floor_fov_true: (u8, u8, u8, u8),
+    pub world_bg_floor_fov_false: (u8, u8, u8, u8),
     pub world_fg_wall_fov_true: (u8, u8, u8, u8),
     pub world_fg_wall_fov_false: (u8, u8, u8, u8),
-    pub world_fg_ground_fov_true: (u8, u8, u8, u8),
-    pub world_fg_ground_fov_false: (u8, u8, u8, u8),
+    pub world_fg_floor_fov_true: (u8, u8, u8, u8),
+    pub world_fg_floor_fov_false: (u8, u8, u8, u8),
 
     // entity colors
     pub entity_player: (u8, u8, u8, u8),
@@ -104,10 +104,10 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     world_bg_wall_fov_false: (100, 30, 45, 255),
     world_fg_wall_fov_true: (218, 86, 136, 255),
     world_fg_wall_fov_false: (100, 30, 45, 255),
-    world_bg_ground_fov_true: (154, 38, 84, 255),
-    world_bg_ground_fov_false: (77, 19, 42, 255),
-    world_fg_ground_fov_true: (134, 38, 80, 255),
-    world_fg_ground_fov_false: (67, 19, 40, 255),
+    world_bg_floor_fov_true: (154, 38, 84, 255),
+    world_bg_floor_fov_false: (77, 19, 42, 255),
+    world_fg_floor_fov_true: (134, 38, 80, 255),
+    world_fg_floor_fov_false: (67, 19, 40, 255),
 
     // entity colors
     entity_player: (170, 170, 170, 255),

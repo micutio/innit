@@ -9,6 +9,7 @@ use crate::game::msg::MessageLog;
 use crate::game::ObjectStore;
 use crate::game::Position;
 use crate::game::State;
+use crate::ui;
 use crate::ui::hud;
 use crate::world_gen;
 
@@ -132,6 +133,21 @@ impl Object {
         self
     }
 
+    /// Initialize the visual properties of the object. Part of the builder pattern.
+    pub fn visualize_bg(
+        mut self,
+        name: &str,
+        character: char,
+        fg_color: (u8, u8, u8, u8),
+        bg_color: (u8, u8, u8, u8),
+    ) -> Object {
+        self.visual.name = name.into();
+        self.visual.glyph = character;
+        self.visual.fg_color = fg_color;
+        self.visual.bg_color = bg_color;
+        self
+    }
+
     /// Initialize the physical properties of the object. Part of the builder pattern.
     pub fn physical(
         mut self,
@@ -203,6 +219,8 @@ impl Object {
         self.physics.is_blocking_sight = true;
         self.visual.glyph = '◘';
         self.visual.name = world_gen::TileType::Wall.as_str().into();
+        self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
+        self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
         self.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Wall;
@@ -215,6 +233,8 @@ impl Object {
         self.physics.is_blocking_sight = false;
         self.visual.glyph = '·';
         self.visual.name = world_gen::TileType::Floor.as_str().into();
+        self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
+        self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
         self.control = None;
 
         if let Some(t) = &mut self.tile {
@@ -227,6 +247,8 @@ impl Object {
         self.physics.is_blocking = true;
         self.physics.is_blocking_sight = true;
         self.visual.glyph = ' ';
+        self.visual.fg_color = (0, 0, 0, 255);
+        self.visual.bg_color = (0, 0, 0, 255);
         self.visual.name = world_gen::TileType::Void.as_str().into();
         self.control = None;
 

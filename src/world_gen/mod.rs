@@ -5,10 +5,10 @@ pub mod ca;
 pub mod rogue;
 
 use crate::entity::{ai, control, Object};
-use crate::game;
 use crate::game::objects::ObjectStore;
 use crate::game::State;
 use crate::raws;
+use crate::{game, ui};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
@@ -55,20 +55,24 @@ pub struct Tile {
 
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
+        let fg_col = ui::palette().world_fg_wall_fov_true;
+        let bg_col = ui::palette().world_bg_wall_fov_true;
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize(TileType::Wall.as_str(), '◘', (255, 255, 255, 255))
+            .visualize_bg(TileType::Wall.as_str(), '◘', fg_col, bg_col)
             .physical(true, true, is_visible)
             .tile(TileType::Wall)
             .control(control::Controller::Npc(Box::new(ai::AiTile)))
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
+        let fg_col = ui::palette().world_fg_floor_fov_true;
+        let bg_col = ui::palette().world_bg_floor_fov_true;
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize(TileType::Floor.as_str(), '·', (255, 255, 255, 255))
+            .visualize_bg(TileType::Floor.as_str(), '·', fg_col, bg_col)
             .physical(false, false, is_visible)
             .tile(TileType::Floor)
     }
