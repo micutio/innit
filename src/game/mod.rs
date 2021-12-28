@@ -233,8 +233,12 @@ impl Game {
 
                     // a warm welcoming message
                     self.state.log.add(
-                        "Welcome microbe! You're innit now. Beware of bacteria and viruses",
-                        msg::MsgClass::Story,
+                        "How is the patient?",
+                        msg::MsgClass::Story(Some("Prof. Hill".into())),
+                    );
+                    self.state.log.add(
+                        "Good so far. Mobile microscope online and tracking injected @-cell. Let's see whether it responds to the infection...",
+                        msg::MsgClass::Story(None),
                     );
                 }
             }

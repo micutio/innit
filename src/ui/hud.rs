@@ -13,6 +13,7 @@ use crate::entity::act;
 use crate::entity::genetics;
 use crate::entity::Object;
 use crate::game::{self, State};
+use crate::ui;
 use crate::ui::palette;
 use crate::util;
 
@@ -727,13 +728,14 @@ fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
     // convert messages into log text lines (str, fg_col, bg_col)
     let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
     let mut log_lines: Vec<(String, (u8, u8, u8, u8), (u8, u8, u8, u8))> = Vec::new();
+    let line_width = layout.width();
     for (msg, class) in &state.log.messages {
-        let lines = util::text_to_width(&msg, layout.width());
+        let lines = util::text_to_width(&msg, line_width);
         let fg_color = match class {
             game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
             game::msg::MsgClass::Info => palette().hud_fg_msg_info,
             game::msg::MsgClass::Action => palette().hud_fg_msg_action,
-            game::msg::MsgClass::Story => palette().hud_fg_msg_story,
+            game::msg::MsgClass::Story(_) => palette().hud_fg_msg_story,
         };
         let bg_color = if bg_flag {
             palette().hud_bg_log1
@@ -741,6 +743,18 @@ fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
             palette().hud_bg_log2
         };
         bg_flag = !bg_flag;
+
+        log_lines.push((" ".into(), fg_color, bg_color));
+        // if we're displaying text messages, prepend the author's name
+        if let game::msg::MsgClass::Story(author_opt) = class {
+            let author_line = if let Some(author) = author_opt {
+                (author.into(), ui::palette().col_acc4, bg_color)
+            } else {
+                ("You".into(), ui::palette().col_acc1, bg_color)
+            };
+            log_lines.push(author_line);
+        }
+
         for l in lines {
             log_lines.push((l, fg_color, bg_color));
         }

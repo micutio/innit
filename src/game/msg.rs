@@ -5,7 +5,7 @@ pub enum MsgClass {
     Info,
     Action,
     Alert,
-    Story,
+    Story(Option<String>),
 }
 
 #[derive(Serialize, Deserialize, Default)]

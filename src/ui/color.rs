@@ -10,6 +10,8 @@ pub struct Palette {
     pub col_acc2: (u8, u8, u8, u8),
     /// Accent color 3
     pub col_acc3: (u8, u8, u8, u8),
+    /// Accent color 4
+    pub col_acc4: (u8, u8, u8, u8),
     /// transparent color
     pub col_transparent: (u8, u8, u8, u8),
 
@@ -64,11 +66,13 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     /// Main complementary color
     col_comp: (9, 124, 172, 255),
     /// Accent color 1
-    col_acc1: (167, 223, 204, 255),
+    col_acc1: (157, 213, 194, 255),
     /// Accent color 2
     col_acc2: (182, 191, 118, 255),
     /// Accent color 3
     col_acc3: (220, 98, 42, 255),
+    /// Accent color 4
+    col_acc4: (100, 180, 240, 255),
     /// transparent color
     col_transparent: (255, 255, 255, 0),
 
@@ -96,7 +100,7 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     hud_fg_msg_alert: (220, 80, 80, 255),
     hud_fg_msg_info: (96, 96, 96, 255),
     hud_fg_msg_action: (80, 80, 220, 255),
-    hud_fg_msg_story: (80, 160, 220, 255),
+    hud_fg_msg_story: (60, 140, 200, 255),
 
     // world colors
     world_bg: (49, 49, 49, 255),
