@@ -39,7 +39,7 @@ pub enum TileType {
 impl TileType {
     pub fn as_str(&self) -> &str {
         match self {
-            TileType::Wall => "wall tile",
+            TileType::Wall => "tissue cell",
             TileType::Floor => "floor tile",
             TileType::Void => "void tile",
         }

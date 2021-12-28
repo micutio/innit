@@ -83,7 +83,7 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     hud_bg_dna: (170, 170, 170, 255),
     hud_bg_active: (255, 255, 255, 255),
     hud_bg_log1: (230, 230, 230, 255),
-    hud_bg_log2: (240, 240, 240, 255),
+    hud_bg_log2: (250, 250, 250, 255),
     hud_bg_tooltip: (190, 190, 190, 255),
 
     // hud colors - foreground
