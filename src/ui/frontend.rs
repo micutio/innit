@@ -82,18 +82,20 @@ fn draw_direct(objects: &ObjectStore) {
                     rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
                     rltk::to_cp437(obj.visual.glyph),
                 );
-            } else if !obj.physics.is_blocking {
-                draw_batch_nbl.set(
-                    obj.pos.into(),
-                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                    rltk::to_cp437(obj.visual.glyph),
-                );
-            } else {
-                draw_batch_blk.set(
-                    obj.pos.into(),
-                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                    rltk::to_cp437(obj.visual.glyph),
-                );
+            } else if obj.physics.is_visible {
+                if !obj.physics.is_blocking {
+                    draw_batch_nbl.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
+                } else {
+                    draw_batch_blk.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
+                }
             }
         });
     draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
@@ -121,32 +123,33 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .iter_mut()
         .flatten()
         .filter(|o| !o.is_void())
-        .for_each(|o| {
+        .for_each(|obj| {
             let closest_player_view = player_views
                 .iter()
-                .min_by_key(|x| o.pos.distance(&x.0) as i32);
+                .min_by_key(|x| obj.pos.distance(&x.0) as i32);
             if let Some((pos, range)) = closest_player_view {
-                update_visual(o, *pos, *range, &tc_rgb);
+                update_visual(obj, *pos, *range, &tc_rgb);
             }
-            // draw
-            if o.tile.is_some() {
+            if obj.tile.is_some() {
                 draw_batch_tile.set(
-                    o.pos.into(),
-                    rltk::ColorPair::new(o.visual.fg_color, o.visual.bg_color),
-                    rltk::to_cp437(o.visual.glyph),
+                    obj.pos.into(),
+                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                    rltk::to_cp437(obj.visual.glyph),
                 );
-            } else if !o.physics.is_blocking {
-                draw_batch_nbl.set(
-                    o.pos.into(),
-                    rltk::ColorPair::new(o.visual.fg_color, o.visual.bg_color),
-                    rltk::to_cp437(o.visual.glyph),
-                );
-            } else {
-                draw_batch_blk.set(
-                    o.pos.into(),
-                    rltk::ColorPair::new(o.visual.fg_color, o.visual.bg_color),
-                    rltk::to_cp437(o.visual.glyph),
-                );
+            } else if obj.physics.is_visible {
+                if !obj.physics.is_blocking {
+                    draw_batch_nbl.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
+                } else {
+                    draw_batch_blk.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
+                }
             }
         });
     draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
@@ -163,7 +166,7 @@ fn update_visual(
 ) {
     let dist_to_player = object.pos.distance(&player_pos);
     let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
-    object.physics.is_visible = dist_to_player < player_sensing_range as f32;
+    object.physics.is_visible = dist_to_player < (player_sensing_range as f32);
 
     let obj_vis = object.physics.is_visible;
     let obj_opaque = object.physics.is_blocking_sight;
