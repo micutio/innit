@@ -8,17 +8,14 @@ use rltk;
 pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::Rltk, vis_update: bool) {
     // time rendering method for profiling purposes
     let mut timer = util::Timer::new("render world");
-
     ctx.set_active_console(game::consts::WORLD_CON);
-
     if vis_update && !game::env().is_debug_mode {
         draw_updated_visibility(objects);
     } else {
         draw_direct(objects);
     }
-
     let elapsed = timer.stop_silent();
-    info!("render world in {}", util::timer::format(elapsed));
+    trace!("render world in {}", util::timer::format(elapsed));
 }
 
 struct TileColorsRgb {
