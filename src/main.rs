@@ -141,31 +141,31 @@ pub fn main() -> rltk::BError {
     let font_12x12_rex_paint = "fonts/rex_paint_12x12.png";
     let font_14x14_rex_paint = "fonts/rex_paint_14x14.png";
     let font_16x16_rex_paint = "fonts/rex_paint_16x16.png";
-    let mut context = rltk::RltkBuilder::new()
+    let context = rltk::RltkBuilder::new()
         .with_dimensions(game::consts::SCREEN_WIDTH, game::consts::SCREEN_HEIGHT)
-        .with_font(font_8x8_cheepicus, 8, 8)
-        .with_font(font_12x12_cheepicus, 12, 12)
-        .with_font(font_14x14_cheepicus, 14, 14)
-        .with_font(font_16x16_cheepicus, 16, 16)
         .with_font(font_8x8_rex_paint, 8, 8)
         .with_font(font_12x12_rex_paint, 12, 12)
         .with_font(font_14x14_rex_paint, 14, 14)
         .with_font(font_16x16_rex_paint, 16, 16)
+        .with_font(font_8x8_cheepicus, 8, 8)
+        .with_font(font_12x12_cheepicus, 12, 12)
+        .with_font(font_14x14_cheepicus, 14, 14)
+        .with_font(font_16x16_cheepicus, 16, 16)
         .with_advanced_input(true)
         .with_fancy_console(
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
-            font_8x8_cheepicus,
+            font_8x8_rex_paint,
         ) // world layer
         .with_fancy_console(
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
-            font_8x8_cheepicus,
+            font_8x8_rex_paint,
         ) // hud layer
         .with_fancy_console(
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
-            font_8x8_cheepicus,
+            font_8x8_rex_paint,
         ) // particles layer
         .with_title(format!("Innit alpha v{}", VERSION))
         .with_fps_cap(60.0)
@@ -173,6 +173,5 @@ pub fn main() -> rltk::BError {
         .with_vsync(true)
         .build()?;
 
-    context.set_active_font(0, true);
     rltk::main_loop(context, game::Game::new())
 }

@@ -179,6 +179,7 @@ impl Action for RepairStructure {
                 ui::palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
+                0.0,
                 (1.0, 1.0),
             )
         }
@@ -269,6 +270,7 @@ impl Action for Attack {
                         ui::palette().col_transparent,
                         'x',
                         250.0,
+                        0.0,
                         (1.0, 1.0),
                     )
                 }
@@ -507,7 +509,7 @@ impl Action for InjectRetrovirus {
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -522,7 +524,7 @@ impl Action for InjectRetrovirus {
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -560,6 +562,7 @@ impl Action for InjectRetrovirus {
                         bg,
                         target.visual.glyph,
                         350.0,
+                        0.0,
                         (1.0, 1.0),
                     );
                 }
@@ -950,130 +953,125 @@ impl Action for BinaryFission {
         let is_pos_available = !objects.is_pos_occupied(&target_pos);
 
         if is_pos_available {
-            let child_obj =
-                if let Some((idx, target_opt)) = objects.extract_tile_by_pos(&target_pos) {
-                    if let Some(mut t) = target_opt {
-                        if owner.tile.is_some() && owner.physics.is_blocking {
-                            if !t.physics.is_blocking {
-                                // turn into wall
-                                t.into_wall_tile();
-                                // insert (mutated) genome
-                                t.set_dna(owner.dna.clone());
-                                t.update_genome_from_dna(state);
-                                t.processors.life_elapsed = 0;
+            let child_obj = if let Some((idx, target_opt)) =
+                objects.extract_tile_by_pos(&target_pos)
+            {
+                if let Some(mut t) = target_opt {
+                    if owner.tile.is_some() && owner.physics.is_blocking {
+                        if !t.physics.is_blocking {
+                            // turn into wall
+                            t.into_wall_tile();
+                            // insert (mutated) genome
+                            t.set_dna(owner.dna.clone());
+                            t.update_genome_from_dna(state);
+                            t.processors.life_elapsed = 0;
 
-                                // play a little particle effect
-                                if t.physics.is_visible {
-                                    // cover up the new cell as long as the creation particles play
-                                    let t_fg = ui::palette().world_bg;
-                                    let t_bg = ui::palette().world_bg;
-                                    ui::register_particle(
-                                        t.pos,
-                                        t_fg,
-                                        t_bg,
-                                        t.visual.glyph,
-                                        600.0,
-                                        (1.0, 1.0),
-                                    );
-                                    let fg = owner.visual.fg_color;
-                                    let bg = owner.visual.bg_color;
-                                    ui::register_particles(
-                                        particle::ParticleBuilder::new(
-                                            owner.pos.x() as f32,
-                                            owner.pos.y() as f32,
-                                            fg,
-                                            bg,
-                                            owner.visual.glyph,
-                                            600.0,
-                                        )
-                                        .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
-                                        .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
-                                        .with_scale((0.0, 0.0), (1.0, 1.0)),
-                                    )
-                                }
-
-                                objects.replace(idx, t);
-                                // return prematurely because we don't need to insert anything new into
-                                // the object vector
-                                return ActionResult::Success {
-                                    callback: ObjectFeedback::NoFeedback,
-                                };
-                            } else {
-                                objects.replace(idx, t);
-                                None
-                            }
-                        } else {
-                            // create a new object
-                            let child_ctrl = match &owner.control {
-                                Some(ctrl) => match ctrl {
-                                    control::Controller::Npc(ai) => {
-                                        Some(control::Controller::Npc(ai.clone()))
-                                    }
-                                    control::Controller::Player(_) => {
-                                        Some(control::Controller::Player(control::Player::new()))
-                                    }
-                                },
-                                None => None,
-                            };
-                            let mut child = Object::new()
-                                .position(&t.pos)
-                                .living(true)
-                                .visualize(
-                                    owner.visual.name.as_str(),
-                                    owner.visual.glyph,
-                                    owner.visual.fg_color,
-                                )
-                                .genome(
-                                    owner.gene_stability,
-                                    state
-                                        .gene_library
-                                        .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
-                                )
-                                .control_opt(child_ctrl)
-                                .living(true);
-                            child.physics.is_visible = t.physics.is_visible;
                             // play a little particle effect
-                            if child.physics.is_visible {
+                            if t.physics.is_visible {
                                 // cover up the new cell as long as the creation particles play
-                                let t_fg = t.visual.fg_color;
-                                let t_bg = t.visual.bg_color;
-                                ui::register_particle(
-                                    t.pos,
-                                    t_fg,
-                                    t_bg,
-                                    t.visual.glyph,
-                                    600.0,
-                                    (1.0, 1.0),
-                                );
-                                let fg = owner.visual.fg_color;
-                                let bg = owner.visual.bg_color;
-                                let start_x = owner.pos.x() as f32
-                                    + ((t.pos.x() - owner.pos.x()) as f32 * 0.5);
-                                let start_y = owner.pos.y() as f32
-                                    + ((t.pos.y() - owner.pos.y()) as f32 * 0.5);
+                                let fg = ui::palette().world_bg_floor_fov_false;
+                                let bg = ui::palette().world_bg_floor_fov_false;
+                                ui::register_particle(t.pos, fg, bg, '○', 800.0, 0.0, (1.0, 1.0));
+                                let o_fg = owner.visual.fg_color;
+                                let o_bg = owner.visual.bg_color;
                                 ui::register_particles(
                                     particle::ParticleBuilder::new(
-                                        start_x,
-                                        start_y,
-                                        fg,
-                                        bg,
-                                        child.visual.glyph,
-                                        600.0,
+                                        owner.pos.x() as f32,
+                                        owner.pos.y() as f32,
+                                        o_fg,
+                                        o_bg,
+                                        owner.visual.glyph,
+                                        800.0,
                                     )
                                     .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
                                     .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
                                     .with_scale((0.0, 0.0), (1.0, 1.0)),
                                 )
                             }
+
                             objects.replace(idx, t);
-                            Some(child)
+                            // return prematurely because we don't need to insert anything new into
+                            // the object vector
+                            return ActionResult::Success {
+                                callback: ObjectFeedback::NoFeedback,
+                            };
+                        } else {
+                            objects.replace(idx, t);
+                            None
                         }
                     } else {
-                        None
+                        // create a new object
+                        let child_ctrl = match &owner.control {
+                            Some(ctrl) => match ctrl {
+                                control::Controller::Npc(ai) => {
+                                    Some(control::Controller::Npc(ai.clone()))
+                                }
+                                control::Controller::Player(_) => {
+                                    Some(control::Controller::Player(control::Player::new()))
+                                }
+                            },
+                            None => None,
+                        };
+                        let mut child = Object::new()
+                            .position(&t.pos)
+                            .living(true)
+                            .visualize(
+                                owner.visual.name.as_str(),
+                                owner.visual.glyph,
+                                owner.visual.fg_color,
+                            )
+                            .genome(
+                                owner.gene_stability,
+                                state
+                                    .gene_library
+                                    .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
+                            )
+                            .control_opt(child_ctrl)
+                            .living(true);
+                        child.physics.is_visible = t.physics.is_visible;
+                        // play a little particle effect
+                        if child.physics.is_visible {
+                            // cover up the new cell as long as the creation particles play
+                            let t_fg = t.visual.fg_color;
+                            let t_bg = t.visual.bg_color;
+                            ui::register_particle(
+                                t.pos,
+                                t_fg,
+                                t_bg,
+                                t.visual.glyph,
+                                600.0,
+                                0.0,
+                                (1.0, 1.0),
+                            );
+                            let fg = owner.visual.fg_color;
+                            let bg = owner.visual.bg_color;
+                            let start_x =
+                                owner.pos.x() as f32 + ((t.pos.x() - owner.pos.x()) as f32 * 0.5);
+                            let start_y =
+                                owner.pos.y() as f32 + ((t.pos.y() - owner.pos.y()) as f32 * 0.5);
+                            ui::register_particles(
+                                particle::ParticleBuilder::new(
+                                    start_x,
+                                    start_y,
+                                    fg,
+                                    bg,
+                                    child.visual.glyph,
+                                    600.0,
+                                )
+                                .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
+                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                                .with_scale((0.0, 0.0), (1.0, 1.0)),
+                            )
+                        }
+                        objects.replace(idx, t);
+                        Some(child)
                     }
                 } else {
                     None
-                };
+                }
+            } else {
+                None
+            };
 
             // finally place the 'child' cell into the world
             if let Some(child) = child_obj {

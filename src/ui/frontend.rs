@@ -25,19 +25,19 @@ struct TileColorsRgb {
     // bg wall fov true
     pub bwt: rltk::RGB,
     // bg ground fov true
-    pub bgt: rltk::RGB,
+    pub bft: rltk::RGB,
     // fg wall fov true
     pub fwt: rltk::RGB,
     // fg ground fov true
-    pub fgt: rltk::RGB,
+    pub fft: rltk::RGB,
     // bg wall fov false
     pub bwf: rltk::RGB,
     // bg ground fov false
-    pub bgf: rltk::RGB,
+    pub bff: rltk::RGB,
     // fg wall fov false
     pub fwf: rltk::RGB,
     // fg ground fov false
-    pub fgf: rltk::RGB,
+    pub fff: rltk::RGB,
 }
 
 impl TileColorsRgb {
@@ -46,21 +46,21 @@ impl TileColorsRgb {
         // default tile foreground and background colors
         let bwt = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
         let bwf = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
-        let bgt = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_true));
-        let bgf = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_false));
+        let bft = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_true));
+        let bff = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_false));
         let fwt = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_true));
         let fwf = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_false));
-        let fgt = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_true));
-        let fgf = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_false));
+        let fft = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_true));
+        let fff = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_false));
         TileColorsRgb {
             bwt,
-            bgt,
+            bft,
             fwt,
-            fgt,
+            fft,
             bwf,
-            bgf,
+            bff,
             fwf,
-            fgf,
+            fff,
         }
     }
 }
@@ -174,7 +174,7 @@ fn update_visual(
     let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque) {
         // outside field of view:
         (false, true) => (tc.fwf, tc.bwf),
-        (false, false) => (tc.fgf, tc.bgf),
+        (false, false) => (tc.fff, tc.bff),
         // inside fov:
         // (true, true) => COLOR_LIGHT_WALL,
         (true, true) => (
@@ -183,8 +183,8 @@ fn update_visual(
         ),
         // (true, false) => COLOR_ground_in_fov,
         (true, false) => (
-            tc.fgt.lerp(tc.fgf, vis_ratio),
-            tc.bgt.lerp(tc.bgf, vis_ratio),
+            tc.fft.lerp(tc.fff, vis_ratio),
+            tc.bft.lerp(tc.bff, vis_ratio),
         ),
     };
 

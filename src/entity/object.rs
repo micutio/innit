@@ -27,11 +27,16 @@ pub struct Visual {
 
 impl Visual {
     pub fn new() -> Self {
+        let bg_color = if game::env().is_debug_mode {
+            ui::palette().world_bg_floor_fov_true
+        } else {
+            ui::palette().world_bg_floor_fov_false
+        };
         Visual {
             name: "unknown".into(),
             glyph: '_',
             fg_color: (0, 0, 0, 255),
-            bg_color: (0, 0, 0, 255),
+            bg_color,
         }
     }
 }
@@ -46,11 +51,12 @@ pub struct Physics {
 
 impl Physics {
     pub fn new() -> Self {
+        let is_visible = game::env().is_debug_mode;
         Physics {
             is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
-            is_visible: false,
+            is_visible,
         }
     }
 }
@@ -158,7 +164,7 @@ impl Object {
         self.physics.is_blocking = is_blocking;
         self.physics.is_blocking_sight = is_blocking_sight;
         self.physics.is_always_visible = is_always_visible;
-        self.physics.is_visible = is_always_visible;
+        self.physics.is_visible = game::env().is_debug_mode;
         self
     }
 
@@ -217,10 +223,15 @@ impl Object {
     pub fn into_wall_tile(&mut self) {
         self.physics.is_blocking = true;
         self.physics.is_blocking_sight = true;
-        self.visual.glyph = '◘';
+        self.visual.glyph = '○';
         self.visual.name = world_gen::TileType::Wall.as_str().into();
-        self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
-        self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
+        if game::env().is_debug_mode {
+            self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
+            self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
+        } else {
+            self.visual.fg_color = ui::palette().world_fg_wall_fov_false;
+            self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
+        }
         self.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Wall;
@@ -233,8 +244,13 @@ impl Object {
         self.physics.is_blocking_sight = false;
         self.visual.glyph = '·';
         self.visual.name = world_gen::TileType::Floor.as_str().into();
-        self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
-        self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
+        if game::env().is_debug_mode {
+            self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
+            self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
+        } else {
+            self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
+            self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
+        }
         self.control = None;
 
         if let Some(t) = &mut self.tile {
@@ -267,11 +283,7 @@ impl Object {
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
         // world.
         if let Some(_) = self.tile {
-            self.physics.is_blocking = false;
-            self.physics.is_blocking_sight = false;
-            self.visual.glyph = '·';
-            self.visual.name = "floor tile".into();
-            self.control = None;
+            self.into_floor_tile();
         } else {
             self.alive = false;
             // take this object out of the world

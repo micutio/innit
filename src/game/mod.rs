@@ -520,11 +520,10 @@ impl rltk::GameState for Game {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
             }
-
-            particles().render(ctx);
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
+        particles().render(ctx);
         self.require_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();

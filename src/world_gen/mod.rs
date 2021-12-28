@@ -55,20 +55,34 @@ pub struct Tile {
 
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col = ui::palette().world_fg_wall_fov_true;
-        let bg_col = ui::palette().world_bg_wall_fov_true;
+        let fg_col;
+        let bg_col;
+        if game::env().is_debug_mode {
+            fg_col = ui::palette().world_fg_wall_fov_true;
+            bg_col = ui::palette().world_bg_wall_fov_true;
+        } else {
+            fg_col = ui::palette().world_fg_wall_fov_false;
+            bg_col = ui::palette().world_bg_wall_fov_false;
+        }
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize_bg(TileType::Wall.as_str(), '◘', fg_col, bg_col)
+            .visualize_bg(TileType::Wall.as_str(), '○', fg_col, bg_col)
             .physical(true, true, is_visible)
             .tile(TileType::Wall)
             .control(control::Controller::Npc(Box::new(ai::AiTile)))
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col = ui::palette().world_fg_floor_fov_true;
-        let bg_col = ui::palette().world_bg_floor_fov_true;
+        let fg_col;
+        let bg_col;
+        if game::env().is_debug_mode {
+            fg_col = ui::palette().world_fg_floor_fov_true;
+            bg_col = ui::palette().world_bg_floor_fov_true;
+        } else {
+            fg_col = ui::palette().world_fg_floor_fov_false;
+            bg_col = ui::palette().world_bg_floor_fov_false;
+        }
         Object::new()
             .position_xy(x, y)
             .living(true)

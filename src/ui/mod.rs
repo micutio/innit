@@ -23,6 +23,7 @@ pub fn register_particle(
     col_bg: (u8, u8, u8, u8),
     glyph: char,
     lifetime: f32,
+    start_delay: f32,
     scale: (f32, f32),
 ) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
@@ -33,7 +34,7 @@ pub fn register_particle(
         col_bg,
         glyph,
         lifetime,
-        0.0,
+        start_delay,
         scale,
     ));
 }
