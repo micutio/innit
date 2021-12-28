@@ -14,23 +14,7 @@ use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Pass {
-    force_redraw: bool,
-}
-
-impl Pass {
-    pub fn update() -> Self {
-        Pass { force_redraw: true }
-    }
-}
-
-impl Default for Pass {
-    fn default() -> Self {
-        Pass {
-            force_redraw: false,
-        }
-    }
-}
+pub struct Pass;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for Pass {
@@ -48,13 +32,9 @@ impl Action for Pass {
         //     ui::register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         // }
 
-        let callback = if self.force_redraw {
-            ObjectFeedback::Render
-        } else {
-            ObjectFeedback::NoFeedback
-        };
-
-        ActionResult::Success { callback }
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
+        }
     }
 
     fn set_target(&mut self, _target: Target) {}

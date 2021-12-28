@@ -29,7 +29,7 @@ impl Ai for AiPassive {
         _objects: &mut ObjectStore,
         _owner: &mut Object,
     ) -> Box<dyn Action> {
-        Box::new(act::Pass::default())
+        Box::new(act::Pass)
     }
 }
 
@@ -57,7 +57,7 @@ impl Ai for AiRandom {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(act::Pass::default());
+            return Box::new(act::Pass);
         }
 
         // Get a list of possible targets, blocking and non-blocking, and search only for actions
@@ -138,7 +138,7 @@ impl Ai for AiRandom {
             }
             boxed_action
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 }
@@ -171,7 +171,7 @@ impl Ai for AiRandomWalk {
             action.set_target(act::Target::from_pos(&owner.pos, &t.pos));
             action
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 }
@@ -203,7 +203,7 @@ impl Ai for AiVirus {
             .any(|t| !t.physics.is_blocking)
         {
             owner.die(state, objects);
-            return Box::new(act::Pass::default());
+            return Box::new(act::Pass);
         }
 
         // if there is an adjacent cell, attempt to infect it
@@ -266,7 +266,7 @@ impl Ai for AiVirus {
         }
 
         // if nothing else sticks, just pass
-        return Box::new(act::Pass::default());
+        return Box::new(act::Pass);
     }
 }
 
@@ -315,7 +315,7 @@ impl Ai for AiForceVirusProduction {
             if self.current_turn == t {
                 if let Some(original_ai) = self.original_ai.take() {
                     owner.control.replace(original_ai);
-                    return Box::new(act::Pass::update());
+                    return Box::new(act::Pass);
                 }
             } else {
                 self.current_turn += 1;
@@ -341,7 +341,7 @@ impl Ai for AiTile {
             && owner.processors.actions.is_empty()
             && owner.sensors.actions.is_empty()
         {
-            return Box::new(act::Pass::default());
+            return Box::new(act::Pass);
         }
 
         if owner.processors.life_elapsed >= owner.processors.life_expectancy {
@@ -388,6 +388,6 @@ impl Ai for AiTile {
                 }
             }
         }
-        Box::new(act::Pass::default())
+        Box::new(act::Pass)
     }
 }

@@ -63,7 +63,7 @@ impl Clone for Box<dyn Action> {
 
 pub fn action_from_string(action_descriptor: &str) -> Result<Box<dyn Action>, String> {
     match action_descriptor {
-        "ActPass" => Ok(Box::new(Pass::default())),
+        "ActPass" => Ok(Box::new(Pass)),
         "ActMove" => Ok(Box::new(Move::new())),
         "ActRepairStructure" => Ok(Box::new(RepairStructure::new())),
         "ActAttack" => Ok(Box::new(Attack::new())),

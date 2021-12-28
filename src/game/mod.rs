@@ -296,7 +296,7 @@ impl Game {
                         None
                     }
                 }
-                PassTurn => Some(Box::new(act::Pass::default())),
+                PassTurn => Some(Box::new(act::Pass)),
             };
             player.set_next_action(a);
             RunState::Ticking
