@@ -120,7 +120,7 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .get_vector_mut()
         .iter_mut()
         .flatten()
-        .filter(|o| !(o.is_void() || o.is_player()))
+        .filter(|o| !o.is_void())
         .for_each(|o| {
             let closest_player_view = player_views
                 .iter()
