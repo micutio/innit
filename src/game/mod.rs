@@ -88,7 +88,7 @@ pub struct Game {
     // world generation state end
     hud: hud::Hud,
     require_render: bool,
-    _rex_assets: rex_assets::RexAssets,
+    rex_assets: rex_assets::RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
     /// Without it each mouse event is fired twice in a row and toggles are useless.
     mouse_workaround: bool,
@@ -121,7 +121,7 @@ impl Game {
             world_generator: world_gen::ca::CaBased::new(),
             hud: hud::Hud::new(),
             require_render: false,
-            _rex_assets: rex_assets::RexAssets::new(),
+            rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
             slowest_tick: 0,
         }
@@ -536,7 +536,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.cls();
-                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
                     Some(option) => menu::main::MainMenuItem::process(
                         &mut self.state,
@@ -552,9 +552,7 @@ impl rltk::GameState for Game {
                 self.hud.require_refresh = false;
                 self.require_render = false;
                 particles().particles.clear();
-                ctx.set_active_console(consts::WORLD_CON);
-                ctx.cls();
-                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                frontend::render_world(&mut self.objects, ctx, true);
                 match instance.display(ctx) {
                     Some(option) => menu::game_over::GameOverMenuItem::process(
                         &mut self.state,
@@ -571,8 +569,7 @@ impl rltk::GameState for Game {
                 self.require_render = false;
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
-                ctx.cls();
-                // ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
+                frontend::render_world(&mut self.objects, ctx, true);
                 match instance.display(ctx) {
                     Some(option) => menu::game_won::GameWonMenuItem::process(
                         &mut self.state,
