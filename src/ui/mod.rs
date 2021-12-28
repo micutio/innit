@@ -8,7 +8,7 @@ pub mod menu;
 pub mod particle;
 pub mod rex_assets;
 
-use crate::game::Position;
+use crate::game::{self, Position};
 
 use std::sync::{Mutex, MutexGuard};
 
@@ -27,6 +27,10 @@ pub fn register_particle(
     scale: (f32, f32),
 ) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
+    if game::env().is_particles_disabled {
+        return;
+    }
+
     particle_sys.particles.push(particle::Particle::new(
         pos.x() as f32,
         pos.y() as f32,
@@ -41,6 +45,9 @@ pub fn register_particle(
 
 pub fn register_particles(builder: particle::ParticleBuilder) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
+    if game::env().is_particles_disabled {
+        return;
+    }
     particle_sys.particles.append(&mut builder.build());
 }
 

@@ -120,6 +120,9 @@ pub fn main() -> rltk::BError {
             if arg.eq("--spectate") {
                 game::env().set_spectating(true);
             }
+            if arg.eq("-np") || arg.eq("--no-particles") {
+                game::env().set_disable_particles(true);
+            }
         }
     }
 
