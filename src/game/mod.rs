@@ -502,6 +502,11 @@ impl rltk::GameState for Game {
         // Render world and world only if there is any new information, otherwise save the
         // computation.
         if self.require_render || self.hud.require_refresh || self.state.log.is_changed {
+            info!(
+                "render trigger: world {}, hud {}, log {}",
+                self.require_render, self.hud.require_refresh, self.state.log.is_changed
+            );
+
             let require_update_visibility =
                 !(self.hud.require_refresh || self.state.log.is_changed);
             self.state.log.is_changed = false;
@@ -612,6 +617,7 @@ impl rltk::GameState for Game {
                         // if innit_env().is_spectating {
                         //     RunState::CheckInput
                         // } else {
+                        info!("render triggered by object feedback");
                         self.require_render = true;
                         RunState::Ticking
                         // }

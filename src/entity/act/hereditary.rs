@@ -698,9 +698,12 @@ impl Action for ProduceVirion {
                 }
             }
         };
-        ActionResult::Success {
-            callback: ObjectFeedback::Render,
-        }
+        let callback = if owner.physics.is_visible {
+            ObjectFeedback::Render
+        } else {
+            ObjectFeedback::NoFeedback
+        };
+        ActionResult::Success { callback }
     }
 
     fn set_target(&mut self, _t: Target) {}
