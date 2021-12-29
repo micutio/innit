@@ -29,10 +29,10 @@ pub struct Menu<T: MenuItem> {
 
 impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
-        let x1 = (game::consts::SCREEN_WIDTH - 1) - game::consts::MENU_WIDTH;
+        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
-        let y2 = game::consts::SCREEN_HEIGHT - 1;
+        let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 0;
         let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
         Menu {
@@ -115,12 +115,7 @@ impl<T: MenuItem> Menu<T> {
         // draw bottom line
         let btm_y = game::consts::SCREEN_HEIGHT - 1;
         draw_batch.fill_region(
-            rltk::Rect::with_exact(
-                7,
-                game::consts::SCREEN_HEIGHT - 1,
-                game::consts::SCREEN_WIDTH - 1,
-                btm_y,
-            ),
+            rltk::Rect::with_exact(7, btm_y, game::consts::SCREEN_WIDTH - 1, btm_y + 1),
             rltk::ColorPair::new(fg_hud, bg_hud),
             rltk::to_cp437(' '),
         );

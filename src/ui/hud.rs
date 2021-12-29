@@ -249,8 +249,8 @@ impl Hud {
     pub fn new() -> Self {
         let x1 = game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH;
         let y1 = 0;
-        let x2 = x1 + game::consts::SIDE_PANEL_WIDTH - 1;
-        let y2 = game::consts::SIDE_PANEL_HEIGHT - 1;
+        let x2 = x1 + game::consts::SIDE_PANEL_WIDTH;
+        let y2 = game::consts::SIDE_PANEL_HEIGHT;
         let layout = rltk::Rect::with_exact(x1, y1, x2, y2);
         let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
         let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
@@ -456,12 +456,7 @@ pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut rltk::BTerm, player: &
     // draw bottom line
     let btm_y = game::consts::SCREEN_HEIGHT - 1;
     draw_batch.fill_region(
-        rltk::Rect::with_exact(
-            7,
-            game::consts::SCREEN_HEIGHT - 1,
-            game::consts::SCREEN_WIDTH - 1,
-            btm_y,
-        ),
+        rltk::Rect::with_exact(7, btm_y, game::consts::SCREEN_WIDTH - 1, btm_y + 1),
         rltk::ColorPair::new(fg_hud, bg_hud),
         rltk::to_cp437(' '),
     );
@@ -490,8 +485,8 @@ fn render_dna_region(draw_batch: &mut rltk::DrawBatch) {
         rltk::Rect::with_size(
             game::consts::SCREEN_WIDTH - 1,
             0,
-            0,
-            game::consts::SCREEN_HEIGHT - 1,
+            1,
+            game::consts::SCREEN_HEIGHT,
         ),
         rltk::ColorPair::new(bg_dna, bg_dna),
         rltk::to_cp437(' '),
@@ -501,7 +496,7 @@ fn render_dna_region(draw_batch: &mut rltk::DrawBatch) {
             game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
             0,
             game::consts::SIDE_PANEL_WIDTH - 1,
-            0,
+            1,
         ),
         rltk::ColorPair::new(bg_dna, bg_dna),
         rltk::to_cp437(' '),
@@ -611,7 +606,7 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut rltk::D
 
     // draw action header
     draw_batch.fill_region(
-        rltk::Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH - 1, 0),
+        rltk::Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH, 1),
         rltk::ColorPair::new(action_fg, action_header_bg),
         rltk::to_cp437(' '),
     );
@@ -691,7 +686,7 @@ fn render_inventory(
     let bg_inv_header = palette().hud_bg_dna;
 
     draw_batch.fill_region(
-        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 1),
         rltk::ColorPair::new(fg_inv, bg_inv_header),
         rltk::to_cp437(' '),
     );
@@ -719,7 +714,7 @@ fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatc
     let bg_log_header = palette().hud_bg_dna;
 
     draw_batch.fill_region(
-        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 1),
         rltk::ColorPair::new(fg_log, bg_log_header),
         rltk::to_cp437(' '),
     );
