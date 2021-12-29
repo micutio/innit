@@ -30,11 +30,12 @@ impl InfoBox {
         }
     }
 
-    fn render(&self) {
+    pub fn render(&self) {
         let mut draw_batch = rltk::DrawBatch::new();
         let fg_hud_border = ui::palette().hud_fg_border;
         let fg_hud = ui::palette().hud_fg;
         let bg_hud = ui::palette().hud_bg;
+
         // draw box
         draw_batch.fill_region(
             self.layout,

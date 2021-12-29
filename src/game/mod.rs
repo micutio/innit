@@ -50,6 +50,7 @@ pub enum RunState {
     ChooseActionMenu(menu::Menu<menu::choose_action::ActionItem>),
     GameOver(menu::Menu<menu::game_over::GameOverMenuItem>),
     WinScreen(menu::Menu<menu::game_won::GameWonMenuItem>),
+    CreditsScreen(menu::Menu<menu::credits::CreditsMenuItem>),
     InfoBox(dialog::InfoBox),
     GenomeEditing(genome_editor::GenomeEditor),
     Ticking,
@@ -66,6 +67,7 @@ impl Display for RunState {
             RunState::ChooseActionMenu(_) => write!(f, "ChooseActionMenu"),
             RunState::GameOver(_) => write!(f, "GameOver"),
             RunState::WinScreen(_) => write!(f, "WinScreen"),
+            RunState::CreditsScreen(_) => write!(f, "CreditsScreen"),
             RunState::InfoBox(_) => write!(f, "InfoBox"),
             RunState::GenomeEditing(_) => write!(f, "GenomeEditing"),
             RunState::Ticking => write!(f, "Ticking"),
@@ -589,6 +591,24 @@ impl rltk::GameState for Game {
                         &option,
                     ),
                     None => RunState::WinScreen(instance.clone()),
+                }
+            }
+            RunState::CreditsScreen(ref mut instance) => {
+                self.state.log.is_changed = false;
+                self.hud.require_refresh = false;
+                self.require_render = false;
+                particles().particles.clear();
+                ctx.set_active_console(consts::WORLD_CON);
+                frontend::render_world(&mut self.objects, ctx, true);
+                menu::credits::render_content(ctx);
+                match instance.display(ctx) {
+                    Some(option) => menu::credits::CreditsMenuItem::process(
+                        &mut self.state,
+                        &mut self.objects,
+                        instance,
+                        &option,
+                    ),
+                    None => RunState::CreditsScreen(instance.clone()),
                 }
             }
             RunState::ChooseActionMenu(ref mut instance) => match instance.display(ctx) {

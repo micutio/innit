@@ -15,7 +15,7 @@ impl MenuItem for GameOverMenuItem {
         item: &GameOverMenuItem,
     ) -> game::RunState {
         match item {
-            GameOverMenuItem::Credits => todo!(),
+            GameOverMenuItem::Credits => game::RunState::CreditsScreen(menu::credits::new()),
             GameOverMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
