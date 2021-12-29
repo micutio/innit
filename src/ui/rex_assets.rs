@@ -1,9 +1,10 @@
-use rltk::rex::XpFile;
+use crate::rltk::EMBED;
+use bracket_lib::prelude as rltk;
 
 rltk::embedded_resource!(SMALL_DUNGEON, "../../resources/art/menu_bg.xp");
 
 pub struct RexAssets {
-    pub menu: XpFile,
+    pub menu: rltk::XpFile,
 }
 
 impl RexAssets {
@@ -12,7 +13,7 @@ impl RexAssets {
         rltk::link_resource!(SMALL_DUNGEON, "../../resources/art/menu_bg.xp");
 
         RexAssets {
-            menu: XpFile::from_resource("../../resources/art/menu_bg.xp").unwrap(),
+            menu: rltk::XpFile::from_resource("../../resources/art/menu_bg.xp").unwrap(),
         }
     }
 }

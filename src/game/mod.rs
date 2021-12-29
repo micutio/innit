@@ -33,8 +33,8 @@ use crate::util::timer;
 use crate::world_gen;
 use crate::world_gen::WorldGen;
 
+use bracket_lib::prelude as rltk;
 use core::fmt;
-use rltk;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 #[cfg(not(target_arch = "wasm32"))]
@@ -313,7 +313,7 @@ impl Game {
 
     /// Perform a meta action, i.e.: the player using the game UI without directly affecting the
     /// game state.
-    fn run_meta_action(&mut self, ctx: &mut rltk::Rltk, action: input::UiAction) -> RunState {
+    fn run_meta_action(&mut self, ctx: &mut rltk::BTerm, action: input::UiAction) -> RunState {
         debug!("received action {:?}", action);
         use input::UiAction;
         match action {
@@ -496,7 +496,7 @@ impl rltk::GameState for Game {
     /// - process player input
     /// - render game world
     /// - let NPCs take their turn
-    fn tick(&mut self, ctx: &mut rltk::Rltk) {
+    fn tick(&mut self, ctx: &mut rltk::BTerm) {
         // mouse workaround
         if ctx.left_click {
             if self.mouse_workaround {

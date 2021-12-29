@@ -1,6 +1,7 @@
 use crate::game::{self, ObjectStore, State};
 use crate::ui::dialog;
 use crate::ui::menu::{self, Menu, MenuItem};
+use bracket_lib::prelude as rltk;
 
 #[derive(Copy, Clone, Debug)]
 pub enum CreditsMenuItem {
@@ -30,7 +31,7 @@ pub fn new() -> Menu<CreditsMenuItem> {
     )
 }
 
-pub fn render_content(ctx: &mut rltk::Rltk) {
+pub fn render_content(ctx: &mut rltk::BTerm) {
     let title = "Credits".to_string();
     let lines = vec![
         " ".to_string(),

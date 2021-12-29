@@ -4,7 +4,7 @@ use crate::game::position::Position;
 use crate::game::{self, env, ObjectStore, State};
 use crate::ui::hud;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
@@ -123,7 +123,7 @@ pub fn read(
     state: &mut State,
     objects: &mut ObjectStore,
     hud: &mut hud::Hud,
-    ctx: &mut rltk::Rltk,
+    ctx: &mut rltk::BTerm,
 ) -> PlayerInput {
     let mut input = rltk::INPUT.lock();
     #[allow(clippy::single_match)]

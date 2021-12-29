@@ -3,9 +3,9 @@ use crate::game::{self, ObjectStore, Position};
 use crate::ui;
 use crate::util;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 
-pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::Rltk, vis_update: bool) {
+pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::BTerm, vis_update: bool) {
     // time rendering method for profiling purposes
     let mut timer = util::Timer::new("render world");
     ctx.set_active_console(game::consts::WORLD_CON);

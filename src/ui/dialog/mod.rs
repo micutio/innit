@@ -2,7 +2,7 @@ pub mod character;
 pub mod controls;
 
 use crate::{game, ui};
-use rltk;
+use bracket_lib::prelude as rltk;
 
 /// Simple info box. Can be exited by clicking outside or pressing `Esc`
 #[derive(Clone, Debug)]
@@ -68,7 +68,7 @@ impl InfoBox {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(self, ctx: &mut rltk::Rltk) -> Option<InfoBox> {
+    pub fn display(self, ctx: &mut rltk::BTerm) -> Option<InfoBox> {
         // render current menu
         self.render();
 

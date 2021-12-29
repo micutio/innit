@@ -2,7 +2,7 @@
 
 use crate::game;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
@@ -172,7 +172,7 @@ impl ParticleSystem {
         }
     }
 
-    pub fn render(&self, ctx: &mut rltk::Rltk) {
+    pub fn render(&self, ctx: &mut rltk::BTerm) {
         ctx.set_active_console(game::consts::PAR_CON);
         ctx.cls();
         let mut draw_batch = rltk::DrawBatch::new();
@@ -193,7 +193,7 @@ impl ParticleSystem {
 
     /// Advance the particle lifetimes and cull all those that have expired.
     /// Returns `true` if some particles expired in this call.
-    pub fn update(&mut self, ctx: &rltk::Rltk) -> bool {
+    pub fn update(&mut self, ctx: &rltk::BTerm) -> bool {
         let mut has_changed = false;
         self.particles.iter_mut().for_each(|p| {
             if p.start_delay > 0.0 {

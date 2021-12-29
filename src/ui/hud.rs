@@ -17,7 +17,7 @@ use crate::ui;
 use crate::ui::palette;
 use crate::util;
 
-use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rect, Rltk};
+use bracket_lib::prelude as rltk;
 
 /// Menu item properties
 /// - `text` for rendering
@@ -29,8 +29,8 @@ pub struct UiItem<T> {
     pub item_enum: T,
     pub text: String,
     pub tooltip: ToolTip,
-    pub layout: Rect,
-    pub color: ColorPair,
+    pub layout: rltk::Rect,
+    pub color: rltk::ColorPair,
 }
 
 impl<T> UiItem<T> {
@@ -38,8 +38,8 @@ impl<T> UiItem<T> {
         item_enum: T,
         text: S1,
         tooltip: ToolTip,
-        layout: Rect,
-        color: ColorPair,
+        layout: rltk::Rect,
+        color: rltk::ColorPair,
     ) -> Self {
         UiItem {
             item_enum,
@@ -50,8 +50,8 @@ impl<T> UiItem<T> {
         }
     }
 
-    pub fn top_left_corner(&self) -> Point {
-        Point::new(self.layout.x1, self.layout.y1)
+    pub fn top_left_corner(&self) -> rltk::Point {
+        rltk::Point::new(self.layout.x1, self.layout.y1)
     }
 }
 
@@ -90,26 +90,26 @@ impl HudItem {
     }
 }
 
-fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
+fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<HudItem>> {
     let button_len = game::consts::SIDE_PANEL_WIDTH / 2;
     let button_x = hud_layout.x1 + 3;
     let fg_col = palette().hud_fg;
     let bg_col = palette().hud_bg;
-    let col_pair = ColorPair::new(fg_col, bg_col);
+    let col_pair = rltk::ColorPair::new(fg_col, bg_col);
     let bar_width = game::consts::SIDE_PANEL_WIDTH - 3;
     let items = vec![
         UiItem::new(
             HudItem::BarItem,
             "",
             ToolTip::header_only("your health"),
-            Rect::with_size(button_x, 2, bar_width, 1),
+            rltk::Rect::with_size(button_x, 2, bar_width, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::BarItem,
             "",
             ToolTip::header_only("your energy"),
-            Rect::with_size(button_x, 3, bar_width, 1),
+            rltk::Rect::with_size(button_x, 3, bar_width, 1),
             col_pair,
         ),
         /* lifetime display disabled for now
@@ -125,28 +125,28 @@ fn create_hud_items(hud_layout: &Rect) -> Vec<UiItem<HudItem>> {
             HudItem::PrimaryAction,
             "",
             ToolTip::header_only("select new primary action"),
-            Rect::with_size(button_x, 7, button_len, 1),
+            rltk::Rect::with_size(button_x, 7, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::SecondaryAction,
             "",
             ToolTip::header_only("select new secondary action"),
-            Rect::with_size(button_x, 8, button_len, 1),
+            rltk::Rect::with_size(button_x, 8, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::Quick1Action,
             "",
             ToolTip::header_only("select new quick action"),
-            Rect::with_size(button_x, 9, button_len, 1),
+            rltk::Rect::with_size(button_x, 9, button_len, 1),
             col_pair,
         ),
         UiItem::new(
             HudItem::Quick2Action,
             "",
             ToolTip::header_only("select new quick action"),
-            Rect::with_size(button_x, 10, button_len, 1),
+            rltk::Rect::with_size(button_x, 10, button_len, 1),
             col_pair,
         ),
     ];
@@ -236,10 +236,10 @@ impl ToolTip {
 // }
 
 pub struct Hud {
-    layout: Rect,
-    pub inv_area: Rect,
-    pub log_area: Rect,
-    last_mouse: Point,
+    layout: rltk::Rect,
+    pub inv_area: rltk::Rect,
+    pub log_area: rltk::Rect,
+    last_mouse: rltk::Point,
     pub require_refresh: bool,
     pub items: Vec<UiItem<HudItem>>,
     tooltips: Vec<ToolTip>,
@@ -251,21 +251,21 @@ impl Hud {
         let y1 = 0;
         let x2 = x1 + game::consts::SIDE_PANEL_WIDTH - 1;
         let y2 = game::consts::SIDE_PANEL_HEIGHT - 1;
-        let layout = Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
-        let log_area = Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
+        let layout = rltk::Rect::with_exact(x1, y1, x2, y2);
+        let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
+        let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
         Hud {
             layout,
             inv_area,
             log_area,
-            last_mouse: Point::new(0, 0),
+            last_mouse: rltk::Point::new(0, 0),
             require_refresh: false,
             items: create_hud_items(&layout),
             tooltips: Vec::new(),
         }
     }
 
-    pub fn update_tooltips(&mut self, mouse_pos: Point, names: Vec<ToolTip>) {
+    pub fn update_tooltips(&mut self, mouse_pos: rltk::Point, names: Vec<ToolTip>) {
         self.tooltips.clear();
         if let Some(item) = self
             .items
@@ -326,7 +326,7 @@ impl Hud {
                 HudItem::DnaItem,
                 dna_glyph,
                 ToolTip::no_header(tooltip_text),
-                Rect::with_size(
+                rltk::Rect::with_size(
                     game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH
                         + 3
                         + h_offset as i32,
@@ -334,7 +334,7 @@ impl Hud {
                     1,
                     1,
                 ),
-                ColorPair::new(col, bg_color),
+                rltk::ColorPair::new(col, bg_color),
             ));
         }
 
@@ -377,8 +377,8 @@ impl Hud {
                 HudItem::DnaItem,
                 dna_glyph,
                 ToolTip::no_header(tooltip_text),
-                Rect::with_size(game::consts::SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
-                ColorPair::new(col, bg_color),
+                rltk::Rect::with_size(game::consts::SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
+                rltk::ColorPair::new(col, bg_color),
             ));
         }
 
@@ -396,7 +396,7 @@ impl Hud {
                 .take((self.inv_area.width() - 5) as usize)
                 .collect();
 
-            let use_layout = Rect::with_size(
+            let use_layout = rltk::Rect::with_size(
                 self.inv_area.x1 + 1,
                 self.inv_area.y1 + idx as i32,
                 self.inv_area.width() - 3,
@@ -418,10 +418,10 @@ impl Hud {
                 format!("{} {}", obj.visual.glyph, name_fitted),
                 item_tooltip,
                 use_layout,
-                ColorPair::new(obj.visual.fg_color, bg_col),
+                rltk::ColorPair::new(obj.visual.fg_color, bg_col),
             ));
 
-            let drop_layout = Rect::with_size(
+            let drop_layout = rltk::Rect::with_size(
                 self.inv_area.x1 + self.inv_area.width() - 2,
                 self.inv_area.y1 + idx as i32,
                 2,
@@ -433,43 +433,43 @@ impl Hud {
                 " x",
                 ToolTip::header_only(format!("drop {}", &obj.visual.name)),
                 drop_layout,
-                ColorPair::new(magenta, bg_col),
+                rltk::ColorPair::new(magenta, bg_col),
             ));
         }
     }
 }
 
-pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut Rltk, player: &Object) {
+pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut rltk::BTerm, player: &Object) {
     ctx.set_active_console(game::consts::HUD_CON);
     hud.update_ui_items(player);
-    let mut draw_batch = DrawBatch::new();
+    let mut draw_batch = rltk::DrawBatch::new();
     let fg_hud = palette().hud_fg;
     let bg_hud = palette().hud_bg;
 
     // fill side panel background
     draw_batch.fill_region(
         hud.layout,
-        ColorPair::new(fg_hud, bg_hud),
+        rltk::ColorPair::new(fg_hud, bg_hud),
         rltk::to_cp437(' '),
     );
 
     // draw bottom line
     let btm_y = game::consts::SCREEN_HEIGHT - 1;
     draw_batch.fill_region(
-        Rect::with_exact(
+        rltk::Rect::with_exact(
             7,
             game::consts::SCREEN_HEIGHT - 1,
             game::consts::SCREEN_WIDTH - 1,
             btm_y,
         ),
-        ColorPair::new(fg_hud, bg_hud),
+        rltk::ColorPair::new(fg_hud, bg_hud),
         rltk::to_cp437(' '),
     );
 
     draw_batch.print_color(
         rltk::Point::new(9, btm_y),
         "Mobile Fluorescence Microscope",
-        ColorPair::new(fg_hud, bg_hud),
+        rltk::ColorPair::new(fg_hud, bg_hud),
     );
 
     render_dna_region(&mut draw_batch);
@@ -483,87 +483,87 @@ pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut Rltk, player: &Object)
     draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
 }
 
-fn render_dna_region(draw_batch: &mut DrawBatch) {
+fn render_dna_region(draw_batch: &mut rltk::DrawBatch) {
     let fg_hud = palette().hud_fg;
     let bg_dna = palette().hud_bg_dna;
     draw_batch.fill_region(
-        Rect::with_size(
+        rltk::Rect::with_size(
             game::consts::SCREEN_WIDTH - 1,
             0,
             0,
             game::consts::SCREEN_HEIGHT - 1,
         ),
-        ColorPair::new(bg_dna, bg_dna),
-        to_cp437(' '),
+        rltk::ColorPair::new(bg_dna, bg_dna),
+        rltk::to_cp437(' '),
     );
     draw_batch.fill_region(
-        Rect::with_size(
+        rltk::Rect::with_size(
             game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
             0,
             game::consts::SIDE_PANEL_WIDTH - 1,
             0,
         ),
-        ColorPair::new(bg_dna, bg_dna),
-        to_cp437(' '),
+        rltk::ColorPair::new(bg_dna, bg_dna),
+        rltk::to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(
+        rltk::Point::new(
             game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
             0,
         ),
         "DNA ",
-        ColorPair::new(fg_hud, bg_dna),
+        rltk::ColorPair::new(fg_hud, bg_dna),
     );
 }
 
-fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
+fn render_bars(player: &Object, draw_batch: &mut rltk::DrawBatch) {
     let fg_hud = palette().hud_fg;
     let bg_bar = palette().hud_bg_bar;
     let bg_hud = palette().hud_bg;
     let health = palette().hud_fg_bar_health;
     let energy = palette().hud_fg_bar_energy;
 
-    let bar_icon_col = ColorPair::new(fg_hud, bg_hud);
+    let bar_icon_col = rltk::ColorPair::new(fg_hud, bg_hud);
     let bar_icon_x = (game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH) + 1;
     let bar_x = bar_icon_x + 2;
     let bar_width = game::consts::SIDE_PANEL_WIDTH - 4;
     let bar_ctr = bar_width / 2;
 
     // draw headers for bars
-    draw_batch.print_color(Point::new(bar_icon_x, 2), '+', bar_icon_col);
-    draw_batch.print_color(Point::new(bar_icon_x, 3), '√', bar_icon_col);
+    draw_batch.print_color(rltk::Point::new(bar_icon_x, 2), '+', bar_icon_col);
+    draw_batch.print_color(rltk::Point::new(bar_icon_x, 3), '√', bar_icon_col);
     // draw_batch.print_color(Point::new(bar_x, 4), '♥', bar_icon_col);
 
     // draw bars
     // - health bar
     draw_batch.bar_horizontal(
-        Point::new(bar_x, 2),
+        rltk::Point::new(bar_x, 2),
         bar_width,
         player.actuators.hp,
         player.actuators.max_hp,
-        ColorPair::new(health, bg_bar),
+        rltk::ColorPair::new(health, bg_bar),
     );
     draw_batch.print_color_centered_at(
-        Point::new(bar_x + bar_ctr, 2),
+        rltk::Point::new(bar_x + bar_ctr, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
-        ColorPair::new(fg_hud, health),
+        rltk::ColorPair::new(fg_hud, health),
     );
     // - energy bar
     draw_batch.bar_horizontal(
-        Point::new(bar_x, 3),
+        rltk::Point::new(bar_x, 3),
         bar_width,
         player.processors.energy,
         player.processors.energy_storage,
-        ColorPair::new(energy, bg_bar),
+        rltk::ColorPair::new(energy, bg_bar),
     );
 
     draw_batch.print_color_centered_at(
-        Point::new(bar_x + bar_ctr, 3),
+        rltk::Point::new(bar_x + bar_ctr, 3),
         format!(
             "{}/{}",
             player.processors.energy, player.processors.energy_storage
         ),
-        ColorPair::new(fg_hud, energy),
+        rltk::ColorPair::new(fg_hud, energy),
     );
     // - lifetime bar
     // disabled for now, because it has no useful functionality
@@ -602,7 +602,7 @@ fn render_bars(player: &Object, draw_batch: &mut DrawBatch) {
     */
 }
 
-fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBatch) {
+fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut rltk::DrawBatch) {
     let action_header_bg = palette().hud_bg_dna;
     let action_bg = palette().hud_bg;
     let action_fg = palette().hud_fg;
@@ -611,35 +611,35 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
 
     // draw action header
     draw_batch.fill_region(
-        Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH - 1, 0),
-        ColorPair::new(action_fg, action_header_bg),
-        to_cp437(' '),
+        rltk::Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH - 1, 0),
+        rltk::ColorPair::new(action_fg, action_header_bg),
+        rltk::to_cp437(' '),
     );
     draw_batch.print_color(
-        Point::new(x, 6),
+        rltk::Point::new(x, 6),
         "Actions",
-        ColorPair::new(action_fg, action_header_bg),
+        rltk::ColorPair::new(action_fg, action_header_bg),
     );
     // draw buttons
     draw_batch.print_color(
-        Point::new(x, 7),
+        rltk::Point::new(x, 7),
         "P",
-        ColorPair::new(action_fg_hl, action_bg),
+        rltk::ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(x, 8),
+        rltk::Point::new(x, 8),
         "S",
-        ColorPair::new(action_fg_hl, action_bg),
+        rltk::ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(x, 9),
+        rltk::Point::new(x, 9),
         "Q",
-        ColorPair::new(action_fg_hl, action_bg),
+        rltk::ColorPair::new(action_fg_hl, action_bg),
     );
     draw_batch.print_color(
-        Point::new(x, 10),
+        rltk::Point::new(x, 10),
         "E",
-        ColorPair::new(action_fg_hl, action_bg),
+        rltk::ColorPair::new(action_fg_hl, action_bg),
     );
 
     // update action button texts
@@ -681,24 +681,29 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut DrawBat
     });
 }
 
-fn render_inventory(hud: &Hud, player: &Object, layout: Rect, draw_batch: &mut DrawBatch) {
+fn render_inventory(
+    hud: &Hud,
+    player: &Object,
+    layout: rltk::Rect,
+    draw_batch: &mut rltk::DrawBatch,
+) {
     let fg_inv = palette().hud_fg;
     let bg_inv_header = palette().hud_bg_dna;
 
     draw_batch.fill_region(
-        Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
-        ColorPair::new(fg_inv, bg_inv_header),
-        to_cp437(' '),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::ColorPair::new(fg_inv, bg_inv_header),
+        rltk::to_cp437(' '),
     );
 
     draw_batch.print_color(
-        Point::new(layout.x1, layout.y1 - 1),
+        rltk::Point::new(layout.x1, layout.y1 - 1),
         format!(
             "Inventory [{}/{}]",
             player.inventory.items.len(),
             player.actuators.volume
         ),
-        ColorPair::new(fg_inv, bg_inv_header),
+        rltk::ColorPair::new(fg_inv, bg_inv_header),
     );
 
     hud.items
@@ -709,20 +714,20 @@ fn render_inventory(hud: &Hud, player: &Object, layout: Rect, draw_batch: &mut D
         });
 }
 
-fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
+fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatch) {
     let fg_log = palette().hud_fg;
     let bg_log_header = palette().hud_bg_dna;
 
     draw_batch.fill_region(
-        Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
-        ColorPair::new(fg_log, bg_log_header),
-        to_cp437(' '),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::ColorPair::new(fg_log, bg_log_header),
+        rltk::to_cp437(' '),
     );
 
     draw_batch.print_color(
-        Point::new(layout.x1, layout.y1 - 1),
+        rltk::Point::new(layout.x1, layout.y1 - 1),
         "Log",
-        ColorPair::new(fg_log, bg_log_header),
+        rltk::ColorPair::new(fg_log, bg_log_header),
     );
 
     // convert messages into log text lines (str, fg_col, bg_col)
@@ -771,26 +776,26 @@ fn render_log(state: &State, layout: Rect, draw_batch: &mut DrawBatch) {
     let mut y = layout.y1;
     for l in visible_log {
         draw_batch.fill_region(
-            Rect::with_exact(layout.x1, y, layout.x2, y),
-            ColorPair::new(l.1, l.2),
-            to_cp437(' '),
+            rltk::Rect::with_exact(layout.x1, y, layout.x2, y),
+            rltk::ColorPair::new(l.1, l.2),
+            rltk::to_cp437(' '),
         );
         draw_batch.print_color(
-            Point::new(layout.x1, y as i32),
+            rltk::Point::new(layout.x1, y as i32),
             &l.0,
-            ColorPair::new(l.1, l.2),
+            rltk::ColorPair::new(l.1, l.2),
         );
         y += 1;
     }
 }
 
-fn render_ui_items(hud: &Hud, draw_batch: &mut DrawBatch) {
+fn render_ui_items(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     for item in &hud.items {
         draw_batch.print_color(item.top_left_corner(), &item.text, item.color);
     }
 }
 
-fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
+fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     if hud.tooltips.is_empty() {
         return;
     }
@@ -857,13 +862,13 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
         let tt_height = tooltip.content_height() + 1;
 
         draw_batch.fill_region(
-            Rect::with_size(next_x, next_y, tt_width, tt_height),
-            ColorPair::new(fg_tt, bg_tt),
-            to_cp437(' '),
+            rltk::Rect::with_size(next_x, next_y, tt_width, tt_height),
+            rltk::ColorPair::new(fg_tt, bg_tt),
+            rltk::to_cp437(' '),
         );
         draw_batch.draw_hollow_box(
-            Rect::with_size(next_x, next_y, tt_width, tt_height),
-            ColorPair::new(fg_tt_border, bg_tt),
+            rltk::Rect::with_size(next_x, next_y, tt_width, tt_height),
+            rltk::ColorPair::new(fg_tt_border, bg_tt),
         );
         let mut top_offset: i32 = 1;
         if tooltip.header.is_some() {
@@ -871,44 +876,44 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut DrawBatch) {
 
             if !tooltip.attributes.is_empty() {
                 draw_batch.print_color(
-                    Point::new(next_x, next_y + 2),
+                    rltk::Point::new(next_x, next_y + 2),
                     // to_cp437('─'),
                     "├",
-                    ColorPair::new(fg_tt_border, bg_tt),
+                    rltk::ColorPair::new(fg_tt_border, bg_tt),
                 );
                 draw_batch.print_color(
-                    Point::new(next_x + tt_width, next_y + 2),
+                    rltk::Point::new(next_x + tt_width, next_y + 2),
                     // to_cp437('─'),
                     "┤",
-                    ColorPair::new(fg_tt_border, bg_tt),
+                    rltk::ColorPair::new(fg_tt_border, bg_tt),
                 );
                 for x in (next_x + 1)..(next_x + tt_width) {
                     draw_batch.print_color(
-                        Point::new(x, next_y + 2),
+                        rltk::Point::new(x, next_y + 2),
                         // to_cp437('─'),
                         "─",
-                        ColorPair::new(fg_tt_border, bg_tt),
+                        rltk::ColorPair::new(fg_tt_border, bg_tt),
                     );
                 }
             }
 
             draw_batch.print_color_centered_at(
-                Point::new(next_x + (tt_width / 2), next_y + 1),
+                rltk::Point::new(next_x + (tt_width / 2), next_y + 1),
                 tooltip.header.as_ref().unwrap(),
-                ColorPair::new(fg_tt, bg_tt),
+                rltk::ColorPair::new(fg_tt, bg_tt),
             );
         }
 
         for (idx, (s1, s2)) in tooltip.attributes.iter().enumerate() {
             draw_batch.print_color(
-                Point::new(next_x + 1, next_y + idx as i32 + top_offset),
+                rltk::Point::new(next_x + 1, next_y + idx as i32 + top_offset),
                 s1,
-                ColorPair::new(fg_tt, bg_tt),
+                rltk::ColorPair::new(fg_tt, bg_tt),
             );
             draw_batch.print_color_right(
-                Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
+                rltk::Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
                 s2,
-                ColorPair::new(fg_tt, bg_tt),
+                rltk::ColorPair::new(fg_tt, bg_tt),
             );
         }
 

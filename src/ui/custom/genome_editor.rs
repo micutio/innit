@@ -9,7 +9,7 @@ use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
@@ -182,7 +182,7 @@ impl GenomeEditor {
             .collect()
     }
 
-    pub fn display(self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
+    pub fn display(self, game_state: &mut State, ctx: &mut rltk::BTerm) -> game::RunState {
         // 1. render everything
         self.render(game_state, ctx);
 
@@ -190,7 +190,7 @@ impl GenomeEditor {
         self.read_input(game_state, ctx)
     }
 
-    fn render(&self, game_state: &mut State, ctx: &mut rltk::Rltk) {
+    fn render(&self, game_state: &mut State, ctx: &mut rltk::BTerm) {
         ctx.set_active_console(game::consts::HUD_CON);
         ctx.cls();
         let mut draw_batch = rltk::DrawBatch::new();
@@ -482,7 +482,7 @@ impl GenomeEditor {
         draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
 
-    fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::Rltk) -> game::RunState {
+    fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::BTerm) -> game::RunState {
         // wait for user input
         // a) keyboard input
         // if we have a key activity, process and return immediately
