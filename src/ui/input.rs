@@ -73,9 +73,6 @@ fn key_to_action(key: rltk::VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerIn
         (Vkc::Key3, false, false) => PlayerInput::Meta(UiAction::SetFont(2)),
         (Vkc::Key4, false, false) => PlayerInput::Meta(UiAction::SetFont(3)),
         (Vkc::Key5, false, false) => PlayerInput::Meta(UiAction::SetFont(4)),
-        (Vkc::Key6, false, false) => PlayerInput::Meta(UiAction::SetFont(5)),
-        (Vkc::Key7, false, false) => PlayerInput::Meta(UiAction::SetFont(6)),
-        (Vkc::Key8, false, false) => PlayerInput::Meta(UiAction::SetFont(7)),
         _ => PlayerInput::Undefined,
     }
 }
