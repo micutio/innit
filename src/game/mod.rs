@@ -236,7 +236,7 @@ impl Game {
                     // a warm welcoming message
                     self.state.log.add(
                         "How is the patient?",
-                        msg::MsgClass::Story(Some("Prof. Hill".into())),
+                        msg::MsgClass::Story(Some("Prof. H.".into())),
                     );
                     self.state.log.add(
                         "Good so far. Mobile microscope online and tracking injected @-cell. Let's see whether it responds to the infection...",

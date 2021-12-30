@@ -714,6 +714,7 @@ fn render_inventory(
 fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatch) {
     let fg_log = palette().hud_fg;
     let bg_log_header = palette().hud_bg_dna;
+    let bg_log_default = palette().hud_bg;
 
     draw_batch.fill_region(
         rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 1),
@@ -730,7 +731,7 @@ fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatc
     // convert messages into log text lines (str, fg_col, bg_col)
     let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
     let mut log_lines: Vec<(String, (u8, u8, u8, u8), (u8, u8, u8, u8))> = Vec::new();
-    let line_width = layout.width();
+    let line_width = layout.width() as usize;
     for (msg, class) in &state.log.messages {
         let lines = util::text_to_width(&msg, line_width);
         let fg_color = match class {
@@ -746,13 +747,13 @@ fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatc
         };
         bg_flag = !bg_flag;
 
-        log_lines.push((" ".into(), fg_color, bg_color));
+        log_lines.push((" ".into(), fg_color, bg_log_default));
         // if we're displaying text messages, prepend the author's name
         if let game::msg::MsgClass::Story(author_opt) = class {
             let author_line = if let Some(author) = author_opt {
                 (author.into(), ui::palette().col_acc4, bg_color)
             } else {
-                ("You".into(), ui::palette().col_acc1, bg_color)
+                ("Dr. S.".into(), ui::palette().col_acc1, bg_color)
             };
             log_lines.push(author_line);
         }
@@ -773,7 +774,7 @@ fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatc
     let mut y = layout.y1;
     for l in visible_log {
         draw_batch.fill_region(
-            rltk::Rect::with_exact(layout.x1, y, layout.x2, y),
+            rltk::Rect::with_exact(layout.x1, y, layout.x2, y + 1),
             rltk::ColorPair::new(l.1, l.2),
             rltk::to_cp437(' '),
         );
