@@ -38,7 +38,12 @@ pub enum PlayerAction {
 }
 
 /// Translate between bracket's keys and our own key codes.
-fn key_to_action(key: rltk::VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerInput {
+fn key_to_action(
+    ctx: &mut rltk::BTerm,
+    key: rltk::VirtualKeyCode,
+    ctrl: bool,
+    shift: bool,
+) -> PlayerInput {
     use self::act::Target::*;
     use rltk::VirtualKeyCode as Vkc;
     match (key, ctrl, shift) {
@@ -60,6 +65,10 @@ fn key_to_action(key: rltk::VirtualKeyCode, ctrl: bool, shift: bool) -> PlayerIn
         (Vkc::Q, false, true) => PlayerInput::Meta(UiAction::ChooseQuick1),
         (Vkc::S, false, false) => PlayerInput::Game(PlayerAction::Secondary(South)),
         (Vkc::S, false, true) => PlayerInput::Meta(UiAction::ChooseSecondary),
+        (Vkc::S, true, true) => {
+            take_screenshot(ctx);
+            PlayerInput::Undefined
+        }
         (Vkc::W, false, false) => PlayerInput::Game(PlayerAction::Secondary(North)),
         (Vkc::Up, false, false) => PlayerInput::Game(PlayerAction::Primary(North)),
         (Vkc::Down, false, false) => PlayerInput::Game(PlayerAction::Primary(South)),
@@ -137,7 +146,7 @@ pub fn read(
         || input.key_pressed_set().contains(&Vkc::RShift);
 
     if let Some(key) = ctx.key {
-        return key_to_action(key, ctrl, shift);
+        return key_to_action(ctx, key, ctrl, shift);
     }
 
     let mouse = Position::from(ctx.mouse_point());
@@ -198,4 +207,14 @@ pub fn read(
         // 3b) check for button press to activate ui buttons
         PlayerInput::Undefined
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn take_screenshot(ctx: &mut rltk::BTerm) {
+    ctx.screenshot("innit_screenshot.png");
+}
+
+#[cfg(target_arch = "wasm32")]
+fn take_screenshot(_ctx: &mut rltk::BTerm) {
+    info!("screenshots no supported in wasm")
 }
