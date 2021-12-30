@@ -218,7 +218,7 @@ fn place_objects(
     use rand::prelude::*;
 
     // TODO: Set npc number per level via transitions.
-    let npc_upper_limit = 50;
+    let npc_upper_limit = 25;
 
     let npc_chances: Vec<(&String, u32)> = spawns
         .iter()

@@ -4,7 +4,7 @@
         "spawn_transitions": [
             {
                 "level": 1,
-                "value": 60
+                "value": 40
             },
             {
                 "level": 3,
@@ -17,7 +17,7 @@
         "spawn_transitions": [
             {
                 "level": 1,
-                "value": 40
+                "value": 60
             },
             {
                 "level": 3,
