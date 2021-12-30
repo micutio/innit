@@ -350,10 +350,11 @@ impl Action for InjectRnaVirus {
                     || owner.is_player()
                     || owner.physics.is_visible
                 {
+                    let verb = if owner.is_player() { "have" } else { "has" };
                     state.log.add(
                         format!(
-                            "{0} has infected {1} with virus RNA. {1} is forced to produce virions",
-                            owner.visual.name, target.visual.name
+                            "{0} {1} infected {2} with virus RNA",
+                            owner.visual.name, verb, target.visual.name
                         ),
                         game::msg::MsgClass::Alert,
                     );
@@ -378,24 +379,8 @@ impl Action for InjectRnaVirus {
                 false
             };
 
-            // copy target name before moving target back into object vector
-            let target_name = target.visual.name.clone();
             objects.replace(index, target);
             if has_infected {
-                if owner.physics.is_visible || owner.is_player() {
-                    state.log.add(
-                        format!(
-                            "{} injected virus RNA into {}",
-                            owner.visual.name, target_name
-                        ),
-                        game::msg::MsgClass::Alert,
-                    );
-                    trace!(
-                        "{} injected virus RNA into {}",
-                        owner.visual.name,
-                        target_name
-                    );
-                }
                 return ActionResult::Success {
                     callback: ObjectFeedback::NoFeedback,
                 };
@@ -479,12 +464,13 @@ impl Action for InjectRetrovirus {
             {
                 // FAIL: target is not an actual cell, merely another virus or plasmid
                 if owner.physics.is_visible {
+                    let verb = if owner.is_player() { "have" } else { "has" };
                     state.log.add(
                         format!(
-                            "A virus has tried to infect {} but it is not a cell!",
-                            target.visual.name
+                            "{0} {1} tried to infect {2} with virus RNA, but it is not a cell!",
+                            owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Info,
+                        game::msg::MsgClass::Alert,
                     );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
@@ -500,6 +486,14 @@ impl Action for InjectRetrovirus {
                             target.visual.name
                         ),
                         game::msg::MsgClass::Info,
+                    );
+                    let verb = if owner.is_player() { "have" } else { "has" };
+                    state.log.add(
+                        format!(
+                            "{0} {1} tried to infect {2} with virus RNA, but cannot find a matching receptor!",
+                            owner.visual.name, verb, target.visual.name
+                        ),
+                        game::msg::MsgClass::Alert,
                     );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
@@ -532,7 +526,14 @@ impl Action for InjectRetrovirus {
                 );
                 debug!("{}", msg);
                 if owner.physics.is_visible {
-                    state.log.add(msg, game::msg::MsgClass::Alert);
+                    let verb = if owner.is_player() { "have" } else { "has" };
+                    state.log.add(
+                        format!(
+                            "{0} {1} infected {2} with retrovirus DNA",
+                            owner.visual.name, verb, target.visual.name
+                        ),
+                        game::msg::MsgClass::Alert,
+                    );
                     // play a little particle effect
                     let fg = ui::palette().hud_fg_bar_health;
                     let bg = ui::palette().col_transparent;
@@ -623,8 +624,9 @@ impl Action for ProduceVirion {
                 // );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {
+                    let verb = if owner.is_player() { "are" } else { "is" };
                     state.log.add(
-                        format!("{} is forced to produce virions", owner.visual.name),
+                        format!("{0} {1} forced to produce virions", owner.visual.name, verb),
                         game::msg::MsgClass::Alert,
                     );
                 }
