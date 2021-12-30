@@ -241,6 +241,7 @@ pub struct Hud {
     pub log_area: rltk::Rect,
     last_mouse: rltk::Point,
     pub require_refresh: bool,
+
     pub items: Vec<UiItem<HudItem>>,
     tooltips: Vec<ToolTip>,
 }
@@ -260,6 +261,7 @@ impl Hud {
             log_area,
             last_mouse: rltk::Point::new(0, 0),
             require_refresh: false,
+
             items: create_hud_items(&layout),
             tooltips: Vec::new(),
         }

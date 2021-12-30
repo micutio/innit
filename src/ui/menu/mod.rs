@@ -44,10 +44,10 @@ impl<T: MenuItem> Menu<T> {
     }
 
     pub fn with_header(header: &str, item_vec: Vec<(T, String)>) -> Self {
-        let x1 = (game::consts::SCREEN_WIDTH - 1) - game::consts::MENU_WIDTH;
+        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
-        let y2 = game::consts::SCREEN_HEIGHT - 1;
+        let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 2;
         let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
         Menu {

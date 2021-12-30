@@ -82,6 +82,22 @@ pub fn main() -> rltk::BError {
                     game::env().set_seed(seed);
                 }
             }
+            if arg.eq("-t") || arg.eq("--tile-size") {
+                // try get next argument to retrieve the seed number
+                if i + 1 == args.len() {
+                    info!("no tile size parameter provided, fall back to use '16' instead");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let seed = match next_arg.parse::<i32>() {
+                        Ok(n) => n,
+                        Err(_) => {
+                            info!("no numerical tile size parameter provided, fall back to use '16' instead");
+                            16
+                        }
+                    };
+                    game::env().set_tile_size(seed);
+                }
+            }
             if arg.eq("-t") || arg.eq("--turns") {
                 // try get next argument to retrieve the seed number
                 if i + 1 == args.len() {
@@ -120,6 +136,7 @@ pub fn main() -> rltk::BError {
     let font_12x12_rex = "fonts/rex_12x12.png";
     let font_8x8_rex = "fonts/rex_8x8.png";
 
+    let tile_size = game::env().tile_size;
     let context = rltk::BTermBuilder::new()
         .with_dimensions(game::consts::SCREEN_WIDTH, game::consts::SCREEN_HEIGHT)
         .with_font(font_16x16_yun, 16, 16)
@@ -129,23 +146,24 @@ pub fn main() -> rltk::BError {
         .with_font(font_8x8_rex, 8, 8)
         .with_advanced_input(true)
         .with_fancy_console(
+            // world layer
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
             font_16x16_yun,
-        ) // world layer
-        .with_fancy_console(
-            game::consts::SCREEN_WIDTH,
-            game::consts::SCREEN_HEIGHT,
-            font_16x16_yun,
-        ) // hud layer
+        )
         .with_fancy_console(
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
             font_16x16_yun,
         ) // particles layer
+        .with_fancy_console(
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_16x16_yun,
+        ) // hud layer
         .with_title(format!("Innit alpha v{}", VERSION))
         .with_fps_cap(60.0)
-        .with_tile_dimensions(16, 16)
+        .with_tile_dimensions(tile_size, tile_size)
         .with_vsync(true)
         .build()?;
 

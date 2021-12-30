@@ -13,10 +13,10 @@ pub const WORLD_CON: usize = 0;
 pub const WORLD_TILE_Z: usize = 0;
 pub const WORLD_NBL_Z: usize = 300_000;
 pub const WORLD_BLK_Z: usize = 600_000;
-pub const HUD_CON: usize = 1;
-pub const HUD_CON_Z: usize = 1_000_000;
-pub const PAR_CON: usize = 2;
-pub const PAR_CON_Z: usize = 2_000_000;
+pub const PAR_CON: usize = 1;
+pub const PAR_CON_Z: usize = 1_000_000;
+pub const HUD_CON: usize = 2;
+pub const HUD_CON_Z: usize = 2_000_000;
 
 pub const MENU_WIDTH: i32 = 20;
 

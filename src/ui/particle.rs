@@ -163,12 +163,14 @@ impl ParticleBuilder {
 
 pub struct ParticleSystem {
     pub particles: Vec<Particle>,
+    vignette: Vec<(game::Position, (u8, u8, u8, u8))>,
 }
 
 impl ParticleSystem {
     pub fn new() -> Self {
         ParticleSystem {
             particles: Vec::new(),
+            vignette: create_vignette(),
         }
     }
 
@@ -188,6 +190,12 @@ impl ParticleSystem {
                 );
             }
         }
+
+        self.vignette.iter().for_each(|(pos, bg_col)| {
+            let color = rltk::ColorPair::new((0, 0, 0, 0), bg_col.clone());
+            draw_batch.print_color(rltk::Point::new(pos.x(), pos.y()), " ", color);
+        });
+
         draw_batch.submit(game::consts::PAR_CON_Z).unwrap();
     }
 
@@ -208,4 +216,26 @@ impl ParticleSystem {
         self.particles.retain(|p| p.lifetime > 0.0);
         has_changed
     }
+}
+
+fn create_vignette() -> Vec<(game::Position, (u8, u8, u8, u8))> {
+    let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
+    let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;
+    let center_pos = game::Position::from_xy(center_x, center_y);
+    let center_point = rltk::Point::new(center_x, center_y);
+
+    let start_radius = center_x - 2;
+    let end_radius = center_x + 1;
+    let mut vignette = Vec::new();
+    for radius in start_radius..end_radius {
+        for point in rltk::BresenhamCircleNoDiag::new(center_point, radius) {
+            let pos = game::Position::from_xy(point.x, point.y);
+            let dist = pos.distance(&center_pos);
+            let ratio = (dist - start_radius as f32) / (end_radius as f32 - start_radius as f32);
+            println!("ratio: {}", ratio);
+            let alpha: u8 = (255.0 * ratio) as u8;
+            vignette.push((pos, (0, 0, 0, alpha)));
+        }
+    }
+    vignette
 }

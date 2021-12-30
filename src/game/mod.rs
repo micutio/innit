@@ -533,10 +533,10 @@ impl rltk::GameState for Game {
                 hud::render_gui(&self.state, &mut self.hud, ctx, &player);
                 self.objects.replace(self.state.player_idx, player);
             }
+            particles().render(ctx);
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
-        particles().render(ctx);
         self.require_render = particles().update(ctx);
 
         let mut new_run_state = self.run_state.take().unwrap();
@@ -566,6 +566,7 @@ impl rltk::GameState for Game {
                 self.require_render = false;
                 particles().particles.clear();
                 frontend::render_world(&mut self.objects, ctx, true);
+                particles().render(ctx);
                 match instance.display(ctx) {
                     Some(option) => menu::game_over::GameOverMenuItem::process(
                         &mut self.state,
@@ -583,6 +584,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 frontend::render_world(&mut self.objects, ctx, true);
+                particles().render(ctx);
                 match instance.display(ctx) {
                     Some(option) => menu::game_won::GameWonMenuItem::process(
                         &mut self.state,
@@ -600,6 +602,7 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 frontend::render_world(&mut self.objects, ctx, true);
+                particles().render(ctx);
                 menu::credits::render_content(ctx);
                 match instance.display(ctx) {
                     Some(option) => menu::credits::CreditsMenuItem::process(
