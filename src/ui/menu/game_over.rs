@@ -15,18 +15,21 @@ impl MenuItem for GameOverMenuItem {
         item: &GameOverMenuItem,
     ) -> game::RunState {
         match item {
-            GameOverMenuItem::Credits => unimplemented!(),
+            GameOverMenuItem::Credits => game::RunState::CreditsScreen(menu::credits::new()),
             GameOverMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
 
 pub fn new() -> Menu<GameOverMenuItem> {
-    Menu::new(vec![
-        (GameOverMenuItem::Credits, "Credits".to_string()),
-        (
-            GameOverMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        ),
-    ])
+    Menu::with_header(
+        "Game Over",
+        vec![
+            (GameOverMenuItem::Credits, "Credits".to_string()),
+            (
+                GameOverMenuItem::ReturnToMain,
+                "Return to Main Menu".to_string(),
+            ),
+        ],
+    )
 }

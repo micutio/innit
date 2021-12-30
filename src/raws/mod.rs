@@ -1,6 +1,8 @@
 pub mod spawn;
 pub mod template;
 
+use crate::rltk::EMBED;
+use bracket_lib::prelude as rltk;
 use spawn::Spawn;
 use template::ObjectTemplate;
 
@@ -11,7 +13,7 @@ pub fn load_spawns() -> Vec<Spawn> {
     rltk::link_resource!(SPAWN_RAW, "../raws/spawns.json");
 
     // Retrieve the raw data as an array of u8 (8-bit unsigned chars)
-    let raw_data = rltk::embedding::EMBED
+    let raw_data = EMBED
         .lock()
         // .unwrap()
         .get_resource("../raws/spawns.json".to_string())
@@ -25,7 +27,7 @@ pub fn load_object_templates() -> Vec<ObjectTemplate> {
     rltk::link_resource!(OBJECT_RAW, "../raws/objects.json");
 
     // Retrieve the raw data as an array of u8 (8-bit unsigned chars)
-    let raw_data = rltk::embedding::EMBED
+    let raw_data = EMBED
         .lock()
         // .unwrap()
         .get_resource("../raws/objects.json".to_string())

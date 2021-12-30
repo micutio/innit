@@ -1,11 +1,11 @@
 use crate::entity::{genetics, Object};
-use crate::game;
 use crate::game::world_gen;
 use crate::game::Position;
 use crate::rand::Rng;
 use crate::util::rng;
+use crate::{game, util};
 
-use rltk;
+use bracket_lib::prelude as rltk;
 use std::ops::{Index, IndexMut};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -40,21 +40,45 @@ impl ObjectStore {
         }
     }
 
-    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
-        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
-        &mut self.objects[idx]
-    }
-
     /// Allocate enough space in the object vector to fit all world tiles and some room to spare.
-    pub fn blank_world(&mut self) {
+    pub fn blank_circle_world(&mut self) {
         self.objects.clear();
         self.objects.resize_with(self.world_tile_count * 2, || None);
+        // First carve out a circular world of wall tiles.
+        self.bresen_circle();
+        // Then fill the rest of world with void tiles.
         for y in 0..game::consts::WORLD_HEIGHT {
             for x in 0..game::consts::WORLD_WIDTH {
                 let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
-                self.objects[idx].replace(world_gen::Tile::wall(x, y, false));
+                if self.objects[idx].is_none() {
+                    self.objects[idx].replace(world_gen::Tile::new_void(x, y, false));
+                }
             }
         }
+    }
+
+    fn bresen_circle(&mut self) {
+        let _timer = util::Timer::new("bresenham circle");
+        let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
+        let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;
+        let center_point = rltk::Point::new(center_x, center_y);
+
+        let max_radius = center_x - 1;
+        for r in 0..=max_radius {
+            for point in rltk::BresenhamCircleNoDiag::new(center_point, r) {
+                let idx = coord_to_idx(game::consts::WORLD_WIDTH, point.x, point.y);
+                self.objects[idx].replace(world_gen::Tile::new_wall(point.x, point.y, false));
+            }
+        }
+
+        // finally turn center point as well
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, center_x, center_y);
+        self.objects[idx].replace(world_gen::Tile::new_wall(center_x, center_y, false));
+    }
+
+    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+        &mut self.objects[idx]
     }
 
     pub fn _set_tile_dna_random(
@@ -386,12 +410,15 @@ impl<'a> Iterator for Neighborhood<'a> {
 
                 self.count += 1;
 
-                if x >= 0
-                    && x < game::consts::WORLD_WIDTH
-                    && y >= 0
-                    && y < game::consts::WORLD_HEIGHT
-                {
-                    return Some(&self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)]);
+                let is_in_x_bounds = x >= 0 && x < game::consts::WORLD_WIDTH;
+                let is_in_y_bounds = y >= 0 && y < game::consts::WORLD_HEIGHT;
+                if is_in_x_bounds && is_in_y_bounds {
+                    let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
+                    if let Some(obj) = tile_obj {
+                        if !obj.is_void() {
+                            return Some(tile_obj);
+                        }
+                    }
                 }
             }
             None

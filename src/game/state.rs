@@ -266,6 +266,9 @@ impl State {
                     ),
                     msg::MsgClass::Alert,
                 );
+                // For the time being, apply mutations directly.
+                // TODO: Replace with reincarnation mechanic.
+                actor.update_genome_from_dna(self);
             } else if actor.physics.is_visible {
                 self.log.add(
                     format!("Mutation occurred in {}!", actor.visual.name),

@@ -55,7 +55,7 @@ pub fn _gray_to_binary32(mut x: u8) -> u8 {
 ///
 /// * `text` - text to be formatted
 /// * `line_width` - maximum length of a line of text.
-pub fn text_to_width(text: &str, line_width: i32) -> Vec<String> {
+pub fn text_to_width(text: &str, line_width: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     let mut current_line: Vec<&str> = Vec::new();
     let mut current_width = 0;

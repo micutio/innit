@@ -2,7 +2,7 @@
 
 use crate::game;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
@@ -163,16 +163,18 @@ impl ParticleBuilder {
 
 pub struct ParticleSystem {
     pub particles: Vec<Particle>,
+    vignette: Vec<(game::Position, (u8, u8, u8, u8))>,
 }
 
 impl ParticleSystem {
     pub fn new() -> Self {
         ParticleSystem {
             particles: Vec::new(),
+            vignette: create_vignette(),
         }
     }
 
-    pub fn render(&self, ctx: &mut rltk::Rltk) {
+    pub fn render(&self, ctx: &mut rltk::BTerm) {
         ctx.set_active_console(game::consts::PAR_CON);
         ctx.cls();
         let mut draw_batch = rltk::DrawBatch::new();
@@ -188,22 +190,52 @@ impl ParticleSystem {
                 );
             }
         }
+
+        self.vignette.iter().for_each(|(pos, bg_col)| {
+            let color = rltk::ColorPair::new((0, 0, 0, 0), bg_col.clone());
+            draw_batch.print_color(rltk::Point::new(pos.x(), pos.y()), " ", color);
+        });
+
         draw_batch.submit(game::consts::PAR_CON_Z).unwrap();
     }
 
     /// Advance the particle lifetimes and cull all those that have expired.
     /// Returns `true` if some particles expired in this call.
-    pub fn update(&mut self, ctx: &rltk::Rltk) -> bool {
-        let start_size: usize = self.particles.len();
+    pub fn update(&mut self, ctx: &rltk::BTerm) -> bool {
+        let mut has_changed = false;
         self.particles.iter_mut().for_each(|p| {
             if p.start_delay > 0.0 {
-                p.start_delay -= ctx.frame_time_ms
+                p.start_delay -= ctx.frame_time_ms;
+                has_changed |= p.start_delay < 0.0;
             } else {
-                p.lifetime -= ctx.frame_time_ms
+                p.lifetime -= ctx.frame_time_ms;
+                has_changed |= p.lifetime < 0.0;
             }
         });
 
         self.particles.retain(|p| p.lifetime > 0.0);
-        self.particles.len() < start_size
+        has_changed
     }
+}
+
+fn create_vignette() -> Vec<(game::Position, (u8, u8, u8, u8))> {
+    let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
+    let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;
+    let center_pos = game::Position::from_xy(center_x, center_y);
+    let center_point = rltk::Point::new(center_x, center_y);
+
+    let start_radius = center_x - 2;
+    let end_radius = center_x + 1;
+    let mut vignette = Vec::new();
+    for radius in start_radius..end_radius {
+        for point in rltk::BresenhamCircleNoDiag::new(center_point, radius) {
+            let pos = game::Position::from_xy(point.x, point.y);
+            let dist = pos.distance(&center_pos);
+            let ratio = (dist - start_radius as f32) / (end_radius as f32 - start_radius as f32);
+            println!("ratio: {}", ratio);
+            let alpha: u8 = (255.0 * ratio) as u8;
+            vignette.push((pos, (0, 0, 0, alpha)));
+        }
+    }
+    vignette
 }

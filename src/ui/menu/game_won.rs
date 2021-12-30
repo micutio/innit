@@ -15,18 +15,21 @@ impl MenuItem for GameWonMenuItem {
         item: &GameWonMenuItem,
     ) -> game::RunState {
         match item {
-            GameWonMenuItem::Credits => unimplemented!(),
+            GameWonMenuItem::Credits => game::RunState::CreditsScreen(menu::credits::new()),
             GameWonMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
 
 pub fn new() -> Menu<GameWonMenuItem> {
-    Menu::new(vec![
-        (GameWonMenuItem::Credits, "Credits".to_string()),
-        (
-            GameWonMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        ),
-    ])
+    Menu::with_header(
+        "SUCCESS - INFECTION REPELLED!",
+        vec![
+            (GameWonMenuItem::Credits, "Credits".to_string()),
+            (
+                GameWonMenuItem::ReturnToMain,
+                "Return to Main Menu".to_string(),
+            ),
+        ],
+    )
 }

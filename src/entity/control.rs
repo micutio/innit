@@ -55,10 +55,10 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Player {
-            primary_action: Box::new(act::Pass::default()),
-            secondary_action: Box::new(act::Pass::default()),
-            quick1_action: Box::new(act::Pass::default()),
-            quick2_action: Box::new(act::Pass::default()),
+            primary_action: Box::new(act::Pass),
+            secondary_action: Box::new(act::Pass),
+            quick1_action: Box::new(act::Pass),
+            quick2_action: Box::new(act::Pass),
             next_action: None,
         }
     }

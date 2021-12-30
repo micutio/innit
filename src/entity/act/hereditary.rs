@@ -14,23 +14,7 @@ use serde::{Deserialize, Serialize};
 
 /// Dummy action for passing the turn.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Pass {
-    force_redraw: bool,
-}
-
-impl Pass {
-    pub fn update() -> Self {
-        Pass { force_redraw: true }
-    }
-}
-
-impl Default for Pass {
-    fn default() -> Self {
-        Pass {
-            force_redraw: false,
-        }
-    }
-}
+pub struct Pass;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
 impl Action for Pass {
@@ -48,13 +32,9 @@ impl Action for Pass {
         //     ui::register_particle(owner.pos.into(), fg, bg, 'Z', 250.0);
         // }
 
-        let callback = if self.force_redraw {
-            ObjectFeedback::Render
-        } else {
-            ObjectFeedback::NoFeedback
-        };
-
-        ActionResult::Success { callback }
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
+        }
     }
 
     fn set_target(&mut self, _target: Target) {}
@@ -179,6 +159,7 @@ impl Action for RepairStructure {
                 ui::palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
+                0.0,
                 (1.0, 1.0),
             )
         }
@@ -269,6 +250,7 @@ impl Action for Attack {
                         ui::palette().col_transparent,
                         'x',
                         250.0,
+                        0.0,
                         (1.0, 1.0),
                     )
                 }
@@ -368,10 +350,11 @@ impl Action for InjectRnaVirus {
                     || owner.is_player()
                     || owner.physics.is_visible
                 {
+                    let verb = if owner.is_player() { "have" } else { "has" };
                     state.log.add(
                         format!(
-                            "{0} has infected {1} with virus RNA. {1} is forced to produce virions",
-                            owner.visual.name, target.visual.name
+                            "{0} {1} infected {2} with virus RNA",
+                            owner.visual.name, verb, target.visual.name
                         ),
                         game::msg::MsgClass::Alert,
                     );
@@ -396,24 +379,8 @@ impl Action for InjectRnaVirus {
                 false
             };
 
-            // copy target name before moving target back into object vector
-            let target_name = target.visual.name.clone();
             objects.replace(index, target);
             if has_infected {
-                if owner.physics.is_visible || owner.is_player() {
-                    state.log.add(
-                        format!(
-                            "{} injected virus RNA into {}",
-                            owner.visual.name, target_name
-                        ),
-                        game::msg::MsgClass::Alert,
-                    );
-                    trace!(
-                        "{} injected virus RNA into {}",
-                        owner.visual.name,
-                        target_name
-                    );
-                }
                 return ActionResult::Success {
                     callback: ObjectFeedback::NoFeedback,
                 };
@@ -497,17 +464,18 @@ impl Action for InjectRetrovirus {
             {
                 // FAIL: target is not an actual cell, merely another virus or plasmid
                 if owner.physics.is_visible {
+                    let verb = if owner.is_player() { "have" } else { "has" };
                     state.log.add(
                         format!(
-                            "A virus has tried to infect {} but it is not a cell!",
-                            target.visual.name
+                            "{0} {1} tried to infect {2} with virus RNA, but it is not a cell!",
+                            owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Info,
+                        game::msg::MsgClass::Alert,
                     );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -519,10 +487,18 @@ impl Action for InjectRetrovirus {
                         ),
                         game::msg::MsgClass::Info,
                     );
+                    let verb = if owner.is_player() { "have" } else { "has" };
+                    state.log.add(
+                        format!(
+                            "{0} {1} tried to infect {2} with virus RNA, but cannot find a matching receptor!",
+                            owner.visual.name, verb, target.visual.name
+                        ),
+                        game::msg::MsgClass::Alert,
+                    );
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -550,7 +526,14 @@ impl Action for InjectRetrovirus {
                 );
                 debug!("{}", msg);
                 if owner.physics.is_visible {
-                    state.log.add(msg, game::msg::MsgClass::Alert);
+                    let verb = if owner.is_player() { "have" } else { "has" };
+                    state.log.add(
+                        format!(
+                            "{0} {1} infected {2} with retrovirus DNA",
+                            owner.visual.name, verb, target.visual.name
+                        ),
+                        game::msg::MsgClass::Alert,
+                    );
                     // play a little particle effect
                     let fg = ui::palette().hud_fg_bar_health;
                     let bg = ui::palette().col_transparent;
@@ -560,6 +543,7 @@ impl Action for InjectRetrovirus {
                         bg,
                         target.visual.glyph,
                         350.0,
+                        0.0,
                         (1.0, 1.0),
                     );
                 }
@@ -640,8 +624,9 @@ impl Action for ProduceVirion {
                 // );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {
+                    let verb = if owner.is_player() { "are" } else { "is" };
                     state.log.add(
-                        format!("{} is forced to produce virions", owner.visual.name),
+                        format!("{0} {1} forced to produce virions", owner.visual.name, verb),
                         game::msg::MsgClass::Alert,
                     );
                 }
@@ -695,9 +680,12 @@ impl Action for ProduceVirion {
                 }
             }
         };
-        ActionResult::Success {
-            callback: ObjectFeedback::Render,
-        }
+        let callback = if owner.physics.is_visible {
+            ObjectFeedback::Render
+        } else {
+            ObjectFeedback::NoFeedback
+        };
+        ActionResult::Success { callback }
     }
 
     fn set_target(&mut self, _t: Target) {}
@@ -950,17 +938,14 @@ impl Action for BinaryFission {
         let is_pos_available = !objects.is_pos_occupied(&target_pos);
 
         if is_pos_available {
-            let child_obj = match objects.get_tile_at(target_pos.x(), target_pos.y()) {
-                Some(t) => {
+            let child_obj = if let Some((idx, target_opt)) =
+                objects.extract_tile_by_pos(&target_pos)
+            {
+                if let Some(mut t) = target_opt {
                     if owner.tile.is_some() && owner.physics.is_blocking {
                         if !t.physics.is_blocking {
                             // turn into wall
-                            t.physics.is_blocking = true;
-                            t.physics.is_blocking_sight = true;
-                            t.visual.glyph = '◘';
-                            t.visual.name = "wall tile".into();
-                            t.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
-                            t.alive = true;
+                            t.into_wall_tile();
                             // insert (mutated) genome
                             t.set_dna(owner.dna.clone());
                             t.update_genome_from_dna(state);
@@ -969,26 +954,19 @@ impl Action for BinaryFission {
                             // play a little particle effect
                             if t.physics.is_visible {
                                 // cover up the new cell as long as the creation particles play
-                                let t_fg = ui::palette().world_bg;
-                                let t_bg = ui::palette().world_bg;
-                                ui::register_particle(
-                                    t.pos,
-                                    t_fg,
-                                    t_bg,
-                                    t.visual.glyph,
-                                    600.0,
-                                    (1.0, 1.0),
-                                );
-                                let fg = owner.visual.fg_color;
-                                let bg = owner.visual.bg_color;
+                                let fg = ui::palette().world_bg_floor_fov_false;
+                                let bg = ui::palette().world_bg_floor_fov_false;
+                                ui::register_particle(t.pos, fg, bg, '○', 800.0, 0.0, (1.0, 1.0));
+                                let o_fg = owner.visual.fg_color;
+                                let o_bg = owner.visual.bg_color;
                                 ui::register_particles(
                                     particle::ParticleBuilder::new(
                                         owner.pos.x() as f32,
                                         owner.pos.y() as f32,
-                                        fg,
-                                        bg,
+                                        o_fg,
+                                        o_bg,
                                         owner.visual.glyph,
-                                        600.0,
+                                        800.0,
                                     )
                                     .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
                                     .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
@@ -996,12 +974,14 @@ impl Action for BinaryFission {
                                 )
                             }
 
+                            objects.replace(idx, t);
                             // return prematurely because we don't need to insert anything new into
                             // the object vector
                             return ActionResult::Success {
                                 callback: ObjectFeedback::NoFeedback,
                             };
                         } else {
+                            objects.replace(idx, t);
                             None
                         }
                     } else {
@@ -1045,6 +1025,7 @@ impl Action for BinaryFission {
                                 t_bg,
                                 t.visual.glyph,
                                 600.0,
+                                0.0,
                                 (1.0, 1.0),
                             );
                             let fg = owner.visual.fg_color;
@@ -1067,10 +1048,14 @@ impl Action for BinaryFission {
                                 .with_scale((0.0, 0.0), (1.0, 1.0)),
                             )
                         }
+                        objects.replace(idx, t);
                         Some(child)
                     }
+                } else {
+                    None
                 }
-                None => None,
+            } else {
+                None
             };
 
             // finally place the 'child' cell into the world

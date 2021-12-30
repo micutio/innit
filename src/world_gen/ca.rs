@@ -1,9 +1,9 @@
 use crate::entity::Object;
 use crate::entity::{act, ai, control, genetics, inventory};
 use crate::game::{self, ObjectStore, State};
-use crate::raws;
 use crate::util::rng::RngExtended;
 use crate::world_gen::WorldGen;
+use crate::{raws, world_gen};
 
 const CA_CYCLES: i32 = 150;
 
@@ -51,22 +51,18 @@ impl WorldGen for CaBased {
                 ca.step();
                 // update positions assigned with `true` to floor tiles
                 for (idx, cell) in ca.cells().into_iter().enumerate() {
-                    if let Some(Some(tile)) = objects.get_vector_mut().get_mut(idx + 1) {
-                        if let Some(t) = &mut tile.tile {
+                    if let Some(Some(tile_obj)) = objects.get_vector_mut().get_mut(idx + 1) {
+                        if let Some(t) = &mut tile_obj.tile {
                             // TODO: Create constants for morphogen cutoffs and min morphogens
                             t.morphogen = cell.morphogen;
                             if t.morphogen < 0.3 {
-                                tile.physics.is_blocking = false;
-                                tile.physics.is_blocking_sight = false;
-                                tile.visual.glyph = '·';
-                                tile.visual.name = "empty tile".into();
-                                tile.control = None;
+                                if let world_gen::TileType::Wall = t.typ {
+                                    tile_obj.into_floor_tile()
+                                }
                             } else {
-                                tile.physics.is_blocking = true;
-                                tile.physics.is_blocking_sight = true;
-                                tile.visual.glyph = '◘';
-                                tile.visual.name = "wall tile".into();
-                                tile.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
+                                if let world_gen::TileType::Floor = t.typ {
+                                    tile_obj.into_wall_tile()
+                                }
                             }
                         }
                     }

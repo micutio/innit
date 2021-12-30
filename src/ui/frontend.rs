@@ -1,214 +1,204 @@
 use crate::entity::Object;
 use crate::game::{self, ObjectStore, Position};
 use crate::ui;
-use crate::util::timer;
+use crate::util;
 
-use rltk;
+use bracket_lib::prelude as rltk;
 
-pub fn render_world(objects: &mut ObjectStore, _ctx: &mut rltk::Rltk) {
+pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::BTerm, vis_update: bool) {
     // time rendering method for profiling purposes
-    let mut timer = timer::Timer::new("render world");
-    let mut draw_batch = rltk::DrawBatch::new();
-    let world_col = ui::palette().world_bg;
-
-    draw_batch.fill_region(
-        rltk::Rect::with_size(
-            0,
-            0,
-            game::consts::WORLD_WIDTH - 1,
-            game::consts::WORLD_HEIGHT - 1,
-        ),
-        rltk::ColorPair::new(world_col, world_col),
-        rltk::to_cp437(' '),
-    );
-
-    update_visibility(objects);
-
-    // draw tiles first and then all other objects
-    objects
-        .get_tiles()
-        .iter()
-        .flatten()
-        .filter(|o| {
-            // Is there a better way than using `and_then`?
-            game::env().is_debug_mode
-                || o.physics.is_visible
-                || o.physics.is_always_visible
-                || if let Some(t) = &o.tile {
-                    t.is_explored
-                } else {
-                    false
-                }
-        })
-        .for_each(|tile_obj| {
-            draw_batch.set(
-                tile_obj.pos.into(),
-                rltk::ColorPair::new(tile_obj.visual.fg_color, tile_obj.visual.bg_color),
-                rltk::to_cp437(tile_obj.visual.glyph),
-            );
-        });
-
-    let mut objects_to_draw: Vec<&Object> = objects
-        .get_non_tiles()
-        .iter()
-        .flatten()
-        .filter(|o| {
-            // Is there a better way than using `and_then`?
-            game::env().is_debug_mode || o.physics.is_visible || o.physics.is_always_visible
-        })
-        .collect();
-
-    // sort, so that non-blocking objects come first
-    objects_to_draw.sort_by(|o1, o2| o1.physics.is_blocking.cmp(&o2.physics.is_blocking));
-
-    // draw the objects in the list
-    for object in &objects_to_draw {
-        draw_batch.set(
-            object.pos.into(),
-            rltk::ColorPair::new(object.visual.fg_color, object.visual.bg_color),
-            rltk::to_cp437(object.visual.glyph),
-        );
+    let mut timer = util::Timer::new("render world");
+    ctx.set_active_console(game::consts::WORLD_CON);
+    if vis_update && !game::env().is_debug_mode {
+        draw_updated_visibility(objects);
+    } else {
+        draw_direct(objects);
     }
-
     let elapsed = timer.stop_silent();
-    trace!("render world in {}", timer::format(elapsed));
-
-    draw_batch.submit(game::consts::WORLD_CON_Z).unwrap()
+    trace!("render world in {}", util::timer::format(elapsed));
 }
 
-fn update_visibility(objects: &mut ObjectStore) {
-    // in debug mode everything is visible
-    if game::env().is_debug_mode {
-        let bwft = ui::palette().world_bg_wall_fov_true;
-        let bgft = ui::palette().world_bg_ground_fov_true;
-        let fwft = ui::palette().world_fg_wall_fov_true;
-        let fgft = ui::palette().world_fg_ground_fov_true;
-        objects.get_vector_mut().iter_mut().flatten().for_each(|o| {
-            // o.physics.is_visible = true;
-            if o.tile.is_some() {
-                if o.physics.is_blocking_sight {
-                    o.visual.fg_color = fwft;
-                    o.visual.bg_color = bwft;
+struct TileColorsRgb {
+    // bg wall fov true
+    pub bwt: rltk::RGB,
+    // bg ground fov true
+    pub bft: rltk::RGB,
+    // fg wall fov true
+    pub fwt: rltk::RGB,
+    // fg ground fov true
+    pub fft: rltk::RGB,
+    // bg wall fov false
+    pub bwf: rltk::RGB,
+    // bg ground fov false
+    pub bff: rltk::RGB,
+    // fg wall fov false
+    pub fwf: rltk::RGB,
+    // fg ground fov false
+    pub fff: rltk::RGB,
+}
+
+impl TileColorsRgb {
+    fn new() -> Self {
+        use rltk::{RGB, RGBA};
+        // default tile foreground and background colors
+        let bwt = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
+        let bwf = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
+        let bft = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_true));
+        let bff = RGB::from(RGBA::from(ui::palette().world_bg_floor_fov_false));
+        let fwt = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_true));
+        let fwf = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_false));
+        let fft = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_true));
+        let fff = RGB::from(RGBA::from(ui::palette().world_fg_floor_fov_false));
+        TileColorsRgb {
+            bwt,
+            bft,
+            fwt,
+            fft,
+            bwf,
+            bff,
+            fwf,
+            fff,
+        }
+    }
+}
+
+fn draw_direct(objects: &ObjectStore) {
+    let mut draw_batch_tile = rltk::DrawBatch::new();
+    let mut draw_batch_nbl = rltk::DrawBatch::new();
+    let mut draw_batch_blk = rltk::DrawBatch::new();
+
+    objects
+        .get_vector()
+        .iter()
+        .flatten()
+        .filter(|o| !o.is_void())
+        .for_each(|obj| {
+            if obj.tile.is_some() {
+                draw_batch_tile.set(
+                    obj.pos.into(),
+                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                    rltk::to_cp437(obj.visual.glyph),
+                );
+            } else if obj.physics.is_visible {
+                if !obj.physics.is_blocking {
+                    draw_batch_nbl.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
                 } else {
-                    o.visual.fg_color = fgft;
-                    o.visual.bg_color = bgft;
+                    draw_batch_blk.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
                 }
             }
         });
-        return;
-    }
+    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
+    draw_batch_nbl.submit(game::consts::WORLD_NBL_Z).unwrap();
+    draw_batch_blk.submit(game::consts::WORLD_BLK_Z).unwrap();
+}
 
-    let player_positions: Vec<(Position, i32)> = objects
-        .get_vector()
+fn draw_updated_visibility(objects: &mut ObjectStore) {
+    // let tcU8 = TileColorsU8::new();
+    let mut draw_batch_tile = rltk::DrawBatch::new();
+    let mut draw_batch_nbl = rltk::DrawBatch::new();
+    let mut draw_batch_blk = rltk::DrawBatch::new();
+    let tc_rgb = TileColorsRgb::new();
+
+    let player_views: Vec<(Position, i32)> = objects
+        .get_non_tiles()
         .iter()
         .flatten()
         .filter(|o| o.is_player())
         .map(|o| (o.pos, o.sensors.sensing_range))
         .collect();
 
-    // set all objects invisible by default
-    let mut dist_map: Vec<f32> = vec![
-        f32::MAX;
-        (game::consts::WORLD_HEIGHT * game::consts::WORLD_WIDTH)
-            as usize
-            + game::consts::WORLD_WIDTH as usize
-    ];
-    for object_opt in objects.get_vector_mut() {
-        if let Some(object) = object_opt {
-            object.physics.is_visible = false;
-            update_visual(object, -1, Position::default(), &mut dist_map);
-        }
-    }
-
-    for (pos, range) in player_positions {
-        let mut visible_pos = rltk::field_of_view(pos.into(), range, objects);
-        visible_pos.retain(|p| {
-            p.x >= 0
-                && p.x < game::consts::WORLD_WIDTH
-                && p.y >= 0
-                && p.y < game::consts::WORLD_HEIGHT
-        });
-
-        for object_opt in objects.get_vector_mut() {
-            if let Some(object) = object_opt {
-                if visible_pos.contains(&object.pos.into()) {
-                    object.physics.is_visible = true;
-                    update_visual(object, range, pos, &mut dist_map);
+    objects
+        .get_vector_mut()
+        .iter_mut()
+        .flatten()
+        .filter(|o| !o.is_void())
+        .for_each(|obj| {
+            let closest_player_view = player_views
+                .iter()
+                .min_by_key(|x| obj.pos.distance(&x.0) as i32);
+            if let Some((pos, range)) = closest_player_view {
+                update_visual(obj, *pos, *range, &tc_rgb);
+            }
+            if obj.tile.is_some() {
+                draw_batch_tile.set(
+                    obj.pos.into(),
+                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                    rltk::to_cp437(obj.visual.glyph),
+                );
+            } else if obj.physics.is_visible {
+                if !obj.physics.is_blocking {
+                    draw_batch_nbl.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
+                } else {
+                    draw_batch_blk.set(
+                        obj.pos.into(),
+                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                        rltk::to_cp437(obj.visual.glyph),
+                    );
                 }
             }
-        }
-    }
+        });
+    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
+    draw_batch_nbl.submit(game::consts::WORLD_NBL_Z).unwrap();
+    draw_batch_blk.submit(game::consts::WORLD_BLK_Z).unwrap();
 }
 
 /// Update the player's field of view and updated which tiles are visible/explored.
 fn update_visual(
     object: &mut Object,
-    player_sensing_range: i32,
     player_pos: Position,
-    dist_map: &mut Vec<f32>,
+    player_sensing_range: i32,
+    tc: &TileColorsRgb,
 ) {
-    use rltk::{RGB, RGBA};
-    // go through all tiles and set their background color
-    let bwft = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_true));
-    let bwff = RGB::from(RGBA::from(ui::palette().world_bg_wall_fov_false));
-    let bgft = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_true));
-    let bgff = RGB::from(RGBA::from(ui::palette().world_bg_ground_fov_false));
-    let fwft = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_true));
-    let fwff = RGB::from(RGBA::from(ui::palette().world_fg_wall_fov_false));
-    let fgft = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_true));
-    let fgff = RGB::from(RGBA::from(ui::palette().world_fg_ground_fov_false));
+    let dist_to_player = object.pos.distance(&player_pos);
+    let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
+    object.physics.is_visible = dist_to_player < (player_sensing_range as f32);
 
-    let wall = object.physics.is_blocking_sight;
-
-    let idx =
-        object.pos.y() as usize * (game::consts::WORLD_WIDTH as usize) + object.pos.x() as usize;
-    if idx >= dist_map.len() {
-        panic!("Invalid object index!");
-    }
-    dist_map[idx] = dist_map[idx].min(object.pos.distance(&player_pos));
-
+    let obj_vis = object.physics.is_visible;
+    let obj_opaque = object.physics.is_blocking_sight;
     // set tile foreground and background colors
-    let (tile_color_fg, tile_color_bg) = match (object.physics.is_visible, wall) {
+    let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque) {
         // outside field of view:
-        (false, true) => (fwff, bwff),
-        (false, false) => (fgff, bgff),
+        (false, true) => (tc.fwf, tc.bwf),
+        (false, false) => (tc.fff, tc.bff),
         // inside fov:
         // (true, true) => COLOR_LIGHT_WALL,
         (true, true) => (
-            fwft.lerp(fwff, dist_map[idx] / (player_sensing_range + 1) as f32),
-            bwft.lerp(bwff, dist_map[idx] / (player_sensing_range + 1) as f32),
+            tc.fwt.lerp(tc.fwf, vis_ratio),
+            tc.bwt.lerp(tc.bwf, vis_ratio),
         ),
         // (true, false) => COLOR_ground_in_fov,
         (true, false) => (
-            fgft.lerp(fgff, dist_map[idx] / (player_sensing_range + 1) as f32),
-            bgft.lerp(bgff, dist_map[idx] / (player_sensing_range + 1) as f32),
+            tc.fft.lerp(tc.fff, vis_ratio),
+            tc.bft.lerp(tc.bff, vis_ratio),
         ),
     };
 
-    if let Some(tile) = &mut object.tile {
-        if object.physics.is_visible {
-            tile.is_explored = true;
-        }
-        if tile.is_explored || game::env().is_debug_mode {
-            // show explored tiles only (any visible tile is explored already)
-            object.visual.fg_color = (
-                (tile_color_fg.r * 255.0) as u8,
-                (tile_color_fg.g * 255.0) as u8,
-                (tile_color_fg.b * 255.0) as u8,
-                255 as u8,
-            );
-            object.visual.bg_color = (
-                (tile_color_bg.r * 255.0) as u8,
-                (tile_color_bg.g * 255.0) as u8,
-                (tile_color_bg.b * 255.0) as u8,
-                255 as u8,
-            );
-        }
-    } else {
-        object.visual.bg_color = (
-            (tile_color_bg.r * 255.0) as u8,
-            (tile_color_bg.g * 255.0) as u8,
-            (tile_color_bg.b * 255.0) as u8,
+    // set new background color for object
+    object.visual.bg_color = (
+        (tile_color_bg.r * 255.0) as u8,
+        (tile_color_bg.g * 255.0) as u8,
+        (tile_color_bg.b * 255.0) as u8,
+        255 as u8,
+    );
+
+    // if we're dealing with a tile, then change foreground color as well
+    if object.tile.is_some() {
+        object.visual.fg_color = (
+            (tile_color_fg.r * 255.0) as u8,
+            (tile_color_fg.g * 255.0) as u8,
+            (tile_color_fg.b * 255.0) as u8,
             255 as u8,
         );
     }

@@ -1,5 +1,6 @@
 use crate::entity::act;
 use crate::entity::act::Action;
+use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -8,6 +9,7 @@ use crate::game::msg::MessageLog;
 use crate::game::ObjectStore;
 use crate::game::Position;
 use crate::game::State;
+use crate::ui;
 use crate::ui::hud;
 use crate::world_gen;
 
@@ -25,11 +27,16 @@ pub struct Visual {
 
 impl Visual {
     pub fn new() -> Self {
+        let bg_color = if game::env().is_debug_mode {
+            ui::palette().world_bg_floor_fov_true
+        } else {
+            ui::palette().world_bg_floor_fov_false
+        };
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            fg_color: (255, 255, 255, 255),
-            bg_color: (0, 0, 0, 255),
+            fg_color: (0, 0, 0, 255),
+            bg_color,
         }
     }
 }
@@ -44,11 +51,12 @@ pub struct Physics {
 
 impl Physics {
     pub fn new() -> Self {
+        let is_visible = game::env().is_debug_mode;
         Physics {
             is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
-            is_visible: false,
+            is_visible,
         }
     }
 }
@@ -131,6 +139,21 @@ impl Object {
         self
     }
 
+    /// Initialize the visual properties of the object. Part of the builder pattern.
+    pub fn visualize_bg(
+        mut self,
+        name: &str,
+        character: char,
+        fg_color: (u8, u8, u8, u8),
+        bg_color: (u8, u8, u8, u8),
+    ) -> Object {
+        self.visual.name = name.into();
+        self.visual.glyph = character;
+        self.visual.fg_color = fg_color;
+        self.visual.bg_color = bg_color;
+        self
+    }
+
     /// Initialize the physical properties of the object. Part of the builder pattern.
     pub fn physical(
         mut self,
@@ -141,7 +164,7 @@ impl Object {
         self.physics.is_blocking = is_blocking;
         self.physics.is_blocking_sight = is_blocking_sight;
         self.physics.is_always_visible = is_always_visible;
-        self.physics.is_visible = is_always_visible;
+        self.physics.is_visible = game::env().is_debug_mode;
         self
     }
 
@@ -171,9 +194,9 @@ impl Object {
 
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
-    pub fn tile_explored(mut self, is_explored: bool) -> Object {
+    pub fn tile(mut self, typ: world_gen::TileType) -> Object {
         self.tile = Some(world_gen::Tile {
-            is_explored,
+            typ,
             morphogen: 0.0,
         });
         self
@@ -196,6 +219,60 @@ impl Object {
         self
     }
 
+    /// Turn this object into a wall tile. Generally only use with objects that already are tiles.
+    pub fn into_wall_tile(&mut self) {
+        self.physics.is_blocking = true;
+        self.physics.is_blocking_sight = true;
+        self.visual.glyph = '○';
+        self.visual.name = world_gen::TileType::Wall.as_str().into();
+        if game::env().is_debug_mode {
+            self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
+            self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
+        } else {
+            self.visual.fg_color = ui::palette().world_fg_wall_fov_false;
+            self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
+        }
+        self.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Wall;
+        }
+    }
+
+    /// Turn this object into a floor tile. Generally only use with objects that already are tiles.
+    pub fn into_floor_tile(&mut self) {
+        self.physics.is_blocking = false;
+        self.physics.is_blocking_sight = false;
+        self.visual.glyph = '·';
+        self.visual.name = world_gen::TileType::Floor.as_str().into();
+        if game::env().is_debug_mode {
+            self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
+            self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
+        } else {
+            self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
+            self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
+        }
+        self.control = None;
+
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Floor;
+        }
+    }
+
+    /// Turn this object into a void tile. Generally only use with objects that already are tiles.
+    pub fn into_void_tile(&mut self) {
+        self.physics.is_blocking = true;
+        self.physics.is_blocking_sight = true;
+        self.visual.glyph = ' ';
+        self.visual.fg_color = (0, 0, 0, 255);
+        self.visual.bg_color = (0, 0, 0, 255);
+        self.visual.name = world_gen::TileType::Void.as_str().into();
+        self.control = None;
+
+        if let Some(t) = &mut self.tile {
+            t.typ = world_gen::TileType::Void;
+        }
+    }
+
     /// Perform necessary actions when object dies.
     pub fn die(&mut self, _state: &mut State, objects: &mut ObjectStore) {
         // empty inventory into this objects' current position
@@ -206,11 +283,7 @@ impl Object {
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
         // world.
         if let Some(_) = self.tile {
-            self.physics.is_blocking = false;
-            self.physics.is_blocking_sight = false;
-            self.visual.glyph = '·';
-            self.visual.name = "empty tile".into();
-            self.control = None;
+            self.into_floor_tile();
         } else {
             self.alive = false;
             // take this object out of the world
@@ -223,6 +296,18 @@ impl Object {
     pub fn is_player(&self) -> bool {
         if let Some(control::Controller::Player(_)) = self.control {
             true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_void(&self) -> bool {
+        if let Some(t) = &self.tile {
+            if let world_gen::TileType::Void = t.typ {
+                true
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -392,7 +477,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 
@@ -403,7 +488,7 @@ impl Object {
             action_clone.set_target(target);
             action_clone
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 
@@ -411,7 +496,7 @@ impl Object {
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick1_action.clone()
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 
@@ -419,7 +504,7 @@ impl Object {
         if let Some(control::Controller::Player(ctrl)) = &self.control {
             ctrl.quick2_action.clone()
         } else {
-            Box::new(act::Pass::default())
+            Box::new(act::Pass)
         }
     }
 

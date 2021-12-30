@@ -28,11 +28,13 @@ fn test_random_ai() {
         panic!();
     }
 
+    let virus_color = palette().entity_virus;
+
     // Set up monsters
     let virus_north = Object::new()
         .position_xy(p_x, p_y - 1)
         .living(true)
-        .visualize("Virus", 'v', palette().entity_virus)
+        .visualize("Virus", 'v', virus_color)
         .physical(true, false, false)
         .genome(
             0.75,
@@ -45,7 +47,7 @@ fn test_random_ai() {
     let virus_east = Object::new()
         .position_xy(p_x + 1, p_y)
         .living(true)
-        .visualize("Virus", 'v', palette().entity_virus)
+        .visualize("Virus", 'v', virus_color)
         .physical(true, false, false)
         .genome(
             0.75,
@@ -58,7 +60,7 @@ fn test_random_ai() {
     let virus_south = Object::new()
         .position_xy(p_x, p_y + 1)
         .living(true)
-        .visualize("Virus", 'v', palette().entity_virus)
+        .visualize("Virus", 'v', virus_color)
         .physical(true, false, false)
         .genome(
             0.75,
@@ -87,7 +89,7 @@ fn test_random_ai() {
     let virus_west = Object::new()
         .position_xy(p_x - 1, p_y)
         .living(true)
-        .visualize("Virus", 'v', palette().entity_virus)
+        .visualize("Virus", 'v', virus_color)
         .physical(true, false, false)
         .genome(
             0.75,
@@ -123,26 +125,28 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
 
     // create blank game world
     let mut objects = ObjectStore::new();
-    objects.blank_world();
+    objects.blank_circle_world();
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
+
+    let debug_mode = env().is_debug_mode;
 
     // make tiles near the player walkable
     objects
         .get_tile_at(p_x, p_y)
-        .replace(Tile::floor(p_x, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y, debug_mode));
     objects
         .get_tile_at(p_x + 1, p_y)
-        .replace(Tile::floor(p_x + 1, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x + 1, p_y, debug_mode));
     objects
         .get_tile_at(p_x - 1, p_y)
-        .replace(Tile::floor(p_x - 1, p_y, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x - 1, p_y, debug_mode));
     objects
         .get_tile_at(p_x, p_y - 1)
-        .replace(Tile::floor(p_x, p_y - 1, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y - 1, debug_mode));
     objects
         .get_tile_at(p_x, p_y + 1)
-        .replace(Tile::floor(p_x, p_y + 1, env().is_debug_mode));
+        .replace(Tile::new_floor(p_x, p_y + 1, debug_mode));
 
     let player = Object::new()
         .position_xy(p_x, p_y)

@@ -2,7 +2,7 @@ pub mod character;
 pub mod controls;
 
 use crate::{game, ui};
-use rltk;
+use bracket_lib::prelude as rltk;
 
 /// Simple info box. Can be exited by clicking outside or pressing `Esc`
 #[derive(Clone, Debug)]
@@ -30,11 +30,12 @@ impl InfoBox {
         }
     }
 
-    fn render(&self) {
+    pub fn render(&self) {
         let mut draw_batch = rltk::DrawBatch::new();
         let fg_hud_border = ui::palette().hud_fg_border;
         let fg_hud = ui::palette().hud_fg;
         let bg_hud = ui::palette().hud_bg;
+
         // draw box
         draw_batch.fill_region(
             self.layout,
@@ -67,7 +68,7 @@ impl InfoBox {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(self, ctx: &mut rltk::Rltk) -> Option<InfoBox> {
+    pub fn display(self, ctx: &mut rltk::BTerm) -> Option<InfoBox> {
         // render current menu
         self.render();
 
