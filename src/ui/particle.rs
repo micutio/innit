@@ -232,7 +232,6 @@ fn create_vignette() -> Vec<(game::Position, (u8, u8, u8, u8))> {
             let pos = game::Position::from_xy(point.x, point.y);
             let dist = pos.distance(&center_pos);
             let ratio = (dist - start_radius as f32) / (end_radius as f32 - start_radius as f32);
-            println!("ratio: {}", ratio);
             let alpha: u8 = (255.0 * ratio) as u8;
             vignette.push((pos, (0, 0, 0, alpha)));
         }
