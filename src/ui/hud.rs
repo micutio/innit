@@ -253,8 +253,8 @@ impl Hud {
         let x2 = x1 + game::consts::SIDE_PANEL_WIDTH;
         let y2 = game::consts::SIDE_PANEL_HEIGHT;
         let layout = rltk::Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
-        let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
+        let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 1, 23);
+        let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 1, 58);
         Hud {
             layout,
             inv_area,
