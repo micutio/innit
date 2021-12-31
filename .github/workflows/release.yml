@@ -1,0 +1,87 @@
+# For reference see:
+# https://github.com/NuroDev/rust-cross-release/blob/main/.github/workflows/release.yml
+
+name: Release
+
+# TODO: Add manual workflow using `workflow_dispatch`
+on:
+  release:
+    types:
+      - created
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  binary:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: innit
+            asset_name: innit-${{ github.event.release.tag_name }}-linux-x86_64
+            use_cross: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: innit
+            asset_name: innit-${{ github.event.release.tag_name }}-linux-musl-x86_64
+            use_cross: true
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: innit
+            asset_name: innit-${{ github.event.release.tag_name }}-macos-x86_64
+            # TODO: Figure out how to install additional targets on the runner.
+            #       Refer to https://www.rohanjain.in/cargo-cross/
+            #                https://github.com/marketplace/actions/set-up-a-rust-toolchain
+            # - os: macos-latest
+            #   target: aarch64-apple-darwin
+            #   artifact_name: innit
+            #   asset_name: innit-${{ github.event.release.tag_name }}-macos-aarch64
+
+
+          # TODO: Add support for more Windows toolchains (i686-pc-windows-gnu, i686-pc-windows-msvc & x86_64-pc-windows-gnu)
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: innit.exe
+            asset_name: innit-${{ github.event.release.tag_name }}-windows-x86_64
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: "stable"
+          override: true
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          use-cross: ${{ matrix.use_cross }}
+          args: --verbose --release --target=${{ matrix.target }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ./target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+      # TODO: Zip only Windows releases, use bash `tar` to archive all *unix assets
+      - name: Archive Release
+        uses: papeloto/action-zip@v1
+        with:
+          files: ./target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ./LICENSE
+          dest: ${{ matrix.asset_name }}.zip
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.asset_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
