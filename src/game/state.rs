@@ -5,6 +5,7 @@ use crate::game::{self, consts, msg, ObjectStore};
 use crate::util::rng;
 
 use rand::{Rng, RngCore};
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
 /// The game state struct contains all information necessary to represent the current state of the

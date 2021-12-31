@@ -39,6 +39,6 @@ fn quit() -> game::RunState {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn quit() -> RunState {
-    RunState::MainMenu()
+fn quit() -> game::RunState {
+    game::RunState::MainMenu(new())
 }
