@@ -9,7 +9,7 @@ use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
 
-use bracket_lib::prelude as rltk;
+
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
