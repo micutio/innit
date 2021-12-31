@@ -11,8 +11,7 @@ wasm-bindgen = [ "instant/wasm-bindgen" ]
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
-bracket-lib = { git="https://github.com/amethyst/bracket-lib.git" }
-
+rltk="0.8.1"
 cpuprofiler = "0.0.4"
 instant = "0.1"
 lazy_static = "1.4.0"

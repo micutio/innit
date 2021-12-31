@@ -10,11 +10,11 @@ extern crate casim;
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
-extern crate bracket_lib;
 extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
 extern crate rand_isaac;
+extern crate rltk;
 extern crate serde;
 extern crate serde_json;
 
@@ -26,8 +26,6 @@ mod ui;
 mod util;
 mod world_gen;
 
-use crate::rltk::EMBED;
-use bracket_lib::prelude as rltk;
 use std::env;
 
 rltk::embedded_resource!(FONT_16X16_YUN, "../resources/fonts/yun_16x16.png");

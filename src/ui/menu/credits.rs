@@ -1,7 +1,7 @@
 use crate::game::{self, ObjectStore, State};
 use crate::ui::dialog;
 use crate::ui::menu::{self, Menu, MenuItem};
-use bracket_lib::prelude as rltk;
+
 
 #[derive(Copy, Clone, Debug)]
 pub enum CreditsMenuItem {

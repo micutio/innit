@@ -17,7 +17,7 @@ use crate::ui;
 use crate::ui::palette;
 use crate::util;
 
-use bracket_lib::prelude as rltk;
+
 
 /// Menu item properties
 /// - `text` for rendering

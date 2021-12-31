@@ -33,7 +33,7 @@ use crate::util::timer;
 use crate::world_gen;
 use crate::world_gen::WorldGen;
 
-use bracket_lib::prelude as rltk;
+
 use core::fmt;
 use std::error::Error;
 use std::fmt::{Display, Formatter};

@@ -5,7 +5,7 @@ use crate::rand::Rng;
 use crate::util::rng;
 use crate::{game, util};
 
-use bracket_lib::prelude as rltk;
+
 use std::ops::{Index, IndexMut};
 
 #[cfg(not(target_arch = "wasm32"))]
