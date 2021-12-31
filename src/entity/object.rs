@@ -11,6 +11,7 @@ use crate::game::Position;
 use crate::game::State;
 use crate::ui;
 use crate::ui::hud;
+use crate::util;
 use crate::world_gen;
 
 use serde::{Deserialize, Serialize};
@@ -605,14 +606,22 @@ impl Object {
         // tiles have reduced information (might change in the future) since they are static
         if self.tile.is_some() {
             return if !self.physics.is_blocking {
-                hud::ToolTip::no_header(vec![])
+                hud::ToolTip::no_header(Vec::new(), Vec::new())
             } else {
                 let attributes = vec![("receptors:".to_string(), receptor_match)];
-                hud::ToolTip::new(self.visual.name.clone(), attributes)
+                hud::ToolTip::new(self.visual.name.clone(), Vec::new(), attributes)
             };
         }
 
         let header = self.visual.name.clone();
+        let text = if self.is_player() {
+            util::text_to_width(
+                "An experimental cell designed to aid the immune system in fighting pathogens.",
+                game::consts::SIDE_PANEL_WIDTH as usize,
+            )
+        } else {
+            Vec::new()
+        };
         let attributes: Vec<(String, String)> = vec![
             (
                 "position".to_string(),
@@ -636,7 +645,7 @@ impl Object {
             ),
             ("receptors:".to_string(), receptor_match),
         ];
-        hud::ToolTip::new(header, attributes)
+        hud::ToolTip::new(header, text, attributes)
     }
 
     pub fn get_available_actions(&self, targets: &[act::TargetCategory]) -> Vec<String> {

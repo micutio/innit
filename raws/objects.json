@@ -48,7 +48,7 @@
             255
         ],
         "item": {
-            "name": "Plasmids can transfer DNA between cells and bacteria and help manipulate it.",
+            "name": "Plasmids help manipulate DNA and also transfer pieces of it between cells.",
             "action": "ActEditGenome"
         },
         "controller": null,

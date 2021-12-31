@@ -157,33 +157,35 @@ fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<HudItem>> {
 #[derive(Clone, Debug)]
 pub struct ToolTip {
     header: Option<String>,
+    text: Vec<String>,
     attributes: Vec<(String, String)>,
 }
 
 impl ToolTip {
-    pub fn new<S1: Into<String>>(header: S1, attrs: Vec<(String, String)>) -> Self {
+    pub fn new<S1: Into<String>>(
+        header: S1,
+        text: Vec<String>,
+        attributes: Vec<(String, String)>,
+    ) -> Self {
         ToolTip {
             header: Some(header.into()),
-            attributes: attrs
-                .iter()
-                .map(|(e1, e2)| (e1.into(), e2.into()))
-                .collect(),
+            text,
+            attributes,
         }
     }
 
-    pub fn no_header(attrs: Vec<(String, String)>) -> Self {
+    pub fn no_header(text: Vec<String>, attributes: Vec<(String, String)>) -> Self {
         ToolTip {
             header: None,
-            attributes: attrs
-                .iter()
-                .map(|(e1, e2)| (e1.into(), e2.into()))
-                .collect(),
+            text,
+            attributes,
         }
     }
 
     pub fn header_only<S1: Into<String>>(header: S1) -> Self {
         ToolTip {
             header: Some(header.into()),
+            text: Vec::new(),
             attributes: Vec::new(),
         }
     }
@@ -196,6 +198,8 @@ impl ToolTip {
             0
         };
 
+        let text_width: usize = self.text.iter().map(|s| s.len() + 1).max().unwrap_or(0);
+
         let attributes_width: usize = self
             .attributes
             .iter()
@@ -204,36 +208,31 @@ impl ToolTip {
             .unwrap_or(0);
 
         // pad header with 2 and attributes with 3 to account for borders and separators
-        (header_width + 2).max(attributes_width) as i32
+        *vec![header_width + 2, text_width, attributes_width]
+            .iter()
+            .max()
+            .unwrap() as i32
     }
 
     /// Calculate the height in `[cells]` that a text box will require to be rendered on screen.
     fn content_height(&self) -> i32 {
         // header takes two lines for header text and separator
         let header_height = if self.header.is_some() {
-            if self.attributes.is_empty() {
-                1
-            } else {
-                2
+            match (self.attributes.is_empty(), self.text.is_empty()) {
+                (true, true) => 1,
+                (false, false) => 3,
+                _ => 2,
             }
         } else {
             0
         };
 
+        let text_height = self.text.len();
         let attributes_height = self.attributes.len();
-        // println!("ATTRIBUTES LEN {}", self.attributes.len());
 
-        // pad height with 2 cells to account for rendering borders top and bottom
-        (header_height + attributes_height) as i32
+        (header_height + text_height + attributes_height) as i32
     }
 }
-
-// fn tooltip_from(g_trait: &GeneticTrait) -> Vec<String> {
-//     vec![
-//         format!("trait: {}", g_trait.trait_name),
-//         format!("group: {}", g_trait.trait_family),
-//     ]
-// }
 
 pub struct Hud {
     layout: rltk::Rect,
@@ -310,12 +309,12 @@ impl Hud {
 
             let gene_title = format!("gene {:2}:", h_offset + 1);
             let is_from_plasmid = h_offset >= player_dna_length;
-            let mut tooltip_text = vec![
+            let mut tooltip_attrs = vec![
                 (gene_title, g_trait.trait_name.clone()),
                 ("group  :".to_string(), g_trait.trait_family.to_string()),
             ];
             if is_from_plasmid {
-                tooltip_text.push(("origin: ".to_string(), "plasmid".to_string()));
+                tooltip_attrs.push(("origin: ".to_string(), "plasmid".to_string()));
             }
 
             let bg_color = if is_from_plasmid {
@@ -327,7 +326,7 @@ impl Hud {
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 dna_glyph,
-                ToolTip::no_header(tooltip_text),
+                ToolTip::no_header(Vec::new(), tooltip_attrs),
                 rltk::Rect::with_size(
                     game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH
                         + 3
@@ -362,12 +361,12 @@ impl Hud {
 
             let gene_title = format!("gene {:2}:", v_offset + 1);
             let is_from_plasmid = v_offset + horiz_display_count >= player_dna_length;
-            let mut tooltip_text = vec![
+            let mut tooltip_attrs = vec![
                 (gene_title, g_trait.trait_name.clone()),
                 ("group  :".to_string(), g_trait.trait_family.to_string()),
             ];
             if is_from_plasmid {
-                tooltip_text.push(("origin :".to_string(), "plasmid".to_string()));
+                tooltip_attrs.push(("origin :".to_string(), "plasmid".to_string()));
             }
 
             let bg_color = if is_from_plasmid {
@@ -378,7 +377,7 @@ impl Hud {
             self.items.push(UiItem::new(
                 HudItem::DnaItem,
                 dna_glyph,
-                ToolTip::no_header(tooltip_text),
+                ToolTip::no_header(Vec::new(), tooltip_attrs),
                 rltk::Rect::with_size(game::consts::SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
                 rltk::ColorPair::new(col, bg_color),
             ));
@@ -407,10 +406,8 @@ impl Hud {
             let bg_col = palette().hud_bg;
 
             let item_tooltip = if let Some(item) = &obj.item {
-                ToolTip::new(
-                    format!("use {}", &obj.visual.name),
-                    vec![(item.description.clone(), "".to_string())],
-                )
+                let lines = util::text_to_width(&item.description, self.layout.width() as usize);
+                ToolTip::new(format!("use {}", &obj.visual.name), lines, Vec::new())
             } else {
                 ToolTip::header_only(format!("this can't be used or consumed"))
             };
@@ -859,6 +856,7 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
         let tt_width = tooltip.content_width() + 1;
         let tt_height = tooltip.content_height() + 1;
 
+        // draw the tooltip box
         draw_batch.fill_region(
             rltk::Rect::with_size(next_x, next_y, tt_width, tt_height),
             rltk::ColorPair::new(fg_tt, bg_tt),
@@ -868,33 +866,12 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
             rltk::Rect::with_size(next_x, next_y, tt_width, tt_height),
             rltk::ColorPair::new(fg_tt_border, bg_tt),
         );
+
         let mut top_offset: i32 = 1;
         if tooltip.header.is_some() {
-            top_offset = 3;
+            top_offset = 2;
 
-            if !tooltip.attributes.is_empty() {
-                draw_batch.print_color(
-                    rltk::Point::new(next_x, next_y + 2),
-                    // to_cp437('─'),
-                    "├",
-                    rltk::ColorPair::new(fg_tt_border, bg_tt),
-                );
-                draw_batch.print_color(
-                    rltk::Point::new(next_x + tt_width, next_y + 2),
-                    // to_cp437('─'),
-                    "┤",
-                    rltk::ColorPair::new(fg_tt_border, bg_tt),
-                );
-                for x in (next_x + 1)..(next_x + tt_width) {
-                    draw_batch.print_color(
-                        rltk::Point::new(x, next_y + 2),
-                        // to_cp437('─'),
-                        "─",
-                        rltk::ColorPair::new(fg_tt_border, bg_tt),
-                    );
-                }
-            }
-
+            // draw header
             draw_batch.print_color_centered_at(
                 rltk::Point::new(next_x + (tt_width / 2), next_y + 1),
                 tooltip.header.as_ref().unwrap(),
@@ -902,14 +879,77 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
             );
         }
 
+        // draw separator if there is a header
+        if tooltip.header.is_some() && !tooltip.text.is_empty() {
+            draw_batch.print_color(
+                rltk::Point::new(next_x, next_y + top_offset),
+                // to_cp437('─'),
+                "├",
+                rltk::ColorPair::new(fg_tt_border, bg_tt),
+            );
+            draw_batch.print_color(
+                rltk::Point::new(next_x + tt_width, next_y + top_offset),
+                // to_cp437('─'),
+                "┤",
+                rltk::ColorPair::new(fg_tt_border, bg_tt),
+            );
+            for x in (next_x + 1)..(next_x + tt_width) {
+                draw_batch.print_color(
+                    rltk::Point::new(x, next_y + top_offset),
+                    // to_cp437('─'),
+                    "─",
+                    rltk::ColorPair::new(fg_tt_border, bg_tt),
+                );
+            }
+            top_offset += 1;
+        }
+
+        // draw text
+        let text_len = tooltip.text.len() as i32;
+        for (idx, s) in tooltip.text.iter().enumerate() {
+            draw_batch.print_color(
+                rltk::Point::new(next_x + 1, next_y + top_offset + idx as i32),
+                s,
+                rltk::ColorPair::new(fg_tt, bg_tt),
+            );
+        }
+
+        let has_prev_content = tooltip.header.is_some() || !tooltip.text.is_empty();
+        if has_prev_content && !tooltip.attributes.is_empty() {
+            draw_batch.print_color(
+                rltk::Point::new(next_x, next_y + top_offset + text_len),
+                // to_cp437('─'),
+                "├",
+                rltk::ColorPair::new(fg_tt_border, bg_tt),
+            );
+            draw_batch.print_color(
+                rltk::Point::new(next_x + tt_width, next_y + top_offset + text_len),
+                // to_cp437('─'),
+                "┤",
+                rltk::ColorPair::new(fg_tt_border, bg_tt),
+            );
+            for x in (next_x + 1)..(next_x + tt_width) {
+                draw_batch.print_color(
+                    rltk::Point::new(x, next_y + top_offset + text_len),
+                    // to_cp437('─'),
+                    "─",
+                    rltk::ColorPair::new(fg_tt_border, bg_tt),
+                );
+            }
+            top_offset += 1;
+        }
+
         for (idx, (s1, s2)) in tooltip.attributes.iter().enumerate() {
             draw_batch.print_color(
-                rltk::Point::new(next_x + 1, next_y + idx as i32 + top_offset),
+                rltk::Point::new(next_x + 1, next_y + text_len + top_offset + idx as i32),
                 s1,
                 rltk::ColorPair::new(fg_tt, bg_tt),
             );
             draw_batch.print_color_right(
-                rltk::Point::new(next_x + tt_width, next_y + idx as i32 + top_offset),
+                rltk::Point::new(
+                    next_x + tt_width,
+                    next_y + text_len + idx as i32 + top_offset,
+                ),
                 s2,
                 rltk::ColorPair::new(fg_tt, bg_tt),
             );
