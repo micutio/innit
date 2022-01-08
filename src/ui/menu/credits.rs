@@ -2,7 +2,6 @@ use crate::game::{self, ObjectStore, State};
 use crate::ui::dialog;
 use crate::ui::menu::{self, Menu, MenuItem};
 
-
 #[derive(Copy, Clone, Debug)]
 pub enum CreditsMenuItem {
     ReturnToMain,
@@ -23,7 +22,7 @@ impl MenuItem for CreditsMenuItem {
 
 pub fn new() -> Menu<CreditsMenuItem> {
     Menu::with_header(
-        "SUCCESS - INFECTION REPELLED!",
+        "YOU WON!",
         vec![(
             CreditsMenuItem::ReturnToMain,
             "Return to Main Menu".to_string(),

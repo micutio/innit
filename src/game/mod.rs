@@ -565,6 +565,11 @@ impl rltk::GameState for Game {
                 self.require_render = false;
                 particles().particles.clear();
                 frontend::render_world(&mut self.objects, ctx, true);
+                // render log in game over screen
+                let mut draw_batch = rltk::DrawBatch::new();
+                hud::render_log(&self.state, self.hud.log_area, &mut draw_batch);
+                draw_batch.submit(consts::HUD_CON_Z).unwrap();
+                // render particles
                 particles().render(ctx);
                 match instance.display(ctx) {
                     Some(option) => menu::game_over::GameOverMenuItem::process(
@@ -583,6 +588,11 @@ impl rltk::GameState for Game {
                 particles().particles.clear();
                 ctx.set_active_console(consts::WORLD_CON);
                 frontend::render_world(&mut self.objects, ctx, true);
+                // render log in game over screen
+                let mut draw_batch = rltk::DrawBatch::new();
+                hud::render_log(&self.state, self.hud.log_area, &mut draw_batch);
+                draw_batch.submit(consts::HUD_CON_Z).unwrap();
+                // render particles
                 particles().render(ctx);
                 match instance.display(ctx) {
                     Some(option) => menu::game_won::GameWonMenuItem::process(

@@ -8,7 +8,6 @@ use crate::game::{self, State};
 use crate::ui::hud::{ToolTip, UiItem};
 use crate::{game::objects::ObjectStore, ui::palette};
 
-
 pub trait MenuItem: Clone {
     fn process(
         state: &mut State,
@@ -29,7 +28,7 @@ pub struct Menu<T: MenuItem> {
 
 impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
-        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH;
+        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
         let y2 = game::consts::SCREEN_HEIGHT;
@@ -44,7 +43,7 @@ impl<T: MenuItem> Menu<T> {
     }
 
     pub fn with_header(header: &str, item_vec: Vec<(T, String)>) -> Self {
-        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH;
+        let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH;
         let y2 = game::consts::SCREEN_HEIGHT;

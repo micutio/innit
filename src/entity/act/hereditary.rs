@@ -624,7 +624,11 @@ impl Action for ProduceVirion {
                 // );
                 assert!(!dna.is_empty());
                 if owner.physics.is_visible || owner.is_player() {
-                    let verb = if owner.is_player() { "are" } else { "is" };
+                    let verb = if owner.visual.name.contains("You") {
+                        "are"
+                    } else {
+                        "is"
+                    };
                     state.log.add(
                         format!("{0} {1} forced to produce virions", owner.visual.name, verb),
                         game::msg::MsgClass::Alert,
@@ -796,24 +800,6 @@ impl Action for KillSwitch {
     ) -> ActionResult {
         match self.target {
             Target::Center => {
-                // play a little particle effect
-                if owner.physics.is_visible {
-                    let fg = (255, 10, 90, 180);
-                    let bg = ui::palette().col_transparent;
-
-                    ui::register_particles(
-                        particle::ParticleBuilder::new(
-                            owner.pos.x() as f32,
-                            owner.pos.y() as f32,
-                            fg,
-                            bg,
-                            owner.visual.glyph,
-                            600.0,
-                        )
-                        .with_end_color((0, 0, 0, 0), bg)
-                        .with_scale((0.0, 0.0), (1.0, 1.0)),
-                    )
-                }
                 owner.die(state, objects);
                 let callback = if owner.physics.is_visible {
                     ObjectFeedback::Render
@@ -841,23 +827,6 @@ impl Action for KillSwitch {
                         .iter()
                         .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
                     if has_killswitch && has_matching_receptor {
-                        if target.physics.is_visible {
-                            let fg = (255, 10, 90, 180);
-                            let bg = ui::palette().col_transparent;
-
-                            ui::register_particles(
-                                particle::ParticleBuilder::new(
-                                    target.pos.x() as f32,
-                                    target.pos.y() as f32,
-                                    fg,
-                                    bg,
-                                    target.visual.glyph,
-                                    600.0,
-                                )
-                                .with_end_color((0, 0, 0, 0), bg)
-                                .with_scale((0.0, 0.0), (1.0, 1.0)),
-                            )
-                        }
                         target.die(state, objects);
                     }
 

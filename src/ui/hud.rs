@@ -706,7 +706,7 @@ fn render_inventory(
         });
 }
 
-fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatch) {
+pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::DrawBatch) {
     let fg_log = palette().hud_fg;
     let bg_log_header = palette().hud_bg_dna;
     let bg_log_default = palette().hud_bg;

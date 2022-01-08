@@ -292,6 +292,25 @@ impl Object {
                 self.visual.name = "your remains".to_string();
             }
         }
+
+        // play a little particle effect
+        if self.physics.is_visible {
+            let fg = (255, 0, 0, 255);
+            let bg = ui::palette().col_transparent;
+
+            ui::register_particles(
+                ui::particle::ParticleBuilder::new(
+                    self.pos.x() as f32,
+                    self.pos.y() as f32,
+                    fg,
+                    bg,
+                    '☼',
+                    600.0,
+                )
+                .with_end_color((0, 0, 0, 0), bg)
+                .with_scale((0.0, 0.0), (1.0, 1.0)),
+            )
+        }
     }
 
     pub fn is_player(&self) -> bool {
