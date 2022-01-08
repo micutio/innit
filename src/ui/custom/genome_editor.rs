@@ -114,7 +114,7 @@ impl GenomeEditor {
                 let len: i32 = (s.len() + 3) as i32;
                 let is_enabled = enabled_functions.contains(e);
                 let item = EditFunction::new(
-                    rltk::Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 0),
+                    rltk::Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
                     is_enabled,
                     *e,
                     idx,
@@ -137,7 +137,7 @@ impl GenomeEditor {
             total_height,
         );
 
-        let layout_top_row = rltk::Rect::with_size(layout.x1, layout.y1 + TOP_ROW_Y_OFFSET, 0, 0);
+        let layout_top_row = rltk::Rect::with_size(layout.x1, layout.y1 + TOP_ROW_Y_OFFSET, 0, 1);
         for mut item in &mut edit_functions {
             item.layout = item.layout.add(layout_top_row);
         }
@@ -151,7 +151,7 @@ impl GenomeEditor {
             selected_gene: 0,
             gene_selection_locked: false,
             selected_function: 0,
-            state: GenomeEditingState::ChooseGene,
+            state: GenomeEditingState::ChooseFunction,
             player_dna: dna,
             edit_functions,
             gene_items,
@@ -277,7 +277,7 @@ impl GenomeEditor {
                     item.layout.x1,
                     item.layout.y1,
                     item.layout.width(),
-                    item.layout.height(),
+                    item.layout.height() - 1,
                 ),
                 rltk::ColorPair::new(fg_col, bg_col),
                 rltk::to_cp437(' '),
@@ -578,13 +578,8 @@ impl GenomeEditor {
                 },
                 Return => {
                     // use dummy value, this function will call itself with the correct value.
-                    return match self.state {
-                        ChooseGene => game::RunState::GenomeEditing(self),
-                        _ => {
-                            let function_idx: usize = self.selected_function;
-                            self.do_action(game_state, function_idx)
-                        }
-                    };
+                    let function_idx: usize = self.selected_function;
+                    return self.do_action(game_state, function_idx);
                 }
                 Escape => return game::RunState::CheckInput,
                 _ => {}
