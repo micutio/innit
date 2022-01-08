@@ -60,6 +60,17 @@ impl State {
     pub fn process_object(&mut self, objects: &mut ObjectStore) -> act::ObjectFeedback {
         // unpack object to process its next action
         if let Some(mut actor) = objects.extract_by_index(self.obj_idx) {
+            // skip floor tiles
+            if actor.tile.is_some() && !actor.physics.is_blocking {
+                let mut process_result = act::ObjectFeedback::NoFeedback;
+                // return object back to objects vector, if still alive
+                self.conclude_recycle_obj(objects, actor, &mut process_result);
+
+                // finally increase object index and turn counter
+                self.conclude_advance_turn(objects.get_obj_count());
+                return process_result;
+            }
+
             // Object takes the turn, which has three phases:
             // 1. turn preparation
             // 2. turn action

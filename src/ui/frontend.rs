@@ -168,7 +168,7 @@ fn update_visual(
     tc: &TileColorsRgb,
 ) {
     let dist_to_player = object.pos.distance(&player_pos);
-    let vis_ratio = dist_to_player / (player_sensing_range as f32);
+    let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
     object.physics.is_visible =
         visible_positions.contains(&rltk::Point::new(object.pos.x(), object.pos.y()));
 

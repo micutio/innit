@@ -285,6 +285,7 @@ impl Object {
         // world.
         if let Some(_) = self.tile {
             self.into_floor_tile();
+            self.processors.life_elapsed = 0;
         } else {
             self.alive = false;
             // take this object out of the world
