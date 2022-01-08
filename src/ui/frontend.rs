@@ -3,8 +3,6 @@ use crate::game::{self, ObjectStore, Position};
 use crate::ui;
 use crate::util;
 
-
-
 pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::BTerm, vis_update: bool) {
     // time rendering method for profiling purposes
     let mut timer = util::Timer::new("render world");
@@ -114,6 +112,13 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .filter(|o| o.is_player())
         .map(|o| (o.pos, o.sensors.sensing_range))
         .collect();
+    let visible_positions: Vec<rltk::Point> = player_views
+        .iter()
+        .map(|(pos, range)| {
+            rltk::field_of_view(rltk::Point::new(pos.x(), pos.y()), *range, objects)
+        })
+        .flatten()
+        .collect();
 
     objects
         .get_vector_mut()
@@ -125,7 +130,7 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
                 .iter()
                 .min_by_key(|x| obj.pos.distance(&x.0) as i32);
             if let Some((pos, range)) = closest_player_view {
-                update_visual(obj, *pos, *range, &tc_rgb);
+                update_visual(obj, *pos, *range, &visible_positions, &tc_rgb);
             }
             if obj.tile.is_some() {
                 draw_batch_tile.set(
@@ -159,11 +164,13 @@ fn update_visual(
     object: &mut Object,
     player_pos: Position,
     player_sensing_range: i32,
+    visible_positions: &[rltk::Point],
     tc: &TileColorsRgb,
 ) {
     let dist_to_player = object.pos.distance(&player_pos);
-    let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
-    object.physics.is_visible = dist_to_player < (player_sensing_range as f32);
+    let vis_ratio = dist_to_player / (player_sensing_range as f32);
+    object.physics.is_visible =
+        visible_positions.contains(&rltk::Point::new(object.pos.x(), object.pos.y()));
 
     let obj_vis = object.physics.is_visible;
     let obj_opaque = object.physics.is_blocking_sight;

@@ -24,6 +24,7 @@ pub struct Palette {
     pub hud_bg_log1: (u8, u8, u8, u8),
     pub hud_bg_log2: (u8, u8, u8, u8),
     pub hud_bg_tooltip: (u8, u8, u8, u8),
+    pub hud_bg_plasmid_dna: (u8, u8, u8, u8),
 
     // hud colors - foreground
     pub hud_fg: (u8, u8, u8, u8),
@@ -85,6 +86,7 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     hud_bg_log1: (35, 35, 35, 255),
     hud_bg_log2: (25, 25, 25, 255),
     hud_bg_tooltip: (85, 85, 85, 255),
+    hud_bg_plasmid_dna: (60, 90, 125, 255),
 
     // hud colors - foreground
     hud_fg: (200, 200, 200, 255),
@@ -92,7 +94,7 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     hud_fg_highlight: (9, 124, 172, 255),
     hud_fg_inactive: (140, 140, 140, 255),
     hud_fg_dna_actuator: (220, 50, 30, 255),
-    hud_fg_dna_processor: (80, 60, 220, 255),
+    hud_fg_dna_processor: (130, 90, 230, 255),
     hud_fg_dna_sensor: (90, 220, 70, 255),
     hud_fg_bar_health: (240, 50, 30, 255),
     hud_fg_bar_energy: (220, 184, 68, 255),
@@ -105,7 +107,7 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     // world colors
     world_bg: (49, 49, 49, 255),
     world_bg_wall_fov_false: (100, 30, 50, 255),
-    world_fg_wall_fov_false: (100, 30, 50, 255),
+    world_fg_wall_fov_false: (105, 35, 55, 255),
     world_bg_wall_fov_true: (154, 38, 84, 255),
     world_fg_wall_fov_true: (206, 82, 126, 255),
     world_bg_floor_fov_false: (80, 25, 35, 255),

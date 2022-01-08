@@ -316,7 +316,7 @@ impl Hud {
             }
 
             let bg_color = if is_from_plasmid {
-                palette().hud_bg_tooltip
+                palette().hud_bg_plasmid_dna
             } else {
                 palette().hud_bg_dna
             };
@@ -368,7 +368,7 @@ impl Hud {
             }
 
             let bg_color = if is_from_plasmid {
-                palette().hud_bg_tooltip
+                palette().hud_bg_plasmid_dna
             } else {
                 palette().hud_bg_dna
             };
@@ -538,7 +538,7 @@ fn render_bars(player: &Object, draw_batch: &mut rltk::DrawBatch) {
     draw_batch.print_color_centered_at(
         rltk::Point::new(bar_x + bar_ctr, 2),
         format!("{}/{}", player.actuators.hp, player.actuators.max_hp),
-        rltk::ColorPair::new(fg_hud, health),
+        rltk::ColorPair::new(bg_hud, health),
     );
     // - energy bar
     draw_batch.bar_horizontal(
@@ -555,7 +555,7 @@ fn render_bars(player: &Object, draw_batch: &mut rltk::DrawBatch) {
             "{}/{}",
             player.processors.energy, player.processors.energy_storage
         ),
-        rltk::ColorPair::new(fg_hud, energy),
+        rltk::ColorPair::new(bg_hud, energy),
     );
     // - lifetime bar
     // disabled for now, because it has no useful functionality
