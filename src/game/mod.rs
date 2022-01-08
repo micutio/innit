@@ -33,7 +33,6 @@ use crate::util::timer;
 use crate::world_gen;
 use crate::world_gen::WorldGen;
 
-
 use core::fmt;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -475,7 +474,7 @@ fn save_game(state: &State, objects: &ObjectStore) -> Result<(), Box<dyn Error>>
         let mut save_file = File::create(env_data)?;
         let save_data = serde_json::to_string(&(state, objects))?;
         save_file.write_all(save_data.as_bytes())?;
-        debug!("SAVED GAME TO FILE");
+        info!("SAVED GAME TO FILE {:#?}", save_file);
         Ok(())
     } else {
         // TODO: Create dialog_s with error message!

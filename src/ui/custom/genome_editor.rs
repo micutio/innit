@@ -9,7 +9,6 @@ use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
 
-
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
@@ -115,7 +114,7 @@ impl GenomeEditor {
                 let len: i32 = (s.len() + 3) as i32;
                 let is_enabled = enabled_functions.contains(e);
                 let item = EditFunction::new(
-                    rltk::Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 1),
+                    rltk::Rect::with_size(top_row_x, TOP_ROW_Y_OFFSET, len, 0),
                     is_enabled,
                     *e,
                     idx,
@@ -222,7 +221,7 @@ impl GenomeEditor {
                     self.layout.x1 + 1,
                     self.layout.y1 + TOP_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
-                    1,
+                    0,
                 ),
                 rltk::ColorPair::new(hud_fg, hud_bg_active),
                 rltk::to_cp437(' '),
@@ -233,7 +232,7 @@ impl GenomeEditor {
                     self.layout.x1 + 1,
                     self.layout.y1 + MID_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
-                    1,
+                    0,
                 ),
                 rltk::ColorPair::new(hud_fg, hud_bg_active),
                 rltk::to_cp437(' '),
