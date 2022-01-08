@@ -76,7 +76,7 @@ pub enum TraitAttribute {
     Hp,
     Volume,
     Metabolism,
-    Storage,
+    Energy,
     Receptor,
     LifeExpectancy,
     None,
@@ -166,7 +166,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
         GeneticTrait::new("Enzyme", Processing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("Energy Store", Processing, TraitAttribute::None, None),
+        GeneticTrait::new("Energy Store", Processing, TraitAttribute::Energy, None),
         GeneticTrait::new(
             "Repair Structure",
             Processing,
@@ -683,7 +683,7 @@ impl TraitBuilder {
             TraitAttribute::Metabolism => {
                 self.processors.metabolism += 1;
             }
-            TraitAttribute::Storage => {
+            TraitAttribute::Energy => {
                 self.processors.energy_storage += 1;
             }
             TraitAttribute::Receptor => {

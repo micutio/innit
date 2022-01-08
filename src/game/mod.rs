@@ -697,6 +697,7 @@ impl rltk::GameState for Game {
                 genome_editor::GenomeEditingState::Done => {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
+                        player.update_genome_from_dna(&mut self.state);
                     }
                     self.require_render = true;
                     RunState::CheckInput
