@@ -86,7 +86,7 @@ impl Tile {
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize_bg(TileType::Floor.as_str(), '·', fg_col, bg_col)
+            .visualize_bg(TileType::Floor.as_str(), ' ', fg_col, bg_col)
             .physical(false, false, is_visible)
             .tile(TileType::Floor)
     }

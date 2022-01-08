@@ -243,7 +243,7 @@ impl Object {
     pub fn into_floor_tile(&mut self) {
         self.physics.is_blocking = false;
         self.physics.is_blocking_sight = false;
-        self.visual.glyph = '·';
+        self.visual.glyph = ' ';
         self.visual.name = world_gen::TileType::Floor.as_str().into();
         if game::env().is_debug_mode {
             self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
