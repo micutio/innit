@@ -110,9 +110,9 @@ pub const DEFAULT_PALETTE: Palette = Palette {
     world_fg_wall_fov_false: (105, 35, 55, 255),
     world_bg_wall_fov_true: (154, 38, 84, 255),
     world_fg_wall_fov_true: (206, 82, 126, 255),
-    world_bg_floor_fov_false: (80, 25, 35, 255),
+    world_bg_floor_fov_false: (80, 25, 45, 255),
     world_fg_floor_fov_false: (80, 25, 35, 255),
-    world_bg_floor_fov_true: (124, 18, 54, 255),
+    world_bg_floor_fov_true: (124, 18, 64, 255),
     world_fg_floor_fov_true: (206, 82, 126, 255),
 
     // entity colors
