@@ -8,12 +8,12 @@
             "is_always_visible": false,
             "is_visible": false
         },
-        "color": [
-            90,
-            255,
-            0,
-            255
-        ],
+        "color": {
+            "r": 90,
+            "g": 255,
+            "b": 0,
+            "a": 255
+        },
         "item": null,
         "controller": "AiVirus",
         "dna_type": "Rna",
@@ -41,12 +41,12 @@
             "is_always_visible": false,
             "is_visible": false
         },
-        "color": [
-            0,
-            90,
-            255,
-            255
-        ],
+        "color": {
+            "r": 0,
+            "g": 90,
+            "b": 255,
+            "a": 255
+        },
         "item": {
             "name": "Plasmids help manipulate DNA and also transfer pieces of it between cells.",
             "action": "ActEditGenome"
