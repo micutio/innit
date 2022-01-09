@@ -38,7 +38,7 @@ rltk::embedded_resource!(FONT_8X8_REX, "../resources/fonts/rex_8x8.png");
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
 // Check [https://bfnightly.bracketproductions.com/rustbook/webbuild.html] for building as WASM.
 
-const VERSION: &str = "0.04";
+const VERSION: &str = "0.0.6";
 
 pub fn main() -> rltk::BError {
     println!(

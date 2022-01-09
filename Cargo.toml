@@ -1,6 +1,6 @@
 [package]
 name = "innit"
-version = "0.0.4"
+version = "0.0.6"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
 edition = "2021"
