@@ -74,7 +74,7 @@ jobs:
 
       # TODO: Zip only Windows releases, use bash `tar` to archive all *unix assets
       - name: Archive Release
-        uses: papeloto/action-zip@v1
+        uses: vimtor/action-zip@v1
         with:
           files: ./target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ./LICENSE
           dest: ${{ matrix.asset_name }}.zip
