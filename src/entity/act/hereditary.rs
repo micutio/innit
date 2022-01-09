@@ -155,7 +155,7 @@ impl Action for RepairStructure {
         if owner.physics.is_visible {
             ui::register_particle(
                 owner.pos,
-                (50, 255, 50, 180),
+                ui::Rgba::new(50, 255, 50, 180), // TODO:
                 ui::palette().col_transparent,
                 owner.visual.glyph,
                 450.0,
@@ -246,7 +246,7 @@ impl Action for Attack {
                     // show particle effect
                     ui::register_particle(
                         t.pos,
-                        (200, 10, 10, 180),
+                        ui::Rgba::new(200, 10, 10, 180), // TODO:
                         ui::palette().col_transparent,
                         'x',
                         250.0,
@@ -475,7 +475,7 @@ impl Action for InjectRetrovirus {
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos, fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if owner.processors.receptors.is_empty() {
                 // this virus must have receptors
@@ -498,7 +498,7 @@ impl Action for InjectRetrovirus {
                     // play a little particle effect
                     let fg = ui::palette().col_acc3;
                     let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos.into(), fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
+                    ui::register_particle(owner.pos, fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
                 }
             } else if target
                 .processors
@@ -538,7 +538,7 @@ impl Action for InjectRetrovirus {
                     let fg = ui::palette().hud_fg_bar_health;
                     let bg = ui::palette().col_transparent;
                     ui::register_particle(
-                        owner.pos.into(),
+                        owner.pos,
                         fg,
                         bg,
                         target.visual.glyph,
@@ -907,14 +907,12 @@ impl Action for BinaryFission {
         let is_pos_available = !objects.is_pos_occupied(&target_pos);
 
         if is_pos_available {
-            let child_obj = if let Some((idx, target_opt)) =
-                objects.extract_tile_by_pos(&target_pos)
-            {
-                if let Some(mut t) = target_opt {
+            let child_obj =
+                if let Some((idx, Some(mut t))) = objects.extract_tile_by_pos(&target_pos) {
                     if owner.tile.is_some() && owner.physics.is_blocking {
                         if !t.physics.is_blocking {
                             // turn into wall
-                            t.into_wall_tile();
+                            t.set_tile_to_wall();
                             // insert (mutated) genome
                             t.set_dna(owner.dna.clone());
                             t.update_genome_from_dna(state);
@@ -1022,10 +1020,7 @@ impl Action for BinaryFission {
                     }
                 } else {
                     None
-                }
-            } else {
-                None
-            };
+                };
 
             // finally place the 'child' cell into the world
             if let Some(child) = child_obj {

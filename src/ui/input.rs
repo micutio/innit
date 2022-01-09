@@ -4,8 +4,6 @@ use crate::game::position::Position;
 use crate::game::{self, env, ObjectStore, State};
 use crate::ui::hud;
 
-
-
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
     Meta(UiAction),
@@ -162,12 +160,12 @@ pub fn read(
             // get clicked cell, check if it is adjacent to player, perform primary action
             if let Some(player) = &objects[state.player_idx] {
                 if let Some(control::Controller::Player(ctrl)) = &player.control {
-                    if let act::TargetCategory::Any = ctrl.primary_action.get_target_category() {
-                        return PlayerInput::Game(PlayerAction::Primary(act::Target::from_pos(
-                            &player.pos,
-                            &mouse,
-                        )));
-                    } else if player.pos.is_adjacent(&mouse) {
+                    let is_any_possible = matches!(
+                        ctrl.primary_action.get_target_category(),
+                        act::TargetCategory::Any
+                    );
+
+                    if is_any_possible || player.pos.is_adjacent(&mouse) {
                         return PlayerInput::Game(PlayerAction::Primary(act::Target::from_pos(
                             &player.pos,
                             &mouse,

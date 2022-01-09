@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone, Copy)]
@@ -15,9 +14,9 @@ impl PartialEq for Position {
     }
 }
 
-impl Into<rltk::Point> for Position {
-    fn into(self) -> rltk::Point {
-        rltk::Point::new(self.x, self.y)
+impl From<Position> for rltk::Point {
+    fn from(val: Position) -> Self {
+        rltk::Point::new(val.x, val.y)
     }
 }
 
@@ -39,8 +38,8 @@ impl Position {
             panic!("invalid postion ({}, {})", x, y);
         }
         Position {
-            x: x,
-            y: y,
+            x,
+            y,
             last_x: x,
             last_y: y,
         }

@@ -1,5 +1,4 @@
-use crate::rltk::EMBED;
-
+// use crate::rltk::EMBED;
 
 rltk::embedded_resource!(SMALL_DUNGEON, "../../resources/art/menu_bg.xp");
 

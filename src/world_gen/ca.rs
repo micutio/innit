@@ -50,19 +50,17 @@ impl WorldGen for CaBased {
             if let Some(ca) = &mut self.ca {
                 ca.step();
                 // update positions assigned with `true` to floor tiles
-                for (idx, cell) in ca.cells().into_iter().enumerate() {
+                for (idx, cell) in ca.cells().iter().enumerate() {
                     if let Some(Some(tile_obj)) = objects.get_vector_mut().get_mut(idx + 1) {
                         if let Some(t) = &mut tile_obj.tile {
                             // TODO: Create constants for morphogen cutoffs and min morphogens
                             t.morphogen = cell.morphogen;
                             if t.morphogen < 0.3 {
                                 if let world_gen::TileType::Wall = t.typ {
-                                    tile_obj.into_floor_tile()
+                                    tile_obj.set_tile_to_floor()
                                 }
-                            } else {
-                                if let world_gen::TileType::Floor = t.typ {
-                                    tile_obj.into_wall_tile()
-                                }
+                            } else if let world_gen::TileType::Floor = t.typ {
+                                tile_obj.set_tile_to_wall()
                             }
                         }
                     }
@@ -103,15 +101,15 @@ struct CaCell {
 
 #[derive(Clone, Debug)]
 enum CellState {
-    EMPTY,
-    GREEN,
-    BURNING,
-    BURNT,
+    Empty,
+    Green,
+    Burning,
+    Burnt,
 }
 
 impl Default for CellState {
     fn default() -> Self {
-        Self::EMPTY
+        Self::Empty
     }
 }
 
@@ -139,9 +137,9 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
             let morphogen = (((min_dist_border * 2) as f64 / max_dist) * 0.20) + 0.50;
             let morph_clamped = f64::min(f64::max(morphogen, 0.01), 1.0);
             if state.rng.flip_with_prob(morph_clamped) {
-                cell.state = CellState::GREEN;
+                cell.state = CellState::Green;
             } else {
-                cell.state = CellState::EMPTY;
+                cell.state = CellState::Empty;
             }
             cell.burn_count = 5;
             cell.morphogen = 1.0;
@@ -149,7 +147,7 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
     }
 
     let mid_idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, mid_x, mid_y);
-    cells[mid_idx].state = CellState::BURNING;
+    cells[mid_idx].state = CellState::Burning;
 
     // transition function
     // 1. propagate fire between burning and green cells
@@ -161,26 +159,26 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
         for n in neigh_it {
             neigh_count += 1;
             neigh_morphogen += n.morphogen;
-            if let CellState::BURNING = n.state {
+            if let CellState::Burning = n.state {
                 is_fire_near = true;
             }
         }
         if neigh_count < 4 {
-            cell.state = CellState::EMPTY;
+            cell.state = CellState::Empty;
             return;
         }
 
         // propagate fire
         match cell.state {
-            CellState::GREEN => {
+            CellState::Green => {
                 if neigh_count == 4 && is_fire_near {
-                    cell.state = CellState::BURNING;
+                    cell.state = CellState::Burning;
                 }
             }
-            CellState::BURNING => {
+            CellState::Burning => {
                 cell.burn_count -= 1;
                 if cell.burn_count <= 0 {
-                    cell.state = CellState::BURNT;
+                    cell.state = CellState::Burnt;
                     cell.morphogen = 0.0;
                 }
             }
@@ -189,7 +187,7 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
 
         // burnt cells always have zero mophogen content, this is to maintain the shape of the
         // generated world
-        if let CellState::BURNT = cell.state {
+        if let CellState::Burnt = cell.state {
             cell.morphogen = 0.0
         } else {
             // propagate morphogen
@@ -291,7 +289,7 @@ fn place_objects(
                     ),
                     DnaTemplate::Defined { traits } => state
                         .gene_library
-                        .dna_from_trait_strs(&mut state.rng, &traits),
+                        .dna_from_trait_strs(&mut state.rng, traits),
                 };
 
                 // populate inventory if present

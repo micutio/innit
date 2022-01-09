@@ -67,24 +67,15 @@ pub enum HudItem {
 
 impl HudItem {
     fn is_use_inventory_item(&self) -> bool {
-        match *self {
-            Self::UseInventory { idx: _ } => true,
-            _ => false,
-        }
+        matches!(*self, Self::UseInventory { idx: _ })
     }
 
     fn is_drop_inventory_item(&self) -> bool {
-        match *self {
-            Self::DropInventory { idx: _ } => true,
-            _ => false,
-        }
+        matches!(*self, Self::DropInventory { idx: _ })
     }
 
     fn is_dna_item(&self) -> bool {
-        match *self {
-            Self::DnaItem => true,
-            _ => false,
-        }
+        matches!(*self, Self::DnaItem)
     }
 }
 
@@ -296,12 +287,12 @@ impl Hud {
             .enumerate()
         {
             use genetics::TraitFamily;
-            let col: (u8, u8, u8, u8) = match g_trait.trait_family {
+            let col: ui::Rgba = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk(_) => (59, 59, 59, 255), // TODO
-                TraitFamily::Ltr => (255, 255, 255, 255),  // TODO
+                TraitFamily::Junk(_) => ui::Rgba::new(59, 59, 59, 255), // TODO
+                TraitFamily::Ltr => ui::Rgba::new(255, 255, 255, 255),  // TODO
             };
             let dna_glyph: char = if h_offset % 2 == 0 { '►' } else { '◄' };
 
@@ -347,12 +338,12 @@ impl Hud {
                 break;
             }
             use genetics::TraitFamily;
-            let col: (u8, u8, u8, u8) = match g_trait.trait_family {
+            let col: ui::Rgba = match g_trait.trait_family {
                 TraitFamily::Sensing => palette().hud_fg_dna_processor,
                 TraitFamily::Processing => palette().hud_fg_dna_actuator,
                 TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk(_) => (59, 59, 59, 255), // TODO
-                TraitFamily::Ltr => (255, 255, 255, 255),  // TODO
+                TraitFamily::Junk(_) => ui::Rgba::new(59, 59, 59, 255), // TODO
+                TraitFamily::Ltr => ui::Rgba::new(255, 255, 255, 255),  // TODO
             };
 
             let dna_glyph: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
@@ -407,7 +398,7 @@ impl Hud {
                 let lines = util::text_to_width(&item.description, self.layout.width() as usize);
                 ToolTip::new(format!("use {}", &obj.visual.name), lines, Vec::new())
             } else {
-                ToolTip::header_only(format!("this can't be used or consumed"))
+                ToolTip::header_only("this can't be used or consumed".to_string())
             };
 
             self.items.push(UiItem::new(
@@ -725,10 +716,10 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
 
     // convert messages into log text lines (str, fg_col, bg_col)
     let mut bg_flag: bool = state.log.messages.len() % 2 == 0;
-    let mut log_lines: Vec<(String, (u8, u8, u8, u8), (u8, u8, u8, u8))> = Vec::new();
+    let mut log_lines: Vec<(String, ui::Rgba, ui::Rgba)> = Vec::new();
     let line_width = layout.width() as usize;
     for (msg, class) in &state.log.messages {
-        let lines = util::text_to_width(&msg, line_width);
+        let lines = util::text_to_width(msg, line_width);
         let fg_color = match class {
             game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
             game::msg::MsgClass::Info => palette().hud_fg_msg_info,
@@ -769,7 +760,7 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
     let mut y = layout.y1;
     for l in visible_log {
         draw_batch.fill_region(
-            rltk::Rect::with_exact(layout.x1, y, layout.x2, y + 0),
+            rltk::Rect::with_exact(layout.x1, y, layout.x2, y),
             rltk::ColorPair::new(l.1, l.2),
             rltk::to_cp437(' '),
         );

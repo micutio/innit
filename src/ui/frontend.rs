@@ -193,20 +193,12 @@ fn update_visual(
     };
 
     // set new background color for object
-    object.visual.bg_color = (
-        (tile_color_bg.r * 255.0) as u8,
-        (tile_color_bg.g * 255.0) as u8,
-        (tile_color_bg.b * 255.0) as u8,
-        255 as u8,
-    );
+    object.visual.bg_color =
+        ui::Rgba::from_f32(tile_color_bg.r, tile_color_bg.g, tile_color_bg.b, 255.0);
 
     // if we're dealing with a tile, then change foreground color as well
     if object.tile.is_some() {
-        object.visual.fg_color = (
-            (tile_color_fg.r * 255.0) as u8,
-            (tile_color_fg.g * 255.0) as u8,
-            (tile_color_fg.b * 255.0) as u8,
-            255 as u8,
-        );
+        object.visual.fg_color =
+            ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 255.0);
     }
 }

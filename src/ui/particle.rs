@@ -2,8 +2,6 @@
 
 use crate::game;
 
-
-
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
 pub struct Particle {
@@ -19,6 +17,7 @@ pub struct Particle {
 }
 
 impl Particle {
+    #[allow(clippy::too_many_arguments)]
     pub fn new<NumT, RgbT>(
         x: NumT,
         y: NumT,
@@ -133,8 +132,8 @@ impl ParticleBuilder {
                 });
                 let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
                     (
-                        rltk::RGBA::from(self.col_fg).lerp(c.0, progress),
-                        rltk::RGBA::from(self.col_fg).lerp(c.1, progress),
+                        self.col_fg.lerp(c.0, progress),
+                        self.col_fg.lerp(c.1, progress),
                     )
                 });
                 let scale = self.scale.map_or((1.0, 1.0), |(start_sc, end_sc)| {
@@ -192,7 +191,7 @@ impl ParticleSystem {
         }
 
         self.vignette.iter().for_each(|(pos, bg_col)| {
-            let color = rltk::ColorPair::new((0, 0, 0, 0), bg_col.clone());
+            let color = rltk::ColorPair::new((0, 0, 0, 0), *bg_col);
             draw_batch.print_color(rltk::Point::new(pos.x(), pos.y()), " ", color);
         });
 

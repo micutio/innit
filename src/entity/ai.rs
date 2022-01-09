@@ -266,7 +266,7 @@ impl Ai for AiVirus {
         }
 
         // if nothing else sticks, just pass
-        return Box::new(act::Pass);
+        Box::new(act::Pass)
     }
 }
 
@@ -355,35 +355,33 @@ impl Ai for AiTile {
                 killswitch_action.set_target(act::Target::Center);
                 return killswitch_action;
             }
-        } else {
-            if let Some(fission_action) = owner
-                .actuators
-                .actions
-                .iter()
-                .find(|a| a.get_identifier().eq("bin. fission"))
-            {
-                // If the tile can perform fission, check whether a neighboring cell is available
-                // and also contains a high enough concentration of growth gradient.
+        } else if let Some(fission_action) = owner
+            .actuators
+            .actions
+            .iter()
+            .find(|a| a.get_identifier().eq("bin. fission"))
+        {
+            // If the tile can perform fission, check whether a neighboring cell is available
+            // and also contains a high enough concentration of growth gradient.
 
-                let target_cell = objects
-                    .get_neighborhood_tiles(owner.pos)
-                    .into_iter()
-                    .flatten()
-                    .filter(|obj| {
-                        if let Some(_tile) = &obj.tile {
-                            !obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos)
-                        } else {
-                            false
-                        }
-                    })
-                    .choose(&mut state.rng);
-                if let Some(target) = target_cell {
-                    if let Some(target_tile) = &target.tile {
-                        if state.rng.flip_with_prob(target_tile.morphogen / 2.0) {
-                            let mut fission = fission_action.clone_action();
-                            fission.set_target(act::Target::from_pos(&owner.pos, &target.pos));
-                            return fission;
-                        }
+            let target_cell = objects
+                .get_neighborhood_tiles(owner.pos)
+                .into_iter()
+                .flatten()
+                .filter(|obj| {
+                    if let Some(_tile) = &obj.tile {
+                        !obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos)
+                    } else {
+                        false
+                    }
+                })
+                .choose(&mut state.rng);
+            if let Some(target) = target_cell {
+                if let Some(target_tile) = &target.tile {
+                    if state.rng.flip_with_prob(target_tile.morphogen / 2.0) {
+                        let mut fission = fission_action.clone_action();
+                        fission.set_target(act::Target::from_pos(&owner.pos, &target.pos));
+                        return fission;
                     }
                 }
             }

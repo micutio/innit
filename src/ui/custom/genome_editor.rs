@@ -57,11 +57,11 @@ struct GeneItem {
     layout: rltk::Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color: (u8, u8, u8, u8),
+    color: ui::Rgba,
 }
 
 impl GeneItem {
-    fn new(layout: rltk::Rect, gene_idx: usize, color: (u8, u8, u8, u8)) -> Self {
+    fn new(layout: rltk::Rect, gene_idx: usize, color: ui::Rgba) -> Self {
         GeneItem {
             layout,
             gene_idx,
@@ -167,12 +167,12 @@ impl GenomeEditor {
             .iter()
             .enumerate()
             .map(|(idx, i)| {
-                let col: (u8, u8, u8, u8) = match i.trait_family {
+                let col: ui::Rgba = match i.trait_family {
                     TraitFamily::Sensing => cyan,
                     TraitFamily::Processing => magenta,
                     TraitFamily::Actuating => yellow,
-                    TraitFamily::Junk(_) => (100, 100, 100, 255), // TODO: coloring
-                    TraitFamily::Ltr => (255, 255, 255, 255),     // TODO: coloring
+                    TraitFamily::Junk(_) => ui::Rgba::new(100, 100, 100, 255), // TODO: coloring
+                    TraitFamily::Ltr => ui::Rgba::new(255, 255, 255, 255),     // TODO: coloring
                 };
                 let item = GeneItem::new(rltk::Rect::with_size(x, y, 1, 1), idx, col);
                 x += 1;
@@ -413,7 +413,7 @@ impl GenomeEditor {
                 if let Some(action) = &genome.action {
                     draw_batch.print_color(
                         rltk::Point::new(connect_end.x + spacing, connect_end.y + 3),
-                        format!("{}", action.get_identifier(),),
+                        action.get_identifier(),
                         color,
                     );
                 } else {
@@ -560,7 +560,7 @@ impl GenomeEditor {
                     }
                     GenomeEditingState::ChooseFunction => {
                         let mut new_idx = self.selected_function;
-                        while new_idx <= self.edit_functions.len() - 1 {
+                        while new_idx < self.edit_functions.len() {
                             new_idx += 1;
                             if let Some(item) = self.edit_functions.get(new_idx) {
                                 if item.is_enabled {
@@ -590,15 +590,11 @@ impl GenomeEditor {
         // b) mouse input
 
         // b.1) check whether we're hovering a function and update the selected function idx
-        let hovered_function = if let Some(item) = self
+        let hovered_function = self
             .edit_functions
             .iter()
             .find(|i| i.layout.point_in_rect(ctx.mouse_point()) && i.is_enabled)
-        {
-            Some(item.idx)
-        } else {
-            None
-        };
+            .map(|item| item.idx);
 
         if let Some(idx) = hovered_function {
             // update active index
@@ -617,15 +613,11 @@ impl GenomeEditor {
         //      - if we are in state `Move`, move the selected gene to the hovered position
         //      - if we are in state `ChooseGene`, only update the gene if it is not locked
 
-        let hovered_gene = if let Some(item) = self
+        let hovered_gene = self
             .gene_items
             .iter()
             .find(|i| i.layout.point_in_rect(ctx.mouse_point()))
-        {
-            Some(item.gene_idx)
-        } else {
-            None
-        };
+            .map(|item| item.gene_idx);
 
         if let Some(target_idx) = hovered_gene {
             match self.state {
@@ -723,15 +715,13 @@ impl GenomeEditor {
                 }
                 Duplicate => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
-                        let mut trait_to_duplicate: Option<GeneticTrait> = None;
+                        let mut trait_clone: Option<GeneticTrait> = None;
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
-                            trait_to_duplicate = Some(g_trait.clone());
+                            trait_clone = Some(g_trait.clone());
                         }
 
-                        if trait_to_duplicate.is_some() {
-                            self.player_dna
-                                .simplified
-                                .insert(self.selected_gene + 1, trait_to_duplicate.unwrap());
+                        if let Some(t) = trait_clone {
+                            self.player_dna.simplified.insert(self.selected_gene + 1, t);
                             self.decrease_charge();
                             self.regenerate_dna(game_state);
                         }

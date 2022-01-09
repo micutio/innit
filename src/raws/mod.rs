@@ -19,8 +19,8 @@ pub fn load_spawns() -> Vec<Spawn> {
         .get_resource("../raws/spawns.json".to_string())
         .unwrap();
     let raw_string =
-        std::str::from_utf8(&raw_data).expect("Unable to convert to a valid UTF-8 string.");
-    serde_json::from_str(&raw_string).expect("Unable to parse JSON")
+        std::str::from_utf8(raw_data).expect("Unable to convert to a valid UTF-8 string.");
+    serde_json::from_str(raw_string).expect("Unable to parse JSON")
 }
 
 pub fn load_object_templates() -> Vec<ObjectTemplate> {
@@ -33,6 +33,6 @@ pub fn load_object_templates() -> Vec<ObjectTemplate> {
         .get_resource("../raws/objects.json".to_string())
         .unwrap();
     let raw_string =
-        std::str::from_utf8(&raw_data).expect("Unable to convert to a valid UTF-8 string.");
-    serde_json::from_str(&raw_string).expect("Unable to parse JSON")
+        std::str::from_utf8(raw_data).expect("Unable to convert to a valid UTF-8 string.");
+    serde_json::from_str(raw_string).expect("Unable to parse JSON")
 }

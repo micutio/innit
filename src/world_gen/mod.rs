@@ -95,7 +95,7 @@ impl Tile {
         Object::new()
             .position_xy(x, y)
             .living(true)
-            .visualize(TileType::Void.as_str(), '█', (0, 0, 0, 255))
+            .visualize(TileType::Void.as_str(), '█', ui::Rgba::new(0, 0, 0, 255))
             .physical(true, true, is_visible)
             .tile(TileType::Void)
     }

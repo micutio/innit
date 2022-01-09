@@ -19,6 +19,7 @@ use crate::entity::genetics;
 use crate::entity::object;
 use crate::game::msg::MessageLog;
 use crate::raws;
+use crate::ui;
 use crate::ui::custom::genome_editor;
 use crate::ui::dialog;
 use crate::ui::frontend;
@@ -210,7 +211,7 @@ impl Game {
                     let player = object::Object::new()
                         .position_xy(new_x, new_y)
                         .living(true)
-                        .visualize("You", '@', (255, 255, 255, 255))
+                        .visualize("You", '@', ui::Rgba::new(255, 255, 255, 255))
                         .physical(true, false, true)
                         .control(control::Controller::Player(control::Player::new()))
                         .genome(

@@ -153,8 +153,8 @@ fn place_objects(
     let num_npc = state.rng.gen_range(0..npc_count);
     for _ in 0..num_npc {
         // choose random spot for this monster
-        let x = state.rng.gen_range(0 + 1..game::consts::WORLD_WIDTH);
-        let y = state.rng.gen_range(0 + 1..game::consts::WORLD_HEIGHT);
+        let x = state.rng.gen_range(1..game::consts::WORLD_WIDTH);
+        let y = state.rng.gen_range(1..game::consts::WORLD_HEIGHT);
 
         if !objects.is_pos_occupied(&game::position::Position::from_xy(x, y)) {
             // let monster_type = monster_chances[monster_dist.sample(&mut state.rng)].0;

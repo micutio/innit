@@ -22,8 +22,8 @@ use std::fmt;
 pub struct Visual {
     pub name: String,
     pub glyph: char,
-    pub fg_color: (u8, u8, u8, u8),
-    pub bg_color: (u8, u8, u8, u8),
+    pub fg_color: ui::Rgba,
+    pub bg_color: ui::Rgba,
 }
 
 impl Visual {
@@ -36,7 +36,7 @@ impl Visual {
         Visual {
             name: "unknown".into(),
             glyph: '_',
-            fg_color: (0, 0, 0, 255),
+            fg_color: ui::Rgba::new(0, 0, 0, 255),
             bg_color,
         }
     }
@@ -133,7 +133,7 @@ impl Object {
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, fg_color: (u8, u8, u8, u8)) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: ui::Rgba) -> Object {
         self.visual.name = name.into();
         self.visual.glyph = character;
         self.visual.fg_color = fg_color;
@@ -145,8 +145,8 @@ impl Object {
         mut self,
         name: &str,
         character: char,
-        fg_color: (u8, u8, u8, u8),
-        bg_color: (u8, u8, u8, u8),
+        fg_color: ui::Rgba,
+        bg_color: ui::Rgba,
     ) -> Object {
         self.visual.name = name.into();
         self.visual.glyph = character;
@@ -221,7 +221,7 @@ impl Object {
     }
 
     /// Turn this object into a wall tile. Generally only use with objects that already are tiles.
-    pub fn into_wall_tile(&mut self) {
+    pub fn set_tile_to_wall(&mut self) {
         self.physics.is_blocking = true;
         self.physics.is_blocking_sight = true;
         self.visual.glyph = '○';
@@ -240,7 +240,7 @@ impl Object {
     }
 
     /// Turn this object into a floor tile. Generally only use with objects that already are tiles.
-    pub fn into_floor_tile(&mut self) {
+    pub fn set_tile_to_floor(&mut self) {
         self.physics.is_blocking = false;
         self.physics.is_blocking_sight = false;
         self.visual.glyph = ' ';
@@ -260,12 +260,12 @@ impl Object {
     }
 
     /// Turn this object into a void tile. Generally only use with objects that already are tiles.
-    pub fn into_void_tile(&mut self) {
+    pub fn set_tile_to_void(&mut self) {
         self.physics.is_blocking = true;
         self.physics.is_blocking_sight = true;
         self.visual.glyph = ' ';
-        self.visual.fg_color = (0, 0, 0, 255);
-        self.visual.bg_color = (0, 0, 0, 255);
+        self.visual.fg_color = ui::Rgba::new(0, 0, 0, 255);
+        self.visual.bg_color = ui::Rgba::new(0, 0, 0, 255);
         self.visual.name = world_gen::TileType::Void.as_str().into();
         self.control = None;
 
@@ -283,8 +283,8 @@ impl Object {
         }
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
         // world.
-        if let Some(_) = self.tile {
-            self.into_floor_tile();
+        if self.tile.is_some() {
+            self.set_tile_to_floor();
             self.processors.life_elapsed = 0;
         } else {
             self.alive = false;
@@ -296,7 +296,7 @@ impl Object {
 
         // play a little particle effect
         if self.physics.is_visible {
-            let fg = (255, 0, 0, 255);
+            let fg = ui::Rgba::new(255, 0, 0, 255); // TODO:
             let bg = ui::palette().col_transparent;
 
             ui::register_particles(
@@ -308,27 +308,19 @@ impl Object {
                     '☼',
                     600.0,
                 )
-                .with_end_color((0, 0, 0, 0), bg)
+                .with_end_color(bg, bg)
                 .with_scale((0.0, 0.0), (1.0, 1.0)),
             )
         }
     }
 
     pub fn is_player(&self) -> bool {
-        if let Some(control::Controller::Player(_)) = self.control {
-            true
-        } else {
-            false
-        }
+        matches!(self.control, Some(control::Controller::Player(_)))
     }
 
     pub fn is_void(&self) -> bool {
         if let Some(t) = &self.tile {
-            if let world_gen::TileType::Void = t.typ {
-                true
-            } else {
-                false
-            }
+            matches!(t.typ, world_gen::TileType::Void)
         } else {
             false
         }
@@ -567,9 +559,7 @@ impl Object {
         &genetics::Actuators,
         &genetics::Dna,
     )> {
-        let mut combined_dna = Vec::new();
-        // append own dna first
-        combined_dna.push((&self.sensors, &self.processors, &self.actuators, &self.dna));
+        let mut combined_dna = vec![(&self.sensors, &self.processors, &self.actuators, &self.dna)];
         let mut inventory_dna = self
             .inventory
             .items
@@ -649,15 +639,14 @@ impl Object {
             ),
             (
                 "hp:".to_string(),
-                format!("{}/{}", self.actuators.hp, self.actuators.max_hp).to_string(),
+                format!("{}/{}", self.actuators.hp, self.actuators.max_hp),
             ),
             (
                 "energy:".to_string(),
                 format!(
                     "{}/{}",
                     self.processors.energy, self.processors.energy_storage
-                )
-                .to_string(),
+                ),
             ),
             (
                 "sense range:".to_string(),

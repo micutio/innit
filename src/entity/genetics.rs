@@ -384,8 +384,8 @@ impl GeneLibrary {
 
         if has_ltr {
             if let Some(ltr_code) = self.trait_to_gray.get("LTR marker") {
-                dna.push(0 as u8);
-                dna.push(1 as u8);
+                dna.push(0_u8);
+                dna.push(1_u8);
                 dna.push(*ltr_code);
             }
         }
@@ -393,9 +393,9 @@ impl GeneLibrary {
         // randomly grab a trait and add trait id, length and random attribute value
         for _ in 0..avg_genome_len {
             // push 0x00 first as the genome start symbol
-            dna.push(0 as u8);
+            dna.push(0_u8);
             // add length
-            dna.push(1 as u8);
+            dna.push(1_u8);
             // pick random trait number from list and add trait id
             let trait_num = rng.gen_range(1..self.trait_count);
             trace!(
@@ -411,8 +411,8 @@ impl GeneLibrary {
 
         if has_ltr {
             if let Some(ltr_code) = self.trait_to_gray.get("LTR Marker") {
-                dna.push(0 as u8);
-                dna.push(1 as u8);
+                dna.push(0_u8);
+                dna.push(1_u8);
                 dna.push(*ltr_code);
             }
         }
@@ -431,18 +431,16 @@ impl GeneLibrary {
             dna.push(1);
             if let Some(gray) = self.trait_to_gray.get(&t.trait_name) {
                 dna.push(*gray);
+            } else if let TraitFamily::Junk(value) = t.trait_family {
+                dna.push(value);
+                // Don't do random anymore
+                // let defined_range = self.trait_to_gray.len() as u8;
+                // dna.push(rng.gen_range(defined_range..=255));
             } else {
-                if let TraitFamily::Junk(value) = t.trait_family {
-                    dna.push(value);
-                    // Don't do random anymore
-                    // let defined_range = self.trait_to_gray.len() as u8;
-                    // dna.push(rng.gen_range(defined_range..=255));
-                } else {
-                    panic!(
-                        "unknown genetic trait: {} , {}",
-                        t.trait_name, t.trait_family
-                    );
-                }
+                panic!(
+                    "unknown genetic trait: {} , {}",
+                    t.trait_name, t.trait_family
+                );
             }
             //
             // // add random attribute value
@@ -462,18 +460,16 @@ impl GeneLibrary {
             dna.push(1);
             if let Some(gray) = self.trait_to_gray.get(&t.trait_name) {
                 dna.push(*gray);
+            } else if let TraitFamily::Junk(value) = t.trait_family {
+                dna.push(value);
+                // Don't do random anymore
+                // let defined_range = self.trait_to_gray.len() as u8;
+                // dna.push(rng.gen_range(defined_range..=255));
             } else {
-                if let TraitFamily::Junk(value) = t.trait_family {
-                    dna.push(value);
-                    // Don't do random anymore
-                    // let defined_range = self.trait_to_gray.len() as u8;
-                    // dna.push(rng.gen_range(defined_range..=255));
-                } else {
-                    panic!(
-                        "unknown genetic trait: {} , {}",
-                        t.trait_name, t.trait_family
-                    );
-                }
+                panic!(
+                    "unknown genetic trait: {} , {}",
+                    t.trait_name, t.trait_family
+                );
             }
             //
             // // add random attribute value
@@ -752,7 +748,7 @@ impl TraitBuilder {
                     None
                 }
             })
-            .filter_map(|o| o)
+            .flatten()
             .collect();
 
         self.processors.actions = self
@@ -771,7 +767,7 @@ impl TraitBuilder {
                     None
                 }
             })
-            .filter_map(|o| o)
+            .flatten()
             .collect();
 
         self.actuators.actions = self
@@ -790,7 +786,7 @@ impl TraitBuilder {
                     None
                 }
             })
-            .filter_map(|o| o)
+            .flatten()
             .collect();
 
         // Space for 'post-processing'

@@ -5,7 +5,6 @@ use crate::rand::Rng;
 use crate::util::rng;
 use crate::{game, util};
 
-
 use std::ops::{Index, IndexMut};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -162,13 +161,7 @@ impl ObjectStore {
 
     pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
         match self.objects.get_mut(index) {
-            Some(item) => match item.take() {
-                Some(object) => {
-                    // debug!("extract object {} @ index {}", object.visual.name, index);
-                    Some(object)
-                }
-                None => None,
-            },
+            Some(item) => item.take(),
             None => panic!(" Error: invalid index {}", index),
         }
     }
@@ -184,17 +177,16 @@ impl ObjectStore {
     }
 
     pub fn extract_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self.objects.iter().position(|opt| {
-            if let Some(obj) = opt {
-                obj.pos.is_equal(pos) && obj.tile.is_some()
-            } else {
-                false
-            }
-        }) {
-            Some((i, self.extract_by_index(i)))
-        } else {
-            None
-        }
+        self.objects
+            .iter()
+            .position(|opt| {
+                if let Some(obj) = opt {
+                    obj.pos.is_equal(pos) && obj.tile.is_some()
+                } else {
+                    false
+                }
+            })
+            .map(|i| (i, self.extract_by_index(i)))
     }
 
     pub fn extract_non_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
@@ -213,21 +205,20 @@ impl ObjectStore {
     }
 
     pub fn extract_item_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
-        if let Some(i) = self.objects.iter().position(|opt| {
-            if let Some(obj) = opt {
-                obj.pos.is_equal(pos)
-                    && obj.tile.is_none()
-                    && obj.item.is_some()
-                    && !obj.physics.is_blocking
-            } else {
-                false
-            }
-            // o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
-        }) {
-            Some((i, self.extract_by_index(i)))
-        } else {
-            None
-        }
+        self.objects
+            .iter()
+            .position(|opt| {
+                if let Some(obj) = opt {
+                    obj.pos.is_equal(pos)
+                        && obj.tile.is_none()
+                        && obj.item.is_some()
+                        && !obj.physics.is_blocking
+                } else {
+                    false
+                }
+                // o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
+            })
+            .map(|i| (i, self.extract_by_index(i)))
     }
 
     pub fn replace(&mut self, index: usize, mut object: Object) {
@@ -374,7 +365,7 @@ impl rltk::Algorithm2D for ObjectStore {
     }
 }
 
-static VON_NEUMAN_NEIGHBORHOOD: &'static [(i32, i32); 4] = &[(-1, 0), (0, -1), (1, 0), (0, 1)];
+static VON_NEUMAN_NEIGHBORHOOD: &[(i32, i32); 4] = &[(-1, 0), (0, -1), (1, 0), (0, 1)];
 
 pub struct Neighborhood<'a> {
     count: usize,
@@ -410,8 +401,8 @@ impl<'a> Iterator for Neighborhood<'a> {
 
                 self.count += 1;
 
-                let is_in_x_bounds = x >= 0 && x < game::consts::WORLD_WIDTH;
-                let is_in_y_bounds = y >= 0 && y < game::consts::WORLD_HEIGHT;
+                let is_in_x_bounds = (0..game::consts::WORLD_WIDTH).contains(&x);
+                let is_in_y_bounds = (0..game::consts::WORLD_HEIGHT).contains(&y);
                 if is_in_x_bounds && is_in_y_bounds {
                     let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
                     if let Some(obj) = tile_obj {

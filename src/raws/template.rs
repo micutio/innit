@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::entity;
 use crate::game;
+use crate::ui;
 /// Struct for spawning objects that requires an internal state.
 /// Templates can be created from game data serialised with JSON.
 ///
@@ -31,7 +32,7 @@ pub struct ObjectTemplate {
     pub npc: String,
     pub glyph: char,
     pub physics: entity::object::Physics,
-    pub color: (u8, u8, u8, u8),
+    pub color: ui::Rgba,
     pub item: Option<ItemTemplate>,
     pub controller: Option<String>,
     pub dna_type: entity::genetics::DnaType,
@@ -73,7 +74,7 @@ impl ObjectTemplate {
                 is_always_visible: false,
                 is_visible,
             },
-            color: (90, 255, 0, 255),
+            color: ui::Rgba::new(90, 255, 0, 255),
             item: None,
             controller: Some("AI_VIRUS".to_string()),
             dna_type: entity::genetics::DnaType::Rna,
