@@ -8,6 +8,8 @@ use crate::game::{self, State};
 use crate::ui::hud::{ToolTip, UiItem};
 use crate::{game::objects::ObjectStore, ui::palette};
 
+use bracket_lib::prelude as rltk;
+
 pub trait MenuItem: Clone {
     fn process(
         state: &mut State,
@@ -30,7 +32,7 @@ impl<T: MenuItem> Menu<T> {
     pub fn new(item_vec: Vec<(T, String)>) -> Self {
         let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
-        let x2 = x1 + game::consts::MENU_WIDTH;
+        let x2 = x1 + game::consts::MENU_WIDTH + 1;
         let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 0;
         let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
@@ -45,7 +47,7 @@ impl<T: MenuItem> Menu<T> {
     pub fn with_header(header: &str, item_vec: Vec<(T, String)>) -> Self {
         let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
-        let x2 = x1 + game::consts::MENU_WIDTH;
+        let x2 = x1 + game::consts::MENU_WIDTH + 1;
         let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 2;
         let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);

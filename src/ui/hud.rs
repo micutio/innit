@@ -17,6 +17,8 @@ use crate::ui;
 use crate::ui::palette;
 use crate::util;
 
+use bracket_lib::prelude as rltk;
+
 /// Menu item properties
 /// - `text` for rendering
 /// - `layout` for checking mouse interaction
@@ -241,8 +243,8 @@ impl Hud {
         let x2 = x1 + game::consts::SIDE_PANEL_WIDTH;
         let y2 = game::consts::SIDE_PANEL_HEIGHT;
         let layout = rltk::Rect::with_exact(x1, y1, x2, y2);
-        let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 2, 23);
-        let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 2, 58);
+        let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 1, 23);
+        let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 1, 58);
         Hud {
             layout,
             inv_area,
@@ -444,7 +446,7 @@ pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut rltk::BTerm, player: &
     // draw bottom line
     let btm_y = game::consts::SCREEN_HEIGHT - 1;
     draw_batch.fill_region(
-        rltk::Rect::with_exact(7, btm_y, game::consts::SCREEN_WIDTH - 1, btm_y),
+        rltk::Rect::with_exact(7, btm_y, game::consts::SCREEN_WIDTH - 1, btm_y + 1),
         rltk::ColorPair::new(fg_hud, bg_hud),
         rltk::to_cp437(' '),
     );
@@ -473,7 +475,7 @@ fn render_dna_region(draw_batch: &mut rltk::DrawBatch) {
         rltk::Rect::with_size(
             game::consts::SCREEN_WIDTH - 1,
             0,
-            0,
+            1,
             game::consts::SCREEN_HEIGHT,
         ),
         rltk::ColorPair::new(bg_dna, bg_dna),
@@ -483,8 +485,8 @@ fn render_dna_region(draw_batch: &mut rltk::DrawBatch) {
         rltk::Rect::with_size(
             game::consts::SCREEN_WIDTH - game::consts::SIDE_PANEL_WIDTH,
             0,
-            game::consts::SIDE_PANEL_WIDTH - 1,
-            0,
+            game::consts::SIDE_PANEL_WIDTH,
+            1,
         ),
         rltk::ColorPair::new(bg_dna, bg_dna),
         rltk::to_cp437(' '),
@@ -594,7 +596,7 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut rltk::D
 
     // draw action header
     draw_batch.fill_region(
-        rltk::Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH, 0),
+        rltk::Rect::with_size(x - 1, 6, game::consts::SIDE_PANEL_WIDTH + 1, 1),
         rltk::ColorPair::new(action_fg, action_header_bg),
         rltk::to_cp437(' '),
     );
@@ -674,7 +676,7 @@ fn render_inventory(
     let bg_inv_header = palette().hud_bg_dna;
 
     draw_batch.fill_region(
-        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 1),
         rltk::ColorPair::new(fg_inv, bg_inv_header),
         rltk::to_cp437(' '),
     );
@@ -703,7 +705,7 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
     let bg_log_default = palette().hud_bg;
 
     draw_batch.fill_region(
-        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 0),
+        rltk::Rect::with_size(layout.x1 - 1, layout.y1 - 1, layout.width() + 1, 1),
         rltk::ColorPair::new(fg_log, bg_log_header),
         rltk::to_cp437(' '),
     );
@@ -760,7 +762,7 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
     let mut y = layout.y1;
     for l in visible_log {
         draw_batch.fill_region(
-            rltk::Rect::with_exact(layout.x1, y, layout.x2, y),
+            rltk::Rect::with_exact(layout.x1, y, layout.x2, y + 1),
             rltk::ColorPair::new(l.1, l.2),
             rltk::to_cp437(' '),
         );

@@ -2,6 +2,8 @@
 
 use crate::game;
 
+use bracket_lib::prelude as rltk;
+
 const TIME_MS_PER_FRAME: f32 = 1000.0 / 60.0;
 
 pub struct Particle {

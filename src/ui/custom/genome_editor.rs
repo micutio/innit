@@ -9,6 +9,7 @@ use crate::rand::Rng;
 use crate::ui;
 use crate::util::rng::RngExtended;
 
+use bracket_lib::prelude as rltk;
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
@@ -221,7 +222,7 @@ impl GenomeEditor {
                     self.layout.x1 + 1,
                     self.layout.y1 + TOP_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
-                    0,
+                    1,
                 ),
                 rltk::ColorPair::new(hud_fg, hud_bg_active),
                 rltk::to_cp437(' '),
@@ -232,7 +233,7 @@ impl GenomeEditor {
                     self.layout.x1 + 1,
                     self.layout.y1 + MID_ROW_Y_OFFSET + 1,
                     self.layout.width() - 2,
-                    0,
+                    1,
                 ),
                 rltk::ColorPair::new(hud_fg, hud_bg_active),
                 rltk::to_cp437(' '),
@@ -277,7 +278,7 @@ impl GenomeEditor {
                     item.layout.x1,
                     item.layout.y1,
                     item.layout.width(),
-                    item.layout.height() - 1,
+                    item.layout.height(),
                 ),
                 rltk::ColorPair::new(fg_col, bg_col),
                 rltk::to_cp437(' '),
@@ -775,7 +776,6 @@ impl GenomeEditor {
 
 pub fn try_create(state: &mut State, objects: &mut ObjectStore) -> Option<GenomeEditor> {
     if let Some(ref mut player) = objects[state.player_idx] {
-        // NOTE: In the future editor features could be read from the plasmid.
         let genome_editor = GenomeEditor::new(player.dna.clone(), 1);
         Some(genome_editor)
     } else {

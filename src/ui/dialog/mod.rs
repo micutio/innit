@@ -2,7 +2,7 @@ pub mod character;
 pub mod controls;
 
 use crate::{game, ui};
-
+use bracket_lib::prelude as rltk;
 
 /// Simple info box. Can be exited by clicking outside or pressing `Esc`
 #[derive(Clone, Debug)]

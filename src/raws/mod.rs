@@ -1,8 +1,8 @@
 pub mod spawn;
 pub mod template;
 
-use crate::rltk::EMBED;
-
+use bracket_lib::prelude as rltk;
+use bracket_lib::terminal::EMBED;
 use spawn::Spawn;
 use template::ObjectTemplate;
 

@@ -34,6 +34,7 @@ use crate::util::timer;
 use crate::world_gen;
 use crate::world_gen::WorldGen;
 
+use bracket_lib::prelude as rltk;
 use core::fmt;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -714,7 +715,21 @@ impl rltk::GameState for Game {
                     RunState::CheckInput
                 }
 
-                _ => genome_editor.display(&mut self.state, ctx),
+                _ => {
+                    self.state.log.is_changed = false;
+                    self.hud.require_refresh = false;
+                    self.require_render = false;
+                    particles().particles.clear();
+                    ctx.set_active_console(consts::WORLD_CON);
+                    frontend::render_world(&mut self.objects, ctx, true);
+                    ctx.set_active_console(consts::HUD_CON);
+                    if let Some(player) = self.objects.extract_by_index(self.state.player_idx) {
+                        hud::render_gui(&self.state, &mut self.hud, ctx, &player);
+                        self.objects.replace(self.state.player_idx, player);
+                    }
+                    particles().render(ctx);
+                    genome_editor.display(&mut self.state, ctx)
+                }
             },
             RunState::InfoBox(infobox) => match infobox.display(ctx) {
                 Some(infobox) => RunState::InfoBox(infobox),

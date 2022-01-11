@@ -7,11 +7,13 @@ edition = "2021"
 
 [features]
 stdweb = [ "instant/stdweb" ]
-wasm-bindgen = [ "instant/wasm-bindgen" ]
+# wasm-bindgen = [ "instant/wasm-bindgen" ]
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
-rltk="0.8.1"
+bracket-lib = {git = "https://github.com/amethyst/bracket-lib", branch="master"}
+# bracket-lib = {git = "https://github.com/jasonjmcghee/bracket-lib", branch="issue_254_webgl_missing-features"} # testing
+
 cpuprofiler = "0.0.4"
 instant = "0.1"
 lazy_static = "1.4.0"
@@ -29,3 +31,4 @@ dirs = "4.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen = "0.2"

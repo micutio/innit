@@ -11,6 +11,7 @@ pub mod rex_assets;
 use crate::game::{self, Position};
 use crate::ui;
 
+use bracket_lib::prelude as rltk;
 use serde::{Deserialize, Serialize};
 use std::convert::From;
 use std::sync::{Mutex, MutexGuard};

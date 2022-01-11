@@ -10,11 +10,11 @@ extern crate casim;
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
+extern crate bracket_lib;
 extern crate pretty_env_logger;
 extern crate rand;
 extern crate rand_core;
 extern crate rand_isaac;
-extern crate rltk;
 extern crate serde;
 extern crate serde_json;
 
@@ -26,6 +26,9 @@ mod ui;
 mod util;
 mod world_gen;
 
+bracket_lib::prelude::add_wasm_support!();
+use bracket_lib::prelude as rltk;
+use bracket_lib::terminal::EMBED;
 use std::env;
 
 rltk::embedded_resource!(FONT_16X16_YUN, "../resources/fonts/yun_16x16.png");
@@ -162,7 +165,7 @@ pub fn main() -> rltk::BError {
         .with_title(format!("Innit alpha v{}", VERSION))
         .with_fps_cap(60.0)
         .with_tile_dimensions(tile_size, tile_size)
-        .with_vsync(true)
+        // .with_vsync(true)
         .build()?;
 
     rltk::main_loop(context, game::Game::new())

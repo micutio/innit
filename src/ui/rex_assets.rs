@@ -1,4 +1,6 @@
 // use crate::rltk::EMBED;
+use bracket_lib::prelude as rltk;
+use bracket_lib::terminal::EMBED;
 
 rltk::embedded_resource!(SMALL_DUNGEON, "../../resources/art/menu_bg.xp");
 
