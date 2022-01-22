@@ -38,7 +38,7 @@ impl Rgba {
         }
     }
 
-    pub fn from_f32(r: f32, b: f32, g: f32, a: f32) -> Self {
+    pub fn from_f32(r: f32, g: f32, b: f32, a: f32) -> Self {
         Rgba {
             r: (r * 255.0) as u8,
             g: (g * 255.0) as u8,

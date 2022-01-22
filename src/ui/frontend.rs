@@ -187,7 +187,7 @@ fn update_visual(
             tc.fwt.lerp(tc.fwf, vis_ratio),
             tc.bwt.lerp(tc.bwf, vis_ratio),
         ),
-        // (true, false) => COLOR_ground_in_fov,
+        // (true, false) => COLOR_floor_in_fov,
         (true, false) => (
             tc.fft.lerp(tc.fff, vis_ratio),
             tc.bft.lerp(tc.bff, vis_ratio),
@@ -196,12 +196,12 @@ fn update_visual(
 
     // set new background color for object
     object.visual.bg_color =
-        ui::Rgba::from_f32(tile_color_bg.r, tile_color_bg.g, tile_color_bg.b, 255.0);
+        ui::Rgba::from_f32(tile_color_bg.r, tile_color_bg.g, tile_color_bg.b, 1.0);
 
     // if we're dealing with a tile, then change foreground color as well
     if object.tile.is_some() {
         object.visual.fg_color =
-            ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 255.0);
+            ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 1.0);
     }
 }
 
@@ -264,12 +264,13 @@ pub fn render_shader(
                 .iter()
                 .for_each(|point| {
                     let dist = obj.pos.distance(&game::Position::from_xy(point.x, point.y));
-                    let is_not_wall = if let Some(o) = objects.get_tile_at(point.x, point.y) {
-                        !o.physics.is_blocking_sight
-                    } else {
-                        false
-                    };
-                    if dist <= default_range && is_not_wall {
+                    let is_visible_and_not_wall =
+                        if let Some(o) = objects.get_tile_at(point.x, point.y) {
+                            o.physics.is_visible && !o.physics.is_blocking_sight
+                        } else {
+                            false
+                        };
+                    if dist <= default_range && is_visible_and_not_wall {
                         // get rgb foreground color of object
                         let mut rgba: rltk::RGBA = obj.visual.fg_color.into();
                         // turn it into HSV to easily shift saturation and value
