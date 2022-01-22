@@ -1,5 +1,5 @@
 use crate::entity::Object;
-use crate::game::{self, ObjectStore, Position};
+use crate::game::{self, consts, ObjectStore, Position};
 use crate::ui;
 use crate::util;
 
@@ -203,4 +203,104 @@ fn update_visual(
         object.visual.fg_color =
             ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 255.0);
     }
+}
+
+pub struct ShaderCell {
+    pub x: i32,
+    pub y: i32,
+    pub fg_col: rltk::RGBA,
+    pub bg_col: rltk::RGBA,
+    pub glyph: char,
+}
+
+impl ShaderCell {
+    pub fn new(x: i32, y: i32) -> Self {
+        ShaderCell {
+            x,
+            y,
+            fg_col: rltk::RGBA::from_u8(0, 0, 0, 100),
+            bg_col: rltk::RGBA::from_u8(0, 0, 0, 100),
+            glyph: ' ',
+        }
+    }
+}
+
+pub fn create_shader(objects: &ObjectStore) -> Vec<ShaderCell> {
+    (0..objects.get_vector().len())
+        .into_iter()
+        .map(|i| {
+            let (x, y) = game::objects::idx_to_coord(consts::WORLD_WIDTH as usize, i);
+            ShaderCell::new(x, y)
+        })
+        .collect()
+}
+
+pub fn render_shader(
+    shader: &mut Vec<ShaderCell>,
+    objects: &ObjectStore,
+    ctx: &mut rltk::BTerm,
+    vis_update: bool,
+) {
+    if vis_update {
+        shader.iter_mut().for_each(|cell| {
+            cell.fg_col.r = 0.0;
+            cell.fg_col.g = 0.0;
+            cell.fg_col.b = 0.0;
+            cell.fg_col.a = 0.39;
+            cell.bg_col.r = 0.0;
+            cell.bg_col.g = 0.0;
+            cell.bg_col.b = 0.0;
+            cell.bg_col.a = 0.39;
+        });
+        let default_range = 3.0;
+
+        objects.get_non_tiles().iter().flatten().for_each(|obj| {
+            if obj.physics.is_visible {
+                rltk::field_of_view(
+                    rltk::Point::new(obj.pos.x(), obj.pos.y()),
+                    default_range as i32,
+                    objects,
+                )
+                .iter()
+                .for_each(|point| {
+                    let dist = obj.pos.distance(&game::Position::from_xy(point.x, point.y));
+                    let is_not_wall = if let Some(o) = objects.get_tile_at(point.x, point.y) {
+                        !o.physics.is_blocking_sight
+                    } else {
+                        false
+                    };
+                    if dist <= default_range && is_not_wall {
+                        // get rgb foreground color of object
+                        let mut rgba: rltk::RGBA = obj.visual.fg_color.into();
+                        // turn it into HSV to easily shift saturation and value
+                        let mut hsv: rltk::HSV = rltk::HSV::from(rgba);
+                        let percent = 1.0 - (dist / default_range);
+                        // hsv.s = 0.50 + (0.5 * percent);
+                        hsv.v = 0.5 * percent;
+                        // turn it back into rgba to align alpha and print it
+                        rgba = hsv.into();
+                        rgba.a = 0.2 * (1.0 - percent);
+                        let idx =
+                            game::objects::coord_to_idx(consts::WORLD_WIDTH, point.x, point.y);
+                        let mut adjusted_col = shader[idx].fg_col.lerp(rgba, percent);
+                        adjusted_col.a = 0.39;
+                        shader[idx].fg_col = adjusted_col;
+                        shader[idx].bg_col = adjusted_col;
+                    }
+                })
+            }
+        });
+    }
+
+    ctx.set_active_console(consts::SHADER_CON);
+    let mut draw_batch = rltk::DrawBatch::new();
+    shader.iter().for_each(|cell| {
+        draw_batch.print_color(
+            rltk::Point::new(cell.x, cell.y),
+            cell.glyph,
+            rltk::ColorPair::new(cell.fg_col, cell.bg_col),
+        );
+    });
+
+    draw_batch.submit(game::consts::SHADER_CON_Z).unwrap();
 }

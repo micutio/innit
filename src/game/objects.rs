@@ -76,7 +76,12 @@ impl ObjectStore {
         self.objects[idx].replace(world_gen::Tile::new_wall(center_x, center_y, false));
     }
 
-    pub fn get_tile_at(&mut self, x: i32, y: i32) -> &mut Option<Object> {
+    pub fn get_tile_at(&self, x: i32, y: i32) -> &Option<Object> {
+        let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
+        &self.objects[idx]
+    }
+
+    pub fn get_tile_at_mut(&mut self, x: i32, y: i32) -> &mut Option<Object> {
         let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
         &mut self.objects[idx]
     }
@@ -332,7 +337,7 @@ impl rltk::BaseMap for ObjectStore {
     fn is_opaque(&self, idx: usize) -> bool {
         if idx > 0 && idx < self.objects.len() {
             if let Some(o) = &self.objects[idx] {
-                o.physics.is_blocking
+                o.physics.is_blocking_sight
             } else {
                 false
             }
@@ -357,7 +362,7 @@ impl rltk::Algorithm2D for ObjectStore {
 
     /// Convert an array index to a point. Defaults to an index based on an array
     fn index_to_point2d(&self, idx: usize) -> rltk::Point {
-        let coord = _idx_to_coord(game::consts::WORLD_WIDTH as usize, idx);
+        let coord = idx_to_coord(game::consts::WORLD_WIDTH as usize, idx);
         rltk::Point::from_tuple(coord)
     }
 
@@ -424,7 +429,7 @@ pub fn coord_to_idx(width: i32, x: i32, y: i32) -> usize {
 }
 
 /// Convert an vector index to a point.
-pub fn _idx_to_coord(width: usize, idx: usize) -> (i32, i32) {
+pub fn idx_to_coord(width: usize, idx: usize) -> (i32, i32) {
     let x = idx % width;
     let y = idx / width;
     (x as i32, y as i32)

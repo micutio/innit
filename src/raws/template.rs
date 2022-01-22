@@ -70,7 +70,7 @@ impl ObjectTemplate {
             glyph: 'v',
             physics: entity::object::Physics {
                 is_blocking: true,
-                is_blocking_sight: true,
+                is_blocking_sight: false,
                 is_always_visible: false,
                 is_visible,
             },

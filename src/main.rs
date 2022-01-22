@@ -153,10 +153,17 @@ pub fn main() -> rltk::BError {
             font_16x16_yun,
         )
         .with_fancy_console(
+            // particles layer
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,
             font_16x16_yun,
-        ) // particles layer
+        )
+        .with_fancy_console(
+            // shader layer
+            game::consts::SCREEN_WIDTH,
+            game::consts::SCREEN_HEIGHT,
+            font_16x16_yun,
+        )
         .with_fancy_console(
             game::consts::SCREEN_WIDTH,
             game::consts::SCREEN_HEIGHT,

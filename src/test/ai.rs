@@ -133,19 +133,19 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
 
     // make tiles near the player walkable
     objects
-        .get_tile_at(p_x, p_y)
+        .get_tile_at_mut(p_x, p_y)
         .replace(Tile::new_floor(p_x, p_y, debug_mode));
     objects
-        .get_tile_at(p_x + 1, p_y)
+        .get_tile_at_mut(p_x + 1, p_y)
         .replace(Tile::new_floor(p_x + 1, p_y, debug_mode));
     objects
-        .get_tile_at(p_x - 1, p_y)
+        .get_tile_at_mut(p_x - 1, p_y)
         .replace(Tile::new_floor(p_x - 1, p_y, debug_mode));
     objects
-        .get_tile_at(p_x, p_y - 1)
+        .get_tile_at_mut(p_x, p_y - 1)
         .replace(Tile::new_floor(p_x, p_y - 1, debug_mode));
     objects
-        .get_tile_at(p_x, p_y + 1)
+        .get_tile_at_mut(p_x, p_y + 1)
         .replace(Tile::new_floor(p_x, p_y + 1, debug_mode));
 
     let player = Object::new()

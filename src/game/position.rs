@@ -127,6 +127,7 @@ impl Position {
         Position::from_xy(self.x + delta.x, self.y + delta.y)
     }
 
+    // TODO: Extract distance function to make it available outside of positions.
     /// Return distance of this object to a given coordinate.
     pub fn distance(&self, other: &Position) -> f32 {
         let dx = (other.x - self.x) as f32;

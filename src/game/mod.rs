@@ -90,6 +90,7 @@ pub struct Game {
     world_generator: world_gen::ca::CaBased,
     // world generation state end
     hud: hud::Hud,
+    shader: Vec<frontend::ShaderCell>,
     require_render: bool,
     rex_assets: rex_assets::RexAssets,
     /// This workaround is required because each mouse click is registered twice (press & release),
@@ -123,6 +124,7 @@ impl Game {
             // let mut world_generator : RogueWorldGenerator::new(),
             world_generator: world_gen::ca::CaBased::new(),
             hud: hud::Hud::new(),
+            shader: vec![],
             require_render: false,
             rex_assets: rex_assets::RexAssets::new(),
             mouse_workaround: false,
@@ -523,9 +525,11 @@ impl rltk::GameState for Game {
 
             ctx.set_active_console(consts::WORLD_CON);
             ctx.cls();
-            ctx.set_active_console(consts::HUD_CON);
-            ctx.cls();
             ctx.set_active_console(consts::PAR_CON);
+            ctx.cls();
+            ctx.set_active_console(consts::SHADER_CON);
+            ctx.cls();
+            ctx.set_active_console(consts::HUD_CON);
             ctx.cls();
 
             frontend::render_world(&mut self.objects, ctx, require_update_visibility);
@@ -535,6 +539,12 @@ impl rltk::GameState for Game {
                 self.objects.replace(self.state.player_idx, player);
             }
             particles().render(ctx);
+            frontend::render_shader(
+                &mut self.shader,
+                &self.objects,
+                ctx,
+                require_update_visibility,
+            );
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.
@@ -764,7 +774,12 @@ impl rltk::GameState for Game {
                 if env().is_debug_mode {
                     self.require_render = true;
                 }
-                self.world_gen()
+                let next_runstate = self.world_gen();
+                match next_runstate {
+                    RunState::WorldGen => {}
+                    _ => self.shader = frontend::create_shader(&self.objects),
+                }
+                next_runstate
             }
         };
         self.run_state.replace(new_run_state);
