@@ -218,8 +218,8 @@ impl ShaderCell {
         ShaderCell {
             x,
             y,
-            fg_col: rltk::RGBA::from_u8(0, 0, 0, 100),
-            bg_col: rltk::RGBA::from_u8(0, 0, 0, 100),
+            fg_col: rltk::RGBA::from_f32(0.0, 0.0, 0.0, 0.2),
+            bg_col: rltk::RGBA::from_f32(0.0, 0.0, 0.0, 0.2),
             glyph: ' ',
         }
     }
@@ -246,16 +246,16 @@ pub fn render_shader(
             cell.fg_col.r = 0.0;
             cell.fg_col.g = 0.0;
             cell.fg_col.b = 0.0;
-            cell.fg_col.a = 0.39;
+            cell.fg_col.a = 0.2;
             cell.bg_col.r = 0.0;
             cell.bg_col.g = 0.0;
             cell.bg_col.b = 0.0;
-            cell.bg_col.a = 0.39;
+            cell.bg_col.a = 0.2;
         });
-        let default_range = 3.0;
+        let default_range = 4.0;
 
         objects.get_non_tiles().iter().flatten().for_each(|obj| {
-            if obj.physics.is_visible {
+            if !obj.is_player() {
                 rltk::field_of_view(
                     rltk::Point::new(obj.pos.x(), obj.pos.y()),
                     default_range as i32,
@@ -277,14 +277,14 @@ pub fn render_shader(
                         let mut hsv: rltk::HSV = rltk::HSV::from(rgba);
                         let percent = 1.0 - (dist / default_range);
                         // hsv.s = 0.50 + (0.5 * percent);
-                        hsv.v = 0.5 * percent;
+                        hsv.v = 0.8 * percent;
                         // turn it back into rgba to align alpha and print it
                         rgba = hsv.into();
                         rgba.a = 0.2 * (1.0 - percent);
                         let idx =
                             game::objects::coord_to_idx(consts::WORLD_WIDTH, point.x, point.y);
                         let mut adjusted_col = shader[idx].fg_col.lerp(rgba, percent);
-                        adjusted_col.a = 0.39;
+                        adjusted_col.a = 0.2;
                         shader[idx].fg_col = adjusted_col;
                         shader[idx].bg_col = adjusted_col;
                     }
