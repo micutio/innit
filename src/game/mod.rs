@@ -539,12 +539,14 @@ impl rltk::GameState for Game {
                 self.objects.replace(self.state.player_idx, player);
             }
             particles().render(ctx);
-            frontend::render_shader(
-                &mut self.shader,
-                &self.objects,
-                ctx,
-                require_update_visibility,
-            );
+            if !env().is_gfx_disabled {
+                frontend::render_shader(
+                    &mut self.shader,
+                    &self.objects,
+                    ctx,
+                    require_update_visibility,
+                );
+            }
         }
 
         // The particles need to be queried each cycle to activate and cull them in time.

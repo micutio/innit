@@ -83,7 +83,7 @@ pub fn main() -> rltk::BError {
                     game::env().set_seed(seed);
                 }
             }
-            if arg.eq("-t") || arg.eq("--tile-size") {
+            if arg.eq("--tile-size") {
                 // try get next argument to retrieve the seed number
                 if i + 1 == args.len() {
                     info!("no tile size parameter provided, fall back to use '16' instead");
@@ -120,6 +120,9 @@ pub fn main() -> rltk::BError {
             }
             if arg.eq("-np") || arg.eq("--no-particles") {
                 game::env().set_disable_particles(true);
+            }
+            if arg.eq("-g") || arg.eq("--gfx") {
+                game::env().set_disable_gfx(false);
             }
         }
     }

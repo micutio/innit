@@ -18,9 +18,10 @@ pub struct GameEnv {
     pub seed: Option<u64>,
     /// optional turn limit
     pub turn_limit: Option<u128>,
-    /// if trie: do not create a player object
+    /// if true: do not create a player object
     pub is_spectating: bool,
     pub is_particles_disabled: bool,
+    pub is_gfx_disabled: bool,
 }
 
 impl GameEnv {
@@ -32,6 +33,7 @@ impl GameEnv {
             turn_limit: None,
             is_spectating: false,
             is_particles_disabled: false,
+            is_gfx_disabled: true,
         }
     }
 
@@ -57,5 +59,9 @@ impl GameEnv {
 
     pub fn set_disable_particles(&mut self, disable_particles: bool) {
         self.is_particles_disabled = disable_particles;
+    }
+
+    pub fn set_disable_gfx(&mut self, disable_gfx: bool) {
+        self.is_gfx_disabled = disable_gfx;
     }
 }
