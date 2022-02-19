@@ -332,7 +332,6 @@ impl Action for InjectRnaVirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        // TODO: extract with index is non-deterministic, extract by something else
         if let Some((index, Some(mut target))) = objects.extract_blocking_with_idx(&target_pos) {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
@@ -454,58 +453,33 @@ impl Action for InjectRetrovirus {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        if let Some((index, Some(mut target))) = objects.extract_non_tile_by_pos(&target_pos) {
-            // check whether the virus can attach to the object
+        if let Some((index, Some(mut target))) = objects.extract_blocking_with_idx(&target_pos) {
+            // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
-
-            if target.dna.dna_type == genetics::DnaType::Nucleus
-                || target.dna.dna_type == genetics::DnaType::Nucleoid
-            {
-                // FAIL: target is not an actual cell, merely another virus or plasmid
-                if owner.physics.is_visible {
-                    let verb = if owner.is_player() { "have" } else { "has" };
-                    state.log.add(
-                        format!(
-                            "{0} {1} tried to infect {2} with virus RNA, but it is not a cell!",
-                            owner.visual.name, verb, target.visual.name
-                        ),
-                        game::msg::MsgClass::Alert,
-                    );
-                    // play a little particle effect
-                    let fg = ui::palette().col_acc3;
-                    let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos, fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
-                }
-            } else if owner.processors.receptors.is_empty() {
-                // this virus must have receptors
-                if owner.physics.is_visible {
-                    state.log.add(
-                        format!(
-                            "A virus has tried to infect {} but cannot find matching receptor!",
-                            target.visual.name
-                        ),
-                        game::msg::MsgClass::Info,
-                    );
-                    let verb = if owner.is_player() { "have" } else { "has" };
-                    state.log.add(
-                        format!(
-                            "{0} {1} tried to infect {2} with virus RNA, but cannot find a matching receptor!",
-                            owner.visual.name, verb, target.visual.name
-                        ),
-                        game::msg::MsgClass::Alert,
-                    );
-                    // play a little particle effect
-                    let fg = ui::palette().col_acc3;
-                    let bg = ui::palette().col_transparent;
-                    ui::register_particle(owner.pos, fg, bg, '?', 150.0, 0.0, (1.0, 1.0));
-                }
-            } else if target
+            let has_infected = if target
                 .processors
                 .receptors
                 .iter()
-                .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ))
+                .any(|e| owner.processors.receptors.contains(e))
+                && (target.dna.dna_type == genetics::DnaType::Nucleus
+                    || target.dna.dna_type == genetics::DnaType::Nucleoid)
             {
+                if target.is_player()
+                    || target.physics.is_visible
+                    || owner.is_player()
+                    || owner.physics.is_visible
+                {
+                    let verb = if owner.is_player() { "have" } else { "has" };
+                    state.log.add(
+                        format!(
+                            "{0} {1} infected {2} with virus RNA",
+                            owner.visual.name, verb, target.visual.name
+                        ),
+                        game::msg::MsgClass::Alert,
+                    );
+                }
+                // insert virus dna into target dna
                 // target and  owner must have matching receptor
                 let mut new_dna = target.dna.raw.clone();
                 new_dna.append(&mut owner.dna.raw.clone());
@@ -514,45 +488,40 @@ impl Action for InjectRetrovirus {
                     .dna_to_traits(target.dna.dna_type, new_dna.as_ref());
                 target.set_genome(s, p, a, d);
 
+                // TODO: decide whether to replace AI or how to trigger virus production
+                let original_ai = target.control.take();
+                // TODO: Determine the duration of "infection" dynamically.
+                let overriding_ai =
+                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
+                        original_ai,
+                        4,
+                        Some(owner.dna.raw.clone()),
+                    )));
+                target.control.replace(overriding_ai);
+
                 // The virus becomes an empty shell after successfully transmitting its dna.
                 owner.dna.raw.clear();
-                // The virus 'dies' symbolically...
+                // The virus 'dies' symbolically.
                 owner.die(state, objects);
-                // ..because it's still debated as to whether viruses are alive to begin with.
+                // Funny, because it's still debated as to whether viruses are alive to begin.
+                true
+            } else {
+                false
+            };
 
-                let msg = format!(
-                    "{} has infected {} with retrovirus dna",
-                    owner.visual.name, target.visual.name
-                );
-                debug!("{}", msg);
-                if owner.physics.is_visible {
-                    let verb = if owner.is_player() { "have" } else { "has" };
-                    state.log.add(
-                        format!(
-                            "{0} {1} infected {2} with retrovirus DNA",
-                            owner.visual.name, verb, target.visual.name
-                        ),
-                        game::msg::MsgClass::Alert,
-                    );
-                    // play a little particle effect
-                    let fg = ui::palette().hud_fg_bar_health;
-                    let bg = ui::palette().col_transparent;
-                    ui::register_particle(
-                        owner.pos,
-                        fg,
-                        bg,
-                        target.visual.glyph,
-                        350.0,
-                        0.0,
-                        (1.0, 1.0),
-                    );
-                }
-            }
             objects.replace(index, target);
-        }
-
-        ActionResult::Success {
-            callback: ObjectFeedback::NoFeedback,
+            if has_infected {
+                return ActionResult::Success {
+                    callback: ObjectFeedback::NoFeedback,
+                };
+            }
+            ActionResult::Success {
+                callback: ObjectFeedback::NoFeedback,
+            }
+        } else {
+            ActionResult::Success {
+                callback: ObjectFeedback::NoFeedback,
+            }
         }
     }
 
