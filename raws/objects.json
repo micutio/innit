@@ -1,5 +1,35 @@
 [
     {
+        "npc": "Bacteria",
+        "glyph": "b",
+        "physics": {
+            "is_blocking": true,
+            "is_blocking_sight": true,
+            "is_always_visible": false,
+            "is_visible": false
+        },
+        "color": {
+            "r": 180,
+            "g": 180,
+            "b": 0,
+            "a": 255
+        },
+        "item": null,
+        "controller": "AiRandom",
+        "dna_type": "Nucleoid",
+        "dna_template": {
+            "Defined": {
+                "traits": [
+                    "Receptor",
+                    "Attack",
+                    "Repair Structure",
+                    "Kill Switch"
+                ]
+            }
+        },
+        "stability": 0.99
+    },
+    {
         "npc": "Virus",
         "glyph": "v",
         "physics": {

@@ -1,6 +1,6 @@
 [
     {
-        "npc": "Virus",
+        "npc": "Bacteria",
         "spawn_transitions": [
             {
                 "level": 1,
@@ -13,11 +13,24 @@
         ]
     },
     {
+        "npc": "Virus",
+        "spawn_transitions": [
+            {
+                "level": 1,
+                "value": 10
+            },
+            {
+                "level": 3,
+                "value": 79
+            }
+        ]
+    },
+    {
         "npc": "Plasmid",
         "spawn_transitions": [
             {
                 "level": 1,
-                "value": 70
+                "value": 60
             },
             {
                 "level": 3,
