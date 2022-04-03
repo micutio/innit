@@ -116,10 +116,9 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .collect();
     let visible_positions: Vec<rltk::Point> = player_views
         .iter()
-        .map(|(pos, range)| {
+        .flat_map(|(pos, range)| {
             rltk::field_of_view(rltk::Point::new(pos.x(), pos.y()), *range, objects)
         })
-        .flatten()
         .collect();
 
     objects

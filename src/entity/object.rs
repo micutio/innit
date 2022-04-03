@@ -415,16 +415,15 @@ impl Object {
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
         let mut controller_opt = self.control.take();
-        let next_action: Option<Box<dyn Action>>;
-        match controller_opt {
+        let next_action: Option<Box<dyn Action>> = match controller_opt {
             Some(control::Controller::Npc(ref mut boxed_ai)) => {
-                next_action = Some(boxed_ai.act(state, objects, self));
+                Some(boxed_ai.act(state, objects, self))
             }
             Some(control::Controller::Player(ref mut player_ctrl)) => {
-                next_action = player_ctrl.next_action.take();
+                player_ctrl.next_action.take()
             }
-            None => next_action = None,
-        }
+            None => None,
+        };
 
         if self.control.is_none() {
             self.control = controller_opt;

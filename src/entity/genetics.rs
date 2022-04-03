@@ -735,7 +735,7 @@ impl TraitBuilder {
         self.sensors.actions = self
             .sensor_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -748,13 +748,12 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         self.processors.actions = self
             .processor_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -767,13 +766,12 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         self.actuators.actions = self
             .actuator_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -786,7 +784,6 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         // Space for 'post-processing'
