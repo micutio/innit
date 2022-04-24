@@ -82,6 +82,13 @@ pub enum TraitAttribute {
     None,
 }
 
+pub enum GeneOrigin {
+    Foreign,
+    Damaged,
+    Friendly,
+    ImmuneSystem,
+}
+
 /// Genetic traits are linked to actions and attributes.
 /// Actions are supposed to be linked to key inputs.
 /// Relationships:
@@ -145,7 +152,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         ),
         GeneticTrait::new(
             "Binary Fission",
-            TraitFamily::Actuating,
+            Actuating,
             TraitAttribute::None,
             Some(Box::new(act::BinaryFission::new())),
         ),
@@ -165,7 +172,7 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         ),
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
-        GeneticTrait::new("Enzyme", Processing, TraitAttribute::Metabolism, None),
+        GeneticTrait::new("Metabolism", Processing, TraitAttribute::Metabolism, None),
         GeneticTrait::new("Energy Store", Processing, TraitAttribute::Energy, None),
         GeneticTrait::new(
             "Repair Structure",
@@ -176,11 +183,11 @@ fn create_trait_list() -> Vec<GeneticTrait> {
         GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
         GeneticTrait::new(
             "Kill Switch",
-            TraitFamily::Processing,
+            Processing,
             TraitAttribute::None,
             Some(Box::new(act::KillSwitch::new())),
         ),
-        GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
+        GeneticTrait::new("LTR marker", Ltr, TraitAttribute::None, None),
     ]
 }
 
