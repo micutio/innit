@@ -67,7 +67,7 @@ impl State {
                 self.conclude_recycle_obj(objects, actor, &mut process_result);
 
                 // finally increase object index and turn counter
-                self.conclude_advance_turn(objects.get_obj_count());
+                self.conclude_advance_turn(objects);
                 return process_result;
             }
 
@@ -117,7 +117,7 @@ impl State {
             self.conclude_recycle_obj(objects, actor, &mut process_result);
 
             // finally increase object index and turn counter
-            self.conclude_advance_turn(objects.get_obj_count());
+            self.conclude_advance_turn(objects);
 
             // return the result of our action
             process_result
@@ -125,7 +125,7 @@ impl State {
             trace!("no object at index {}, skipping its turn", self.obj_idx);
 
             // increase object index and turn counter
-            self.conclude_advance_turn(objects.get_obj_count());
+            self.conclude_advance_turn(objects);
             act::ObjectFeedback::NoFeedback
         }
     }
@@ -339,10 +339,14 @@ impl State {
         }
     }
 
-    fn conclude_advance_turn(&mut self, obj_count: usize) {
-        let next_obj_idx = (self.obj_idx + 1) % obj_count;
+    fn conclude_advance_turn(&mut self, objects: &mut ObjectStore) {
+        let next_obj_idx = (self.obj_idx + 1) % objects.get_obj_count();
         if next_obj_idx < self.obj_idx {
+            // The current turn number N has ended for all objects and a new turn N+1 starts
             self.turn += 1;
+            // First thing to do in the new turn is to update the complement protein levels of each
+            // floor tile.
+            objects.update_complement_proteins();
         }
         self.obj_idx = next_obj_idx;
     }

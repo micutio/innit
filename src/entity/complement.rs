@@ -96,13 +96,13 @@ impl ComplementSystem {
     }
 
     pub fn decay(&mut self) {
-        for i in 0..self.current_proteins.len() {
+        (0..self.current_proteins.len()).for_each(|i| {
             let decay_rate = f32::max(self.current_proteins[i] * 0.33, 0.01);
             self.current_proteins[i] = f32::max(
                 self.current_proteins[i] - decay_rate,
                 self.min_concentration,
             );
-        }
+        });
     }
 }
 
