@@ -235,7 +235,7 @@ pub fn create_shader(objects: &ObjectStore) -> Vec<ShaderCell> {
 }
 
 pub fn render_shader(
-    shader: &mut Vec<ShaderCell>,
+    shader: &mut [ShaderCell],
     objects: &ObjectStore,
     ctx: &mut rltk::BTerm,
     vis_update: bool,
