@@ -76,6 +76,19 @@ impl ObjectStore {
         self.objects[idx].replace(world_gen::Tile::new_wall(center_x, center_y, false));
     }
 
+    /// Iterate over all tiles and update their protein levels
+    fn update_complement_proteins(&mut self) {
+        // `update` step
+        // - for each tile:
+        //   - 1. extract from objects
+        //   - 2. update complement proteins from neighbor tiles
+        //   - 3. put back into objects
+
+        // `apply new values` step
+        // - for each tile:
+        //   - 1. apply new value
+    }
+
     pub fn get_tile_at(&self, x: i32, y: i32) -> &Option<Object> {
         let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
         &self.objects[idx]

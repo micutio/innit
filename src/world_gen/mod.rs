@@ -4,7 +4,7 @@
 pub mod ca;
 pub mod rogue;
 
-use crate::entity::{ai, control, Object};
+use crate::entity::{self, ai, control, Object};
 use crate::game::objects::ObjectStore;
 use crate::game::State;
 use crate::raws;
@@ -51,6 +51,7 @@ impl TileType {
 pub struct Tile {
     pub typ: TileType,
     pub morphogen: f64, // growth protein that controls where walls can 'grow'
+    pub complement: entity::complement::ComplementSystem,
 }
 
 impl Tile {

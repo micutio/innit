@@ -22,7 +22,12 @@
 //! - inhibitor protein up if processed cell waste present
 //! - CauseInflammation down if inhibitor protein up
 
-#[derive(FromPrimitive)]
+use crate::game;
+use crate::world_gen::TileType;
+use serde::{Deserialize, Serialize};
+// use std::mem;
+
+// #[derive(FromPrimitive)]
 enum ComplementProtein {
     AttackMembrane = 0,    // first pathway
     MarkAsPathogen = 1,    // second pathway, alert phagocytes to attack a pathogen
@@ -30,31 +35,79 @@ enum ComplementProtein {
     InhibitCascade = 3,    // regulation of the complement system
 }
 
-struct ComplementSystem {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ComplementSystem {
     min_concentration: f32,
     max_concentration: f32,
-    protein_concentration: [f32; 4], // 4 <- number of complement system proteins
+    current_proteins: [f32; 4], // 4 <- number of complement system proteins
+    next_proteins: [f32; 4],    // 4 <- number of complement system proteins
 }
 
 impl ComplementSystem {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let min_concentration = 0.0;
-        let max_concentration = 100.0;
-        let protein_concentration = [0.0, 0.0, 0.0, 0.0];
+        let max_concentration = 0.99;
+        let current_proteins = [0.0, 0.0, 0.0, 0.99];
+        let next_proteins = [0.0, 0.0, 0.0, 0.99];
 
         ComplementSystem {
             min_concentration,
             max_concentration,
-            protein_concentration,
+            current_proteins,
+            next_proteins,
         }
     }
 
-    fn update(&mut self, neighbor_protein_concentration: [f32; 4]) {}
+    pub fn detect_neighbor_concentration(&mut self, neighbor_tiles: game::objects::Neighborhood) {
+        let mut accumulated_proteins = [0.0; 4];
+        let mut neighbor_count = 0.0;
+        neighbor_tiles
+            .flatten()
+            .filter(|obj| {
+                if let Some(t) = &obj.tile {
+                    matches!(t.typ, TileType::Floor)
+                } else {
+                    false
+                }
+            })
+            .for_each(|obj| {
+                neighbor_count += 1.0;
+                if let Some(t) = &obj.tile {
+                    for (rref, val) in accumulated_proteins
+                        .iter_mut()
+                        .zip(t.complement.current_proteins)
+                    {
+                        *rref += val;
+                    }
+                }
+            });
+        accumulated_proteins
+            .iter_mut()
+            .for_each(|val| *val /= neighbor_count);
 
-    fn decay(&mut self) {
-        for i in self.protein_concentration.len {
-            self.protein_concentration[i] =
-                min(self.protein_concentration - 0.1, self.min_concentration);
+        (0..accumulated_proteins.len()).for_each(|i| {
+            self.next_proteins[i] = self.current_proteins[i]
+                + ((accumulated_proteins[i] - self.current_proteins[i]) * 0.5);
+        });
+    }
+
+    pub fn update(&mut self) {
+        (self.current_proteins, self.next_proteins) = (self.next_proteins, self.current_proteins)
+    }
+
+    pub fn decay(&mut self) {
+        for i in 0..self.current_proteins.len() {
+            let decay_rate = f32::max(self.current_proteins[i] * 0.33, 0.01);
+            self.current_proteins[i] = f32::max(
+                self.current_proteins[i] - decay_rate,
+                self.min_concentration,
+            );
         }
+    }
+}
+
+impl Default for ComplementSystem {
+    fn default() -> Self {
+        Self::new()
     }
 }
