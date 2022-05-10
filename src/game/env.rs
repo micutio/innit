@@ -22,6 +22,10 @@ pub struct GameEnv {
     pub is_spectating: bool,
     pub is_particles_disabled: bool,
     pub is_gfx_disabled: bool,
+    /// visualisation of the commplement system:
+    /// - 0, 1, 2 -> display respective pathway
+    /// - 3 -> don't show
+    pub complement_system_display: usize,
 }
 
 impl GameEnv {
@@ -34,6 +38,7 @@ impl GameEnv {
             is_spectating: false,
             is_particles_disabled: false,
             is_gfx_disabled: true,
+            complement_system_display: 3,
         }
     }
 
@@ -63,5 +68,9 @@ impl GameEnv {
 
     pub fn set_disable_gfx(&mut self, disable_gfx: bool) {
         self.is_gfx_disabled = disable_gfx;
+    }
+
+    pub fn set_complement_display(&mut self, display_mode: usize) {
+        self.complement_system_display = display_mode;
     }
 }

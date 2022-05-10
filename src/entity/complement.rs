@@ -25,32 +25,31 @@
 use crate::game;
 use crate::world_gen::TileType;
 use serde::{Deserialize, Serialize};
-// use std::mem;
 
 // #[derive(FromPrimitive)]
-enum ComplementProtein {
-    AttackMembrane = 0,    // first pathway
-    MarkAsPathogen = 1,    // second pathway, alert phagocytes to attack a pathogen
-    CauseInflammation = 2, // third pathway, sounding the alarm bells that a pathogen is detected
-    InhibitCascade = 3,    // regulation of the complement system
-}
+// enum ComplementProtein {
+//     AttackMembrane = 0,    // first pathway
+//     MarkAsPathogen = 1,    // second pathway, alert phagocytes to attack a pathogen
+//     CauseInflammation = 2, // third pathway, sounding the alarm bells that a pathogen is detected
+//     InhibitCascade = 3,    // regulation of the complement system
+// }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ComplementSystem {
+pub struct ComplementProteins {
     min_concentration: f32,
     max_concentration: f32,
-    current_proteins: [f32; 4], // 4 <- number of complement system proteins
-    next_proteins: [f32; 4],    // 4 <- number of complement system proteins
+    pub current_proteins: [f32; 4], // 4 <- number of complement system proteins
+    next_proteins: [f32; 4],        // 4 <- number of complement system proteins
 }
 
-impl ComplementSystem {
+impl ComplementProteins {
     pub fn new() -> Self {
         let min_concentration = 0.0;
         let max_concentration = 0.99;
         let current_proteins = [0.0, 0.0, 0.0, 0.99];
         let next_proteins = [0.0, 0.0, 0.0, 0.99];
 
-        ComplementSystem {
+        ComplementProteins {
             min_concentration,
             max_concentration,
             current_proteins,
@@ -86,16 +85,16 @@ impl ComplementSystem {
             .for_each(|val| *val /= neighbor_count);
 
         (0..accumulated_proteins.len()).for_each(|i| {
-            self.next_proteins[i] = self.current_proteins[i]
-                + ((accumulated_proteins[i] - self.current_proteins[i]) * 0.5);
+            self.next_proteins[i] += (accumulated_proteins[i] - self.current_proteins[i]) * 0.5;
         });
     }
 
     pub fn update(&mut self) {
-        (self.current_proteins, self.next_proteins) = (self.next_proteins, self.current_proteins)
+        std::mem::swap(&mut self.current_proteins, &mut self.next_proteins);
     }
 
     pub fn decay(&mut self) {
+        let inhibitor_idx: usize = 3;
         (0..self.current_proteins.len()).for_each(|i| {
             let decay_rate = f32::max(self.current_proteins[i] * 0.33, 0.01);
             self.current_proteins[i] = f32::max(
@@ -103,10 +102,20 @@ impl ComplementSystem {
                 self.min_concentration,
             );
         });
+
+        (0..inhibitor_idx).for_each(|i| {
+            let inhibition_rate = self.current_proteins[i] - self.current_proteins[inhibitor_idx];
+            if inhibition_rate < 0.0 {
+                self.current_proteins[i] = f32::max(
+                    self.current_proteins[i] - inhibition_rate,
+                    self.min_concentration,
+                );
+            }
+        });
     }
 }
 
-impl Default for ComplementSystem {
+impl Default for ComplementProteins {
     fn default() -> Self {
         Self::new()
     }

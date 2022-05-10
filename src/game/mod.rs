@@ -425,6 +425,12 @@ impl Game {
                 }
             }
             UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
+            UiAction::SetComplementDisplay(x) => {
+                env().set_complement_display(x);
+                println!("set complement display to: {}", x);
+                self.require_render = true;
+                RunState::CheckInput
+            }
             UiAction::SetFont(x) => {
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.set_active_font(x, false);

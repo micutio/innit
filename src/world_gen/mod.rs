@@ -51,7 +51,7 @@ impl TileType {
 pub struct Tile {
     pub typ: TileType,
     pub morphogen: f64, // growth protein that controls where walls can 'grow'
-    pub complement: entity::complement::ComplementSystem,
+    pub complement: entity::complement::ComplementProteins,
 }
 
 impl Tile {

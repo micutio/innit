@@ -23,6 +23,7 @@ pub enum UiAction {
     ChooseQuick2,
     GenomeEditor,
     Help,
+    SetComplementDisplay(usize),
     SetFont(usize),
 }
 
@@ -77,11 +78,15 @@ fn key_to_action(
         (Vkc::Space, false, false) => PlayerInput::Game(PlayerAction::PassTurn),
         (Vkc::Escape, false, false) => PlayerInput::Meta(UiAction::ExitGameLoop),
         (Vkc::F1, false, false) => PlayerInput::Meta(UiAction::Help),
-        (Vkc::Key1, false, false) => PlayerInput::Meta(UiAction::SetFont(0)),
-        (Vkc::Key2, false, false) => PlayerInput::Meta(UiAction::SetFont(1)),
-        (Vkc::Key3, false, false) => PlayerInput::Meta(UiAction::SetFont(2)),
-        (Vkc::Key4, false, false) => PlayerInput::Meta(UiAction::SetFont(3)),
-        (Vkc::Key5, false, false) => PlayerInput::Meta(UiAction::SetFont(4)),
+        (Vkc::Key1, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(3)),
+        (Vkc::Key2, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(0)),
+        (Vkc::Key3, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(1)),
+        (Vkc::Key4, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(2)),
+        (Vkc::Key5, false, false) => PlayerInput::Meta(UiAction::SetFont(0)),
+        (Vkc::Key6, false, false) => PlayerInput::Meta(UiAction::SetFont(1)),
+        (Vkc::Key7, false, false) => PlayerInput::Meta(UiAction::SetFont(2)),
+        (Vkc::Key8, false, false) => PlayerInput::Meta(UiAction::SetFont(3)),
+        (Vkc::Key9, false, false) => PlayerInput::Meta(UiAction::SetFont(4)),
         _ => PlayerInput::Undefined,
     }
 }

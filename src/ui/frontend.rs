@@ -2,6 +2,7 @@ use crate::entity::Object;
 use crate::game::{self, consts, ObjectStore, Position};
 use crate::ui;
 use crate::util;
+use crate::world_gen;
 
 use bracket_lib::prelude as rltk;
 
@@ -201,6 +202,24 @@ fn update_visual(
     if object.tile.is_some() {
         object.visual.fg_color =
             ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 1.0);
+
+        if let Some(t) = &object.tile {
+            if matches!(t.typ, world_gen::TileType::Floor) {
+                // adjust fg and bg color to reflect complement protein concentration
+                let proteins = t.complement.current_proteins;
+                let ratio_r = proteins[1];
+                let delta_r = 255.0 - object.visual.bg_color.r as f32;
+                object.visual.bg_color.r += (delta_r * ratio_r) as u8;
+
+                let ratio_g = proteins[0];
+                let delta_g = 255.0 - object.visual.bg_color.g as f32;
+                object.visual.bg_color.g += (delta_g * ratio_g) as u8;
+
+                let ratio_b = proteins[2];
+                let delta_b = 255.0 - object.visual.bg_color.b as f32;
+                object.visual.bg_color.b += (delta_b * ratio_b) as u8;
+            }
+        }
     }
 }
 

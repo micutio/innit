@@ -1,7 +1,7 @@
 use crate::entity::act;
 use crate::entity::act::Action;
 use crate::entity::ai;
-use crate::entity::complement::ComplementSystem;
+use crate::entity::complement::ComplementProteins;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -200,7 +200,7 @@ impl Object {
         self.tile = Some(world_gen::Tile {
             typ,
             morphogen: 0.0,
-            complement: ComplementSystem::new(),
+            complement: ComplementProteins::new(),
         });
         self
     }
