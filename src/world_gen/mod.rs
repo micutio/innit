@@ -71,7 +71,7 @@ impl Tile {
             .visualize_bg(TileType::Wall.as_str(), '○', fg_col, bg_col)
             .physical(true, true, is_visible)
             .tile(TileType::Wall)
-            .control(control::Controller::Npc(Box::new(ai::AiTile)))
+            .control(control::Controller::Npc(Box::new(ai::AiWallTile)))
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
