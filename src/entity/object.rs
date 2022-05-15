@@ -285,9 +285,13 @@ impl Object {
         }
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
         // world.
-        if self.tile.is_some() {
+        if let Some(t) = &self.tile {
+            if matches!(t.typ, world_gen::TileType::Floor) {
+                println!("a dying floor tile...");
+            }
             self.set_tile_to_floor();
             self.processors.life_elapsed = 0;
+            self.actuators.hp = self.actuators.max_hp;
         } else {
             self.alive = false;
             // take this object out of the world
