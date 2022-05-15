@@ -390,4 +390,21 @@ impl Ai for AiWallTile {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AiFloorTile;
+
+#[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
+impl Ai for AiFloorTile {
+    fn act(
+        &mut self,
+        _state: &mut State,
+        objects: &mut ObjectStore,
+        owner: &mut Object,
+    ) -> Box<dyn Action> {
+        if objects.is_pos_occupied(&owner.pos) {
+            Box::new(act::UpdateComplementProteins)
+        } else {
+            Box::new(act::Pass)
+        }
+    }
+}

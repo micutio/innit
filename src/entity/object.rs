@@ -615,9 +615,16 @@ impl Object {
         };
 
         // tiles have reduced information (might change in the future) since they are static
-        if self.tile.is_some() {
-            return if !self.physics.is_blocking {
-                hud::ToolTip::no_header(Vec::new(), Vec::new())
+        if let Some(tile) = &self.tile {
+            return if matches!(tile.typ, world_gen::TileType::Floor) {
+                let proteins = tile.complement.current_proteins;
+                let complement_attr = vec![
+                    ("inflammation".to_string(), format!("{:.2}", proteins[2])),
+                    ("marked".to_string(), format!("{:.2}", proteins[1])),
+                    ("attack".to_string(), format!("{:.2}", proteins[0])),
+                    ("inhibitor".to_string(), format!("{:.2}", proteins[3])),
+                ];
+                hud::ToolTip::new("Floor Cell", Vec::new(), complement_attr)
             } else {
                 let attributes = vec![("receptors:".to_string(), receptor_match)];
                 hud::ToolTip::new(self.visual.name.clone(), Vec::new(), attributes)

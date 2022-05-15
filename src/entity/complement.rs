@@ -46,8 +46,8 @@ impl ComplementProteins {
     pub fn new() -> Self {
         let min_concentration = 0.0;
         let max_concentration = 0.99;
-        let current_proteins = [0.0, 0.0, 0.0, 0.99];
-        let next_proteins = [0.0, 0.0, 0.0, 0.99];
+        let current_proteins = [0.0, 0.0, 0.0, 0.0];
+        let next_proteins = [0.0, 0.0, 0.0, 0.0];
 
         ComplementProteins {
             min_concentration,
@@ -55,6 +55,10 @@ impl ComplementProteins {
             current_proteins,
             next_proteins,
         }
+    }
+
+    pub fn cause_inflammation(&mut self) {
+        self.current_proteins[2] = f32::min(self.current_proteins[2] + 0.1, self.max_concentration);
     }
 
     pub fn detect_neighbor_concentration(&mut self, neighbor_tiles: game::objects::Neighborhood) {

@@ -90,6 +90,7 @@ impl Tile {
             .visualize_bg(TileType::Floor.as_str(), ' ', fg_col, bg_col)
             .physical(false, false, is_visible)
             .tile(TileType::Floor)
+            .control(control::Controller::Npc(Box::new(ai::AiFloorTile)))
     }
 
     pub fn new_void(x: i32, y: i32, is_visible: bool) -> Object {

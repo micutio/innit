@@ -267,12 +267,10 @@ impl Game {
 
     fn check_win_condition(&self) -> bool {
         let has_game_started = self.state.turn > 0;
-        let has_no_pathogens_left = !self
-            .objects
-            .get_non_tiles()
-            .iter()
-            .flatten()
-            .any(|o| o.visual.name.to_lowercase().contains("virus"));
+        let has_no_pathogens_left = !self.objects.get_non_tiles().iter().flatten().any(|o| {
+            o.visual.name.to_lowercase().contains("virus")
+                || o.visual.name.to_lowercase().contains("bacteria")
+        });
         has_game_started && has_no_pathogens_left
     }
 
