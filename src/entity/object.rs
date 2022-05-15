@@ -254,7 +254,7 @@ impl Object {
             self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
             self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
         }
-        self.control = None;
+        self.control = Some(control::Controller::Npc(Box::new(ai::AiFloorTile)));
 
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Floor;
