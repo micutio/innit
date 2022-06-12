@@ -97,7 +97,7 @@ pub struct GeneticTrait {
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
     pub action: Option<Box<dyn Action>>, // TraitActions
-    pub position: u32,                   // position of the gene within the genome
+    pub position: u32, // position of the gene within the genome, only for evaluation
 }
 
 impl GeneticTrait {
@@ -129,58 +129,83 @@ impl GeneticTrait {
 
 fn create_trait_list() -> Vec<GeneticTrait> {
     // use TraitAttribute::*;
-    use TraitFamily::*;
+    // use TraitFamily::*;
     vec![
         GeneticTrait::new(
             "Move",
-            Actuating,
+            TraitFamily::Actuating,
             TraitAttribute::None,
             Some(Box::new(act::Move::new())),
         ),
         GeneticTrait::new(
             "Attack",
-            Actuating,
+            TraitFamily::Actuating,
             TraitAttribute::None,
             Some(Box::new(act::Attack::new())),
         ),
         GeneticTrait::new(
             "Binary Fission",
-            Actuating,
+            TraitFamily::Actuating,
             TraitAttribute::None,
             Some(Box::new(act::BinaryFission::new())),
         ),
-        GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
-        GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
+        GeneticTrait::new(
+            "Cell Membrane",
+            TraitFamily::Actuating,
+            TraitAttribute::Hp,
+            None,
+        ),
+        GeneticTrait::new(
+            "Cell Volume",
+            TraitFamily::Actuating,
+            TraitAttribute::Volume,
+            None,
+        ),
         GeneticTrait::new(
             "Life Expectancy",
-            Processing,
+            TraitFamily::Processing,
             TraitAttribute::LifeExpectancy,
             None,
         ),
         GeneticTrait::new(
             "Optical Sensor",
-            Sensing,
+            TraitFamily::Sensing,
             TraitAttribute::SensingRange,
             None,
         ),
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
-        GeneticTrait::new("Metabolism", Processing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("Energy Store", Processing, TraitAttribute::Energy, None),
+        GeneticTrait::new(
+            "Metabolism",
+            TraitFamily::Processing,
+            TraitAttribute::Metabolism,
+            None,
+        ),
+        GeneticTrait::new(
+            "Energy Store",
+            TraitFamily::Processing,
+            TraitAttribute::Energy,
+            None,
+        ),
         GeneticTrait::new(
             "Repair Structure",
-            Processing,
+            TraitFamily::Processing,
             TraitAttribute::Hp,
             Some(Box::new(act::RepairStructure::new())),
         ),
-        GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
+        GeneticTrait::new(
+            "Receptor",
+            TraitFamily::Processing,
+            TraitAttribute::Receptor,
+            None,
+        ),
         GeneticTrait::new(
             "Kill Switch",
-            Processing,
+            TraitFamily::Processing,
             TraitAttribute::None,
             Some(Box::new(act::KillSwitch::new())),
         ),
-        GeneticTrait::new("LTR marker", Ltr, TraitAttribute::None, None),
+        GeneticTrait::new("LTR marker", TraitFamily::Ltr, TraitAttribute::None, None),
     ]
 }
 
