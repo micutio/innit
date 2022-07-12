@@ -267,12 +267,10 @@ impl Game {
 
     fn check_win_condition(&self) -> bool {
         let has_game_started = self.state.turn > 0;
-        let has_no_pathogens_left = !self
-            .objects
-            .get_non_tiles()
-            .iter()
-            .flatten()
-            .any(|o| o.visual.name.to_lowercase().contains("virus"));
+        let has_no_pathogens_left = !self.objects.get_non_tiles().iter().flatten().any(|o| {
+            o.visual.name.to_lowercase().contains("virus")
+                || o.visual.name.to_lowercase().contains("bacteria")
+        });
         has_game_started && has_no_pathogens_left
     }
 
@@ -425,6 +423,12 @@ impl Game {
                 }
             }
             UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
+            UiAction::SetComplementDisplay(x) => {
+                env().set_complement_display(x);
+                println!("set complement display to: {}", x);
+                self.require_render = true;
+                RunState::CheckInput
+            }
             UiAction::SetFont(x) => {
                 ctx.set_active_console(consts::WORLD_CON);
                 ctx.set_active_font(x, false);

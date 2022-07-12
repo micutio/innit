@@ -3,9 +3,11 @@
 //! Any action is supposed to be assigned to one of the three trait families (sensing, prcessing,
 //! actuating) of an object
 
+mod complement_system;
 mod hereditary;
 mod inventory;
 
+pub use self::complement_system::*;
 pub use self::hereditary::*;
 pub use self::inventory::*;
 

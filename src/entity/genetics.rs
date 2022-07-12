@@ -97,7 +97,7 @@ pub struct GeneticTrait {
     pub trait_family: TraitFamily,
     pub attribute: TraitAttribute,       // Vec<TraitAttribute>
     pub action: Option<Box<dyn Action>>, // TraitActions
-    pub position: u32,                   // position of the gene within the genome
+    pub position: u32, // position of the gene within the genome, only for evaluation
 }
 
 impl GeneticTrait {
@@ -129,17 +129,17 @@ impl GeneticTrait {
 
 fn create_trait_list() -> Vec<GeneticTrait> {
     // use TraitAttribute::*;
-    use TraitFamily::*;
+    // use TraitFamily::*;
     vec![
         GeneticTrait::new(
             "Move",
-            Actuating,
+            TraitFamily::Actuating,
             TraitAttribute::None,
             Some(Box::new(act::Move::new())),
         ),
         GeneticTrait::new(
             "Attack",
-            Actuating,
+            TraitFamily::Actuating,
             TraitAttribute::None,
             Some(Box::new(act::Attack::new())),
         ),
@@ -149,31 +149,56 @@ fn create_trait_list() -> Vec<GeneticTrait> {
             TraitAttribute::None,
             Some(Box::new(act::BinaryFission::new())),
         ),
-        GeneticTrait::new("Cell Membrane", Actuating, TraitAttribute::Hp, None),
-        GeneticTrait::new("Cell Volume", Actuating, TraitAttribute::Volume, None),
+        GeneticTrait::new(
+            "Cell Membrane",
+            TraitFamily::Actuating,
+            TraitAttribute::Hp,
+            None,
+        ),
+        GeneticTrait::new(
+            "Cell Volume",
+            TraitFamily::Actuating,
+            TraitAttribute::Volume,
+            None,
+        ),
         GeneticTrait::new(
             "Life Expectancy",
-            Processing,
+            TraitFamily::Processing,
             TraitAttribute::LifeExpectancy,
             None,
         ),
         GeneticTrait::new(
             "Optical Sensor",
-            Sensing,
+            TraitFamily::Sensing,
             TraitAttribute::SensingRange,
             None,
         ),
         // enzymes are stand-ins for metabolism for now
         // TODO: separate into catabolism and anabolism
-        GeneticTrait::new("Enzyme", Processing, TraitAttribute::Metabolism, None),
-        GeneticTrait::new("Energy Store", Processing, TraitAttribute::Energy, None),
+        GeneticTrait::new(
+            "Metabolism",
+            TraitFamily::Processing,
+            TraitAttribute::Metabolism,
+            None,
+        ),
+        GeneticTrait::new(
+            "Energy Store",
+            TraitFamily::Processing,
+            TraitAttribute::Energy,
+            None,
+        ),
         GeneticTrait::new(
             "Repair Structure",
-            Processing,
+            TraitFamily::Processing,
             TraitAttribute::Hp,
             Some(Box::new(act::RepairStructure::new())),
         ),
-        GeneticTrait::new("Receptor", Processing, TraitAttribute::Receptor, None),
+        GeneticTrait::new(
+            "Receptor",
+            TraitFamily::Processing,
+            TraitAttribute::Receptor,
+            None,
+        ),
         GeneticTrait::new(
             "Kill Switch",
             TraitFamily::Processing,
@@ -735,7 +760,7 @@ impl TraitBuilder {
         self.sensors.actions = self
             .sensor_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -748,13 +773,12 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         self.processors.actions = self
             .processor_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -767,13 +791,12 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         self.actuators.actions = self
             .actuator_action_count
             .iter()
-            .map(|(trait_name, parameter)| {
+            .filter_map(|(trait_name, parameter)| {
                 let genetic_trait = trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
@@ -786,7 +809,6 @@ impl TraitBuilder {
                     None
                 }
             })
-            .flatten()
             .collect();
 
         // Space for 'post-processing'

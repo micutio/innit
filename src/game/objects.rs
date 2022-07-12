@@ -76,6 +76,40 @@ impl ObjectStore {
         self.objects[idx].replace(world_gen::Tile::new_wall(center_x, center_y, false));
     }
 
+    /// Iterate over all tiles and update their protein levels
+    pub fn update_complement_proteins(&mut self) {
+        // `update` step
+        // - for each tile:
+        //   - 1. extract from objects
+        //   - 2. update complement proteins from neighbor tiles
+        //   - 3. put back into objects
+
+        (0..self.world_tile_count).for_each(|i| {
+            let opt_obj = self.extract_by_index(i);
+            if let Some(mut tile_obj) = opt_obj {
+                if let Some(t) = &mut tile_obj.tile {
+                    if matches!(t.typ, world_gen::TileType::Floor) {
+                        t.complement.detect_neighbor_concentration(
+                            self.get_neighborhood_tiles(tile_obj.pos),
+                        )
+                    }
+                }
+                self.replace(i, tile_obj);
+            }
+        });
+
+        // `apply new values` step
+        // - for each tile:
+        //   - 1. apply new value
+        self.get_tiles_mut().iter_mut().flatten().for_each(|obj| {
+            if let Some(t) = &mut obj.tile {
+                if matches!(t.typ, world_gen::TileType::Floor) {
+                    t.complement.update();
+                }
+            }
+        })
+    }
+
     pub fn get_tile_at(&self, x: i32, y: i32) -> &Option<Object> {
         let idx = coord_to_idx(game::consts::WORLD_WIDTH, x, y);
         &self.objects[idx]

@@ -1,6 +1,7 @@
 use crate::entity::act;
 use crate::entity::act::Action;
 use crate::entity::ai;
+use crate::entity::complement::ComplementProteins;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -199,6 +200,7 @@ impl Object {
         self.tile = Some(world_gen::Tile {
             typ,
             morphogen: 0.0,
+            complement: ComplementProteins::new(),
         });
         self
     }
@@ -233,7 +235,7 @@ impl Object {
             self.visual.fg_color = ui::palette().world_fg_wall_fov_false;
             self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
         }
-        self.control = Some(control::Controller::Npc(Box::new(ai::AiTile)));
+        self.control = Some(control::Controller::Npc(Box::new(ai::AiWallTile)));
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Wall;
         }
@@ -252,7 +254,7 @@ impl Object {
             self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
             self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
         }
-        self.control = None;
+        self.control = Some(control::Controller::Npc(Box::new(ai::AiFloorTile)));
 
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Floor;
@@ -283,9 +285,13 @@ impl Object {
         }
         // If this object is a tile, then just revert it to a floor tile, otherwise remove from the
         // world.
-        if self.tile.is_some() {
+        if let Some(t) = &self.tile {
+            if matches!(t.typ, world_gen::TileType::Floor) {
+                println!("a dying floor tile...");
+            }
             self.set_tile_to_floor();
             self.processors.life_elapsed = 0;
+            self.actuators.hp = self.actuators.max_hp;
         } else {
             self.alive = false;
             // take this object out of the world
@@ -415,16 +421,15 @@ impl Object {
     ) -> Option<Box<dyn Action>> {
         // Check if this object is ai controlled, and if so, take the ai out of the object before processing.
         let mut controller_opt = self.control.take();
-        let next_action: Option<Box<dyn Action>>;
-        match controller_opt {
+        let next_action: Option<Box<dyn Action>> = match controller_opt {
             Some(control::Controller::Npc(ref mut boxed_ai)) => {
-                next_action = Some(boxed_ai.act(state, objects, self));
+                Some(boxed_ai.act(state, objects, self))
             }
             Some(control::Controller::Player(ref mut player_ctrl)) => {
-                next_action = player_ctrl.next_action.take();
+                player_ctrl.next_action.take()
             }
-            None => next_action = None,
-        }
+            None => None,
+        };
 
         if self.control.is_none() {
             self.control = controller_opt;
@@ -614,9 +619,16 @@ impl Object {
         };
 
         // tiles have reduced information (might change in the future) since they are static
-        if self.tile.is_some() {
-            return if !self.physics.is_blocking {
-                hud::ToolTip::no_header(Vec::new(), Vec::new())
+        if let Some(tile) = &self.tile {
+            return if matches!(tile.typ, world_gen::TileType::Floor) {
+                let proteins = tile.complement.current_proteins;
+                let complement_attr = vec![
+                    ("inflammation".to_string(), format!("{:.2}", proteins[2])),
+                    ("marked".to_string(), format!("{:.2}", proteins[1])),
+                    ("attack".to_string(), format!("{:.2}", proteins[0])),
+                    ("inhibitor".to_string(), format!("{:.2}", proteins[3])),
+                ];
+                hud::ToolTip::new("Floor Cell", Vec::new(), complement_attr)
             } else {
                 let attributes = vec![("receptors:".to_string(), receptor_match)];
                 hud::ToolTip::new(self.visual.name.clone(), Vec::new(), attributes)

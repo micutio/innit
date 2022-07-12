@@ -2,6 +2,7 @@ use crate::entity::Object;
 use crate::game::{self, consts, ObjectStore, Position};
 use crate::ui;
 use crate::util;
+use crate::world_gen;
 
 use bracket_lib::prelude as rltk;
 
@@ -9,7 +10,8 @@ pub fn render_world(objects: &mut ObjectStore, ctx: &mut rltk::BTerm, vis_update
     // time rendering method for profiling purposes
     let mut timer = util::Timer::new("render world");
     ctx.set_active_console(game::consts::WORLD_CON);
-    if vis_update && !game::env().is_debug_mode {
+    if vis_update {
+        //&& !game::env().is_debug_mode {
         draw_updated_visibility(objects);
     } else {
         draw_direct(objects);
@@ -116,10 +118,9 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .collect();
     let visible_positions: Vec<rltk::Point> = player_views
         .iter()
-        .map(|(pos, range)| {
+        .flat_map(|(pos, range)| {
             rltk::field_of_view(rltk::Point::new(pos.x(), pos.y()), *range, objects)
         })
-        .flatten()
         .collect();
 
     objects
@@ -171,24 +172,27 @@ fn update_visual(
 ) {
     let dist_to_player = object.pos.distance(&player_pos);
     let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
-    object.physics.is_visible =
-        visible_positions.contains(&rltk::Point::new(object.pos.x(), object.pos.y()));
+    object.physics.is_visible = game::env().is_debug_mode
+        || visible_positions.contains(&rltk::Point::new(object.pos.x(), object.pos.y()));
 
     let obj_vis = object.physics.is_visible;
     let obj_opaque = object.physics.is_blocking_sight;
-    // set tile foreground and background colors
-    let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque) {
+
+    // calculate tile foreground and background colors
+    let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque, game::env().is_debug_mode) {
+        // debug mode:
+        (_, _, true) => (tc.fwt, tc.bwt),
         // outside field of view:
-        (false, true) => (tc.fwf, tc.bwf),
-        (false, false) => (tc.fff, tc.bff),
+        (false, true, false) => (tc.fwf, tc.bwf),
+        (false, false, false) => (tc.fff, tc.bff),
         // inside fov:
         // (true, true) => COLOR_LIGHT_WALL,
-        (true, true) => (
+        (true, true, false) => (
             tc.fwt.lerp(tc.fwf, vis_ratio),
             tc.bwt.lerp(tc.bwf, vis_ratio),
         ),
         // (true, false) => COLOR_floor_in_fov,
-        (true, false) => (
+        (true, false, false) => (
             tc.fft.lerp(tc.fff, vis_ratio),
             tc.bft.lerp(tc.bff, vis_ratio),
         ),
@@ -199,9 +203,33 @@ fn update_visual(
         ui::Rgba::from_f32(tile_color_bg.r, tile_color_bg.g, tile_color_bg.b, 1.0);
 
     // if we're dealing with a tile, then change foreground color as well
-    if object.tile.is_some() {
+    if let Some(t) = &object.tile {
         object.visual.fg_color =
             ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 1.0);
+
+        // only color the tile with their complement concentration if the player can see it
+        if object.physics.is_visible && matches!(t.typ, world_gen::TileType::Floor) {
+            // adjust fg and bg color to reflect complement protein concentration
+            let proteins = t.complement.current_proteins;
+            match game::env().complement_system_display {
+                0 => {
+                    let ratio_g = proteins[0];
+                    let delta_g = 255.0 - object.visual.bg_color.g as f32;
+                    object.visual.bg_color.g += (delta_g * ratio_g) as u8;
+                }
+                1 => {
+                    let ratio_r = proteins[1];
+                    let delta_r = 255.0 - object.visual.bg_color.r as f32;
+                    object.visual.bg_color.r += (delta_r * ratio_r) as u8;
+                }
+                2 => {
+                    let ratio_b = proteins[2];
+                    let delta_b = 255.0 - object.visual.bg_color.b as f32;
+                    object.visual.bg_color.b += (delta_b * ratio_b) as u8;
+                }
+                _ => {}
+            }
+        }
     }
 }
 
@@ -236,7 +264,7 @@ pub fn create_shader(objects: &ObjectStore) -> Vec<ShaderCell> {
 }
 
 pub fn render_shader(
-    shader: &mut Vec<ShaderCell>,
+    shader: &mut [ShaderCell],
     objects: &ObjectStore,
     ctx: &mut rltk::BTerm,
     vis_update: bool,
