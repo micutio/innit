@@ -32,8 +32,8 @@ Innit is still at the outset of development. The basic game engine is, apart fro
 
 ## Screenshots
 
-![innit title image](screenshots/innit_main_alpha-0.0.4.png)
-![innit ui sample](screenshots/ui/ui-0.0.4.png)
+![innit title image](screenshots/main/innit_main_alpha-0.0.5.png)
+![innit ui sample](screenshots/ui/ui-0.0.5.png)
 
 ### Building and running the game
 
