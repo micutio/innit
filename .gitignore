@@ -1,3 +1,4 @@
+.vscode/settings.json 
 wasm/innit.js
 wasm/innit_bg.wasm
 /target
