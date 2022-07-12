@@ -54,7 +54,7 @@ cargo run innit
 #### Additional command line arguments
 
 - `-d | --debug`: runs the game in debug mode, with full vision of the world and world generation
-- `-s | --seeding`: prompts the game to use a fixed random seed
+- `-s | --seed`: prompts the game to use a fixed random seed
 - `--spectate`: runs the game without a player character, best used together with debug mode
 
 ## Known Issues
