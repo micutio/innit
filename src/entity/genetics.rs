@@ -82,13 +82,6 @@ pub enum TraitAttribute {
     None,
 }
 
-pub enum GeneOrigin {
-    Foreign,
-    Damaged,
-    Friendly,
-    ImmuneSystem,
-}
-
 /// Genetic traits are linked to actions and attributes.
 /// Actions are supposed to be linked to key inputs.
 /// Relationships:

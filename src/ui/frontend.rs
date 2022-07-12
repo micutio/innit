@@ -207,7 +207,8 @@ fn update_visual(
         object.visual.fg_color =
             ui::Rgba::from_f32(tile_color_fg.r, tile_color_fg.g, tile_color_fg.b, 1.0);
 
-        if matches!(t.typ, world_gen::TileType::Floor) {
+        // only color the tile with their complement concentration if the player can see it
+        if object.physics.is_visible && matches!(t.typ, world_gen::TileType::Floor) {
             // adjust fg and bg color to reflect complement protein concentration
             let proteins = t.complement.current_proteins;
             match game::env().complement_system_display {

@@ -108,6 +108,7 @@ impl ComplementProteins {
                 f32::max(self.current_proteins[i] - decay_rate, MIN_CONCENTRATION);
         });
 
+        // if there are inhibitor proteins present, accelerate the complement decay
         (0..inhibitor_idx).for_each(|i| {
             let inhibition_rate = self.current_proteins[i] - self.current_proteins[inhibitor_idx];
             if inhibition_rate < 0.0 {
