@@ -4,6 +4,9 @@
 //! later ported to and heavily influenced by the [RLTK tutorial](https://bfnightly.bracketproductions.com/rustbook/)
 //!
 //! Michael Wagner 2018
+//!
+
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 
 extern crate casim;
 #[macro_use]
