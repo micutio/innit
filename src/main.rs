@@ -29,6 +29,7 @@ mod world_gen;
 bracket_lib::prelude::add_wasm_support!();
 use bracket_lib::prelude as rltk;
 use bracket_lib::terminal::EMBED;
+use color_eyre::eyre::Result;
 use std::env;
 
 rltk::embedded_resource!(FONT_16X16_YUN, "../resources/fonts/yun_16x16.png");
@@ -43,7 +44,9 @@ rltk::embedded_resource!(FONT_8X8_REX, "../resources/fonts/rex_8x8.png");
 
 const VERSION: &str = "0.0.6";
 
-pub fn main() -> rltk::BError {
+pub fn main() -> Result<()> {
+    color_eyre::install()?;
+
     println!(
         r#"
         _____             _ _   
@@ -141,7 +144,7 @@ pub fn main() -> rltk::BError {
     let font_8x8_rex = "fonts/rex_8x8.png";
 
     let tile_size = game::env().tile_size;
-    let context = rltk::BTermBuilder::new()
+    let context = match rltk::BTermBuilder::new()
         .with_dimensions(game::consts::SCREEN_WIDTH, game::consts::SCREEN_HEIGHT)
         .with_font(font_16x16_yun, 16, 16)
         .with_font(font_16x16_rex, 16, 16)
@@ -176,7 +179,15 @@ pub fn main() -> rltk::BError {
         .with_fps_cap(60.0)
         .with_tile_dimensions(tile_size, tile_size)
         // .with_vsync(true)
-        .build()?;
+        .build()
+    {
+        Ok(it) => it,
+        Err(err) => panic!("{}", err),
+    };
 
-    rltk::main_loop(context, game::Game::new())
+    if let Err(err) = rltk::main_loop(context, game::Game::new()) {
+        panic!("{}", err);
+    } else {
+        Ok(())
+    }
 }

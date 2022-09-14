@@ -15,6 +15,7 @@ bracket-lib = {git = "https://github.com/amethyst/bracket-lib", branch="master"}
 # bracket-lib = {git = "https://github.com/jasonjmcghee/bracket-lib", branch="issue_254_webgl_missing-features"} # testing
 
 cpuprofiler = "0.0.4"
+color-eyre = "0.6"
 instant = "0.1"
 lazy_static = "1.4.0"
 log = "0.4.17"
