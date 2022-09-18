@@ -4,6 +4,11 @@ version = "0.0.6"
 authors = ["Michael Wagner <wagner.mchl@googlemail.com>"]
 license = "MIT License"
 edition = "2021"
+description = "A roguelike game centered around the human immune system"
+repository = "https://github.com/micutio/innit"
+keywords = ["game","roguelike", "biology", "immune", "system"]
+categories = ["game"]
+
 
 [features]
 stdweb = [ "instant/stdweb" ]
@@ -17,19 +22,19 @@ bracket-lib = {git = "https://github.com/amethyst/bracket-lib", branch="master"}
 cpuprofiler = "0.0.4"
 color-eyre = "0.6"
 instant = "0.1"
-lazy_static = "1.4.0"
-log = "0.4.17"
-pretty_env_logger = "0.4.0"
-rand = "0.8.5"
-rand_core = "0.6.3"
-rand_isaac = "0.3.0"
-serde = { version = "1.0.137", features = ["derive"] }
-serde_json = "1.0.81"
+lazy_static = "1.4"
+log = "0.4"
+pretty_env_logger = "0.4"
+rand = "0.8"
+rand_core = "0.6"
+rand_isaac = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 typetag = "0.2"
 dirs = "4.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2.6", features = ["js"] }
+getrandom = { version = "0.2", features = ["js"] }
 wasm-bindgen = "0.2"
