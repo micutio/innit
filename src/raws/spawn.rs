@@ -24,7 +24,7 @@ pub struct Spawn {
 impl Spawn {
     pub fn _example() -> Vec<Self> {
         vec![
-            Spawn {
+            Self {
                 npc: "Virus".to_string(),
                 spawn_transitions: vec![
                     Transition {
@@ -57,7 +57,7 @@ impl Spawn {
                 //     },
                 // ],
             },
-            Spawn {
+            Self {
                 npc: "Virus".to_string(),
                 spawn_transitions: vec![
                     Transition {

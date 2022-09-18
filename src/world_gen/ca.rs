@@ -34,7 +34,7 @@ impl WorldGen for WorldGenerator {
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::template::ObjectTemplate],
+        object_templates: &[raws::templating::ObjectTemplate],
     ) -> game::RunState {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
@@ -214,7 +214,7 @@ fn place_objects(
     state: &mut State,
     objects: &mut ObjectStore,
     spawns: &[raws::spawn::Spawn],
-    object_templates: &[raws::template::ObjectTemplate],
+    object_templates: &[raws::templating::ObjectTemplate],
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -260,7 +260,7 @@ fn place_objects(
 
 fn try_create_new_npc(
     state: &mut State,
-    template: &raws::template::ObjectTemplate,
+    template: &raws::templating::ObjectTemplate,
     tile: &Object,
 ) -> Option<Object> {
     // assign controller
@@ -284,12 +284,12 @@ fn try_create_new_npc(
 
     // generate DNA, either probabilistically or from a template
     let raw_dna = match &template.dna_template {
-        raws::template::DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
+        raws::templating::DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
             &mut state.rng,
             template.dna_type == genetics::DnaType::Rna,
             *genome_len,
         ),
-        raws::template::DnaTemplate::Distributed {
+        raws::templating::DnaTemplate::Distributed {
             s_rate,
             p_rate,
             a_rate,
@@ -305,7 +305,7 @@ fn try_create_new_npc(
             template.dna_type == genetics::DnaType::Rna,
             *genome_len,
         ),
-        raws::template::DnaTemplate::Defined { traits } => state
+        raws::templating::DnaTemplate::Defined { traits } => state
             .gene_library
             .dna_from_trait_strs(&mut state.rng, traits),
     };

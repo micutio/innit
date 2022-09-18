@@ -86,7 +86,7 @@ pub struct Game {
     run_state: Option<RunState>,
     // world generation state start
     spawns: Vec<raws::spawn::Spawn>,
-    object_templates: Vec<raws::template::ObjectTemplate>,
+    object_templates: Vec<raws::templating::ObjectTemplate>,
     world_generator: world_gen::ca::WorldGenerator,
     // world generation state end
     hud: hud::Hud,
@@ -104,7 +104,8 @@ impl Game {
     pub fn new() -> Self {
         let state = State::new(1);
         let objects = ObjectStore::new();
-        let run_state = match env().spectating {
+        let spectate = env().spectating;
+        let run_state = match spectate {
             env::GameOption::Enabled => RunState::NewGame,
             env::GameOption::Disabled => RunState::MainMenu(menu::main::new()),
         };
@@ -318,9 +319,9 @@ impl Game {
                 }
                 RunState::MainMenu(menu::main::new())
             }
-            input::UiAction::CharacterScreen => RunState::InfoBox(
-                dialog::character::character_screen(&self.state, &self.objects),
-            ),
+            input::UiAction::CharacterScreen => {
+                RunState::InfoBox(dialog::character::info_screen(&self.state, &self.objects))
+            }
             input::UiAction::ChoosePrimary => {
                 if let Some(ref mut player) = self.objects[self.state.player_idx] {
                     let action_items = player.get_available_actions(&[
@@ -336,7 +337,7 @@ impl Game {
                         RunState::Ticking
                     } else {
                         RunState::ChooseActionMenu(menu::choose_action::new(
-                            action_items,
+                            &action_items,
                             menu::choose_action::ActionCategory::Primary,
                         ))
                     }
@@ -359,7 +360,7 @@ impl Game {
                         RunState::Ticking
                     } else {
                         RunState::ChooseActionMenu(menu::choose_action::new(
-                            action_items,
+                            &action_items,
                             menu::choose_action::ActionCategory::Secondary,
                         ))
                     }
@@ -378,7 +379,7 @@ impl Game {
                         RunState::Ticking
                     } else {
                         RunState::ChooseActionMenu(menu::choose_action::new(
-                            action_items,
+                            &action_items,
                             menu::choose_action::ActionCategory::Quick1,
                         ))
                     }
@@ -397,7 +398,7 @@ impl Game {
                         RunState::Ticking
                     } else {
                         RunState::ChooseActionMenu(menu::choose_action::new(
-                            action_items,
+                            &action_items,
                             menu::choose_action::ActionCategory::Quick2,
                         ))
                     }
@@ -411,7 +412,7 @@ impl Game {
                         RunState::GenomeEditing(genome_editor)
                     })
             }
-            input::UiAction::Help => RunState::InfoBox(dialog::controls::controls_screen()),
+            input::UiAction::Help => RunState::InfoBox(dialog::controls::info_screen()),
             input::UiAction::SetComplementDisplay(x) => {
                 env().set_complement_display(*x);
                 println!("set complement display to: {}", x);
@@ -726,7 +727,8 @@ impl rltk::GameState for Game {
                     PlayerSignal::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
                         // checking for input
-                        match env().spectating {
+                        let spectate = env().spectating;
+                        match spectate {
                             env::GameOption::Enabled => RunState::Ticking,
                             env::GameOption::Disabled => RunState::CheckInput,
                         }

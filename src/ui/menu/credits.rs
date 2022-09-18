@@ -13,11 +13,11 @@ impl MenuItem for CreditsMenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<CreditsMenuItem>,
-        item: &CreditsMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            CreditsMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
+            Self::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
@@ -25,7 +25,7 @@ impl MenuItem for CreditsMenuItem {
 pub fn new() -> Menu<CreditsMenuItem> {
     Menu::with_header(
         "YOU WON!",
-        vec![(
+        &[(
             CreditsMenuItem::ReturnToMain,
             "Return to Main Menu".to_string(),
         )],

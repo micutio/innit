@@ -1,10 +1,10 @@
 pub mod spawn;
-pub mod template;
+pub mod templating;
 
 use bracket_lib::prelude as rltk;
 use bracket_lib::terminal::EMBED;
 use spawn::Spawn;
-use template::ObjectTemplate;
+use templating::ObjectTemplate;
 
 rltk::embedded_resource!(SPAWN_RAW, "../../raws/spawns.json");
 rltk::embedded_resource!(OBJECT_RAW, "../../raws/objects.json");

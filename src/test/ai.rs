@@ -17,10 +17,11 @@ fn test_random_ai() {
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
 
     // test walking in any direction
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
             println!("move test '{}'", &action.to_text());
-            assert!(action.get_identifier().contains("move"))
+            assert!(action.get_identifier().contains("move"));
         } else {
             panic!();
         }
@@ -76,9 +77,10 @@ fn test_random_ai() {
     objects.push(virus_south);
 
     // test walking in only west direction
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
-            assert_eq!(action.to_text(), "move to West")
+            assert_eq!(action.to_text(), "move to West");
         } else {
             panic!();
         }
@@ -103,9 +105,10 @@ fn test_random_ai() {
     objects.push(virus_west);
 
     // test no walk possible
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
-            assert_eq!(action.to_text(), "pass")
+            assert_eq!(action.to_text(), "pass");
         } else {
             panic!();
         }

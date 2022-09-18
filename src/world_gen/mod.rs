@@ -22,7 +22,7 @@ pub trait WorldGen {
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::template::ObjectTemplate],
+        object_templates: &[raws::templating::ObjectTemplate],
     ) -> game::RunState;
 
     /// Returns the position of where the player was placed.

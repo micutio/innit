@@ -65,7 +65,7 @@ pub struct ItemTemplate {
 impl ObjectTemplate {
     pub fn _example() -> Vec<Self> {
         let is_visible = matches!(game::env().debug_mode, game::env::GameOption::Enabled);
-        vec![ObjectTemplate {
+        vec![Self {
             npc: "Virus".to_string(),
             glyph: 'v',
             physics: entity::object::Physics {

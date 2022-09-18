@@ -11,12 +11,12 @@ impl MenuItem for GameOverMenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<GameOverMenuItem>,
-        item: &GameOverMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            GameOverMenuItem::Credits => game::RunState::CreditsScreen(menu::credits::new()),
-            GameOverMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
+            Self::Credits => game::RunState::CreditsScreen(menu::credits::new()),
+            Self::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
@@ -24,7 +24,7 @@ impl MenuItem for GameOverMenuItem {
 pub fn new() -> Menu<GameOverMenuItem> {
     Menu::with_header(
         "Game Over",
-        vec![
+        &[
             (GameOverMenuItem::Credits, "Credits".to_string()),
             (
                 GameOverMenuItem::ReturnToMain,

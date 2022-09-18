@@ -46,10 +46,10 @@ fn test_dna_encoding() {
         volume: 1,
     };
 
-    let (_s, _p, _a, _) = gene_lib.dna_to_traits(DnaType::Nucleus, &dna);
+    let (s_, p_, a_, _) = gene_lib.dna_to_traits(DnaType::Nucleus, &dna);
 
-    assert_eq!(s.sensing_range, _s.sensing_range);
-    assert_eq!(s.actions.len(), _s.actions.len());
+    assert_eq!(s.sensing_range, s_.sensing_range);
+    assert_eq!(s.actions.len(), s_.actions.len());
     // TODO: Find a better way of comparing action vectors for equality.
     // let s_match_errors = s
     //     .actions
@@ -66,9 +66,9 @@ fn test_dna_encoding() {
     //     .filter(|(&a, &b)| a.get_target_category() != b.get_target_category())
     //     .count();
     // assert_eq!(p_match_errors, 0);
-    println!("{:#?}", _p.actions);
-    assert_eq!(p.actions.len(), _p.actions.len());
-    assert_eq!(a.max_hp, _a.max_hp);
+    println!("{:#?}", p_.actions);
+    assert_eq!(p.actions.len(), p_.actions.len());
+    assert_eq!(a.max_hp, a_.max_hp);
     // let a_match_errors = a
     //     .actions
     //     .iter()
@@ -76,7 +76,7 @@ fn test_dna_encoding() {
     //     .filter(|(&a, &b)| a.get_target_category() != b.get_target_category())
     //     .count();
     // assert_eq!(a_match_errors, 0);
-    assert_eq!(a.actions.len(), _a.actions.len());
+    assert_eq!(a.actions.len(), a_.actions.len());
 }
 
 /// Test dna encoding and decoding by performing a 'round trip'

@@ -16,8 +16,8 @@ pub struct ActionItem {
 }
 
 impl ActionItem {
-    pub fn new(id: String, category: ActionCategory) -> Self {
-        ActionItem { id, category }
+    pub const fn new(id: String, category: ActionCategory) -> Self {
+        Self { id, category }
     }
 }
 
@@ -25,8 +25,8 @@ impl MenuItem for ActionItem {
     fn process(
         state: &mut State,
         objects: &mut ObjectStore,
-        _menu: &mut Menu<ActionItem>,
-        item: &ActionItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         if let Some(ref mut object) = objects[state.player_idx] {
             let action_opt = object.match_action(&item.id);
@@ -45,11 +45,11 @@ impl MenuItem for ActionItem {
     }
 }
 
-pub fn new(available_actions: Vec<String>, category: ActionCategory) -> Menu<ActionItem> {
+pub fn new(available_actions: &[String], category: ActionCategory) -> Menu<ActionItem> {
     let items: Vec<(ActionItem, String)> = available_actions
         .iter()
         .cloned()
         .map(|s| (ActionItem::new(s.clone(), category), s))
         .collect();
-    Menu::new(items)
+    Menu::new(&items)
 }

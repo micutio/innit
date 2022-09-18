@@ -14,19 +14,19 @@ impl MenuItem for MainMenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<MainMenuItem>,
-        item: &MainMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            MainMenuItem::NewGame => game::RunState::NewGame,
-            MainMenuItem::Resume => game::RunState::LoadGame,
-            MainMenuItem::Quit => quit(),
+            Self::NewGame => game::RunState::NewGame,
+            Self::Resume => game::RunState::LoadGame,
+            Self::Quit => quit(),
         }
     }
 }
 
 pub fn new() -> Menu<MainMenuItem> {
-    Menu::new(vec![
+    Menu::new(&[
         (MainMenuItem::NewGame, "New Game".to_string()),
         (MainMenuItem::Resume, "Resume Last Game".to_string()),
         (MainMenuItem::Quit, "Quit".to_string()),

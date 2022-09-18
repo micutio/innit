@@ -1,6 +1,6 @@
 use crate::ui::dialog::InfoBox;
 
-pub fn controls_screen() -> InfoBox {
+pub fn info_screen() -> InfoBox {
     let title: String = "Controls".to_string();
     let lines = vec![
         "Actions".to_string(),
