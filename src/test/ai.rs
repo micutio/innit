@@ -1,5 +1,6 @@
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
+use crate::game;
 use crate::game::env;
 use crate::game::State;
 use crate::world_gen::Tile;
@@ -129,7 +130,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 
-    let debug_mode = env().is_debug_mode;
+    let debug_mode = matches!(env().debug_mode, game::env::GameOption::Enabled);
 
     // make tiles near the player walkable
     objects

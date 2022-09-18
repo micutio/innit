@@ -22,28 +22,27 @@ impl Action for PickUpItem {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
             // do stuff with object
             if target_obj.item.is_some() {
-                if owner.inventory.items.len() < owner.actuators.volume as usize {
-                    // only add object if it has in item tag
-                    state.log.add(
-                        format!(
-                            "{} picked up a {}",
-                            owner.visual.name, &target_obj.visual.name
-                        ),
-                        game::msg::MsgClass::Info,
-                    );
-                    owner.add_to_inventory(target_obj);
-
-                    // keep the object vector neat and tidy
-                    objects.get_vector_mut().remove(index);
-
-                    return act::ActionResult::Success {
-                        callback: act::ObjectFeedback::NoFeedback,
-                    };
-                } else {
+                if owner.inventory.items.len() > owner.actuators.volume as usize {
                     state
                         .log
                         .add("Your inventory is full!", game::msg::MsgClass::Info);
                 }
+                // only add object if it has in item tag
+                state.log.add(
+                    format!(
+                        "{} picked up a {}",
+                        owner.visual.name, &target_obj.visual.name
+                    ),
+                    game::msg::MsgClass::Info,
+                );
+                owner.add_to_inventory(target_obj);
+
+                // keep the object vector neat and tidy
+                objects.get_vector_mut().remove(index);
+
+                return act::ActionResult::Success {
+                    callback: act::ObjectFeedback::NoFeedback,
+                };
             }
             //else {
             // otherwise put it back into the world

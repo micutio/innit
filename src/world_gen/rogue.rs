@@ -15,21 +15,21 @@ const MAX_ROOMS: i32 = 30;
 /// Module World Generator Rogue-style
 ///
 /// This world generator is based on the genre-defining game `Rogue`.
-pub struct RogueWorldGenerator {
+pub struct WorldGenerator {
     rooms: Vec<Rect>,
     player_start: (i32, i32),
 }
 
-impl RogueWorldGenerator {
-    pub fn _new() -> Self {
-        RogueWorldGenerator {
+impl WorldGenerator {
+    pub const fn _new() -> Self {
+        Self {
             rooms: vec![],
             player_start: (0, 0),
         }
     }
 }
 
-impl WorldGen for RogueWorldGenerator {
+impl WorldGen for WorldGenerator {
     fn make_world(
         &mut self,
         state: &mut State,
@@ -91,7 +91,7 @@ impl WorldGen for RogueWorldGenerator {
                 self.rooms.push(new_room);
             }
 
-            if env().is_debug_mode {
+            if matches!(env().debug_mode, game::env::GameOption::Enabled) {
                 let ten_millis = time::Duration::from_millis(100);
                 thread::sleep(ten_millis);
             }
@@ -107,26 +107,32 @@ impl WorldGen for RogueWorldGenerator {
 fn create_room(objects: &mut ObjectStore, room: Rect) {
     for x in (room.x1 + 1)..room.x2 {
         for y in (room.y1 + 1)..room.y2 {
-            objects
-                .get_tile_at_mut(x, y)
-                .replace(Tile::new_floor(x, y, env().is_debug_mode));
+            objects.get_tile_at_mut(x, y).replace(Tile::new_floor(
+                x,
+                y,
+                matches!(env().debug_mode, game::env::GameOption::Enabled),
+            ));
         }
     }
 }
 
 fn create_h_tunnel(objects: &mut ObjectStore, x1: i32, x2: i32, y: i32) {
     for x in cmp::min(x1, x2)..=cmp::max(x1, x2) {
-        objects
-            .get_tile_at_mut(x, y)
-            .replace(Tile::new_floor(x, y, env().is_debug_mode));
+        objects.get_tile_at_mut(x, y).replace(Tile::new_floor(
+            x,
+            y,
+            matches!(env().debug_mode, game::env::GameOption::Enabled),
+        ));
     }
 }
 
 fn create_v_tunnel(objects: &mut ObjectStore, y1: i32, y2: i32, x: i32) {
     for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
-        objects
-            .get_tile_at_mut(x, y)
-            .replace(Tile::new_floor(x, y, env().is_debug_mode));
+        objects.get_tile_at_mut(x, y).replace(Tile::new_floor(
+            x,
+            y,
+            matches!(env().debug_mode, game::env::GameOption::Enabled),
+        ));
     }
 }
 
@@ -186,8 +192,8 @@ struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
-        Rect {
+    pub const fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
+        Self {
             x1: x,
             y1: y,
             x2: x + w,
@@ -195,14 +201,14 @@ impl Rect {
         }
     }
 
-    pub fn center(&self) -> (i32, i32) {
+    pub const fn center(&self) -> (i32, i32) {
         let center_x = (self.x1 + self.x2) / 2;
         let center_y = (self.y1 + self.y2) / 2;
         (center_x, center_y)
     }
 
     /// Return true if this rect intersects with another one.
-    pub fn intersects_with(&self, other: &Rect) -> bool {
+    pub const fn intersects_with(&self, other: &Self) -> bool {
         (self.x1 <= other.x2)
             && (self.x2 >= other.x1)
             && (self.y1 <= other.y2)

@@ -170,16 +170,17 @@ fn update_visual(
     visible_positions: &[rltk::Point],
     tc: &TileColorsRgb,
 ) {
+    let is_debug_mode = matches!(game::env().debug_mode, game::env::GameOption::Enabled);
     let dist_to_player = object.pos.distance(&player_pos);
     let vis_ratio = dist_to_player / (player_sensing_range as f32 + 1.0);
-    object.physics.is_visible = game::env().is_debug_mode
+    object.physics.is_visible = is_debug_mode
         || visible_positions.contains(&rltk::Point::new(object.pos.x(), object.pos.y()));
 
     let obj_vis = object.physics.is_visible;
     let obj_opaque = object.physics.is_blocking_sight;
 
     // calculate tile foreground and background colors
-    let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque, game::env().is_debug_mode) {
+    let (tile_color_fg, tile_color_bg) = match (obj_vis, obj_opaque, is_debug_mode) {
         // debug mode:
         (_, _, true) => (tc.fwt, tc.bwt),
         // outside field of view:

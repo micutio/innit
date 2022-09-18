@@ -5,6 +5,7 @@ use crate::game::{self, env, ObjectStore, State};
 use crate::ui::hud;
 
 use bracket_lib::prelude as rltk;
+use rltk::VirtualKeyCode as Vkc;
 
 #[derive(Clone, Debug)]
 pub enum PlayerInput {
@@ -46,7 +47,6 @@ fn key_to_action(
     shift: bool,
 ) -> PlayerInput {
     use self::act::Target::*;
-    use rltk::VirtualKeyCode as Vkc;
     match (key, ctrl, shift) {
         // letters
         (Vkc::A, false, false) => PlayerInput::Game(PlayerAction::Secondary(West)),
@@ -54,13 +54,10 @@ fn key_to_action(
         (Vkc::D, false, false) => PlayerInput::Game(PlayerAction::Secondary(East)),
         (Vkc::E, false, false) => PlayerInput::Game(PlayerAction::Quick2),
         (Vkc::E, false, true) => PlayerInput::Meta(UiAction::ChooseQuick2),
-        (Vkc::G, false, false) => {
-            if env().is_debug_mode {
-                PlayerInput::Meta(UiAction::GenomeEditor)
-            } else {
-                PlayerInput::Undefined
-            }
-        }
+        (Vkc::G, false, false) => match env().debug_mode {
+            game::env::GameOption::Enabled => PlayerInput::Meta(UiAction::GenomeEditor),
+            game::env::GameOption::Disabled => PlayerInput::Undefined,
+        },
         (Vkc::P, false, true) => PlayerInput::Meta(UiAction::ChoosePrimary),
         (Vkc::Q, false, false) => PlayerInput::Game(PlayerAction::Quick1),
         (Vkc::Q, false, true) => PlayerInput::Meta(UiAction::ChooseQuick1),
@@ -144,7 +141,7 @@ pub fn read(
     });
 
     // 1) check whether key has been pressed
-    use rltk::VirtualKeyCode as Vkc;
+
     let ctrl = input.key_pressed_set().contains(&Vkc::LControl)
         || input.key_pressed_set().contains(&Vkc::RControl);
     let shift = input.key_pressed_set().contains(&Vkc::LShift)

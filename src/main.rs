@@ -7,6 +7,8 @@
 //!
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
+#![allow(clippy::similar_names)]
 
 extern crate casim;
 #[macro_use]
@@ -47,6 +49,10 @@ rltk::embedded_resource!(FONT_8X8_REX, "../resources/fonts/rex_8x8.png");
 
 const VERSION: &str = "0.0.6";
 
+/// # Panics
+/// If the setup fails.
+/// # Errors
+/// Errors are repackaged with `color_eyre`
 pub fn main() -> Result<()> {
     color_eyre::install()?;
 
@@ -66,72 +72,7 @@ pub fn main() -> Result<()> {
     pretty_env_logger::init();
 
     // parse program arguments
-    let args: Vec<String> = env::args().collect();
-    debug!("args: {:?}", args);
-    for i in 0..args.len() {
-        if let Some(arg) = args.get(i) {
-            if arg.eq("-d") || arg.eq("--debug") {
-                game::env().set_debug_mode(true);
-            }
-            if arg.eq("-s") || arg.eq("--seed") {
-                // try get next argument to retrieve the seed number
-                if i + 1 == args.len() {
-                    info!("no seed parameter provided, fall back to use '0' instead");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let seed = match next_arg.parse::<u64>() {
-                        Ok(n) => n,
-                        Err(_) => {
-                            info!("no numerical seed parameter provided, fall back to use '0' instead");
-                            0
-                        }
-                    };
-                    game::env().set_seed(seed);
-                }
-            }
-            if arg.eq("--tile-size") {
-                // try get next argument to retrieve the seed number
-                if i + 1 == args.len() {
-                    info!("no tile size parameter provided, fall back to use '16' instead");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let seed = match next_arg.parse::<i32>() {
-                        Ok(n) => n,
-                        Err(_) => {
-                            info!("no numerical tile size parameter provided, fall back to use '16' instead");
-                            16
-                        }
-                    };
-                    game::env().set_tile_size(seed);
-                }
-            }
-            if arg.eq("-t") || arg.eq("--turns") {
-                // try get next argument to retrieve the seed number
-                if i + 1 == args.len() {
-                    info!("Option '-t | --turns' requires an integer parameter!");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let turn_limit = match next_arg.parse::<u128>() {
-                        Ok(n) => n,
-                        Err(_) => {
-                            info!("no numerical seed parameter provided, fall back to use '0' instead");
-                            0
-                        }
-                    };
-                    game::env().set_turn_limit(turn_limit);
-                }
-            }
-            if arg.eq("--spectate") {
-                game::env().set_spectating(true);
-            }
-            if arg.eq("-np") || arg.eq("--no-particles") {
-                game::env().set_disable_particles(true);
-            }
-            if arg.eq("-g") || arg.eq("--gfx") {
-                game::env().set_disable_gfx(false);
-            }
-        }
-    }
+    parse_cmdline_flags();
 
     // build engine and launch the game
 
@@ -192,5 +133,65 @@ pub fn main() -> Result<()> {
         panic!("{}", err);
     } else {
         Ok(())
+    }
+}
+
+fn parse_cmdline_flags() {
+    let args: Vec<String> = env::args().collect();
+    debug!("args: {:?}", args);
+    for i in 0..args.len() {
+        if let Some(arg) = args.get(i) {
+            if arg.eq("-d") || arg.eq("--debug") {
+                game::env().set_debug_mode(true);
+            }
+            if arg.eq("-s") || arg.eq("--seed") {
+                // try get next argument to retrieve the seed number
+                if i + 1 == args.len() {
+                    info!("no seed parameter provided, fall back to use '0' instead");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let seed = next_arg.parse().map_or_else(|_| {
+                        info!("no numerical seed parameter provided, fall back to use '0' instead");
+                        0
+                    }, |v| v);
+                    game::env().set_seed(seed);
+                }
+            }
+            if arg.eq("--tile-size") {
+                // try get next argument to retrieve the tile size
+                if i + 1 == args.len() {
+                    info!("no tile size parameter provided, fall back to use '16' instead");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let t_size = next_arg.parse::<i32>().map_or_else(|_| {
+                        info!("no numerical tile size parameter provided, fall back to use '16' instead");
+                        16
+                    }, |v| v);
+                    game::env().set_tile_size(t_size);
+                }
+            }
+            if arg.eq("-t") || arg.eq("--turns") {
+                // try get next argument to retrieve the seed number
+                if i + 1 == args.len() {
+                    info!("Option '-t | --turns' requires an integer parameter!");
+                }
+                if let Some(next_arg) = args.get(i + 1) {
+                    let turn_limit = next_arg.parse::<u128>().map_or_else(|_| {
+                        info!("no numerical seed parameter provided, fall back to use '0' instead");
+                            0
+                    }, |v| v);
+                    game::env().set_turn_limit(turn_limit);
+                }
+            }
+            if arg.eq("--spectate") {
+                game::env().set_spectating(true);
+            }
+            if arg.eq("-np") || arg.eq("--no-particles") {
+                game::env().set_particles(true);
+            }
+            if arg.eq("-g") || arg.eq("--gfx") {
+                game::env().set_disable_gfx(false);
+            }
+        }
     }
 }

@@ -12,7 +12,7 @@ use crate::{game, ui};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
-/// manipulated the world tiles provided in the GameObject struct.
+/// manipulated the world tiles provided in the `GameObject` struct.
 pub trait WorldGen {
     /// Populate the world with tiles, objects and the player.
     /// Returns a runstate, which would be either `Runstate::Ticking` or `Runstate::WorldGen` to
@@ -30,6 +30,7 @@ pub trait WorldGen {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(clippy::use_self)]
 pub enum TileType {
     Wall,
     Floor,
@@ -37,11 +38,11 @@ pub enum TileType {
 }
 
 impl TileType {
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         match self {
-            TileType::Wall => "tissue cell",
-            TileType::Floor => "floor tile",
-            TileType::Void => "void tile",
+            Self::Wall => "tissue cell",
+            Self::Floor => "floor tile",
+            Self::Void => "void tile",
         }
     }
 }
@@ -56,15 +57,16 @@ pub struct Tile {
 
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col;
-        let bg_col;
-        if game::env().is_debug_mode {
-            fg_col = ui::palette().world_fg_wall_fov_true;
-            bg_col = ui::palette().world_bg_wall_fov_true;
-        } else {
-            fg_col = ui::palette().world_fg_wall_fov_false;
-            bg_col = ui::palette().world_bg_wall_fov_false;
-        }
+        let (fg_col, bg_col) = match game::env().debug_mode {
+            game::env::GameOption::Enabled => (
+                ui::palette().world_fg_wall_fov_true,
+                ui::palette().world_bg_wall_fov_true,
+            ),
+            game::env::GameOption::Disabled => (
+                ui::palette().world_fg_wall_fov_false,
+                ui::palette().world_bg_wall_fov_false,
+            ),
+        };
         Object::new()
             .position_xy(x, y)
             .living(true)
@@ -75,15 +77,16 @@ impl Tile {
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col;
-        let bg_col;
-        if game::env().is_debug_mode {
-            fg_col = ui::palette().world_fg_floor_fov_true;
-            bg_col = ui::palette().world_bg_floor_fov_true;
-        } else {
-            fg_col = ui::palette().world_fg_floor_fov_false;
-            bg_col = ui::palette().world_bg_floor_fov_false;
-        }
+        let (fg_col, bg_col) = match game::env().debug_mode {
+            game::env::GameOption::Enabled => (
+                ui::palette().world_fg_floor_fov_true,
+                ui::palette().world_bg_floor_fov_true,
+            ),
+            game::env::GameOption::Disabled => (
+                ui::palette().world_fg_floor_fov_false,
+                ui::palette().world_bg_floor_fov_false,
+            ),
+        };
         Object::new()
             .position_xy(x, y)
             .living(true)
