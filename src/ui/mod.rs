@@ -66,8 +66,7 @@ impl From<Rgba> for rltk::RGBA {
 }
 
 lazy_static! {
-    static ref PARTICLE_SYS: Mutex<particle::ParticleSystem> =
-        Mutex::new(particle::ParticleSystem::new());
+    static ref PARTICLE_SYS: Mutex<particle::System> = Mutex::new(particle::System::new());
 }
 
 pub fn register_particle(
@@ -96,7 +95,7 @@ pub fn register_particle(
     ));
 }
 
-pub fn register_particles(builder: particle::ParticleBuilder) {
+pub fn register_particles(builder: particle::Builder) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
     if matches!(game::env().particles, game::env::GameOption::Disabled) {
         return;
@@ -104,7 +103,7 @@ pub fn register_particles(builder: particle::ParticleBuilder) {
     particle_sys.particles.append(&mut builder.build());
 }
 
-pub fn particles<'a>() -> MutexGuard<'a, particle::ParticleSystem> {
+pub fn particles<'a>() -> MutexGuard<'a, particle::System> {
     PARTICLE_SYS.lock().unwrap()
 }
 

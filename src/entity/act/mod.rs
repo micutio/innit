@@ -89,7 +89,7 @@ pub enum ActionResult {
 }
 
 /// Results from processing an objects action for that turn, in ascending rank.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum ObjectFeedback {
     NoAction,   // object did not act and is still pondering its turn
     NoFeedback, // action completed, but requires no visual feedback
@@ -101,7 +101,7 @@ pub enum ObjectFeedback {
 
 /// Possible target groups are: objects, empty space, anything or self (None).
 /// Non-targeted actions will always be applied to the performing object itself.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TargetCategory {
     Any,
     BlockingObject,
@@ -122,22 +122,22 @@ pub enum Target {
 impl Target {
     fn to_pos(&self) -> Position {
         match self {
-            Target::North => Position::from_xy(0, -1),
-            Target::South => Position::from_xy(0, 1),
-            Target::East => Position::from_xy(1, 0),
-            Target::West => Position::from_xy(-1, 0),
-            Target::Center => Position::from_xy(0, 0),
+            Self::North => Position::from_xy(0, -1),
+            Self::South => Position::from_xy(0, 1),
+            Self::East => Position::from_xy(1, 0),
+            Self::West => Position::from_xy(-1, 0),
+            Self::Center => Position::from_xy(0, 0),
         }
     }
 
     /// Returns the target direction from acting position p1 to targeted position p2.
-    pub fn from_pos(p1: &Position, p2: &Position) -> Target {
+    pub fn from_pos(p1: &Position, p2: &Position) -> Self {
         match p1.offset(p2) {
-            (0, -1) => Target::North,
-            (0, 1) => Target::South,
-            (1, 0) => Target::East,
-            (-1, 0) => Target::West,
-            (0, 0) => Target::Center,
+            (0, -1) => Self::North,
+            (0, 1) => Self::South,
+            (1, 0) => Self::East,
+            (-1, 0) => Self::West,
+            (0, 0) => Self::Center,
             _ => panic!("calling from_xy on non-adjacent target"),
         }
     }

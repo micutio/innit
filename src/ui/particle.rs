@@ -34,7 +34,7 @@ impl Particle {
         NumT: TryInto<f32>,
         RgbT: Into<rltk::RGBA>,
     {
-        Particle {
+        Self {
             // For some reason the y-coordinate needs to be adjusted by 1 for the particle to be
             // correct, no idea why.
             pos: rltk::PointF::new(
@@ -51,7 +51,7 @@ impl Particle {
     }
 }
 
-pub struct ParticleBuilder {
+pub struct Builder {
     pos: rltk::PointF,
     col_fg: rltk::RGBA,
     col_bg: rltk::RGBA,
@@ -63,7 +63,7 @@ pub struct ParticleBuilder {
     scale: Option<((f32, f32), (f32, f32))>,
 }
 
-impl ParticleBuilder {
+impl Builder {
     pub fn new<NumT, RgbT>(
         x: NumT,
         y: NumT,
@@ -76,7 +76,7 @@ impl ParticleBuilder {
         NumT: TryInto<f32>,
         RgbT: Into<rltk::RGBA>,
     {
-        ParticleBuilder {
+        Self {
             pos: rltk::PointF::new(
                 x.try_into().ok().unwrap_or(0.0),
                 y.try_into().ok().unwrap_or(0.0),
@@ -92,7 +92,7 @@ impl ParticleBuilder {
         }
     }
 
-    pub fn _with_delay(mut self, start_delay: f32) -> Self {
+    pub const fn _with_delay(mut self, start_delay: f32) -> Self {
         self.start_delay = start_delay;
         self
     }
@@ -110,7 +110,7 @@ impl ParticleBuilder {
         self
     }
 
-    pub fn with_scale(mut self, start_scale: (f32, f32), end_scale: (f32, f32)) -> Self {
+    pub const fn with_scale(mut self, start_scale: (f32, f32), end_scale: (f32, f32)) -> Self {
         self.scale = Some((start_scale, end_scale));
         self
     }
@@ -128,8 +128,8 @@ impl ParticleBuilder {
                 let progress = t / self.lifetime;
                 let pos = self.end_pos.map_or(pos_start, |pos_end| {
                     rltk::PointF::new(
-                        pos_start.x + (progress * (pos_end.x as f32 - pos_start.x)),
-                        pos_start.y + (progress * (pos_end.y as f32 - pos_start.y)),
+                        progress.mul_add(pos_end.x as f32 - pos_start.x, pos_start.x),
+                        progress.mul_add(pos_end.y as f32 - pos_start.y, pos_start.y),
                     )
                 });
                 let col = self.end_col.map_or((self.col_fg, self.col_bg), |c| {
@@ -140,8 +140,8 @@ impl ParticleBuilder {
                 });
                 let scale = self.scale.map_or((1.0, 1.0), |(start_sc, end_sc)| {
                     (
-                        start_sc.0 + (progress * (end_sc.0 - start_sc.0)),
-                        start_sc.1 + (progress * (end_sc.1 - start_sc.1)),
+                        progress.mul_add(end_sc.0 - start_sc.0, start_sc.0),
+                        progress.mul_add(end_sc.1 - start_sc.1, start_sc.1),
                     )
                 });
                 let particle = Particle::new(
@@ -162,14 +162,14 @@ impl ParticleBuilder {
     }
 }
 
-pub struct ParticleSystem {
+pub struct System {
     pub particles: Vec<Particle>,
     vignette: Vec<(game::Position, (u8, u8, u8, u8))>,
 }
 
-impl ParticleSystem {
+impl System {
     pub fn new() -> Self {
-        ParticleSystem {
+        Self {
             particles: Vec::new(),
             vignette: create_vignette(),
         }

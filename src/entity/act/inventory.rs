@@ -48,10 +48,8 @@ impl Action for PickUpItem {
             // otherwise put it back into the world
             //}
             objects.replace(index, target_obj);
-            act::ActionResult::Failure
-        } else {
-            act::ActionResult::Failure
         }
+        act::ActionResult::Failure
     }
 
     fn set_target(&mut self, _t: act::Target) {}
@@ -86,8 +84,8 @@ pub struct DropItem {
 }
 
 impl DropItem {
-    pub fn new(lvl: i32) -> Self {
-        DropItem { lvl }
+    pub const fn new(lvl: i32) -> Self {
+        Self { lvl }
     }
 }
 

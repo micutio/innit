@@ -57,7 +57,8 @@ pub struct Tile {
 
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
-        let (fg_col, bg_col) = match game::env().debug_mode {
+        let dbg = game::env().debug_mode;
+        let (fg_col, bg_col) = match dbg {
             game::env::GameOption::Enabled => (
                 ui::palette().world_fg_wall_fov_true,
                 ui::palette().world_bg_wall_fov_true,
@@ -77,7 +78,8 @@ impl Tile {
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
-        let (fg_col, bg_col) = match game::env().debug_mode {
+        let dbg = game::env().debug_mode;
+        let (fg_col, bg_col) = match dbg {
             game::env::GameOption::Enabled => (
                 ui::palette().world_fg_floor_fov_true,
                 ui::palette().world_bg_floor_fov_true,

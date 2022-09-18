@@ -10,6 +10,7 @@ pub fn env<'a>() -> MutexGuard<'a, Environment> {
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, Default)]
+#[allow(clippy::use_self)]
 pub enum GameOption {
     Enabled,
     #[default]

@@ -10,10 +10,10 @@ pub struct RexAssets {
 
 impl RexAssets {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> RexAssets {
+    pub fn new() -> Self {
         rltk::link_resource!(SMALL_DUNGEON, "../../resources/art/menu_bg.xp");
 
-        RexAssets {
+        Self {
             menu: rltk::XpFile::from_resource("../../resources/art/menu_bg.xp").unwrap(),
         }
     }

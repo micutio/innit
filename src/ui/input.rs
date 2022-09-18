@@ -8,9 +8,9 @@ use bracket_lib::prelude as rltk;
 use rltk::VirtualKeyCode as Vkc;
 
 #[derive(Clone, Debug)]
-pub enum PlayerInput {
+pub enum PlayerSignal {
     Meta(UiAction),
-    Game(PlayerAction),
+    Game(InGameAction),
     Undefined,
 }
 
@@ -29,7 +29,7 @@ pub enum UiAction {
 }
 
 #[derive(Clone, Debug)]
-pub enum PlayerAction {
+pub enum InGameAction {
     Primary(act::Target),   // using the arrow keys
     Secondary(act::Target), // using 'W','A','S','D' keys
     Quick1,                 // using 'Q', un-targeted quick action
@@ -45,46 +45,46 @@ fn key_to_action(
     key: rltk::VirtualKeyCode,
     ctrl: bool,
     shift: bool,
-) -> PlayerInput {
-    use self::act::Target::*;
+) -> PlayerSignal {
     match (key, ctrl, shift) {
         // letters
-        (Vkc::A, false, false) => PlayerInput::Game(PlayerAction::Secondary(West)),
-        (Vkc::C, false, false) => PlayerInput::Meta(UiAction::CharacterScreen),
-        (Vkc::D, false, false) => PlayerInput::Game(PlayerAction::Secondary(East)),
-        (Vkc::E, false, false) => PlayerInput::Game(PlayerAction::Quick2),
-        (Vkc::E, false, true) => PlayerInput::Meta(UiAction::ChooseQuick2),
+        (Vkc::A, false, false) => PlayerSignal::Game(InGameAction::Secondary(act::Target::West)),
+        (Vkc::C, false, false) => PlayerSignal::Meta(UiAction::CharacterScreen),
+        (Vkc::D, false, false) => PlayerSignal::Game(InGameAction::Secondary(act::Target::East)),
+        (Vkc::E, false, false) => PlayerSignal::Game(InGameAction::Quick2),
+        (Vkc::E, false, true) => PlayerSignal::Meta(UiAction::ChooseQuick2),
+        #[allow(clippy::significant_drop_in_scrutinee)]
         (Vkc::G, false, false) => match env().debug_mode {
-            game::env::GameOption::Enabled => PlayerInput::Meta(UiAction::GenomeEditor),
-            game::env::GameOption::Disabled => PlayerInput::Undefined,
+            game::env::GameOption::Enabled => PlayerSignal::Meta(UiAction::GenomeEditor),
+            game::env::GameOption::Disabled => PlayerSignal::Undefined,
         },
-        (Vkc::P, false, true) => PlayerInput::Meta(UiAction::ChoosePrimary),
-        (Vkc::Q, false, false) => PlayerInput::Game(PlayerAction::Quick1),
-        (Vkc::Q, false, true) => PlayerInput::Meta(UiAction::ChooseQuick1),
-        (Vkc::S, false, false) => PlayerInput::Game(PlayerAction::Secondary(South)),
-        (Vkc::S, false, true) => PlayerInput::Meta(UiAction::ChooseSecondary),
+        (Vkc::P, false, true) => PlayerSignal::Meta(UiAction::ChoosePrimary),
+        (Vkc::Q, false, false) => PlayerSignal::Game(InGameAction::Quick1),
+        (Vkc::Q, false, true) => PlayerSignal::Meta(UiAction::ChooseQuick1),
+        (Vkc::S, false, false) => PlayerSignal::Game(InGameAction::Secondary(act::Target::South)),
+        (Vkc::S, false, true) => PlayerSignal::Meta(UiAction::ChooseSecondary),
         (Vkc::S, true, true) => {
             take_screenshot(ctx);
-            PlayerInput::Undefined
+            PlayerSignal::Undefined
         }
-        (Vkc::W, false, false) => PlayerInput::Game(PlayerAction::Secondary(North)),
-        (Vkc::Up, false, false) => PlayerInput::Game(PlayerAction::Primary(North)),
-        (Vkc::Down, false, false) => PlayerInput::Game(PlayerAction::Primary(South)),
-        (Vkc::Left, false, false) => PlayerInput::Game(PlayerAction::Primary(West)),
-        (Vkc::Right, false, false) => PlayerInput::Game(PlayerAction::Primary(East)),
-        (Vkc::Space, false, false) => PlayerInput::Game(PlayerAction::PassTurn),
-        (Vkc::Escape, false, false) => PlayerInput::Meta(UiAction::ExitGameLoop),
-        (Vkc::F1, false, false) => PlayerInput::Meta(UiAction::Help),
-        (Vkc::Key1, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(3)),
-        (Vkc::Key2, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(0)),
-        (Vkc::Key3, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(1)),
-        (Vkc::Key4, false, false) => PlayerInput::Meta(UiAction::SetComplementDisplay(2)),
-        (Vkc::Key5, false, false) => PlayerInput::Meta(UiAction::SetFont(0)),
-        (Vkc::Key6, false, false) => PlayerInput::Meta(UiAction::SetFont(1)),
-        (Vkc::Key7, false, false) => PlayerInput::Meta(UiAction::SetFont(2)),
-        (Vkc::Key8, false, false) => PlayerInput::Meta(UiAction::SetFont(3)),
-        (Vkc::Key9, false, false) => PlayerInput::Meta(UiAction::SetFont(4)),
-        _ => PlayerInput::Undefined,
+        (Vkc::W, false, false) => PlayerSignal::Game(InGameAction::Secondary(act::Target::North)),
+        (Vkc::Up, false, false) => PlayerSignal::Game(InGameAction::Primary(act::Target::North)),
+        (Vkc::Down, false, false) => PlayerSignal::Game(InGameAction::Primary(act::Target::South)),
+        (Vkc::Left, false, false) => PlayerSignal::Game(InGameAction::Primary(act::Target::West)),
+        (Vkc::Right, false, false) => PlayerSignal::Game(InGameAction::Primary(act::Target::East)),
+        (Vkc::Space, false, false) => PlayerSignal::Game(InGameAction::PassTurn),
+        (Vkc::Escape, false, false) => PlayerSignal::Meta(UiAction::ExitGameLoop),
+        (Vkc::F1, false, false) => PlayerSignal::Meta(UiAction::Help),
+        (Vkc::Key1, false, false) => PlayerSignal::Meta(UiAction::SetComplementDisplay(3)),
+        (Vkc::Key2, false, false) => PlayerSignal::Meta(UiAction::SetComplementDisplay(0)),
+        (Vkc::Key3, false, false) => PlayerSignal::Meta(UiAction::SetComplementDisplay(1)),
+        (Vkc::Key4, false, false) => PlayerSignal::Meta(UiAction::SetComplementDisplay(2)),
+        (Vkc::Key5, false, false) => PlayerSignal::Meta(UiAction::SetFont(0)),
+        (Vkc::Key6, false, false) => PlayerSignal::Meta(UiAction::SetFont(1)),
+        (Vkc::Key7, false, false) => PlayerSignal::Meta(UiAction::SetFont(2)),
+        (Vkc::Key8, false, false) => PlayerSignal::Meta(UiAction::SetFont(3)),
+        (Vkc::Key9, false, false) => PlayerSignal::Meta(UiAction::SetFont(4)),
+        _ => PlayerSignal::Undefined,
     }
 }
 
@@ -132,7 +132,7 @@ pub fn read(
     objects: &mut ObjectStore,
     hud: &mut hud::Hud,
     ctx: &mut rltk::BTerm,
-) -> PlayerInput {
+) -> PlayerSignal {
     let mut input = rltk::INPUT.lock();
     #[allow(clippy::single_match)]
     input.for_each_message(|event| match event {
@@ -170,7 +170,7 @@ pub fn read(
                     );
 
                     if is_any_possible || player.pos.is_adjacent(&mouse) {
-                        return PlayerInput::Game(PlayerAction::Primary(act::Target::from_pos(
+                        return PlayerSignal::Game(InGameAction::Primary(act::Target::from_pos(
                             &player.pos,
                             &mouse,
                         )));
@@ -178,7 +178,6 @@ pub fn read(
                 }
             }
         }
-        PlayerInput::Undefined
     } else {
         // 4) is mouse is hovering over sidebar
         // 4a) update hovered button
@@ -187,28 +186,25 @@ pub fn read(
             .iter()
             .find(|i| i.layout.point_in_rect(mouse.into()))
         {
-            return if is_clicked {
-                match item.item_enum {
-                    hud::HudItem::PrimaryAction => PlayerInput::Meta(UiAction::ChoosePrimary),
-                    hud::HudItem::SecondaryAction => PlayerInput::Meta(UiAction::ChooseSecondary),
-                    hud::HudItem::Quick1Action => PlayerInput::Meta(UiAction::ChooseQuick1),
-                    hud::HudItem::Quick2Action => PlayerInput::Meta(UiAction::ChooseQuick2),
-                    hud::HudItem::DnaItem => PlayerInput::Undefined, // no action when clicked
-                    hud::HudItem::BarItem => PlayerInput::Undefined, // no action when clicked
-                    hud::HudItem::UseInventory { idx } => {
-                        PlayerInput::Game(PlayerAction::UseInventoryItem(idx))
+            if is_clicked {
+                return match item.item_enum {
+                    hud::Item::PrimaryAction => PlayerSignal::Meta(UiAction::ChoosePrimary),
+                    hud::Item::SecondaryAction => PlayerSignal::Meta(UiAction::ChooseSecondary),
+                    hud::Item::Quick1Action => PlayerSignal::Meta(UiAction::ChooseQuick1),
+                    hud::Item::Quick2Action => PlayerSignal::Meta(UiAction::ChooseQuick2),
+                    hud::Item::DnaElement | hud::Item::BarElement => PlayerSignal::Undefined, // no action when clicked
+                    hud::Item::UseInventory { idx } => {
+                        PlayerSignal::Game(InGameAction::UseInventoryItem(idx))
                     }
-                    hud::HudItem::DropInventory { idx } => {
-                        PlayerInput::Game(PlayerAction::DropItem(idx))
+                    hud::Item::DropInventory { idx } => {
+                        PlayerSignal::Game(InGameAction::DropItem(idx))
                     }
-                }
-            } else {
-                PlayerInput::Undefined
-            };
+                };
+            }
         };
         // 3b) check for button press to activate ui buttons
-        PlayerInput::Undefined
     }
+    PlayerSignal::Undefined
 }
 
 #[cfg(not(target_arch = "wasm32"))]

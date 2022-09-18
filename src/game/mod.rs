@@ -272,14 +272,14 @@ impl Game {
     }
 
     /// Use the `input::PlayerAction` enum to determine where to retrieve the player's next action.
-    fn set_player_action(&mut self, in_game_action: input::PlayerAction) -> RunState {
+    fn set_player_action(&mut self, in_game_action: input::InGameAction) -> RunState {
         if let Some(ref mut player) = self.objects[self.state.player_idx] {
             let a: Option<Box<dyn act::Action>> = match in_game_action {
-                ui::input::PlayerAction::Primary(dir) => Some(player.get_primary_action(dir)),
-                ui::input::PlayerAction::Secondary(dir) => Some(player.get_secondary_action(dir)),
-                ui::input::PlayerAction::Quick1 => Some(player.get_quick1_action()),
-                ui::input::PlayerAction::Quick2 => Some(player.get_quick2_action()),
-                ui::input::PlayerAction::UseInventoryItem(idx) => {
+                ui::input::InGameAction::Primary(dir) => Some(player.get_primary_action(dir)),
+                ui::input::InGameAction::Secondary(dir) => Some(player.get_secondary_action(dir)),
+                ui::input::InGameAction::Quick1 => Some(player.get_quick1_action()),
+                ui::input::InGameAction::Quick2 => Some(player.get_quick2_action()),
+                ui::input::InGameAction::UseInventoryItem(idx) => {
                     trace!("PlayInput USE_ITEM");
                     let inventory_object = &player.inventory.items.remove(idx);
                     player.inventory.inv_actions.retain(|a| {
@@ -290,7 +290,7 @@ impl Game {
                         .as_ref()
                         .and_then(|item| item.use_action.clone())
                 }
-                ui::input::PlayerAction::DropItem(idx) => {
+                ui::input::InGameAction::DropItem(idx) => {
                     trace!("PlayInput DROP_ITEM");
                     if player.inventory.items.len() > idx {
                         Some(Box::new(act::DropItem::new(idx as i32)))
@@ -298,7 +298,7 @@ impl Game {
                         None
                     }
                 }
-                ui::input::PlayerAction::PassTurn => Some(Box::new(act::Pass)),
+                ui::input::InGameAction::PassTurn => Some(Box::new(act::Pass)),
             };
             player.set_next_action(a);
         }
@@ -713,17 +713,17 @@ impl rltk::GameState for Game {
                 }
             }
             RunState::CheckInput => {
-                use input::PlayerInput;
+                use input::PlayerSignal;
                 match input::read(&mut self.state, &mut self.objects, &mut self.hud, ctx) {
-                    PlayerInput::Meta(meta_action) => {
+                    PlayerSignal::Meta(meta_action) => {
                         trace!("process meta action: {:#?}", meta_action);
                         self.run_meta_action(ctx, &meta_action)
                     }
-                    PlayerInput::Game(game_action) => {
+                    PlayerSignal::Game(game_action) => {
                         trace!("inject in-game action {:#?} to player", game_action);
                         self.set_player_action(game_action)
                     }
-                    PlayerInput::Undefined => {
+                    PlayerSignal::Undefined => {
                         // if we're only spectating then go back to ticking, otherwise keep
                         // checking for input
                         match env().spectating {
@@ -734,7 +734,7 @@ impl rltk::GameState for Game {
                 }
             }
             RunState::GenomeEditing(genome_editor) => {
-                if genome_editor.state == genome_editor::GenomeEditingState::Done {
+                if genome_editor.state == genome_editor::EditingState::Done {
                     if let Some(ref mut player) = self.objects[self.state.player_idx] {
                         player.set_dna(genome_editor.player_dna);
                         player.update_genome_from_dna(&mut self.state);
