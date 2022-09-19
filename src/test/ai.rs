@@ -8,7 +8,7 @@ use crate::{entity::act::Move, game::objects::ObjectStore};
 
 #[test]
 fn test_random_ai() {
-    use crate::entity::ai::AiVirus;
+    use crate::entity::ai::Virus;
     use crate::entity::genetics::{DnaType, GENOME_LEN};
     use crate::entity::object::Object;
     use crate::game::consts::PLAYER;
@@ -44,7 +44,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     let virus_east = Object::new()
         .position_xy(p_x + 1, p_y)
@@ -57,7 +57,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     let virus_south = Object::new()
         .position_xy(p_x, p_y + 1)
@@ -70,7 +70,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     objects.push(virus_north);
     objects.push(virus_east);
@@ -100,7 +100,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     objects.push(virus_west);
 
@@ -119,7 +119,7 @@ fn test_random_ai() {
 }
 
 fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
-    use crate::entity::ai::AiRandom;
+    use crate::entity::ai::RandomAction;
     use crate::entity::object::Object;
     use crate::game::consts::{WORLD_HEIGHT, WORLD_WIDTH};
 
@@ -171,7 +171,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
                 Dna::default(),
             ),
         )
-        .control(Controller::Npc(Box::new(AiRandom::new())));
+        .control(Controller::Npc(Box::new(RandomAction::new())));
 
     objects.set_player(player);
 

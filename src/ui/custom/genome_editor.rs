@@ -7,7 +7,7 @@ use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{self, ObjectStore, State};
 use crate::rand::Rng;
 use crate::ui;
-use crate::util::rng::RngExtended;
+use crate::util::random::RngExtended;
 
 use bracket_lib::prelude as rltk;
 use std::ops::Add;

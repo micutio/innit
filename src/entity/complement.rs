@@ -13,14 +13,14 @@
 //! pathogens or host cells that have been damaged physically or by infection.
 //!
 //! ## General idea of interactions
-//! - CauseInflammation up if pathogen present
-//! - CauseInflammation up if CauseInflammation adjacent
-//! - CauseInflammation up if unprocessed cell waste present
-//! - web protein up if pathogen present AND CauseInflammation present
-//! - stinging protein up if pathogen present AND CauseInflammation up
+//! - `CauseInflammation` up if pathogen present
+//! - `CauseInflammation` up if `CauseInflammation` adjacent
+//! - `CauseInflammation` up if unprocessed cell waste present
+//! - web protein up if pathogen present AND `CauseInflammation` present
+//! - stinging protein up if pathogen present AND `CauseInflammation` up
 //! - inhibitor protein up if triggered? AND no pathogen present
 //! - inhibitor protein up if processed cell waste present
-//! - CauseInflammation down if inhibitor protein up
+//! - `CauseInflammation` down if inhibitor protein up
 
 use crate::game;
 use crate::world_gen::TileType;
@@ -38,17 +38,17 @@ const MIN_CONCENTRATION: f32 = 0.0;
 const MAX_CONCENTRATION: f32 = 0.99;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ComplementProteins {
+pub struct Proteins {
     pub current_proteins: [f32; 4], // 4 <- number of complement system proteins
     next_proteins: [f32; 4],        // 4 <- number of complement system proteins
 }
 
-impl ComplementProteins {
-    pub fn new() -> Self {
+impl Proteins {
+    pub const fn new() -> Self {
         let current_proteins = [0.0, 0.0, 0.0, 0.0];
         let next_proteins = [0.0, 0.0, 0.0, 0.0];
 
-        ComplementProteins {
+        Self {
             current_proteins,
             next_proteins,
         }
@@ -64,11 +64,9 @@ impl ComplementProteins {
         neighbor_tiles
             .flatten()
             .filter(|obj| {
-                if let Some(t) = &obj.tile {
-                    matches!(t.typ, TileType::Floor)
-                } else {
-                    false
-                }
+                obj.tile
+                    .as_ref()
+                    .map_or(false, |t| matches!(t.typ, TileType::Floor))
             })
             .for_each(|obj| {
                 if let Some(t) = &obj.tile {
@@ -89,7 +87,7 @@ impl ComplementProteins {
 
             (0..accumulated_proteins.len()).for_each(|i| {
                 let delta = accumulated_proteins[i] - self.current_proteins[i];
-                let new_value = self.current_proteins[i] + (delta * 0.5);
+                let new_value = delta.mul_add(0.5, self.current_proteins[i]);
                 self.next_proteins[i] =
                     f32::max(f32::min(new_value, MAX_CONCENTRATION), MIN_CONCENTRATION);
             });
@@ -121,7 +119,7 @@ impl ComplementProteins {
     }
 }
 
-impl Default for ComplementProteins {
+impl Default for Proteins {
     fn default() -> Self {
         Self::new()
     }

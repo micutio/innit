@@ -2,7 +2,7 @@ use crate::entity::act::{self, Action};
 use crate::entity::{genetics, Object};
 use crate::game::msg::MessageLog;
 use crate::game::{self, consts, msg, ObjectStore};
-use crate::util::rng;
+use crate::util::random;
 
 use rand::{Rng, RngCore};
 #[cfg(not(target_arch = "wasm32"))]
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 /// file and thus persistent data. No volatile data is allowed here.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct State {
-    pub rng: rng::GameRng,
+    pub rng: random::GameRng,
     pub log: msg::Log,
     pub turn: u128,
     pub dungeon_level: u32,
@@ -24,17 +24,15 @@ pub struct State {
 
 impl State {
     pub fn new(level: u32) -> Self {
-        let rng_seed = if let Some(seed_param) = game::env().seed {
-            seed_param
-        } else {
-            rand::thread_rng().next_u64()
-        };
+        let rng_seed = game::env()
+            .seed
+            .map_or_else(|| rand::thread_rng().next_u64(), |seed_param| seed_param);
 
         info!("using rng seed: {}", rng_seed);
 
-        State {
+        Self {
             // create the list of game messages and their colours, starts empty
-            rng: rng::GameRng::new_from_u64_seed(rng_seed),
+            rng: random::GameRng::new_from_u64_seed(rng_seed),
             log: msg::Log::new(),
             turn: 0,
             dungeon_level: level,
@@ -44,16 +42,14 @@ impl State {
         }
     }
 
-    pub fn is_players_turn(&self) -> bool {
+    pub const fn is_players_turn(&self) -> bool {
         self.obj_idx == self.player_idx
     }
 
     pub fn player_energy_full(&self, objects: &ObjectStore) -> bool {
-        if let Some(player) = &objects[self.player_idx] {
+        objects[self.player_idx].as_ref().map_or(false, |player| {
             player.processors.energy == player.processors.energy_storage
-        } else {
-            false
-        }
+        })
     }
 
     /// Process an object's turn i.e., let it perform as many actions as it has energy for.
@@ -129,9 +125,8 @@ impl State {
             actor.metabolize();
             if self.is_players_turn() {
                 return act::ObjectFeedback::Render;
-            } else {
-                return act::ObjectFeedback::NoFeedback;
             }
+            return act::ObjectFeedback::NoFeedback;
         }
 
         if let Some(next_action) = actor.extract_next_action(self, objects) {
@@ -140,14 +135,12 @@ impl State {
                 trace!("next action: {}", next_action.get_identifier());
             }
             if next_action.get_energy_cost() > actor.processors.energy_storage {
-                self.log.add(
-                    "You don't have enough energy for that!",
-                    msg::MsgClass::Info,
-                );
+                self.log
+                    .add("You don't have enough energy for that!", msg::Class::Info);
                 act::ObjectFeedback::NoFeedback
             } else {
                 actor.processors.energy -= next_action.get_energy_cost();
-                self.process_action(objects, actor, next_action)
+                self.process_action(objects, actor, next_action.as_ref())
             }
         } else {
             // TODO: Turn this into a proper error message and graceful shutdown.
@@ -160,7 +153,7 @@ impl State {
         &mut self,
         objects: &mut ObjectStore,
         actor: &mut Object,
-        action: Box<dyn Action>,
+        action: &dyn Action,
     ) -> act::ObjectFeedback {
         // first execute action, then process result and return
         match action.perform(self, objects, actor) {
@@ -168,19 +161,24 @@ impl State {
                 act::ObjectFeedback::NoFeedback => act::ObjectFeedback::NoFeedback,
                 _ => callback,
             },
-            act::ActionResult::Failure => act::ObjectFeedback::NoFeedback, // TODO: How to handle fails?
+            // TODO: How to handle fails?
+            act::ActionResult::Failure => act::ObjectFeedback::NoFeedback,
             act::ActionResult::Consequence {
                 callback,
                 follow_up,
             } => {
-                let consequence_feedback = self.process_action(objects, actor, follow_up);
+                let consequence_feedback = self.process_action(objects, actor, follow_up.as_ref());
                 match (&callback, &consequence_feedback) {
-                    (act::ObjectFeedback::NoFeedback, _) => consequence_feedback,
-                    (act::ObjectFeedback::NoAction, _) => consequence_feedback,
-                    (act::ObjectFeedback::GameOver, _) => callback,
-                    (act::ObjectFeedback::Render, _) => callback,
-                    (act::ObjectFeedback::UpdateHud, _) => callback,
-                    (act::ObjectFeedback::GenomeManipulator, _) => callback,
+                    (act::ObjectFeedback::NoAction | act::ObjectFeedback::NoFeedback, _) => {
+                        consequence_feedback
+                    }
+                    (
+                        act::ObjectFeedback::GameOver
+                        | act::ObjectFeedback::Render
+                        | act::ObjectFeedback::UpdateHud
+                        | act::ObjectFeedback::GenomeManipulator,
+                        _,
+                    ) => callback,
                 }
             }
         }
@@ -195,7 +193,7 @@ impl State {
             actor.actuators.hp -= 1;
             if actor.is_player() {
                 self.log
-                    .add("You're overloaded! Taking damage...", msg::MsgClass::Alert);
+                    .add("You're overloaded! Taking damage...", msg::Class::Alert);
             }
         }
     }
@@ -215,7 +213,7 @@ impl State {
             return;
         }
 
-        if rng::RngExtended::flip_with_prob(&mut self.rng, 1.0 - actor.gene_stability) {
+        if random::RngExtended::flip_with_prob(&mut self.rng, 1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
             let gene_width = 3;
             let trait_count = actor.dna.raw.len() / gene_width as usize;
@@ -224,13 +222,13 @@ impl State {
             let gene_pos = self.rng.gen_range(0..gene_width as usize);
             let position = trait_start + gene_pos;
             let old_gene = actor.dna.raw[position];
-            let old_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
+            let old_trait = actor.dna.raw[trait_start..trait_end].to_vec();
             // ^ = bitwise exclusive or
-            let new_gene = old_gene ^ rng::RngExtended::random_bit(&mut self.rng);
+            let new_gene = old_gene ^ random::RngExtended::random_bit(&mut self.rng);
             // Replace the modified gene in the dna. The change will become effectual once the
             // cell procreates or "reincarnates".
             actor.dna.raw[position] = new_gene;
-            let new_trait = Vec::from_iter(actor.dna.raw[trait_start..trait_end].iter().cloned());
+            let new_trait = actor.dna.raw[trait_start..trait_end].to_vec();
             trace!(
                 "{} flipping gene {:08b} to {:08b}",
                 actor.visual.name,
@@ -265,7 +263,7 @@ impl State {
                         "Gene {} mutated from {} to {}",
                         gene_no, old_trait_name, new_trait_name
                     ),
-                    msg::MsgClass::Alert,
+                    msg::Class::Alert,
                 );
                 // For the time being, apply mutations directly.
                 // TODO: Replace with reincarnation mechanic.
@@ -273,7 +271,7 @@ impl State {
             } else if actor.physics.is_visible {
                 self.log.add(
                     format!("Mutation occurred in {}!", actor.visual.name),
-                    msg::MsgClass::Info,
+                    msg::Class::Info,
                 );
             }
         }
@@ -293,7 +291,7 @@ impl State {
             // something render-worthy happened
             if actor.is_player() {
                 if let act::ObjectFeedback::NoFeedback = process_result {
-                    *process_result = act::ObjectFeedback::UpdateHud
+                    *process_result = act::ObjectFeedback::UpdateHud;
                 };
             }
         }
@@ -305,26 +303,27 @@ impl State {
         actor: Object,
         process_result: &mut act::ObjectFeedback,
     ) {
-        if !actor.alive {
-            if actor.physics.is_visible {
-                self.log
-                    .add(format!("{} died!", actor.visual.name), msg::MsgClass::Alert);
-                debug!("{} died!", actor.visual.name);
-            }
-
-            // If the dead object is a player then keep it in the world, otherwise remove it.
-            // NOTE: Maybe keep dead material around for scavenging.
-            if actor.is_player() {
-                objects[self.obj_idx].replace(actor);
-            } else {
-                objects.get_vector_mut().remove(self.obj_idx);
-            }
-            // if the "main" player is dead, the game is over
-            if self.obj_idx == consts::PLAYER {
-                *process_result = act::ObjectFeedback::GameOver;
-            }
-        } else {
+        if actor.alive {
             objects[self.obj_idx].replace(actor);
+            return;
+        }
+
+        if actor.physics.is_visible {
+            self.log
+                .add(format!("{} died!", actor.visual.name), msg::Class::Alert);
+            debug!("{} died!", actor.visual.name);
+        }
+
+        // If the dead object is a player then keep it in the world, otherwise remove it.
+        // NOTE: Maybe keep dead material around for scavenging.
+        if actor.is_player() {
+            objects[self.obj_idx].replace(actor);
+        } else {
+            objects.get_vector_mut().remove(self.obj_idx);
+        }
+        // if the "main" player is dead, the game is over
+        if self.obj_idx == consts::PLAYER {
+            *process_result = act::ObjectFeedback::GameOver;
         }
     }
 

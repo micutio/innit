@@ -1,7 +1,7 @@
 use crate::entity::Object;
 use crate::entity::{act, ai, control, genetics, inventory};
 use crate::game::{self, ObjectStore, State};
-use crate::util::rng::RngExtended;
+use crate::util::random::RngExtended;
 use crate::world_gen::WorldGen;
 use crate::{raws, world_gen};
 
@@ -268,10 +268,10 @@ fn try_create_new_npc(
     let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
         match ctrl.as_str() {
             "player" => Some(Controller::Player(control::Player::new())),
-            "AiPassive" => Some(Controller::Npc(Box::new(ai::AiPassive))),
-            "AiRandom" => Some(Controller::Npc(Box::new(ai::AiRandom::new()))),
-            "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::AiRandomWalk))),
-            "AiVirus" => Some(Controller::Npc(Box::new(ai::AiVirus::new()))),
+            "AiPassive" => Some(Controller::Npc(Box::new(ai::Passive))),
+            "AiRandom" => Some(Controller::Npc(Box::new(ai::RandomAction::new()))),
+            "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::RandomWalk))),
+            "AiVirus" => Some(Controller::Npc(Box::new(ai::Virus::new()))),
             c => {
                 error! {"Unknown controller type '{}'", c};
                 // Controller::Npc(Box::new(AiPassive))

@@ -1,7 +1,7 @@
 use crate::entity::act;
 use crate::entity::act::Action;
 use crate::entity::ai;
-use crate::entity::complement::ComplementProteins;
+use crate::entity::complement::Proteins;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -123,7 +123,7 @@ impl Object {
     }
 
     /// Set the object's position in the world. Part of the builder pattern.
-    pub fn position(mut self, pos: &Position) -> Self {
+    pub const fn position(mut self, pos: &Position) -> Self {
         self.pos = Position::from_pos(pos);
         self
     }
@@ -198,11 +198,11 @@ impl Object {
 
     /// Transform the object into a tile. Part of the builder pattern.
     /// Ref. <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/> for overview on chem. gradients.
-    pub fn tile(mut self, typ: world_gen::TileType) -> Self {
+    pub const fn tile(mut self, typ: world_gen::TileType) -> Self {
         self.tile = Some(world_gen::Tile {
             typ,
             morphogen: 0.0,
-            complement: ComplementProteins::new(),
+            complement: Proteins::new(),
         });
         self
     }
@@ -244,7 +244,7 @@ impl Object {
                 self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
             }
         }
-        self.control = Some(control::Controller::Npc(Box::new(ai::AiWallTile)));
+        self.control = Some(control::Controller::Npc(Box::new(ai::WallTile)));
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Wall;
         }
@@ -267,7 +267,7 @@ impl Object {
                 self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
             }
         }
-        self.control = Some(control::Controller::Npc(Box::new(ai::AiFloorTile)));
+        self.control = Some(control::Controller::Npc(Box::new(ai::FloorTile)));
 
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Floor;
@@ -352,7 +352,7 @@ impl Object {
                 if self.is_player() {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
             }
@@ -360,7 +360,7 @@ impl Object {
                 if let Some(control::Controller::Npc(_)) = self.control {
                     log.add(
                         format!("You gained control over {}", &self.visual.name),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
             }

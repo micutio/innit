@@ -241,7 +241,7 @@ impl Action for Attack {
                             "{} attacked {} for {} damage",
                             &owner.visual.name, &t.visual.name, self.lvl
                         ),
-                        game::msg::MsgClass::Info,
+                        game::msg::Class::Info,
                     );
                     // show particle effect
                     ui::register_particle(
@@ -263,7 +263,7 @@ impl Action for Attack {
                 if owner.is_player() {
                     state
                         .log
-                        .add("Nothing to attack here", game::msg::MsgClass::Info);
+                        .add("Nothing to attack here", game::msg::Class::Info);
                 }
                 ActionResult::Failure
             }
@@ -355,13 +355,13 @@ impl Action for InjectRnaVirus {
                             "{0} {1} infected {2} with virus RNA",
                             owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 let original_ai = target.control.take();
                 // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
-                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
+                    control::Controller::Npc(Box::new(ai::ForcedVirusProduction::new_duration(
                         original_ai,
                         4,
                         Some(owner.dna.raw.clone()),
@@ -464,7 +464,7 @@ impl Action for InjectRetrovirus {
                             "{0} {1} infected {2} with virus RNA",
                             owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 // insert virus dna into target dna
@@ -480,7 +480,7 @@ impl Action for InjectRetrovirus {
                 let original_ai = target.control.take();
                 // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
-                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
+                    control::Controller::Npc(Box::new(ai::ForcedVirusProduction::new_duration(
                         original_ai,
                         4,
                         Some(owner.dna.raw.clone()),
@@ -584,7 +584,7 @@ impl Action for ProduceVirion {
                     };
                     state.log.add(
                         format!("{0} {1} forced to produce virions", owner.visual.name, verb),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 owner.inventory.items.push(
@@ -599,7 +599,7 @@ impl Action for ProduceVirion {
                                 .gene_library
                                 .dna_to_traits(genetics::DnaType::Rna, dna),
                         )
-                        .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
+                        .control(control::Controller::Npc(Box::new(ai::Virus {}))),
                 );
             }
             None => {
@@ -630,7 +630,7 @@ impl Action for ProduceVirion {
                                         .gene_library
                                         .dna_to_traits(genetics::DnaType::Rna, &dna_from_seq),
                                 )
-                                .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
+                                .control(control::Controller::Npc(Box::new(ai::Virus {}))),
                             // TODO: Separate Ai for retroviruses?
                         );
                     }

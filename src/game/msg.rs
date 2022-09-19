@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub enum MsgClass {
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub enum Class {
     Info,
     Action,
     Alert,
@@ -11,12 +11,12 @@ pub enum MsgClass {
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
     pub is_changed: bool,
-    pub messages: Vec<(String, MsgClass)>,
+    pub messages: Vec<(String, Class)>,
 }
 
 impl Log {
-    pub fn new() -> Self {
-        Log {
+    pub const fn new() -> Self {
+        Self {
             is_changed: false,
             messages: Vec::new(),
         }
@@ -25,14 +25,14 @@ impl Log {
 
 /// The message log can add text from any string collection.
 pub trait MessageLog {
-    fn add<T: Into<String>>(&mut self, message: T, class: MsgClass);
+    fn add<T: Into<String>>(&mut self, message: T, class: Class);
 }
 
 impl MessageLog for Log {
     /// Push a message into the log under two conditions:
     /// - either the log is empty
     /// - or the last message is not identical to the new message
-    fn add<T: Into<String>>(&mut self, msg: T, class: MsgClass) {
+    fn add<T: Into<String>>(&mut self, msg: T, class: Class) {
         if self.messages.is_empty() {
             self.messages.push((msg.into(), class));
             self.is_changed = true;

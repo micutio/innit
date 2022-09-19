@@ -167,7 +167,7 @@ impl Game {
             // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
             self.objects.set_tile_dna(
                 &mut self.state.rng,
-                vec![
+                &[
                     "Cell Membrane".to_string(),
                     "Receptor".to_string(),
                     "Cell Membrane".to_string(),
@@ -238,11 +238,11 @@ impl Game {
                 // a warm welcoming message
                 self.state.log.add(
                     "How is it going?",
-                    msg::MsgClass::Story(Some("Prof. H.".into())),
+                    msg::Class::Story(Some("Prof. H.".into())),
                 );
                 self.state.log.add(
                                 "Patient stable. Mobile microscope online and set to track injected @-cell. Let's see whether it responds to the infection...",
-                                msg::MsgClass::Story(None),
+                                msg::Class::Story(None),
                             );
             }
         }
@@ -332,7 +332,7 @@ impl Game {
                     if action_items.is_empty() {
                         self.state.log.add(
                             "You have no actions available! Try modifying your genome.",
-                            msg::MsgClass::Alert,
+                            msg::Class::Alert,
                         );
                         RunState::Ticking
                     } else {
@@ -355,7 +355,7 @@ impl Game {
                     if action_items.is_empty() {
                         self.state.log.add(
                             "You have no actions available! Try modifying your genome.",
-                            msg::MsgClass::Alert,
+                            msg::Class::Alert,
                         );
                         RunState::Ticking
                     } else {
@@ -374,7 +374,7 @@ impl Game {
                     if action_items.is_empty() {
                         self.state.log.add(
                             "You have no actions available! Try modifying your genome.",
-                            msg::MsgClass::Alert,
+                            msg::Class::Alert,
                         );
                         RunState::Ticking
                     } else {
@@ -393,7 +393,7 @@ impl Game {
                     if action_items.is_empty() {
                         self.state.log.add(
                             "You have no actions available! Try modifying your genome.",
-                            msg::MsgClass::Alert,
+                            msg::Class::Alert,
                         );
                         RunState::Ticking
                     } else {
@@ -557,7 +557,7 @@ impl rltk::GameState for Game {
     /// - process player input
     /// - render game world
     /// - let NPCs take their turn
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     fn tick(&mut self, ctx: &mut rltk::BTerm) {
         // mouse workaround
         if ctx.left_click {

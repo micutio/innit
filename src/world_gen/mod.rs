@@ -52,7 +52,7 @@ impl TileType {
 pub struct Tile {
     pub typ: TileType,
     pub morphogen: f64, // growth protein that controls where walls can 'grow'
-    pub complement: entity::complement::ComplementProteins,
+    pub complement: entity::complement::Proteins,
 }
 
 impl Tile {
@@ -74,7 +74,7 @@ impl Tile {
             .visualize_bg(TileType::Wall.as_str(), '○', fg_col, bg_col)
             .physical(true, true, is_visible)
             .tile(TileType::Wall)
-            .control(control::Controller::Npc(Box::new(ai::AiWallTile)))
+            .control(control::Controller::Npc(Box::new(ai::WallTile)))
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
@@ -95,7 +95,7 @@ impl Tile {
             .visualize_bg(TileType::Floor.as_str(), ' ', fg_col, bg_col)
             .physical(false, false, is_visible)
             .tile(TileType::Floor)
-            .control(control::Controller::Npc(Box::new(ai::AiFloorTile)))
+            .control(control::Controller::Npc(Box::new(ai::FloorTile)))
     }
 
     pub fn new_void(x: i32, y: i32, is_visible: bool) -> Object {

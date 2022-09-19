@@ -720,10 +720,10 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
     for (msg, class) in &state.log.messages {
         let lines = util::text_to_width(msg, line_width);
         let fg_color = match class {
-            game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
-            game::msg::MsgClass::Info => palette().hud_fg_msg_info,
-            game::msg::MsgClass::Action => palette().hud_fg_msg_action,
-            game::msg::MsgClass::Story(_) => palette().hud_fg_msg_story,
+            game::msg::Class::Alert => palette().hud_fg_msg_alert,
+            game::msg::Class::Info => palette().hud_fg_msg_info,
+            game::msg::Class::Action => palette().hud_fg_msg_action,
+            game::msg::Class::Story(_) => palette().hud_fg_msg_story,
         };
         let bg_color = if bg_flag {
             palette().hud_bg_log1
@@ -734,7 +734,7 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
 
         log_lines.push((" ".into(), fg_color, bg_log_default));
         // if we're displaying text messages, prepend the author's name
-        if let game::msg::MsgClass::Story(author_opt) = class {
+        if let game::msg::Class::Story(author_opt) = class {
             let author_line = author_opt.as_ref().map_or_else(
                 || ("Dr. S.".into(), ui::palette().col_acc1, bg_color),
                 |author| (author.into(), ui::palette().col_acc4, bg_color),

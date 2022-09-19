@@ -25,7 +25,7 @@ impl Action for PickUpItem {
                 if owner.inventory.items.len() > owner.actuators.volume as usize {
                     state
                         .log
-                        .add("Your inventory is full!", game::msg::MsgClass::Info);
+                        .add("Your inventory is full!", game::msg::Class::Info);
                 }
                 // only add object if it has in item tag
                 state.log.add(
@@ -33,7 +33,7 @@ impl Action for PickUpItem {
                         "{} picked up a {}",
                         owner.visual.name, &target_obj.visual.name
                     ),
-                    game::msg::MsgClass::Info,
+                    game::msg::Class::Info,
                 );
                 owner.add_to_inventory(target_obj);
 
@@ -102,7 +102,7 @@ impl Action for DropItem {
             let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
-                game::msg::MsgClass::Info,
+                game::msg::Class::Info,
             );
             // set the item to be dropped at the same position as the player
             item.pos.move_to(&owner.pos);
