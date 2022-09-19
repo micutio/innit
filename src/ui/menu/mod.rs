@@ -10,7 +10,7 @@ use crate::{game::objects::ObjectStore, ui::palette};
 
 use bracket_lib::prelude as rltk;
 
-pub trait MenuItem: Clone {
+pub trait Item: Clone {
     fn process(
         state: &mut State,
         objects: &mut ObjectStore,
@@ -21,14 +21,14 @@ pub trait MenuItem: Clone {
 
 /// Non-click-away-able window menu.
 #[derive(Clone, Debug)]
-pub struct Menu<T: MenuItem> {
+pub struct Menu<T: Item> {
     header: Option<String>,
     items: Vec<UiItem<T>>,
     selection: usize,
     layout: rltk::Rect,
 }
 
-impl<T: MenuItem> Menu<T> {
+impl<T: Item> Menu<T> {
     pub fn new(item_vec: &[(T, String)]) -> Self {
         let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;

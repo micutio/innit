@@ -1,8 +1,8 @@
 use crate::game::{self, ObjectStore, State};
-use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::menu::{Item, Menu};
 
 #[derive(Copy, Clone, Debug)]
-pub enum MainMenuItem {
+pub enum MenuItem {
     NewGame,
     Resume,
     // Controls,
@@ -10,7 +10,7 @@ pub enum MainMenuItem {
     Quit,
 }
 
-impl MenuItem for MainMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
@@ -25,11 +25,11 @@ impl MenuItem for MainMenuItem {
     }
 }
 
-pub fn new() -> Menu<MainMenuItem> {
+pub fn new() -> Menu<MenuItem> {
     Menu::new(&[
-        (MainMenuItem::NewGame, "New Game".to_string()),
-        (MainMenuItem::Resume, "Resume Last Game".to_string()),
-        (MainMenuItem::Quit, "Quit".to_string()),
+        (MenuItem::NewGame, "New Game".to_string()),
+        (MenuItem::Resume, "Resume Last Game".to_string()),
+        (MenuItem::Quit, "Quit".to_string()),
     ])
 }
 

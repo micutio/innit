@@ -25,7 +25,7 @@ use crate::ui::dialog;
 use crate::ui::frontend;
 use crate::ui::hud;
 use crate::ui::input;
-use crate::ui::menu::{self, MenuItem};
+use crate::ui::menu::{self, Item};
 use crate::ui::palette;
 use crate::ui::particles;
 use crate::ui::rex_assets;
@@ -45,13 +45,13 @@ use std::io::{Read, Write};
 
 #[derive(Debug)]
 pub enum RunState {
-    MainMenu(menu::Menu<menu::main::MainMenuItem>),
+    MainMenu(menu::Menu<menu::main::MenuItem>),
     NewGame,
     LoadGame,
     ChooseActionMenu(menu::Menu<menu::choose_action::ActionItem>),
-    GameOver(menu::Menu<menu::game_over::GameOverMenuItem>),
-    WinScreen(menu::Menu<menu::game_won::GameWonMenuItem>),
-    CreditsScreen(menu::Menu<menu::credits::CreditsMenuItem>),
+    GameOver(menu::Menu<menu::game_over::MenuItem>),
+    WinScreen(menu::Menu<menu::game_won::MenuItem>),
+    CreditsScreen(menu::Menu<menu::credits::MenuItem>),
     InfoBox(dialog::InfoBox),
     GenomeEditing(genome_editor::GenomeEditor),
     Ticking,
@@ -584,7 +584,7 @@ impl rltk::GameState for Game {
                 ctx.cls();
                 ctx.render_xp_sprite(&self.rex_assets.menu, 0, 0);
                 match instance.display(ctx) {
-                    Some(option) => menu::main::MainMenuItem::process(
+                    Some(option) => menu::main::MenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -606,7 +606,7 @@ impl rltk::GameState for Game {
                 // render particles
                 particles().render(ctx);
                 match instance.display(ctx) {
-                    Some(option) => menu::game_over::GameOverMenuItem::process(
+                    Some(option) => menu::game_over::MenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -629,7 +629,7 @@ impl rltk::GameState for Game {
                 // render particles
                 particles().render(ctx);
                 match instance.display(ctx) {
-                    Some(option) => menu::game_won::GameWonMenuItem::process(
+                    Some(option) => menu::game_won::MenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,
@@ -648,7 +648,7 @@ impl rltk::GameState for Game {
                 particles().render(ctx);
                 menu::credits::render_content(ctx);
                 match instance.display(ctx) {
-                    Some(option) => menu::credits::CreditsMenuItem::process(
+                    Some(option) => menu::credits::MenuItem::process(
                         &mut self.state,
                         &mut self.objects,
                         instance,

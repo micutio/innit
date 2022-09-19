@@ -30,7 +30,6 @@ pub trait WorldGen {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(clippy::use_self)]
 pub enum TileType {
     Wall,
     Floor,

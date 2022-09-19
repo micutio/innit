@@ -1,13 +1,13 @@
 use crate::game::{self, ObjectStore, State};
-use crate::ui::menu::{self, Menu, MenuItem};
+use crate::ui::menu::{self, Item, Menu};
 
 #[derive(Copy, Clone, Debug)]
-pub enum GameWonMenuItem {
+pub enum MenuItem {
     Credits,
     ReturnToMain,
 }
 
-impl MenuItem for GameWonMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
@@ -21,15 +21,12 @@ impl MenuItem for GameWonMenuItem {
     }
 }
 
-pub fn new() -> Menu<GameWonMenuItem> {
+pub fn new() -> Menu<MenuItem> {
     Menu::with_header(
         "SUCCESS - INFECTION REPELLED!",
         &[
-            (GameWonMenuItem::Credits, "Credits".to_string()),
-            (
-                GameWonMenuItem::ReturnToMain,
-                "Return to Main Menu".to_string(),
-            ),
+            (MenuItem::Credits, "Credits".to_string()),
+            (MenuItem::ReturnToMain, "Return to Main Menu".to_string()),
         ],
     )
 }

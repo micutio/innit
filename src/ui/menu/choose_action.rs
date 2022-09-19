@@ -1,5 +1,5 @@
 use crate::game::{self, ObjectStore, State};
-use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::menu::{Item, Menu};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ActionCategory {
@@ -21,7 +21,7 @@ impl ActionItem {
     }
 }
 
-impl MenuItem for ActionItem {
+impl Item for ActionItem {
     fn process(
         state: &mut State,
         objects: &mut ObjectStore,

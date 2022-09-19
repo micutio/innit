@@ -1,15 +1,15 @@
 use crate::game::{self, ObjectStore, State};
 use crate::ui::dialog;
-use crate::ui::menu::{self, Menu, MenuItem};
+use crate::ui::menu::{self, Item, Menu};
 
 use bracket_lib::prelude as rltk;
 
 #[derive(Copy, Clone, Debug)]
-pub enum CreditsMenuItem {
+pub enum MenuItem {
     ReturnToMain,
 }
 
-impl MenuItem for CreditsMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
@@ -22,13 +22,10 @@ impl MenuItem for CreditsMenuItem {
     }
 }
 
-pub fn new() -> Menu<CreditsMenuItem> {
+pub fn new() -> Menu<MenuItem> {
     Menu::with_header(
         "YOU WON!",
-        &[(
-            CreditsMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        )],
+        &[(MenuItem::ReturnToMain, "Return to Main Menu".to_string())],
     )
 }
 
