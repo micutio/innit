@@ -57,15 +57,13 @@ pub struct Tile {
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
         let dbg = game::env().debug_mode;
-        let (fg_col, bg_col) = match dbg {
-            game::env::GameOption::Enabled => (
-                ui::palette().world_fg_wall_fov_true,
-                ui::palette().world_bg_wall_fov_true,
-            ),
-            game::env::GameOption::Disabled => (
-                ui::palette().world_fg_wall_fov_false,
-                ui::palette().world_bg_wall_fov_false,
-            ),
+        let fg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_fg_wall_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_fg_wall_fov_false,
+        };
+        let bg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_bg_wall_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_bg_wall_fov_false,
         };
         Object::new()
             .position_xy(x, y)
@@ -78,15 +76,13 @@ impl Tile {
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
         let dbg = game::env().debug_mode;
-        let (fg_col, bg_col) = match dbg {
-            game::env::GameOption::Enabled => (
-                ui::palette().world_fg_floor_fov_true,
-                ui::palette().world_bg_floor_fov_true,
-            ),
-            game::env::GameOption::Disabled => (
-                ui::palette().world_fg_floor_fov_false,
-                ui::palette().world_bg_floor_fov_false,
-            ),
+        let fg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_fg_floor_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_fg_floor_fov_false,
+        };
+        let bg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_bg_floor_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_bg_floor_fov_false,
         };
         Object::new()
             .position_xy(x, y)
