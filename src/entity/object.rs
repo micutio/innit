@@ -45,6 +45,7 @@ impl Visual {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,
