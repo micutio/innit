@@ -42,6 +42,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{self, File};
 #[cfg(not(target_arch = "wasm32"))]
 use std::io::{Read, Write};
+use std::ops::Not;
 
 #[derive(Debug)]
 pub enum RunState {
@@ -161,91 +162,104 @@ impl Game {
             &self.object_templates,
         );
 
+        // don't do anything while world gen is still in progress
         if let RunState::WorldGen = new_runstate {
-        } else {
-            // world gen is now done
-            // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
-            self.objects.set_tile_dna(
-                &mut self.state.rng,
-                &[
-                    "Cell Membrane".to_string(),
-                    "Receptor".to_string(),
-                    "Cell Membrane".to_string(),
-                    "Cell Membrane".to_string(),
-                    "Energy Store".to_string(),
-                    "Energy Store".to_string(),
-                    "Binary Fission".to_string(),
-                    "Kill Switch".to_string(),
-                    "Life Expectancy".to_string(),
-                    "Life Expectancy".to_string(),
-                    "Life Expectancy".to_string(),
-                ],
-                &self.state.gene_library,
+            return new_runstate;
+        }
+
+        // world gen is now done
+        self.objects.set_tile_dna(
+            &mut self.state.rng,
+            &[
+                "Cell Membrane".to_string(),
+                "Receptor".to_string(),
+                "Cell Membrane".to_string(),
+                "Cell Membrane".to_string(),
+                "Energy Store".to_string(),
+                "Energy Store".to_string(),
+                "Binary Fission".to_string(),
+                "Kill Switch".to_string(),
+                "Life Expectancy".to_string(),
+                "Life Expectancy".to_string(),
+                "Life Expectancy".to_string(),
+            ],
+            &self.state.gene_library,
+        );
+
+        // alternatively: create random dna
+        // objects.set_tile_dna_random(&mut state.rng, &state.gene_library);
+
+        // if we're only spectating then we're done here, otherwise proceed with player creation
+        if matches!(env().spectating, env::GameOption::Disabled).not() {
+            return new_runstate;
+        }
+
+        // create object representing the player
+        let (new_x, new_y) = self.world_generator.get_player_start_pos();
+
+        // commented-out code left here to demonstrate alternative declaration using distribution
+        // of traits instead of exhaustive list
+        /*
+        let dna = self.state.gene_library.dna_from_distribution(
+            &mut self.state.rng,
+            &[3, 2, 5],
+            &[
+                TraitFamily::Sensing,
+                TraitFamily::Processing,
+                TraitFamily::Actuating,
+            ],
+            false,
+            GENOME_LEN,
+        );
+        */
+
+        let dna = self.state.gene_library.dna_from_trait_strs(
+            &mut self.state.rng,
+            &[
+                "Move".to_string(),
+                "Receptor".to_string(),
+                "Optical Sensor".to_string(),
+                "Optical Sensor".to_string(),
+                "Optical Sensor".to_string(),
+                "Energy Store".to_string(),
+                "Energy Store".to_string(),
+                "Energy Store".to_string(),
+            ],
+        );
+        let player = object::Object::new()
+            .position_xy(new_x, new_y)
+            .living(true)
+            .visualize("You", '@', ui::Rgba::new(255, 255, 255, 255))
+            .physical(true, false, true)
+            .control(control::Controller::Player(control::Player::new()))
+            .genome(
+                0.99,
+                self.state
+                    .gene_library
+                    .dna_to_traits(genetics::DnaType::Nucleus, &dna),
             );
 
-            if matches!(env().spectating, env::GameOption::Disabled) {
-                // create object representing the player
-                let (new_x, new_y) = self.world_generator.get_player_start_pos();
-                // let dna = self.state.gene_library.dna_from_distribution(
-                //     &mut self.state.rng,
-                //     &[3, 2, 5],
-                //     &[
-                //         TraitFamily::Sensing,
-                //         TraitFamily::Processing,
-                //         TraitFamily::Actuating,
-                //     ],
-                //     false,
-                //     GENOME_LEN,
-                // );
-                let dna = self.state.gene_library.dna_from_trait_strs(
-                    &mut self.state.rng,
-                    &[
-                        "Move".to_string(),
-                        "Receptor".to_string(),
-                        "Optical Sensor".to_string(),
-                        "Optical Sensor".to_string(),
-                        "Optical Sensor".to_string(),
-                        "Energy Store".to_string(),
-                        "Energy Store".to_string(),
-                        "Energy Store".to_string(),
-                    ],
-                );
-                let player = object::Object::new()
-                    .position_xy(new_x, new_y)
-                    .living(true)
-                    .visualize("You", '@', ui::Rgba::new(255, 255, 255, 255))
-                    .physical(true, false, true)
-                    .control(control::Controller::Player(control::Player::new()))
-                    .genome(
-                        0.99,
-                        self.state
-                            .gene_library
-                            .dna_to_traits(genetics::DnaType::Nucleus, &dna),
-                    );
+        trace!("created player object {}", player);
+        trace!("player sensors: {:?}", player.sensors);
+        trace!("player processors: {:?}", player.processors);
+        trace!("player actuators: {:?}", player.actuators);
+        trace!("player dna: {:?}", player.dna);
+        trace!(
+            "player default action: {:?}",
+            player.get_primary_action(act::Target::Center).to_text()
+        );
 
-                trace!("created player object {}", player);
-                trace!("player sensors: {:?}", player.sensors);
-                trace!("player processors: {:?}", player.processors);
-                trace!("player actuators: {:?}", player.actuators);
-                trace!("player dna: {:?}", player.dna);
-                trace!(
-                    "player default action: {:?}",
-                    player.get_primary_action(act::Target::Center).to_text()
-                );
+        self.objects.set_player(player);
 
-                self.objects.set_player(player);
-
-                // a warm welcoming message
-                self.state.log.add(
-                    "How is it going?",
-                    msg::Class::Story(Some("Prof. H.".into())),
-                );
-                self.state.log.add(
+        // a warm welcoming message
+        self.state.log.add(
+            "How is it going?",
+            msg::Class::Story(Some("Prof. H.".into())),
+        );
+        self.state.log.add(
                                 "Patient stable. Mobile microscope online and set to track injected @-cell. Let's see whether it responds to the infection...",
                                 msg::Class::Story(None),
                             );
-            }
-        }
 
         new_runstate
     }
