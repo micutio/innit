@@ -65,48 +65,53 @@ impl TileColorsRgb {
 }
 
 fn draw_direct(objects: &ObjectStore) {
+    // draw tiles first, since they have a different logic from non-tiles
     let mut draw_batch_tile = rltk::DrawBatch::new();
-    let mut draw_batch_nbl = rltk::DrawBatch::new();
-    let mut draw_batch_blk = rltk::DrawBatch::new();
-
     objects
-        .get_vector()
+        .get_tiles()
         .iter()
         .flatten()
         .filter(|o| !o.is_void())
         .for_each(|obj| {
-            if obj.tile.is_some() {
-                draw_batch_tile.set(
+            draw_batch_tile.set(
+                obj.pos.into(),
+                rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                rltk::to_cp437(obj.visual.glyph),
+            );
+        });
+    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
+
+    // now draw non-tiles
+    let mut draw_batch_nbl = rltk::DrawBatch::new();
+    let mut draw_batch_blk = rltk::DrawBatch::new();
+    objects
+        .get_non_tiles()
+        .iter()
+        .flatten()
+        .filter(|o| o.physics.is_visible)
+        .for_each(|obj| {
+            if obj.physics.is_blocking {
+                draw_batch_blk.set(
                     obj.pos.into(),
                     rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
                     rltk::to_cp437(obj.visual.glyph),
                 );
-            } else if obj.physics.is_visible {
-                if obj.physics.is_blocking {
-                    draw_batch_blk.set(
-                        obj.pos.into(),
-                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                        rltk::to_cp437(obj.visual.glyph),
-                    );
-                } else {
-                    draw_batch_nbl.set(
-                        obj.pos.into(),
-                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                        rltk::to_cp437(obj.visual.glyph),
-                    );
-                }
+            } else {
+                draw_batch_nbl.set(
+                    obj.pos.into(),
+                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                    rltk::to_cp437(obj.visual.glyph),
+                );
             }
         });
-    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
+
     draw_batch_nbl.submit(game::consts::WORLD_NBL_Z).unwrap();
     draw_batch_blk.submit(game::consts::WORLD_BLK_Z).unwrap();
 }
 
 fn draw_updated_visibility(objects: &mut ObjectStore) {
     // let tcU8 = TileColorsU8::new();
-    let mut draw_batch_tile = rltk::DrawBatch::new();
-    let mut draw_batch_nbl = rltk::DrawBatch::new();
-    let mut draw_batch_blk = rltk::DrawBatch::new();
+
     let tc_rgb = TileColorsRgb::new();
 
     let player_views: Vec<(Position, i32)> = objects
@@ -123,8 +128,10 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         })
         .collect();
 
+    // draw tiles first, since they have a different logic from non-tiles
+    let mut draw_batch_tile = rltk::DrawBatch::new();
     objects
-        .get_vector_mut()
+        .get_tiles_mut()
         .iter_mut()
         .flatten()
         .filter(|o| !o.is_void())
@@ -135,29 +142,43 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
             if let Some((pos, range)) = closest_player_view {
                 update_visual(obj, *pos, *range, &visible_positions, &tc_rgb);
             }
-            if obj.tile.is_some() {
-                draw_batch_tile.set(
+            draw_batch_tile.set(
+                obj.pos.into(),
+                rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                rltk::to_cp437(obj.visual.glyph),
+            );
+        });
+    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
+
+    // now draw non-tiles
+    let mut draw_batch_nbl = rltk::DrawBatch::new();
+    let mut draw_batch_blk = rltk::DrawBatch::new();
+    objects
+        .get_non_tiles_mut()
+        .iter_mut()
+        .flatten()
+        .filter(|o| o.physics.is_visible)
+        .for_each(|obj| {
+            let closest_player_view = player_views
+                .iter()
+                .min_by_key(|x| obj.pos.distance(&x.0) as i32);
+            if let Some((pos, range)) = closest_player_view {
+                update_visual(obj, *pos, *range, &visible_positions, &tc_rgb);
+            }
+            if obj.physics.is_blocking {
+                draw_batch_blk.set(
                     obj.pos.into(),
                     rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
                     rltk::to_cp437(obj.visual.glyph),
                 );
-            } else if obj.physics.is_visible {
-                if obj.physics.is_blocking {
-                } else {
-                    draw_batch_blk.set(
-                        obj.pos.into(),
-                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                        rltk::to_cp437(obj.visual.glyph),
-                    );
-                    draw_batch_nbl.set(
-                        obj.pos.into(),
-                        rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
-                        rltk::to_cp437(obj.visual.glyph),
-                    );
-                }
+            } else {
+                draw_batch_nbl.set(
+                    obj.pos.into(),
+                    rltk::ColorPair::new(obj.visual.fg_color, obj.visual.bg_color),
+                    rltk::to_cp437(obj.visual.glyph),
+                );
             }
         });
-    draw_batch_tile.submit(game::consts::WORLD_TILE_Z).unwrap();
     draw_batch_nbl.submit(game::consts::WORLD_NBL_Z).unwrap();
     draw_batch_blk.submit(game::consts::WORLD_BLK_Z).unwrap();
 }

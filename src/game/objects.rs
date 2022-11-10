@@ -320,18 +320,23 @@ impl ObjectStore {
         &self.objects[..self.world_tile_count]
     }
 
-    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
-        Neighborhood::new(pos, self.get_vector())
-    }
-
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
         &mut self.objects[..self.world_tile_count]
     }
 
+    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
+        Neighborhood::new(pos, self.get_vector())
+    }
+
     /// Return a Vec slice with all objects that are not tiles in the world.
     pub fn get_non_tiles(&self) -> &[Option<Object>] {
         &self.objects[self.world_tile_count..]
+    }
+
+    /// Return a Vec slice with all non-tiles in the world.
+    pub fn get_non_tiles_mut(&mut self) -> &mut [Option<Object>] {
+        &mut self.objects[self.world_tile_count..]
     }
 }
 
