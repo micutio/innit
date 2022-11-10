@@ -434,12 +434,15 @@ impl<'a> Iterator for Neighborhood<'a> {
 
                 let is_in_x_bounds = (0..game::consts::WORLD_WIDTH).contains(&x);
                 let is_in_y_bounds = (0..game::consts::WORLD_HEIGHT).contains(&y);
-                if is_in_x_bounds && is_in_y_bounds {
-                    let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
-                    if let Some(obj) = tile_obj {
-                        if !obj.is_void() {
-                            return Some(tile_obj);
-                        }
+
+                if !(is_in_x_bounds && is_in_y_bounds) {
+                    continue;
+                }
+
+                let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
+                if let Some(obj) = tile_obj {
+                    if !obj.is_void() {
+                        return Some(tile_obj);
                     }
                 }
             }
