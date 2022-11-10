@@ -146,59 +146,69 @@ pub fn main() -> Result<()> {
 fn parse_cmdline_flags() {
     let args: Vec<String> = env::args().collect();
     debug!("args: {:?}", args);
-    for i in 0..args.len() {
-        if let Some(arg) = args.get(i) {
-            if arg.eq("-d") || arg.eq("--debug") {
-                game::env().set_debug_mode(true);
-            }
-            if arg.eq("-s") || arg.eq("--seed") {
-                // try get next argument to retrieve the seed number
-                if i + 1 == args.len() {
-                    info!("no seed parameter provided, fall back to use '0' instead");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let seed = next_arg.parse().map_or_else(|_| {
-                        info!("no numerical seed parameter provided, fall back to use '0' instead");
-                        0
-                    }, |v| v);
-                    game::env().set_seed(seed);
-                }
-            }
-            if arg.eq("--tile-size") {
-                // try get next argument to retrieve the tile size
-                if i + 1 == args.len() {
-                    info!("no tile size parameter provided, fall back to use '16' instead");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let t_size = next_arg.parse::<i32>().map_or_else(|_| {
-                        info!("no numerical tile size parameter provided, fall back to use '16' instead");
-                        16
-                    }, |v| v);
-                    game::env().set_tile_size(t_size);
-                }
-            }
-            if arg.eq("-t") || arg.eq("--turns") {
-                // try get next argument to retrieve the seed number
-                if i + 1 == args.len() {
-                    info!("Option '-t | --turns' requires an integer parameter!");
-                }
-                if let Some(next_arg) = args.get(i + 1) {
-                    let turn_limit = next_arg.parse::<u128>().map_or_else(|_| {
-                        info!("no numerical seed parameter provided, fall back to use '0' instead");
-                            0
-                    }, |v| v);
-                    game::env().set_turn_limit(turn_limit);
-                }
-            }
-            if arg.eq("--spectate") {
-                game::env().set_spectating(true);
-            }
-            if arg.eq("-np") || arg.eq("--no-particles") {
-                game::env().set_particles(true);
-            }
-            if arg.eq("-g") || arg.eq("--gfx") {
-                game::env().set_disable_gfx(false);
+    for idx in 0..args.len() {
+        if let Some(arg) = args.get(idx) {
+            match arg.as_str() {
+                "-d" | "--debug" => game::env().set_debug_mode(true),
+                "-s" | "--seed" => parse_seed(&args, idx),
+                "--tile-size" => parse_tile_size(&args, idx),
+                "-t" | "--turns" => parse_turns(&args, idx),
+                "--spectate" => game::env().set_spectating(true),
+                "-np" | "--no-particles" => game::env().set_particles(false),
+                "-g" | "--gfx" => game::env().set_disable_gfx(false),
+                _ => {}
             }
         }
+    }
+}
+
+fn parse_seed(args: &[String], idx: usize) {
+    // try get next argument to retrieve the seed number
+    if idx + 1 == args.len() {
+        info!("no seed parameter provided, fall back to use '0' instead");
+    }
+    if let Some(next_arg) = args.get(idx + 1) {
+        let seed = next_arg.parse().map_or_else(
+            |_| {
+                info!("no numerical seed parameter provided, fall back to use '0' instead");
+                0
+            },
+            |v| v,
+        );
+        game::env().set_seed(seed);
+    }
+}
+
+fn parse_tile_size(args: &[String], idx: usize) {
+    // try get next argument to retrieve the tile size
+    if idx + 1 == args.len() {
+        info!("no tile size parameter provided, fall back to use '16' instead");
+    }
+    if let Some(next_arg) = args.get(idx + 1) {
+        let t_size = next_arg.parse::<i32>().map_or_else(
+            |_| {
+                info!("no numerical tile size parameter provided, fall back to use '16' instead");
+                16
+            },
+            |v| v,
+        );
+        game::env().set_tile_size(t_size);
+    }
+}
+
+fn parse_turns(args: &[String], idx: usize) {
+    // try get next argument to retrieve the seed number
+    if idx + 1 == args.len() {
+        info!("Option '-t | --turns' requires an integer parameter!");
+    }
+    if let Some(next_arg) = args.get(idx + 1) {
+        let turn_limit = next_arg.parse::<u128>().map_or_else(
+            |_| {
+                info!("no numerical seed parameter provided, fall back to use '0' instead");
+                0
+            },
+            |v| v,
+        );
+        game::env().set_turn_limit(turn_limit);
     }
 }
