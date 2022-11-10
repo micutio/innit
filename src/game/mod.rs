@@ -759,13 +759,14 @@ impl rltk::GameState for Game {
                     genome_editor.display(&mut self.state, ctx)
                 }
             }
-            RunState::InfoBox(infobox) => match infobox.display(ctx) {
-                Some(infobox) => RunState::InfoBox(infobox),
-                None => {
+            RunState::InfoBox(infobox) => {
+                if let Some(infobox) = infobox.display(ctx) {
+                    RunState::InfoBox(infobox)
+                } else {
                     self.require_render = true;
                     RunState::Ticking
                 }
-            },
+            }
             RunState::NewGame => {
                 // start new game
                 ctx.set_active_console(consts::WORLD_CON);

@@ -402,7 +402,7 @@ impl GenomeEditor {
                 );
                 draw_batch.print_color(
                     rltk::Point::new(connect_end.x + spacing, connect_end.y + 2),
-                    &genome.trait_family,
+                    genome.trait_family,
                     color,
                 );
                 draw_batch.print_color(

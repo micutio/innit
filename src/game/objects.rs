@@ -200,10 +200,10 @@ impl ObjectStore {
     }
 
     pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
-        match self.objects.get_mut(index) {
-            Some(item) => item.take(),
-            None => panic!(" Error: invalid index {}", index),
-        }
+        self.objects.get_mut(index).map_or_else(
+            || panic!(" Error: invalid index {}", index),
+            std::option::Option::take,
+        )
     }
 
     /// Extract a blocking object with the given position and return both the object and its index.
@@ -340,20 +340,20 @@ impl Index<usize> for ObjectStore {
 
     fn index(&self, i: usize) -> &Self::Output {
         let item = self.objects.get(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
-        }
+        item.map_or_else(
+            || panic!("[GameObjects::index] Error: invalid index {}", i),
+            |obj_option| obj_option,
+        )
     }
 }
 
 impl IndexMut<usize> for ObjectStore {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         let item = self.objects.get_mut(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
-        }
+        item.map_or_else(
+            || panic!("[GameObjects::index] Error: invalid index {}", i),
+            |obj_option| obj_option,
+        )
     }
 }
 

@@ -230,43 +230,40 @@ impl Action for Attack {
             .flatten()
             .find(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos));
 
-        match valid_target {
-            Some(t) => {
-                // deal damage
-                t.actuators.hp -= self.lvl;
-                debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
-                if owner.physics.is_visible {
-                    state.log.add(
-                        format!(
-                            "{} attacked {} for {} damage",
-                            &owner.visual.name, &t.visual.name, self.lvl
-                        ),
-                        game::msg::Class::Info,
-                    );
-                    // show particle effect
-                    ui::register_particle(
-                        t.pos,
-                        ui::Rgba::new(200, 10, 10, 180), // TODO:
-                        ui::palette().col_transparent,
-                        'x',
-                        250.0,
-                        0.0,
-                        (1.0, 1.0),
-                    );
-                }
+        if let Some(t) = valid_target {
+            // deal damage
+            t.actuators.hp -= self.lvl;
+            debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
+            if owner.physics.is_visible {
+                state.log.add(
+                    format!(
+                        "{} attacked {} for {} damage",
+                        &owner.visual.name, &t.visual.name, self.lvl
+                    ),
+                    game::msg::Class::Info,
+                );
+                // show particle effect
+                ui::register_particle(
+                    t.pos,
+                    ui::Rgba::new(200, 10, 10, 180), // TODO:
+                    ui::palette().col_transparent,
+                    'x',
+                    250.0,
+                    0.0,
+                    (1.0, 1.0),
+                );
+            }
 
-                ActionResult::Success {
-                    callback: ObjectFeedback::NoFeedback,
-                }
+            ActionResult::Success {
+                callback: ObjectFeedback::NoFeedback,
             }
-            None => {
-                if owner.is_player() {
-                    state
-                        .log
-                        .add("Nothing to attack here", game::msg::Class::Info);
-                }
-                ActionResult::Failure
+        } else {
+            if owner.is_player() {
+                state
+                    .log
+                    .add("Nothing to attack here", game::msg::Class::Info);
             }
+            ActionResult::Failure
         }
     }
 
@@ -904,15 +901,13 @@ impl Action for BinaryFission {
                 None
             } else {
                 // create a new object
-                let child_ctrl = match &owner.control {
-                    Some(ctrl) => match ctrl {
-                        control::Controller::Npc(ai) => Some(control::Controller::Npc(ai.clone())),
-                        control::Controller::Player(_) => {
-                            Some(control::Controller::Player(control::Player::new()))
-                        }
-                    },
-                    None => None,
-                };
+                let child_ctrl = owner.control.as_ref().map(|ctrl| match ctrl {
+                    control::Controller::Npc(ai) => control::Controller::Npc(ai.clone()),
+                    control::Controller::Player(_) => {
+                        control::Controller::Player(control::Player::new())
+                    }
+                });
+
                 let mut child = Object::new()
                     .position(&t.pos)
                     .living(true)
