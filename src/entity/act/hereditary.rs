@@ -858,7 +858,8 @@ impl Action for BinaryFission {
         }
 
         let child_obj = if let Some((idx, Some(mut t))) = objects.extract_tile_by_pos(&target_pos) {
-            if owner.tile.is_some() && owner.physics.is_blocking {
+            let is_this_wall_tile = owner.tile.is_some() && owner.physics.is_blocking;
+            if is_this_wall_tile {
                 if !t.physics.is_blocking {
                     // turn into wall
                     t.set_tile_to_wall();
