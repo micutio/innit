@@ -9,6 +9,12 @@ use templating::ObjectTemplate;
 rltk::embedded_resource!(SPAWN_RAW, "../../raws/spawns.json");
 rltk::embedded_resource!(OBJECT_RAW, "../../raws/objects.json");
 
+/// .
+///
+/// # Panics
+///
+/// Panics if .
+#[must_use]
 pub fn load_spawns() -> Vec<Spawn> {
     rltk::link_resource!(SPAWN_RAW, "../raws/spawns.json");
 
@@ -23,6 +29,12 @@ pub fn load_spawns() -> Vec<Spawn> {
     serde_json::from_str(raw_string).expect("Unable to parse JSON")
 }
 
+/// .
+///
+/// # Panics
+///
+/// Panics if .
+#[must_use]
 pub fn load_object_templates() -> Vec<ObjectTemplate> {
     rltk::link_resource!(OBJECT_RAW, "../raws/objects.json");
 

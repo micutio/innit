@@ -22,6 +22,7 @@ pub struct Spawn {
 }
 
 impl Spawn {
+    #[must_use]
     pub fn _example() -> Vec<Self> {
         vec![
             Self {

@@ -9,10 +9,20 @@ repository = "https://github.com/micutio/innit"
 keywords = ["game","roguelike", "biology", "immune", "system"]
 categories = ["game"]
 
+[[bin]]
+name = "innit"
+path = "src/main.rs"
+
+[lib]
+name = "innit"
+path = "src/lib.rs"
 
 [features]
 stdweb = [ "instant/stdweb" ]
 # wasm-bindgen = [ "instant/wasm-bindgen" ]
+
+[dev-dependencies]
+criterion = "0.4"
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
