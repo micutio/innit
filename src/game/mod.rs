@@ -514,6 +514,12 @@ impl Game {
     }
 }
 
+impl Default for Game {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Load an existing savegame and instantiates `GameState` & Objects
 /// from which the game is resumed in the game loop.
 #[cfg(not(target_arch = "wasm32"))]

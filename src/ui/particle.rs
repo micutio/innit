@@ -219,6 +219,12 @@ impl System {
     }
 }
 
+impl Default for System {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn create_vignette() -> Vec<(game::Position, (u8, u8, u8, u8))> {
     let center_x = (game::consts::WORLD_WIDTH / 2) - 1;
     let center_y = (game::consts::WORLD_HEIGHT / 2) - 1;

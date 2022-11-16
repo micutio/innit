@@ -426,6 +426,12 @@ impl Hud {
     }
 }
 
+impl Default for Hud {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn render_gui(state: &State, hud: &mut Hud, ctx: &mut rltk::BTerm, player: &Object) {
     ctx.set_active_console(game::consts::HUD_CON);
     hud.update_ui_items(player);
