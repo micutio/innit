@@ -33,6 +33,11 @@ impl From<rltk::Point> for Position {
 }
 
 impl Position {
+    /// Create a new position instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given x,y coordinate lies outside of the game world.
     pub fn from_xy(x: i32, y: i32) -> Self {
         // temporary sanity check
         assert!(!(x > 80 || y > 60), "invalid postion ({}, {})", x, y);
