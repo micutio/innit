@@ -6,17 +6,6 @@
 //! Michael Wagner 2018
 //!
 
-#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
-#![allow(
-    clippy::multiple_crate_versions,
-    clippy::similar_names,
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_sign_loss,
-    clippy::use_self
-)]
-
 extern crate bracket_lib;
 extern crate casim;
 #[macro_use]
@@ -121,11 +110,11 @@ fn parse_turns(args: &[String], idx: usize) {
     }
 }
 
-/// .
+/// Build an RLTK terminal to run the game in.
 ///
 /// # Errors
 ///
-/// This function will return an error if .
+/// This function will return an error if building the terminal fails.
 pub fn create_rltk_terminal(version: &str) -> rltk::BResult<rltk::BTerm> {
     rltk::embedded_resource!(FONT_16X16_YUN, "../resources/fonts/yun_16x16.png");
     rltk::embedded_resource!(FONT_16X16_REX, "../resources/fonts/rex_16x16.png");
