@@ -157,7 +157,7 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
         .get_non_tiles_mut()
         .iter_mut()
         .flatten()
-        .filter(|o| o.physics.is_visible)
+        // .filter(|o| o.physics.is_visible)
         .for_each(|obj| {
             let closest_player_view = player_views
                 .iter()
@@ -165,6 +165,11 @@ fn draw_updated_visibility(objects: &mut ObjectStore) {
             if let Some((pos, range)) = closest_player_view {
                 update_visual(obj, *pos, *range, &visible_positions, &tc_rgb);
             }
+
+            if !obj.physics.is_visible {
+                return;
+            }
+
             if obj.physics.is_blocking {
                 draw_batch_blk.set(
                     obj.pos.into(),
