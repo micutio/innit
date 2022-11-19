@@ -1,14 +1,20 @@
 pub mod spawn;
-pub mod template;
+pub mod templating;
 
 use bracket_lib::prelude as rltk;
 use bracket_lib::terminal::EMBED;
 use spawn::Spawn;
-use template::ObjectTemplate;
+use templating::ObjectTemplate;
 
 rltk::embedded_resource!(SPAWN_RAW, "../../raws/spawns.json");
 rltk::embedded_resource!(OBJECT_RAW, "../../raws/objects.json");
 
+/// Load the spawn data from the `spawns.json` file.
+///
+/// # Panics
+///
+/// Panics if the `spawns.json` file cannot be accessed or found.
+#[must_use]
 pub fn load_spawns() -> Vec<Spawn> {
     rltk::link_resource!(SPAWN_RAW, "../raws/spawns.json");
 
@@ -23,6 +29,12 @@ pub fn load_spawns() -> Vec<Spawn> {
     serde_json::from_str(raw_string).expect("Unable to parse JSON")
 }
 
+/// Load the object templates from the `objects.json` file.
+///
+/// # Panics
+///
+/// Panics if the `objects.json` file cannot be accessed or found.
+#[must_use]
 pub fn load_object_templates() -> Vec<ObjectTemplate> {
     rltk::link_resource!(OBJECT_RAW, "../raws/objects.json");
 

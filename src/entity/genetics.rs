@@ -2,7 +2,7 @@
 //! module allows to generate objects from DNA and modify them using mutation as well as crossing.
 //! Decoding DNA delivers attributes and functions that fall into one of three gene types.
 //!
-//! Inspiration: https://creatures.fandom.com/wiki/ChiChi_Norn_Genome
+//! Inspiration: <https://creatures.fandom.com/wiki/ChiChi_Norn_Genome>
 //!
 //! ## Gene Types
 //!
@@ -61,11 +61,11 @@ pub enum TraitFamily {
 impl Display for TraitFamily {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            TraitFamily::Sensing => write!(f, "Sense"),
-            TraitFamily::Processing => write!(f, "Process"),
-            TraitFamily::Actuating => write!(f, "Actuate"),
-            TraitFamily::Ltr => write!(f, "Ltr"),
-            TraitFamily::Junk(_) => write!(f, "Junk"),
+            Self::Sensing => write!(f, "Sense"),
+            Self::Processing => write!(f, "Process"),
+            Self::Actuating => write!(f, "Actuate"),
+            Self::Ltr => write!(f, "Ltr"),
+            Self::Junk(_) => write!(f, "Junk"),
         }
     }
 }
@@ -107,7 +107,7 @@ impl GeneticTrait {
         attribute: TraitAttribute,
         action: Option<Box<dyn Action>>,
     ) -> Self {
-        GeneticTrait {
+        Self {
             trait_name: name.to_string(),
             trait_family,
             attribute,
@@ -117,7 +117,7 @@ impl GeneticTrait {
     }
 
     fn junk(value: u8) -> Self {
-        GeneticTrait {
+        Self {
             trait_name: "Junk".to_string(),
             trait_family: TraitFamily::Junk(value),
             attribute: TraitAttribute::None,
@@ -225,7 +225,7 @@ pub struct Sensors {
 
 impl Sensors {
     pub fn new() -> Self {
-        Sensors {
+        Self {
             actions: Vec::new(),
             sensing_range: 1,
         }
@@ -253,7 +253,7 @@ pub struct Processors {
 
 impl Processors {
     pub fn new() -> Self {
-        Processors {
+        Self {
             actions: Vec::new(),
             metabolism: 1,
             energy_storage: 1,
@@ -289,7 +289,7 @@ pub struct Actuators {
 
 impl Actuators {
     pub fn new() -> Self {
-        Actuators {
+        Self {
             actions: Vec::new(),
             max_hp: 1,
             hp: 1,
@@ -320,7 +320,7 @@ pub enum DnaType {
 
 impl Default for DnaType {
     fn default() -> Self {
-        DnaType::Nucleoid
+        Self::Nucleoid
     }
 }
 
@@ -337,8 +337,8 @@ pub struct Dna {
 }
 
 impl Dna {
-    pub fn new() -> Dna {
-        Dna {
+    pub const fn new() -> Self {
+        Self {
             dna_type: genetics::DnaType::Nucleoid,
             raw: Vec::new(),
             simplified: Vec::new(),
@@ -389,7 +389,7 @@ impl GeneLibrary {
             .collect();
         debug!("trait to gray map: {:#?}", trait_to_gray);
         // actual constructor
-        GeneLibrary {
+        Self {
             trait_vec,
             gray_to_trait,
             trait_to_gray,
@@ -401,7 +401,7 @@ impl GeneLibrary {
     /// Generate a new random binary DNA code from a given length and possibly with LTR markers.
     pub fn dna_from_size(
         &self,
-        rng: &mut util::rng::GameRng,
+        rng: &mut util::random::GameRng,
         has_ltr: bool,
         avg_genome_len: usize,
     ) -> Vec<u8> {
@@ -505,7 +505,11 @@ impl GeneLibrary {
     }
 
     /// Encode a vector of genetic trait names into binary DNA code.
-    pub fn dna_from_trait_strs(&self, rng: &mut util::rng::GameRng, traits: &[String]) -> Vec<u8> {
+    pub fn dna_from_trait_strs(
+        &self,
+        rng: &mut util::random::GameRng,
+        traits: &[String],
+    ) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         for t in traits {
             // push 0x00 first as the genome start symbol
@@ -530,7 +534,7 @@ impl GeneLibrary {
     /// Generate a new binary DNA code from a given weighted distribution of trait families.
     pub fn dna_from_distribution(
         &self,
-        rng: &mut util::rng::GameRng,
+        rng: &mut util::random::GameRng,
         weights: &[u8],
         choices: &[TraitFamily],
         has_ltr: bool,
@@ -538,15 +542,16 @@ impl GeneLibrary {
     ) -> Vec<u8> {
         let mut dna: Vec<u8> = Vec::new();
         let mut start_idx = 0;
-        let mut end_idx = genome_len;
-        if has_ltr {
+        let end_idx = if has_ltr {
             start_idx = 1;
             dna.push(*self.trait_to_gray.get("LTR marker").unwrap());
-            end_idx = genome_len - 1;
-        }
+            genome_len - 1
+        } else {
+            genome_len
+        };
         let gene_dist: WeightedIndex<u8> = WeightedIndex::new(weights).unwrap();
         let mut traits_map: HashMap<TraitFamily, Vec<&GeneticTrait>> = HashMap::new();
-        choices.iter().for_each(|x| {
+        for x in choices.iter() {
             traits_map.insert(
                 *x,
                 self.trait_vec
@@ -554,7 +559,7 @@ impl GeneLibrary {
                     .filter(|t| t.trait_family == *x)
                     .collect(),
             );
-        });
+        }
         for _ in start_idx..end_idx {
             let chosen_trait = choices[gene_dist.sample(rng)];
             let gene = traits_map.get(&chosen_trait).unwrap().choose(rng).unwrap();
@@ -590,10 +595,10 @@ impl GeneLibrary {
         trait_builder.finalize(&self.trait_vec)
     }
 
-    /// Combine *dna_from_size()* and *decode_dna()* into a single function call.
+    /// Combine `dna_from_size()` and `decode_dna()` into a single function call.
     pub fn new_genetics(
         &self,
-        rng: &mut util::rng::GameRng,
+        rng: &mut util::random::GameRng,
         dna_type: DnaType,
         has_ltr: bool,
         avg_genome_len: usize,
@@ -633,20 +638,22 @@ impl GeneLibrary {
             // take u8 word and map it to action/attribute
             if let Some(trait_name) = self.gray_to_trait.get(&dna[i]) {
                 // println!("gtt[{} (dna[{}])] -> {}", &dna[i], i, trait_name);
-                if let Some(genetic_trait) = self
-                    .trait_vec
+                self.trait_vec
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
-                {
-                    // trace!("found genetic trait {}", genetic_trait.trait_name);
-                    let mut this_trait = genetic_trait.clone();
-                    this_trait.position = position;
-                    trait_builder.add_action(&this_trait);
-                    trait_builder.add_attribute(&this_trait);
-                    trait_builder.record_trait(this_trait);
-                } else {
-                    error!("no trait for id {}", trait_name);
-                }
+                    .map_or_else(
+                        || {
+                            error!("no trait for id {}", trait_name);
+                        },
+                        |genetic_trait| {
+                            // trace!("found genetic trait {}", genetic_trait.trait_name);
+                            let mut this_trait = genetic_trait.clone();
+                            this_trait.position = position;
+                            trait_builder.add_action(&this_trait);
+                            trait_builder.add_attribute(&this_trait);
+                            trait_builder.record_trait(this_trait);
+                        },
+                    );
             } else {
                 trait_builder.record_trait(GeneticTrait::junk(dna[i]));
             }
@@ -674,7 +681,7 @@ struct TraitBuilder {
 impl TraitBuilder {
     pub fn new(dna_type: DnaType, raw_dna: &[u8]) -> Self {
         assert!(!raw_dna.is_empty());
-        TraitBuilder {
+        Self {
             sensors: Sensors::new(),
             processors: Processors::new(),
             actuators: Actuators::new(),
@@ -744,8 +751,7 @@ impl TraitBuilder {
                     .entry(genetic_trait.trait_name.clone())
                     .or_insert(0) += 1;
             }
-            TraitFamily::Ltr => {}
-            TraitFamily::Junk(_) => {}
+            TraitFamily::Ltr | TraitFamily::Junk(_) => {}
         }
     }
 
@@ -765,13 +771,11 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                if let Some(a) = &genetic_trait.action {
+                genetic_trait.action.as_ref().map(|a| {
                     let mut boxed_action = a.clone_action();
                     boxed_action.set_level(*parameter);
-                    Some(boxed_action)
-                } else {
-                    None
-                }
+                    boxed_action
+                })
             })
             .collect();
 
@@ -783,13 +787,11 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                if let Some(a) = &genetic_trait.action {
+                genetic_trait.action.as_ref().map(|a| {
                     let mut boxed_action = a.clone_action();
                     boxed_action.set_level(*parameter);
-                    Some(boxed_action)
-                } else {
-                    None
-                }
+                    boxed_action
+                })
             })
             .collect();
 
@@ -801,13 +803,11 @@ impl TraitBuilder {
                     .iter()
                     .find(|gt| gt.trait_name.eq(trait_name))
                     .unwrap();
-                if let Some(a) = &genetic_trait.action {
+                genetic_trait.action.as_ref().map(|a| {
                     let mut boxed_action = a.clone_action();
                     boxed_action.set_level(*parameter);
-                    Some(boxed_action)
-                } else {
-                    None
-                }
+                    boxed_action
+                })
             })
             .collect();
 
@@ -816,7 +816,7 @@ impl TraitBuilder {
         if matches!(self.dna.dna_type, DnaType::Nucleoid)
             || matches!(self.dna.dna_type, DnaType::Nucleus)
         {
-            self.actuators.actions.push(Box::new(act::PickUpItem))
+            self.actuators.actions.push(Box::new(act::PickUpItem));
         }
 
         (self.sensors, self.processors, self.actuators, self.dna)

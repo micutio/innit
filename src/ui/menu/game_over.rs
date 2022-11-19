@@ -1,35 +1,32 @@
 use crate::game::{self, ObjectStore, State};
-use crate::ui::menu::{self, Menu, MenuItem};
+use crate::ui::menu::{self, Item, Menu};
 
 #[derive(Copy, Clone, Debug)]
-pub enum GameOverMenuItem {
+pub enum MenuItem {
     Credits,
     ReturnToMain,
 }
 
-impl MenuItem for GameOverMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<GameOverMenuItem>,
-        item: &GameOverMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            GameOverMenuItem::Credits => game::RunState::CreditsScreen(menu::credits::new()),
-            GameOverMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
+            Self::Credits => game::RunState::CreditsScreen(menu::credits::new()),
+            Self::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
 
-pub fn new() -> Menu<GameOverMenuItem> {
+pub fn new() -> Menu<MenuItem> {
     Menu::with_header(
         "Game Over",
-        vec![
-            (GameOverMenuItem::Credits, "Credits".to_string()),
-            (
-                GameOverMenuItem::ReturnToMain,
-                "Return to Main Menu".to_string(),
-            ),
+        &[
+            (MenuItem::Credits, "Credits".to_string()),
+            (MenuItem::ReturnToMain, "Return to Main Menu".to_string()),
         ],
     )
 }

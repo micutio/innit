@@ -2,7 +2,7 @@ use crate::entity::{genetics, Object};
 use crate::game::world_gen;
 use crate::game::Position;
 use crate::rand::Rng;
-use crate::util::rng;
+use crate::util::random;
 use crate::{game, util};
 
 use bracket_lib::prelude as rltk;
@@ -33,7 +33,7 @@ impl ObjectStore {
         let mut objects: Vec<Option<Object>> = Vec::with_capacity(world_tile_count * 2);
         objects.resize_with(world_tile_count * 2, || None);
 
-        ObjectStore {
+        Self {
             world_tile_count,
             occupation,
             objects,
@@ -91,7 +91,7 @@ impl ObjectStore {
                     if matches!(t.typ, world_gen::TileType::Floor) {
                         t.complement.detect_neighbor_concentration(
                             self.get_neighborhood_tiles(tile_obj.pos),
-                        )
+                        );
                     }
                 }
                 self.replace(i, tile_obj);
@@ -107,7 +107,7 @@ impl ObjectStore {
                     t.complement.update();
                 }
             }
-        })
+        });
     }
 
     pub fn get_tile_at(&self, x: i32, y: i32) -> &Option<Object> {
@@ -122,7 +122,7 @@ impl ObjectStore {
 
     pub fn _set_tile_dna_random(
         &mut self,
-        rng: &mut rng::GameRng,
+        rng: &mut random::GameRng,
         gene_library: &genetics::GeneLibrary,
     ) {
         for y in 0..game::consts::WORLD_HEIGHT {
@@ -143,8 +143,8 @@ impl ObjectStore {
 
     pub fn set_tile_dna(
         &mut self,
-        rng: &mut rng::GameRng,
-        traits: Vec<String>,
+        rng: &mut random::GameRng,
+        traits: &[String],
         gene_library: &genetics::GeneLibrary,
     ) {
         for y in 0..game::consts::WORLD_HEIGHT {
@@ -153,7 +153,7 @@ impl ObjectStore {
                 if let Some(tile) = &mut self.objects[idx] {
                     let (sensors, processors, actuators, dna) = gene_library.dna_to_traits(
                         genetics::DnaType::Nucleus,
-                        &gene_library.dna_from_trait_strs(rng, &traits),
+                        &gene_library.dna_from_trait_strs(rng, traits),
                     );
                     tile.set_genome(sensors, processors, actuators, dna);
                     tile.processors.life_elapsed =
@@ -200,10 +200,10 @@ impl ObjectStore {
     }
 
     pub fn extract_by_index(&mut self, index: usize) -> Option<Object> {
-        match self.objects.get_mut(index) {
-            Some(item) => item.take(),
-            None => panic!(" Error: invalid index {}", index),
-        }
+        self.objects.get_mut(index).map_or_else(
+            || panic!(" Error: invalid index {}", index),
+            std::option::Option::take,
+        )
     }
 
     /// Extract a blocking object with the given position and return both the object and its index.
@@ -220,22 +220,16 @@ impl ObjectStore {
         self.objects
             .iter()
             .position(|opt| {
-                if let Some(obj) = opt {
-                    obj.pos.is_equal(pos) && obj.tile.is_some()
-                } else {
-                    false
-                }
+                opt.as_ref()
+                    .map_or(false, |obj| obj.pos.is_equal(pos) && obj.tile.is_some())
             })
             .map(|i| (i, self.extract_by_index(i)))
     }
 
     pub fn extract_non_tile_by_pos(&mut self, pos: &Position) -> Option<(usize, Option<Object>)> {
         if let Some(non_tile_idx) = self.get_non_tiles().iter().position(|opt| {
-            if let Some(obj) = opt {
-                obj.pos.is_equal(pos) && obj.tile.is_none()
-            } else {
-                false
-            }
+            opt.as_ref()
+                .map_or(false, |obj| obj.pos.is_equal(pos) && obj.tile.is_none())
         }) {
             let full_idx = non_tile_idx + self.world_tile_count;
             Some((full_idx, self.extract_by_index(full_idx)))
@@ -248,14 +242,12 @@ impl ObjectStore {
         self.objects
             .iter()
             .position(|opt| {
-                if let Some(obj) = opt {
+                opt.as_ref().map_or(false, |obj| {
                     obj.pos.is_equal(pos)
                         && obj.tile.is_none()
                         && obj.item.is_some()
                         && !obj.physics.is_blocking
-                } else {
-                    false
-                }
+                })
                 // o.pos.is_equal(pos) && o.tile.is_none() && o.item.is_some() && !o.physics.is_blocking
             })
             .map(|i| (i, self.extract_by_index(i)))
@@ -291,11 +283,9 @@ impl ObjectStore {
     /// Check whether there is an object, tile or not, blocking access to the given world coordinate
     pub fn is_pos_blocked(&self, p: &Position) -> bool {
         let tile_idx = coord_to_idx(game::consts::WORLD_WIDTH, p.x(), p.y());
-        let is_blocking_tile = if let Some(obj) = &self.objects[tile_idx] {
-            obj.physics.is_blocking
-        } else {
-            false
-        };
+        let is_blocking_tile = self.objects[tile_idx]
+            .as_ref()
+            .map_or(false, |obj| obj.physics.is_blocking);
 
         let is_blocking_object = self
             .get_non_tiles()
@@ -317,7 +307,7 @@ impl ObjectStore {
         self.objects.len()
     }
 
-    pub fn get_vector(&self) -> &Vec<Option<Object>> {
+    pub const fn get_vector(&self) -> &Vec<Option<Object>> {
         &self.objects
     }
 
@@ -330,18 +320,23 @@ impl ObjectStore {
         &self.objects[..self.world_tile_count]
     }
 
-    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
-        Neighborhood::new(pos, self.get_vector())
-    }
-
     /// Return a Vec slice with all tiles in the world.
     pub fn get_tiles_mut(&mut self) -> &mut [Option<Object>] {
         &mut self.objects[..self.world_tile_count]
     }
 
+    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
+        Neighborhood::new(pos, self.get_vector())
+    }
+
     /// Return a Vec slice with all objects that are not tiles in the world.
     pub fn get_non_tiles(&self) -> &[Option<Object>] {
         &self.objects[self.world_tile_count..]
+    }
+
+    /// Return a Vec slice with all non-tiles in the world.
+    pub fn get_non_tiles_mut(&mut self) -> &mut [Option<Object>] {
+        &mut self.objects[self.world_tile_count..]
     }
 }
 
@@ -350,31 +345,29 @@ impl Index<usize> for ObjectStore {
 
     fn index(&self, i: usize) -> &Self::Output {
         let item = self.objects.get(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
-        }
+        item.map_or_else(
+            || panic!("[GameObjects::index] Error: invalid index {}", i),
+            |obj_option| obj_option,
+        )
     }
 }
 
 impl IndexMut<usize> for ObjectStore {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         let item = self.objects.get_mut(i);
-        match item {
-            Some(obj_option) => obj_option,
-            None => panic!("[GameObjects::index] Error: invalid index {}", i),
-        }
+        item.map_or_else(
+            || panic!("[GameObjects::index] Error: invalid index {}", i),
+            |obj_option| obj_option,
+        )
     }
 }
 
 impl rltk::BaseMap for ObjectStore {
     fn is_opaque(&self, idx: usize) -> bool {
         if idx > 0 && idx < self.objects.len() {
-            if let Some(o) = &self.objects[idx] {
-                o.physics.is_blocking_sight
-            } else {
-                false
-            }
+            self.objects[idx]
+                .as_ref()
+                .map_or(false, |o| o.physics.is_blocking_sight)
         } else {
             false
         }
@@ -432,9 +425,7 @@ impl<'a> Iterator for Neighborhood<'a> {
     type Item = &'a Option<Object>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.count == self.bounds.len() {
-            None
-        } else {
+        if self.count != self.bounds.len() {
             while self.count < self.bounds.len() {
                 let x = self.bounds[self.count].0 + self.cell_pos.x();
                 let y = self.bounds[self.count].1 + self.cell_pos.y();
@@ -443,27 +434,30 @@ impl<'a> Iterator for Neighborhood<'a> {
 
                 let is_in_x_bounds = (0..game::consts::WORLD_WIDTH).contains(&x);
                 let is_in_y_bounds = (0..game::consts::WORLD_HEIGHT).contains(&y);
-                if is_in_x_bounds && is_in_y_bounds {
-                    let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
-                    if let Some(obj) = tile_obj {
-                        if !obj.is_void() {
-                            return Some(tile_obj);
-                        }
+
+                if !(is_in_x_bounds && is_in_y_bounds) {
+                    continue;
+                }
+
+                let tile_obj = &self.buffer[coord_to_idx(game::consts::WORLD_WIDTH, x, y)];
+                if let Some(obj) = tile_obj {
+                    if !obj.is_void() {
+                        return Some(tile_obj);
                     }
                 }
             }
-            None
         }
+        None
     }
 }
 
 // Convert coordinate to an index in a vector.
-pub fn coord_to_idx(width: i32, x: i32, y: i32) -> usize {
+pub const fn coord_to_idx(width: i32, x: i32, y: i32) -> usize {
     (y * width + x) as usize
 }
 
 /// Convert an vector index to a point.
-pub fn idx_to_coord(width: usize, idx: usize) -> (i32, i32) {
+pub const fn idx_to_coord(width: usize, idx: usize) -> (i32, i32) {
     let x = idx % width;
     let y = idx / width;
     (x as i32, y as i32)

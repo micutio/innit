@@ -41,7 +41,7 @@ impl<T> UiItem<T> {
         layout: rltk::Rect,
         color: rltk::ColorPair,
     ) -> Self {
-        UiItem {
+        Self {
             item_enum,
             text: text.into(),
             tooltip,
@@ -55,33 +55,33 @@ impl<T> UiItem<T> {
     }
 }
 
-#[derive(PartialEq)]
-pub enum HudItem {
+#[derive(PartialEq, Eq)]
+pub enum Item {
     PrimaryAction,
     SecondaryAction,
     Quick1Action,
     Quick2Action,
-    DnaItem, // little dna pieces that line the top and right side of the hud
-    BarItem, // health, energy and lifetime bars
+    DnaElement, // little dna pieces that line the top and right side of the hud
+    BarElement, // health, energy and lifetime bars
     UseInventory { idx: usize },
     DropInventory { idx: usize },
 }
 
-impl HudItem {
-    fn is_use_inventory_item(&self) -> bool {
+impl Item {
+    const fn is_use_inventory_item(&self) -> bool {
         matches!(*self, Self::UseInventory { idx: _ })
     }
 
-    fn is_drop_inventory_item(&self) -> bool {
+    const fn is_drop_inventory_item(&self) -> bool {
         matches!(*self, Self::DropInventory { idx: _ })
     }
 
-    fn is_dna_item(&self) -> bool {
-        matches!(*self, Self::DnaItem)
+    const fn is_dna_item(&self) -> bool {
+        matches!(*self, Self::DnaElement)
     }
 }
 
-fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<HudItem>> {
+fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<Item>> {
     let button_len = game::consts::SIDE_PANEL_WIDTH / 2;
     let button_x = hud_layout.x1 + 3;
     let fg_col = palette().hud_fg;
@@ -90,14 +90,14 @@ fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<HudItem>> {
     let bar_width = game::consts::SIDE_PANEL_WIDTH - 3;
     let items = vec![
         UiItem::new(
-            HudItem::BarItem,
+            Item::BarElement,
             "",
             ToolTip::header_only("your health"),
             rltk::Rect::with_size(button_x, 2, bar_width, 1),
             col_pair,
         ),
         UiItem::new(
-            HudItem::BarItem,
+            Item::BarElement,
             "",
             ToolTip::header_only("your energy"),
             rltk::Rect::with_size(button_x, 3, bar_width, 1),
@@ -113,28 +113,28 @@ fn create_hud_items(hud_layout: &rltk::Rect) -> Vec<UiItem<HudItem>> {
         ),
         */
         UiItem::new(
-            HudItem::PrimaryAction,
+            Item::PrimaryAction,
             "",
             ToolTip::header_only("select new primary action"),
             rltk::Rect::with_size(button_x, 7, button_len, 1),
             col_pair,
         ),
         UiItem::new(
-            HudItem::SecondaryAction,
+            Item::SecondaryAction,
             "",
             ToolTip::header_only("select new secondary action"),
             rltk::Rect::with_size(button_x, 8, button_len, 1),
             col_pair,
         ),
         UiItem::new(
-            HudItem::Quick1Action,
+            Item::Quick1Action,
             "",
             ToolTip::header_only("select new quick action"),
             rltk::Rect::with_size(button_x, 9, button_len, 1),
             col_pair,
         ),
         UiItem::new(
-            HudItem::Quick2Action,
+            Item::Quick2Action,
             "",
             ToolTip::header_only("select new quick action"),
             rltk::Rect::with_size(button_x, 10, button_len, 1),
@@ -158,7 +158,7 @@ impl ToolTip {
         text: Vec<String>,
         attributes: Vec<(String, String)>,
     ) -> Self {
-        ToolTip {
+        Self {
             header: Some(header.into()),
             text,
             attributes,
@@ -166,7 +166,7 @@ impl ToolTip {
     }
 
     pub fn no_header(text: Vec<String>, attributes: Vec<(String, String)>) -> Self {
-        ToolTip {
+        Self {
             header: None,
             text,
             attributes,
@@ -174,7 +174,7 @@ impl ToolTip {
     }
 
     pub fn header_only<S1: Into<String>>(header: S1) -> Self {
-        ToolTip {
+        Self {
             header: Some(header.into()),
             text: Vec::new(),
             attributes: Vec::new(),
@@ -183,11 +183,7 @@ impl ToolTip {
 
     /// Calculate the width in `[cells]` that a text box will require to be rendered on screen.
     fn content_width(&self) -> i32 {
-        let header_width: usize = if let Some(h) = &self.header {
-            h.len()
-        } else {
-            0
-        };
+        let header_width: usize = self.header.as_ref().map_or(0, std::string::String::len);
 
         let text_width: usize = self.text.iter().map(|s| s.len() + 1).max().unwrap_or(0);
 
@@ -232,7 +228,7 @@ pub struct Hud {
     last_mouse: rltk::Point,
     pub require_refresh: bool,
 
-    pub items: Vec<UiItem<HudItem>>,
+    pub items: Vec<UiItem<Item>>,
     tooltips: Vec<ToolTip>,
 }
 
@@ -245,7 +241,7 @@ impl Hud {
         let layout = rltk::Rect::with_exact(x1, y1, x2, y2);
         let inv_area = rltk::Rect::with_exact(x1 + 1, 13, game::consts::SCREEN_WIDTH - 1, 23);
         let log_area = rltk::Rect::with_exact(x1 + 1, 26, game::consts::SCREEN_WIDTH - 1, 58);
-        Hud {
+        Self {
             layout,
             inv_area,
             log_area,
@@ -273,6 +269,7 @@ impl Hud {
         self.last_mouse = mouse_pos;
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn update_ui_items(&mut self, player: &Object) {
         self.items.retain(|i| {
             !i.item_enum.is_dna_item()
@@ -315,7 +312,7 @@ impl Hud {
             };
 
             self.items.push(UiItem::new(
-                HudItem::DnaItem,
+                Item::DnaElement,
                 dna_glyph,
                 ToolTip::no_header(Vec::new(), tooltip_attrs),
                 rltk::Rect::with_size(
@@ -339,13 +336,13 @@ impl Hud {
             if v_offset >= game::consts::SCREEN_HEIGHT as usize {
                 break;
             }
-            use genetics::TraitFamily;
+
             let col: ui::Rgba = match g_trait.trait_family {
-                TraitFamily::Sensing => palette().hud_fg_dna_processor,
-                TraitFamily::Processing => palette().hud_fg_dna_actuator,
-                TraitFamily::Actuating => palette().hud_fg_dna_sensor,
-                TraitFamily::Junk(_) => ui::Rgba::new(59, 59, 59, 255), // TODO
-                TraitFamily::Ltr => ui::Rgba::new(255, 255, 255, 255),  // TODO
+                genetics::TraitFamily::Sensing => palette().hud_fg_dna_processor,
+                genetics::TraitFamily::Processing => palette().hud_fg_dna_actuator,
+                genetics::TraitFamily::Actuating => palette().hud_fg_dna_sensor,
+                genetics::TraitFamily::Junk(_) => ui::Rgba::new(59, 59, 59, 255), // TODO
+                genetics::TraitFamily::Ltr => ui::Rgba::new(255, 255, 255, 255),  // TODO
             };
 
             let dna_glyph: char = if v_offset % 2 == 0 { '▼' } else { '▲' };
@@ -366,7 +363,7 @@ impl Hud {
                 palette().hud_bg_dna
             };
             self.items.push(UiItem::new(
-                HudItem::DnaItem,
+                Item::DnaElement,
                 dna_glyph,
                 ToolTip::no_header(Vec::new(), tooltip_attrs),
                 rltk::Rect::with_size(game::consts::SCREEN_WIDTH - 1, v_offset as i32, 1, 1),
@@ -404,7 +401,7 @@ impl Hud {
             };
 
             self.items.push(UiItem::new(
-                HudItem::UseInventory { idx },
+                Item::UseInventory { idx },
                 format!("{} {}", obj.visual.glyph, name_fitted),
                 item_tooltip,
                 use_layout,
@@ -419,13 +416,19 @@ impl Hud {
             );
             let magenta = palette().hud_fg_bar_health;
             self.items.push(UiItem::new(
-                HudItem::DropInventory { idx },
+                Item::DropInventory { idx },
                 " x",
                 ToolTip::header_only(format!("drop {}", &obj.visual.name)),
                 drop_layout,
                 rltk::ColorPair::new(magenta, bg_col),
             ));
         }
+    }
+}
+
+impl Default for Hud {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -633,33 +636,33 @@ fn render_action_fields(player: &Object, hud: &mut Hud, draw_batch: &mut rltk::D
     let q1_action = player.get_quick1_action();
     let q2_action = player.get_quick2_action();
     hud.items.iter_mut().for_each(|i| match i.item_enum {
-        HudItem::PrimaryAction => {
+        Item::PrimaryAction => {
             i.text = format!(
                 "{} ({}√)",
                 p_action.get_identifier(),
                 p_action.get_energy_cost()
-            )
+            );
         }
-        HudItem::SecondaryAction => {
+        Item::SecondaryAction => {
             i.text = format!(
                 "{} ({}√)",
                 s_action.get_identifier(),
                 s_action.get_energy_cost()
-            )
+            );
         }
-        HudItem::Quick1Action => {
+        Item::Quick1Action => {
             i.text = format!(
                 "{} ({}√)",
                 q1_action.get_identifier(),
                 q1_action.get_energy_cost()
-            )
+            );
         }
-        HudItem::Quick2Action => {
+        Item::Quick2Action => {
             i.text = format!(
                 "{} ({}√)",
                 q2_action.get_identifier(),
                 q2_action.get_energy_cost()
-            )
+            );
         }
         _ => {} // HudItem::DnaItem => {}
                 // HudItem::UseInventory(_) => {}
@@ -723,10 +726,10 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
     for (msg, class) in &state.log.messages {
         let lines = util::text_to_width(msg, line_width);
         let fg_color = match class {
-            game::msg::MsgClass::Alert => palette().hud_fg_msg_alert,
-            game::msg::MsgClass::Info => palette().hud_fg_msg_info,
-            game::msg::MsgClass::Action => palette().hud_fg_msg_action,
-            game::msg::MsgClass::Story(_) => palette().hud_fg_msg_story,
+            game::msg::Class::Alert => palette().hud_fg_msg_alert,
+            game::msg::Class::Info => palette().hud_fg_msg_info,
+            game::msg::Class::Action => palette().hud_fg_msg_action,
+            game::msg::Class::Story(_) => palette().hud_fg_msg_story,
         };
         let bg_color = if bg_flag {
             palette().hud_bg_log1
@@ -737,12 +740,11 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
 
         log_lines.push((" ".into(), fg_color, bg_log_default));
         // if we're displaying text messages, prepend the author's name
-        if let game::msg::MsgClass::Story(author_opt) = class {
-            let author_line = if let Some(author) = author_opt {
-                (author.into(), ui::palette().col_acc4, bg_color)
-            } else {
-                ("Dr. S.".into(), ui::palette().col_acc1, bg_color)
-            };
+        if let game::msg::Class::Story(author_opt) = class {
+            let author_line = author_opt.as_ref().map_or_else(
+                || ("Dr. S.".into(), ui::palette().col_acc1, bg_color),
+                |author| (author.into(), ui::palette().col_acc4, bg_color),
+            );
             log_lines.push(author_line);
         }
 
@@ -781,6 +783,7 @@ fn render_ui_items(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     if hud.tooltips.is_empty() {
         return;
@@ -789,14 +792,14 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     let max_width = hud
         .tooltips
         .iter()
-        .map(|t| t.content_width())
+        .map(ui::hud::ToolTip::content_width)
         .max()
         .unwrap_or(0)
         + 2;
     let max_height = hud
         .tooltips
         .iter()
-        .map(|t| t.content_height())
+        .map(ui::hud::ToolTip::content_height)
         .max()
         .unwrap_or(0)
         + 2;
@@ -812,9 +815,9 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
     };
 
     let x_direction = match (is_render_horiz, is_forwards) {
-        (true, true) => 1,
+        (true, true) | (false, _) => 1,
         (true, false) => -1,
-        (false, _) => 1,
+        // (false, _) => 1,
     };
     let mut next_x = if hud.last_mouse.x + x_direction + max_width < game::consts::SCREEN_WIDTH {
         hud.last_mouse.x + x_direction
@@ -967,7 +970,7 @@ fn render_tooltip(hud: &Hud, draw_batch: &mut rltk::DrawBatch) {
                 if y_direction < 0 {
                     next_y = game::consts::SCREEN_HEIGHT - 1;
                 } else {
-                    next_y = 1
+                    next_y = 1;
                 }
                 next_x += tt_width * x_direction;
             }

@@ -15,7 +15,7 @@ pub struct Inventory {
 
 impl Inventory {
     pub fn new() -> Self {
-        Inventory {
+        Self {
             items: Vec::new(),
             inv_actions: Vec::new(),
         }
@@ -31,7 +31,7 @@ pub struct Item {
 
 impl Item {
     pub fn new<S: Into<String>>(descr: S, use_action: Option<Box<dyn Action>>) -> Self {
-        Item {
+        Self {
             description: descr.into(),
             use_action,
         }

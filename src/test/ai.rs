@@ -1,5 +1,6 @@
 use crate::entity::control::Controller;
 use crate::entity::genetics::{Actuators, Dna, Processors, Sensors};
+use crate::game;
 use crate::game::env;
 use crate::game::State;
 use crate::world_gen::Tile;
@@ -7,7 +8,7 @@ use crate::{entity::act::Move, game::objects::ObjectStore};
 
 #[test]
 fn test_random_ai() {
-    use crate::entity::ai::AiVirus;
+    use crate::entity::ai::Virus;
     use crate::entity::genetics::{DnaType, GENOME_LEN};
     use crate::entity::object::Object;
     use crate::game::consts::PLAYER;
@@ -16,10 +17,11 @@ fn test_random_ai() {
     let ((p_x, p_y), mut state, mut objects) = _create_minimal_world();
 
     // test walking in any direction
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
             println!("move test '{}'", &action.to_text());
-            assert!(action.get_identifier().contains("move"))
+            assert!(action.get_identifier().contains("move"));
         } else {
             panic!();
         }
@@ -42,7 +44,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     let virus_east = Object::new()
         .position_xy(p_x + 1, p_y)
@@ -55,7 +57,7 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     let virus_south = Object::new()
         .position_xy(p_x, p_y + 1)
@@ -68,16 +70,17 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     objects.push(virus_north);
     objects.push(virus_east);
     objects.push(virus_south);
 
     // test walking in only west direction
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
-            assert_eq!(action.to_text(), "move to West")
+            assert_eq!(action.to_text(), "move to West");
         } else {
             panic!();
         }
@@ -97,14 +100,15 @@ fn test_random_ai() {
                 .gene_library
                 .new_genetics(&mut state.rng, DnaType::Rna, true, GENOME_LEN),
         )
-        .control(Controller::Npc(Box::new(AiVirus::new())));
+        .control(Controller::Npc(Box::new(Virus::new())));
 
     objects.push(virus_west);
 
     // test no walk possible
+    #[allow(clippy::option_if_let_else)]
     if let Some(mut player) = objects.extract_by_index(PLAYER) {
         if let Some(action) = player.extract_next_action(&mut state, &mut objects) {
-            assert_eq!(action.to_text(), "pass")
+            assert_eq!(action.to_text(), "pass");
         } else {
             panic!();
         }
@@ -115,7 +119,7 @@ fn test_random_ai() {
 }
 
 fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
-    use crate::entity::ai::AiRandom;
+    use crate::entity::ai::RandomAction;
     use crate::entity::object::Object;
     use crate::game::consts::{WORLD_HEIGHT, WORLD_WIDTH};
 
@@ -129,7 +133,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
 
     let (p_x, p_y) = (WORLD_WIDTH / 2, WORLD_HEIGHT / 3);
 
-    let debug_mode = env().is_debug_mode;
+    let debug_mode = matches!(env().debug_mode, game::env::GameOption::Enabled);
 
     // make tiles near the player walkable
     objects
@@ -167,7 +171,7 @@ fn _create_minimal_world() -> ((i32, i32), State, ObjectStore) {
                 Dna::default(),
             ),
         )
-        .control(Controller::Npc(Box::new(AiRandom::new())));
+        .control(Controller::Npc(Box::new(RandomAction::new())));
 
     objects.set_player(player);
 

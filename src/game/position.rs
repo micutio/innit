@@ -17,13 +17,13 @@ impl PartialEq for Position {
 
 impl From<Position> for rltk::Point {
     fn from(val: Position) -> Self {
-        rltk::Point::new(val.x, val.y)
+        Self::new(val.x, val.y)
     }
 }
 
 impl From<rltk::Point> for Position {
     fn from(p: rltk::Point) -> Self {
-        Position {
+        Self {
             x: p.x,
             y: p.y,
             last_x: p.x,
@@ -33,12 +33,15 @@ impl From<rltk::Point> for Position {
 }
 
 impl Position {
+    /// Create a new position instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given x,y coordinate lies outside of the game world.
     pub fn from_xy(x: i32, y: i32) -> Self {
         // temporary sanity check
-        if x > 80 || y > 60 {
-            panic!("invalid postion ({}, {})", x, y);
-        }
-        Position {
+        assert!(!(x > 80 || y > 60), "invalid postion ({}, {})", x, y);
+        Self {
             x,
             y,
             last_x: x,
@@ -46,8 +49,8 @@ impl Position {
         }
     }
 
-    pub fn from_pos(pos: &Position) -> Self {
-        Position {
+    pub const fn from_pos(pos: &Self) -> Self {
+        Self {
             x: pos.x,
             y: pos.y,
             last_x: pos.x,
@@ -55,37 +58,38 @@ impl Position {
         }
     }
 
-    pub fn x(&self) -> i32 {
+    pub const fn x(&self) -> i32 {
         self.x
     }
 
-    pub fn y(&self) -> i32 {
+    pub const fn y(&self) -> i32 {
         self.y
     }
 
-    pub fn is_equal(&self, other: &Position) -> bool {
+    pub const fn is_equal(&self, other: &Self) -> bool {
         self.x == other.x && self.y == other.y
     }
 
-    pub fn _is_eq(&self, x: i32, y: i32) -> bool {
+    pub const fn _is_eq(&self, x: i32, y: i32) -> bool {
         self.x == x && self.y == y
     }
 
     pub fn move_to_xy(&mut self, a: i32, b: i32) {
         // temporary sanity check
-        if a > 80 || b > 60 {
-            panic!("invalid postion ({}, {})", a, b);
-        }
+        assert!(!(a > 80 || b > 60), "invalid postion ({}, {})", a, b);
 
         self.x = a;
         self.y = b;
     }
 
-    pub fn move_to(&mut self, p: &Position) {
+    pub fn move_to(&mut self, p: &Self) {
         // temporary sanity check
-        if p.x > 80 || p.y > 60 {
-            panic!("invalid postion ({}, {})", p.x, p.y);
-        }
+        assert!(
+            !(p.x > 80 || p.y > 60),
+            "invalid postion ({}, {})",
+            p.x,
+            p.y
+        );
 
         self.x = p.x;
         self.y = p.y;
@@ -109,29 +113,29 @@ impl Position {
         result
     }
 
-    pub fn is_adjacent(&self, other: &Position) -> bool {
+    pub const fn is_adjacent(&self, other: &Self) -> bool {
         let delta_x = (other.x - self.x).abs();
         let delta_y = (other.y - self.y).abs();
         delta_x <= 1 && delta_y <= 1 && delta_x + delta_y == 1
     }
 
-    pub fn offset(&self, other: &Position) -> (i32, i32) {
+    pub const fn offset(&self, other: &Self) -> (i32, i32) {
         (other.x - self.x, other.y - self.y)
     }
 
-    pub fn translate(&mut self, delta: &Position) {
+    pub fn translate(&mut self, delta: &Self) {
         self.move_to_xy(self.x + delta.x, self.y + delta.y);
     }
 
-    pub fn get_translated(&self, delta: &Position) -> Position {
-        Position::from_xy(self.x + delta.x, self.y + delta.y)
+    pub fn get_translated(&self, delta: &Self) -> Self {
+        Self::from_xy(self.x + delta.x, self.y + delta.y)
     }
 
     // TODO: Extract distance function to make it available outside of positions.
     /// Return distance of this object to a given coordinate.
-    pub fn distance(&self, other: &Position) -> f32 {
+    pub fn distance(&self, other: &Self) -> f32 {
         let dx = (other.x - self.x) as f32;
         let dy = (other.y - self.y) as f32;
-        f32::sqrt(dx * dx + dy * dy)
+        f32::sqrt(dx.mul_add(dx, dy * dy))
     }
 }

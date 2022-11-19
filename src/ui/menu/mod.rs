@@ -10,7 +10,7 @@ use crate::{game::objects::ObjectStore, ui::palette};
 
 use bracket_lib::prelude as rltk;
 
-pub trait MenuItem: Clone {
+pub trait Item: Clone {
     fn process(
         state: &mut State,
         objects: &mut ObjectStore,
@@ -21,22 +21,22 @@ pub trait MenuItem: Clone {
 
 /// Non-click-away-able window menu.
 #[derive(Clone, Debug)]
-pub struct Menu<T: MenuItem> {
+pub struct Menu<T: Item> {
     header: Option<String>,
     items: Vec<UiItem<T>>,
     selection: usize,
     layout: rltk::Rect,
 }
 
-impl<T: MenuItem> Menu<T> {
-    pub fn new(item_vec: Vec<(T, String)>) -> Self {
+impl<T: Item> Menu<T> {
+    pub fn new(item_vec: &[(T, String)]) -> Self {
         let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH + 1;
         let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 0;
-        let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
-        Menu {
+        let items: Vec<UiItem<T>> = Self::create_items(x1, item_y, item_vec);
+        Self {
             header: None,
             items,
             selection: 0,
@@ -44,14 +44,14 @@ impl<T: MenuItem> Menu<T> {
         }
     }
 
-    pub fn with_header(header: &str, item_vec: Vec<(T, String)>) -> Self {
+    pub fn with_header(header: &str, item_vec: &[(T, String)]) -> Self {
         let x1 = (game::consts::SCREEN_WIDTH) - game::consts::MENU_WIDTH - 1;
         let y1 = 0;
         let x2 = x1 + game::consts::MENU_WIDTH + 1;
         let y2 = game::consts::SCREEN_HEIGHT;
         let item_y = 2;
-        let items: Vec<UiItem<T>> = Menu::create_items(x1, item_y, item_vec);
-        Menu {
+        let items: Vec<UiItem<T>> = Self::create_items(x1, item_y, item_vec);
+        Self {
             header: Some(header.into()),
             items,
             selection: 0,
@@ -59,7 +59,7 @@ impl<T: MenuItem> Menu<T> {
         }
     }
 
-    fn create_items(x1: i32, item_y: i32, item_vec: Vec<(T, String)>) -> Vec<UiItem<T>> {
+    fn create_items(x1: i32, item_y: i32, item_vec: &[(T, String)]) -> Vec<UiItem<T>> {
         item_vec
             .iter()
             .cloned()

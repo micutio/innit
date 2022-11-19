@@ -22,37 +22,34 @@ impl Action for PickUpItem {
         if let Some((index, Some(target_obj))) = objects.extract_item_by_pos(&owner.pos) {
             // do stuff with object
             if target_obj.item.is_some() {
-                if owner.inventory.items.len() < owner.actuators.volume as usize {
-                    // only add object if it has in item tag
-                    state.log.add(
-                        format!(
-                            "{} picked up a {}",
-                            owner.visual.name, &target_obj.visual.name
-                        ),
-                        game::msg::MsgClass::Info,
-                    );
-                    owner.add_to_inventory(target_obj);
-
-                    // keep the object vector neat and tidy
-                    objects.get_vector_mut().remove(index);
-
-                    return act::ActionResult::Success {
-                        callback: act::ObjectFeedback::NoFeedback,
-                    };
-                } else {
+                if owner.inventory.items.len() > owner.actuators.volume as usize {
                     state
                         .log
-                        .add("Your inventory is full!", game::msg::MsgClass::Info);
+                        .add("Your inventory is full!", game::msg::Class::Info);
                 }
+                // only add object if it has in item tag
+                state.log.add(
+                    format!(
+                        "{} picked up a {}",
+                        owner.visual.name, &target_obj.visual.name
+                    ),
+                    game::msg::Class::Info,
+                );
+                owner.add_to_inventory(target_obj);
+
+                // keep the object vector neat and tidy
+                objects.get_vector_mut().remove(index);
+
+                return act::ActionResult::Success {
+                    callback: act::ObjectFeedback::NoFeedback,
+                };
             }
             //else {
             // otherwise put it back into the world
             //}
             objects.replace(index, target_obj);
-            act::ActionResult::Failure
-        } else {
-            act::ActionResult::Failure
         }
+        act::ActionResult::Failure
     }
 
     fn set_target(&mut self, _t: act::Target) {}
@@ -87,8 +84,8 @@ pub struct DropItem {
 }
 
 impl DropItem {
-    pub fn new(lvl: i32) -> Self {
-        DropItem { lvl }
+    pub const fn new(lvl: i32) -> Self {
+        Self { lvl }
     }
 }
 
@@ -105,7 +102,7 @@ impl Action for DropItem {
             let mut item: Object = owner.remove_from_inventory(self.lvl as usize);
             state.log.add(
                 format!("{} dropped a {}", owner.visual.name, &item.visual.name),
-                game::msg::MsgClass::Info,
+                game::msg::Class::Info,
             );
             // set the item to be dropped at the same position as the player
             item.pos.move_to(&owner.pos);

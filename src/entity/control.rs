@@ -54,7 +54,7 @@ pub struct Player {
 
 impl Player {
     pub fn new() -> Self {
-        Player {
+        Self {
             primary_action: Box::new(act::Pass),
             secondary_action: Box::new(act::Pass),
             quick1_action: Box::new(act::Pass),

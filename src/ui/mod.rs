@@ -25,12 +25,12 @@ pub struct Rgba {
 }
 
 impl Rgba {
-    pub fn new(r: u8, b: u8, g: u8, a: u8) -> Self {
-        Rgba { r, g, b, a }
+    pub const fn new(r: u8, b: u8, g: u8, a: u8) -> Self {
+        Self { r, g, b, a }
     }
 
-    pub fn from_tuple(t: (u8, u8, u8, u8)) -> Self {
-        Rgba {
+    pub const fn from_tuple(t: (u8, u8, u8, u8)) -> Self {
+        Self {
             r: t.0,
             g: t.1,
             b: t.2,
@@ -39,7 +39,7 @@ impl Rgba {
     }
 
     pub fn from_f32(r: f32, g: f32, b: f32, a: f32) -> Self {
-        Rgba {
+        Self {
             r: (r * 255.0) as u8,
             g: (g * 255.0) as u8,
             b: (b * 255.0) as u8,
@@ -50,7 +50,7 @@ impl Rgba {
 
 impl From<rltk::RGBA> for Rgba {
     fn from(item: rltk::RGBA) -> Self {
-        Rgba {
+        Self {
             r: (item.r * 255.0) as u8,
             g: (item.g * 255.0) as u8,
             b: (item.b * 255.0) as u8,
@@ -61,13 +61,12 @@ impl From<rltk::RGBA> for Rgba {
 
 impl From<Rgba> for rltk::RGBA {
     fn from(item: Rgba) -> Self {
-        rltk::RGBA::from_u8(item.r, item.g, item.b, item.a)
+        Self::from_u8(item.r, item.g, item.b, item.a)
     }
 }
 
 lazy_static! {
-    static ref PARTICLE_SYS: Mutex<particle::ParticleSystem> =
-        Mutex::new(particle::ParticleSystem::new());
+    static ref PARTICLE_SYS: Mutex<particle::System> = Mutex::new(particle::System::new());
 }
 
 pub fn register_particle(
@@ -80,7 +79,7 @@ pub fn register_particle(
     scale: (f32, f32),
 ) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
-    if game::env().is_particles_disabled {
+    if matches!(game::env().particles, game::env::GameOption::Disabled) {
         return;
     }
 
@@ -96,15 +95,15 @@ pub fn register_particle(
     ));
 }
 
-pub fn register_particles(builder: particle::ParticleBuilder) {
+pub fn register_particles(builder: particle::Builder) {
     let mut particle_sys = PARTICLE_SYS.lock().unwrap();
-    if game::env().is_particles_disabled {
+    if matches!(game::env().particles, game::env::GameOption::Disabled) {
         return;
     }
     particle_sys.particles.append(&mut builder.build());
 }
 
-pub fn particles<'a>() -> MutexGuard<'a, particle::ParticleSystem> {
+pub fn particles<'a>() -> MutexGuard<'a, particle::System> {
     PARTICLE_SYS.lock().unwrap()
 }
 

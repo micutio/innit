@@ -1,7 +1,7 @@
 use crate::entity::act;
 use crate::entity::act::Action;
 use crate::entity::ai;
-use crate::entity::complement::ComplementProteins;
+use crate::entity::complement::Proteins;
 use crate::entity::control;
 use crate::entity::genetics;
 use crate::entity::inventory;
@@ -29,12 +29,13 @@ pub struct Visual {
 
 impl Visual {
     pub fn new() -> Self {
-        let bg_color = if game::env().is_debug_mode {
-            ui::palette().world_bg_floor_fov_true
-        } else {
-            ui::palette().world_bg_floor_fov_false
+        let dbg = game::env().debug_mode;
+        let bg_color = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_bg_floor_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_bg_floor_fov_false,
         };
-        Visual {
+
+        Self {
             name: "unknown".into(),
             glyph: '_',
             fg_color: ui::Rgba::new(0, 0, 0, 255),
@@ -44,6 +45,7 @@ impl Visual {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Physics {
     pub is_blocking: bool,
     pub is_blocking_sight: bool,
@@ -53,8 +55,8 @@ pub struct Physics {
 
 impl Physics {
     pub fn new() -> Self {
-        let is_visible = game::env().is_debug_mode;
-        Physics {
+        let is_visible = matches!(game::env().debug_mode, game::env::GameOption::Enabled);
+        Self {
             is_blocking: false,
             is_blocking_sight: false,
             is_always_visible: false,
@@ -71,7 +73,7 @@ impl Physics {
 /// fields.
 /// The mandatory components _visual_ and _physics_ are relevant to the UI and game core. On the
 /// other hand, nearly all optional components are determined by the object's genome, except
-/// _next_action_.
+/// `next_action`.
 ///
 /// DNA related fields are going to be _sensor_, _processor_ and _actuator_. These contain
 /// attributes pertaining to their specific domain as well as performable actions which are
@@ -98,7 +100,7 @@ pub struct Object {
 impl Object {
     /// The Object constructor uses the builder pattern.
     pub fn new() -> Self {
-        Object {
+        Self {
             pos: Position::from_xy(0, 0),
             alive: false,
             gene_stability: 1.0,
@@ -116,25 +118,25 @@ impl Object {
     }
 
     /// Set the object's position in the world. Part of the builder pattern.
-    pub fn position_xy(mut self, x: i32, y: i32) -> Object {
+    pub fn position_xy(mut self, x: i32, y: i32) -> Self {
         self.pos = Position::from_xy(x, y);
         self
     }
 
     /// Set the object's position in the world. Part of the builder pattern.
-    pub fn position(mut self, pos: &Position) -> Object {
+    pub const fn position(mut self, pos: &Position) -> Self {
         self.pos = Position::from_pos(pos);
         self
     }
 
     /// Set whether this object is alive (true) or dead (false). Part of the builder pattern.
-    pub fn living(mut self, alive: bool) -> Object {
+    pub const fn living(mut self, alive: bool) -> Self {
         self.alive = alive;
         self
     }
 
     /// Initialize the visual properties of the object. Part of the builder pattern.
-    pub fn visualize(mut self, name: &str, character: char, fg_color: ui::Rgba) -> Object {
+    pub fn visualize(mut self, name: &str, character: char, fg_color: ui::Rgba) -> Self {
         self.visual.name = name.into();
         self.visual.glyph = character;
         self.visual.fg_color = fg_color;
@@ -148,7 +150,7 @@ impl Object {
         character: char,
         fg_color: ui::Rgba,
         bg_color: ui::Rgba,
-    ) -> Object {
+    ) -> Self {
         self.visual.name = name.into();
         self.visual.glyph = character;
         self.visual.fg_color = fg_color;
@@ -162,11 +164,11 @@ impl Object {
         is_blocking: bool,
         is_blocking_sight: bool,
         is_always_visible: bool,
-    ) -> Object {
+    ) -> Self {
         self.physics.is_blocking = is_blocking;
         self.physics.is_blocking_sight = is_blocking_sight;
         self.physics.is_always_visible = is_always_visible;
-        self.physics.is_visible = game::env().is_debug_mode;
+        self.physics.is_visible = matches!(game::env().debug_mode, game::env::GameOption::Enabled);
         self
     }
 
@@ -180,7 +182,7 @@ impl Object {
             genetics::Actuators,
             genetics::Dna,
         ),
-    ) -> Object {
+    ) -> Self {
         self.gene_stability = stability;
         self.set_genome(sensors, processors, actuators, dna);
 
@@ -189,35 +191,39 @@ impl Object {
     }
 
     /// Turn the object into a collectible item. Part of the builder pattern.
-    pub fn inventory_item(mut self, item: inventory::Item) -> Object {
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn inventory_item(mut self, item: inventory::Item) -> Self {
         self.item = Some(item);
         self
     }
 
     /// Transform the object into a tile. Part of the builder pattern.
-    /// Ref. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/ for overview on chem. gradients.
-    pub fn tile(mut self, typ: world_gen::TileType) -> Object {
+    /// Ref. <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3848882/> for overview on chem. gradients.
+    pub const fn tile(mut self, typ: world_gen::TileType) -> Self {
         self.tile = Some(world_gen::Tile {
             typ,
             morphogen: 0.0,
-            complement: ComplementProteins::new(),
+            complement: Proteins::new(),
         });
         self
     }
 
     /// Transform the object into an NPC or player. Part of the builder pattern.
-    pub fn control(mut self, controller: control::Controller) -> Object {
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn control(mut self, controller: control::Controller) -> Self {
         self.control = Some(controller);
         self
     }
 
-    pub fn control_opt(mut self, controller: Option<control::Controller>) -> Object {
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn control_opt(mut self, controller: Option<control::Controller>) -> Self {
         self.control = controller;
         self
     }
 
     /// Turn the object into an item that can be added to the inventory. Part of builder pattern.
-    pub fn itemize(mut self, item: Option<inventory::Item>) -> Object {
+    #[allow(clippy::missing_const_for_fn)]
+    pub fn itemize(mut self, item: Option<inventory::Item>) -> Self {
         self.item = item;
         self
     }
@@ -228,14 +234,18 @@ impl Object {
         self.physics.is_blocking_sight = true;
         self.visual.glyph = '○';
         self.visual.name = world_gen::TileType::Wall.as_str().into();
-        if game::env().is_debug_mode {
-            self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
-            self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
-        } else {
-            self.visual.fg_color = ui::palette().world_fg_wall_fov_false;
-            self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
+        let dbg = game::env().debug_mode;
+        match dbg {
+            game::env::GameOption::Enabled => {
+                self.visual.fg_color = ui::palette().world_fg_wall_fov_true;
+                self.visual.bg_color = ui::palette().world_bg_wall_fov_true;
+            }
+            game::env::GameOption::Disabled => {
+                self.visual.fg_color = ui::palette().world_fg_wall_fov_false;
+                self.visual.bg_color = ui::palette().world_bg_wall_fov_false;
+            }
         }
-        self.control = Some(control::Controller::Npc(Box::new(ai::AiWallTile)));
+        self.control = Some(control::Controller::Npc(Box::new(ai::WallTile)));
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Wall;
         }
@@ -247,14 +257,18 @@ impl Object {
         self.physics.is_blocking_sight = false;
         self.visual.glyph = ' ';
         self.visual.name = world_gen::TileType::Floor.as_str().into();
-        if game::env().is_debug_mode {
-            self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
-            self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
-        } else {
-            self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
-            self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
+        let dbg = game::env().debug_mode;
+        match dbg {
+            game::env::GameOption::Enabled => {
+                self.visual.fg_color = ui::palette().world_fg_floor_fov_true;
+                self.visual.bg_color = ui::palette().world_bg_floor_fov_true;
+            }
+            game::env::GameOption::Disabled => {
+                self.visual.fg_color = ui::palette().world_fg_floor_fov_false;
+                self.visual.bg_color = ui::palette().world_bg_floor_fov_false;
+            }
         }
-        self.control = Some(control::Controller::Npc(Box::new(ai::AiFloorTile)));
+        self.control = Some(control::Controller::Npc(Box::new(ai::FloorTile)));
 
         if let Some(t) = &mut self.tile {
             t.typ = world_gen::TileType::Floor;
@@ -306,7 +320,7 @@ impl Object {
             let bg = ui::palette().col_transparent;
 
             ui::register_particles(
-                ui::particle::ParticleBuilder::new(
+                ui::particle::Builder::new(
                     self.pos.x() as f32,
                     self.pos.y() as f32,
                     fg,
@@ -316,15 +330,15 @@ impl Object {
                 )
                 .with_end_color(bg, bg)
                 .with_scale((0.0, 0.0), (1.0, 1.0)),
-            )
+            );
         }
     }
 
-    pub fn is_player(&self) -> bool {
+    pub const fn is_player(&self) -> bool {
         matches!(self.control, Some(control::Controller::Player(_)))
     }
 
-    pub fn is_void(&self) -> bool {
+    pub const fn is_void(&self) -> bool {
         if let Some(t) = &self.tile {
             matches!(t.typ, world_gen::TileType::Void)
         } else {
@@ -339,7 +353,7 @@ impl Object {
                 if self.is_player() {
                     log.add(
                         format!("You lost control over {}", &self.visual.name),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
             }
@@ -347,7 +361,7 @@ impl Object {
                 if let Some(control::Controller::Npc(_)) = self.control {
                     log.add(
                         format!("You gained control over {}", &self.visual.name),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
             }
@@ -359,7 +373,7 @@ impl Object {
         self.processors.energy = min(
             self.processors.energy + self.processors.metabolism,
             self.processors.energy_storage,
-        )
+        );
     }
 
     /// Set the object's current dna and resulting super traits.
@@ -536,7 +550,7 @@ impl Object {
             .cloned()
     }
 
-    pub fn add_to_inventory(&mut self, o: Object) {
+    pub fn add_to_inventory(&mut self, o: Self) {
         let new_idx = self.inventory.items.len();
         // add item to inventory
         self.inventory.items.push(o);
@@ -546,7 +560,7 @@ impl Object {
             .push(Box::new(act::DropItem::new(new_idx as i32)));
     }
 
-    pub fn remove_from_inventory(&mut self, index: usize) -> Object {
+    pub fn remove_from_inventory(&mut self, index: usize) -> Self {
         self.inventory.items.remove(index)
     }
 
@@ -605,7 +619,7 @@ impl Object {
         combined_dna
     }
 
-    pub fn generate_tooltip(&self, other: &Object) -> hud::ToolTip {
+    pub fn generate_tooltip(&self, other: &Self) -> hud::ToolTip {
         // show whether both objects have matching receptors
         let receptor_match = if self
             .processors

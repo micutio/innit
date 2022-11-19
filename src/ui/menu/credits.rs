@@ -1,34 +1,31 @@
 use crate::game::{self, ObjectStore, State};
 use crate::ui::dialog;
-use crate::ui::menu::{self, Menu, MenuItem};
+use crate::ui::menu::{self, Item, Menu};
 
 use bracket_lib::prelude as rltk;
 
 #[derive(Copy, Clone, Debug)]
-pub enum CreditsMenuItem {
+pub enum MenuItem {
     ReturnToMain,
 }
 
-impl MenuItem for CreditsMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<CreditsMenuItem>,
-        item: &CreditsMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            CreditsMenuItem::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
+            Self::ReturnToMain => game::RunState::MainMenu(menu::main::new()),
         }
     }
 }
 
-pub fn new() -> Menu<CreditsMenuItem> {
+pub fn new() -> Menu<MenuItem> {
     Menu::with_header(
         "YOU WON!",
-        vec![(
-            CreditsMenuItem::ReturnToMain,
-            "Return to Main Menu".to_string(),
-        )],
+        &[(MenuItem::ReturnToMain, "Return to Main Menu".to_string())],
     )
 }
 

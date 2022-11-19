@@ -9,16 +9,17 @@ use std::mem;
 pub type GameRng = SerializableRng<Isaac64Rng>;
 
 /// A seedable random number generator that can be serialized for consistent random number
-/// generation. For more info on Rust RNGs, refer to https://rust-random.github.io/book/guide-rngs.html
+/// generation. For more info on Rust RNGs, refer to
+/// <https://rust-random.github.io/book/guide-rngs.html>
 /// For an example implementation of serializable RNG, refer to
-///     https://github.com/rsaarelm/calx/blob/45a8d78edda35f2acd59bf9d2bf96fbb98b214ed/calx-alg/src/rng.rs#L33-L84
+/// <https://github.com/rsaarelm/calx/blob/45a8d78edda35f2acd59bf9d2bf96fbb98b214ed/calx-alg/src/rng.rs#L33-L84>
 #[derive(Clone, Debug)]
 pub struct SerializableRng<T> {
     inner: T,
 }
 
 impl<T: Rng + 'static> SerializableRng<T> {
-    pub fn new(inner: T) -> SerializableRng<T> {
+    pub const fn new(inner: T) -> SerializableRng<T> {
         SerializableRng { inner }
     }
 }
@@ -46,6 +47,7 @@ impl<T: Rng + 'static> Serialize for SerializableRng<T> {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         let mut vec = Vec::new();
         unsafe {
+            #[allow(clippy::ptr_as_ptr)]
             let view = self as *const _ as *const u8;
             for i in 0..(mem::size_of::<T>()) {
                 // vec.push(*view.offset(i as isize));
@@ -83,7 +85,7 @@ impl<T: Rng> RngCore for SerializableRng<T> {
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        impls::fill_bytes_via_next(self, dest)
+        impls::fill_bytes_via_next(self, dest);
     }
 
     #[allow(clippy::unit_arg)]

@@ -7,7 +7,7 @@ use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{self, ObjectStore, State};
 use crate::rand::Rng;
 use crate::ui;
-use crate::util::rng::RngExtended;
+use crate::util::random::RngExtended;
 
 use bracket_lib::prelude as rltk;
 use std::ops::Add;
@@ -15,8 +15,8 @@ use std::ops::Add;
 const TOP_ROW_Y_OFFSET: i32 = 1;
 const MID_ROW_Y_OFFSET: i32 = 4;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum GenomeEditingState {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditingState {
     ChooseGene,
     ChooseFunction,
     Move,
@@ -30,20 +30,20 @@ pub enum GenomeEditingState {
 struct EditFunction {
     layout: rltk::Rect,
     is_enabled: bool,
-    state: GenomeEditingState,
+    state: EditingState,
     idx: usize,
     title: String,
 }
 
 impl EditFunction {
-    fn new(
+    const fn new(
         layout: rltk::Rect,
         is_enabled: bool,
-        state: GenomeEditingState,
+        state: EditingState,
         idx: usize,
         title: String,
     ) -> Self {
-        EditFunction {
+        Self {
             layout,
             is_enabled,
             state,
@@ -62,8 +62,8 @@ struct GeneItem {
 }
 
 impl GeneItem {
-    fn new(layout: rltk::Rect, gene_idx: usize, color: ui::Rgba) -> Self {
-        GeneItem {
+    const fn new(layout: rltk::Rect, gene_idx: usize, color: ui::Rgba) -> Self {
+        Self {
             layout,
             gene_idx,
             color,
@@ -89,7 +89,7 @@ pub struct GenomeEditor {
     plasmid_charges: usize,
     selected_gene: usize,
     selected_function: usize,
-    pub state: GenomeEditingState,
+    pub state: EditingState,
     pub player_dna: Dna,
     edit_functions: Vec<EditFunction>,
     gene_items: Vec<GeneItem>,
@@ -104,9 +104,9 @@ impl GenomeEditor {
 
     /// Creates a new instance of the editor. DNA is parsed into items that can be cycled through.
     pub fn new(dna: Dna, charges: usize) -> Self {
-        use GenomeEditingState::*;
+        use EditingState::{Cut, Done, Duplicate, FlipBit, Move};
         let mut top_row_x = 1;
-        let enabled_functions: Vec<GenomeEditingState> = vec![Move, Cut, FlipBit, Duplicate, Done];
+        let enabled_functions: Vec<EditingState> = vec![Move, Cut, FlipBit, Duplicate, Done];
         let mut edit_functions: Vec<EditFunction> = [Move, Cut, FlipBit, Duplicate, Done]
             .iter()
             .enumerate()
@@ -119,7 +119,7 @@ impl GenomeEditor {
                     is_enabled,
                     *e,
                     idx,
-                    s.to_string(),
+                    (*s).to_string(),
                 );
                 top_row_x += len + 2;
                 item
@@ -144,15 +144,15 @@ impl GenomeEditor {
         }
 
         let gene_items =
-            GenomeEditor::build_gene_items(&dna, layout.x1 + 1, layout.y1 + MID_ROW_Y_OFFSET + 1);
+            Self::build_gene_items(&dna, layout.x1 + 1, layout.y1 + MID_ROW_Y_OFFSET + 1);
 
-        GenomeEditor {
+        Self {
             layout,
             plasmid_charges: charges,
             selected_gene: 0,
             gene_selection_locked: false,
             selected_function: 0,
-            state: GenomeEditingState::ChooseFunction,
+            state: EditingState::ChooseFunction,
             player_dna: dna,
             edit_functions,
             gene_items,
@@ -190,6 +190,7 @@ impl GenomeEditor {
         self.read_input(game_state, ctx)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn render(&self, game_state: &mut State, ctx: &mut rltk::BTerm) {
         ctx.set_active_console(game::consts::HUD_CON);
         ctx.cls();
@@ -216,7 +217,7 @@ impl GenomeEditor {
             rltk::ColorPair::new(hud_fg_border, hud_bg),
         );
 
-        if self.state == GenomeEditingState::ChooseFunction {
+        if self.state == EditingState::ChooseFunction {
             draw_batch.fill_region(
                 rltk::Rect::with_size(
                     self.layout.x1 + 1,
@@ -227,7 +228,7 @@ impl GenomeEditor {
                 rltk::ColorPair::new(hud_fg, hud_bg_active),
                 rltk::to_cp437(' '),
             );
-        } else if self.state == GenomeEditingState::ChooseGene {
+        } else if self.state == EditingState::ChooseGene {
             draw_batch.fill_region(
                 rltk::Rect::with_size(
                     self.layout.x1 + 1,
@@ -255,7 +256,7 @@ impl GenomeEditor {
         );
 
         for item in &self.edit_functions {
-            let bg_col = if self.state == GenomeEditingState::ChooseFunction {
+            let bg_col = if self.state == EditingState::ChooseFunction {
                 hud_bg_active
             } else if self.state == item.state {
                 hud_fg_hl
@@ -300,9 +301,7 @@ impl GenomeEditor {
 
             let bg_color = if item.gene_idx == self.selected_gene {
                 hud_fg_hl
-            } else if self.state == GenomeEditingState::ChooseGene
-                || self.state == GenomeEditingState::Move
-            {
+            } else if self.state == EditingState::ChooseGene || self.state == EditingState::Move {
                 hud_bg_active
             } else {
                 hud_bg
@@ -403,7 +402,7 @@ impl GenomeEditor {
                 );
                 draw_batch.print_color(
                     rltk::Point::new(connect_end.x + spacing, connect_end.y + 2),
-                    &genome.trait_family,
+                    genome.trait_family,
                     color,
                 );
                 draw_batch.print_color(
@@ -447,8 +446,7 @@ impl GenomeEditor {
                         let gene_str: String = gene_bits
                             .iter()
                             .map(|b| format!("{:08b}", b))
-                            .collect::<Vec<String>>()
-                            .join("");
+                            .collect::<String>();
 
                         draw_batch.print_color(
                             rltk::Point::new(connect_end.x + spacing, connect_end.y + 5),
@@ -482,36 +480,35 @@ impl GenomeEditor {
         draw_batch.submit(game::consts::HUD_CON_Z).unwrap();
     }
 
+    #[allow(clippy::too_many_lines)]
     fn read_input(mut self, game_state: &mut State, ctx: &mut rltk::BTerm) -> game::RunState {
         // wait for user input
         // a) keyboard input
         // if we have a key activity, process and return immediately
-        use rltk::VirtualKeyCode::*;
-        use GenomeEditingState::*;
         if let Some(key) = ctx.key {
             match key {
-                Up => {
-                    if let ChooseGene = self.state {
-                        self.state = ChooseFunction
+                rltk::VirtualKeyCode::Up => {
+                    if self.state == EditingState::ChooseGene {
+                        self.state = EditingState::ChooseFunction;
                     }
                 }
-                Down => {
-                    if let ChooseFunction = self.state {
-                        self.state = ChooseGene
+                rltk::VirtualKeyCode::Down => {
+                    if self.state == EditingState::ChooseFunction {
+                        self.state = EditingState::ChooseGene;
                     }
                 }
-                Key1 => return self.do_action(game_state, 0),
-                Key2 => return self.do_action(game_state, 1),
-                Key3 => return self.do_action(game_state, 2),
-                Key4 => return self.do_action(game_state, 3),
-                Key5 => return self.do_action(game_state, 4),
-                Key6 => return self.do_action(game_state, 5),
-                Key7 => return self.do_action(game_state, 6),
-                Key8 => return self.do_action(game_state, 7),
-                Key9 => return self.do_action(game_state, 8),
-                Key0 => return self.do_action(game_state, 9),
-                Left => match self.state {
-                    GenomeEditingState::Move => {
+                rltk::VirtualKeyCode::Key1 => return self.do_action(game_state, 0),
+                rltk::VirtualKeyCode::Key2 => return self.do_action(game_state, 1),
+                rltk::VirtualKeyCode::Key3 => return self.do_action(game_state, 2),
+                rltk::VirtualKeyCode::Key4 => return self.do_action(game_state, 3),
+                rltk::VirtualKeyCode::Key5 => return self.do_action(game_state, 4),
+                rltk::VirtualKeyCode::Key6 => return self.do_action(game_state, 5),
+                rltk::VirtualKeyCode::Key7 => return self.do_action(game_state, 6),
+                rltk::VirtualKeyCode::Key8 => return self.do_action(game_state, 7),
+                rltk::VirtualKeyCode::Key9 => return self.do_action(game_state, 8),
+                rltk::VirtualKeyCode::Key0 => return self.do_action(game_state, 9),
+                rltk::VirtualKeyCode::Left => match self.state {
+                    EditingState::Move => {
                         // if selected is leftmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
                         if self.selected_gene > 0 {
@@ -525,7 +522,7 @@ impl GenomeEditor {
                             self.regenerate_dna(game_state);
                         }
                     }
-                    GenomeEditingState::ChooseFunction => {
+                    EditingState::ChooseFunction => {
                         let mut new_idx = self.selected_function;
                         while new_idx > 0 {
                             new_idx -= 1;
@@ -537,15 +534,15 @@ impl GenomeEditor {
                             }
                         }
                     }
-                    GenomeEditingState::ChooseGene => {
+                    EditingState::ChooseGene => {
                         if self.selected_gene > 0 {
                             self.selected_gene -= 1;
                         }
                     }
                     _ => {}
                 },
-                Right => match self.state {
-                    GenomeEditingState::Move => {
+                rltk::VirtualKeyCode::Right => match self.state {
+                    EditingState::Move => {
                         // if selected is rightmost, then do nothing
                         // otherwise take out of the vector and insert at idx-1
                         if self.selected_gene < self.gene_items.len() {
@@ -559,7 +556,7 @@ impl GenomeEditor {
                             self.regenerate_dna(game_state);
                         }
                     }
-                    GenomeEditingState::ChooseFunction => {
+                    EditingState::ChooseFunction => {
                         let mut new_idx = self.selected_function;
                         while new_idx < self.edit_functions.len() {
                             new_idx += 1;
@@ -571,18 +568,18 @@ impl GenomeEditor {
                             }
                         }
                     }
-                    GenomeEditingState::ChooseGene => {
+                    EditingState::ChooseGene => {
                         self.selected_gene =
                             usize::min(self.selected_gene + 1, self.gene_items.len() - 1);
                     }
                     _ => {}
                 },
-                Return => {
+                rltk::VirtualKeyCode::Return => {
                     // use dummy value, this function will call itself with the correct value.
                     let function_idx: usize = self.selected_function;
                     return self.do_action(game_state, function_idx);
                 }
-                Escape => return game::RunState::CheckInput,
+                rltk::VirtualKeyCode::Escape => return game::RunState::CheckInput,
                 _ => {}
             }
             return game::RunState::GenomeEditing(self);
@@ -601,8 +598,8 @@ impl GenomeEditor {
             // update active index
             self.selected_function = idx;
             // self.selected_function = Some(idx);
-            if let ChooseGene = self.state {
-                self.state = ChooseFunction;
+            if self.state == EditingState::ChooseGene {
+                self.state = EditingState::ChooseFunction;
             }
             // if we have a function and the mouse is clicked, then perform the function
             if ctx.left_click {
@@ -622,7 +619,7 @@ impl GenomeEditor {
 
         if let Some(target_idx) = hovered_gene {
             match self.state {
-                Move => {
+                EditingState::Move => {
                     let step: i32 = if target_idx < self.selected_gene {
                         -1
                     } else {
@@ -638,25 +635,25 @@ impl GenomeEditor {
                         self.regenerate_dna(game_state);
                     }
                 }
-                ChooseGene => {
+                EditingState::ChooseGene => {
                     if !self.gene_selection_locked {
                         self.selected_gene = target_idx;
                     }
                 }
                 _ => {
-                    self.state = ChooseGene;
+                    self.state = EditingState::ChooseGene;
                 }
             }
 
             if ctx.left_click {
                 match self.state {
                     // If we're moving, finalise it now.
-                    Move => self.state = ChooseGene,
-                    ChooseGene => {
+                    EditingState::Move => self.state = EditingState::ChooseGene,
+                    EditingState::ChooseGene => {
                         self.gene_selection_locked = !self.gene_selection_locked;
                     }
                     _ => {
-                        self.state = ChooseGene;
+                        self.state = EditingState::ChooseGene;
                         if !self.gene_selection_locked {
                             self.selected_gene = target_idx;
                         }
@@ -671,19 +668,18 @@ impl GenomeEditor {
     fn do_action(mut self, game_state: &mut State, active_idx: usize) -> game::RunState {
         if let Some(item) = self.edit_functions.get(active_idx) {
             self.selected_function = item.idx;
-            use GenomeEditingState::*;
             match item.state {
-                Move => {
-                    if let Move = self.state {
+                EditingState::Move => {
+                    if self.state == EditingState::Move {
                         // finalise move action
-                        self.state = ChooseFunction;
+                        self.state = EditingState::ChooseFunction;
                         self.decrease_charge();
                     } else {
                         // start move action
-                        self.state = Move;
+                        self.state = EditingState::Move;
                     }
                 }
-                Cut => {
+                EditingState::Cut => {
                     self.player_dna.simplified.remove(self.selected_gene);
                     self.selected_gene = if self.selected_gene == 0 {
                         0
@@ -692,9 +688,9 @@ impl GenomeEditor {
                     };
                     self.decrease_charge();
                     self.regenerate_dna(game_state);
-                    self.state = ChooseFunction;
+                    self.state = EditingState::ChooseFunction;
                 }
-                FlipBit => {
+                EditingState::FlipBit => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
                             let mut gene_bits: Vec<u8> =
@@ -712,9 +708,9 @@ impl GenomeEditor {
                             }
                         }
                     }
-                    self.state = ChooseFunction;
+                    self.state = EditingState::ChooseFunction;
                 }
-                Duplicate => {
+                EditingState::Duplicate => {
                     if let Some(item) = self.gene_items.get(self.selected_gene) {
                         let mut trait_clone: Option<GeneticTrait> = None;
                         if let Some(g_trait) = self.player_dna.simplified.get(item.gene_idx) {
@@ -727,11 +723,11 @@ impl GenomeEditor {
                             self.regenerate_dna(game_state);
                         }
                     }
-                    self.state = ChooseFunction;
+                    self.state = EditingState::ChooseFunction;
                 }
-                Done => {
+                EditingState::Done => {
                     // apply changed genome to player
-                    self.state = Done;
+                    self.state = EditingState::Done;
                     return game::RunState::GenomeEditing(self);
                 }
                 _ => {}
@@ -747,7 +743,7 @@ impl GenomeEditor {
             if self.plasmid_charges == 0 {
                 self.edit_functions
                     .iter_mut()
-                    .filter(|f| f.state != GenomeEditingState::Done)
+                    .filter(|f| f.state != EditingState::Done)
                     .for_each(|f| f.is_enabled = false);
                 // set selected function to the last one; "Done" which is now the only one possible.
                 self.selected_function = self.edit_functions.len() - 1;
@@ -766,7 +762,7 @@ impl GenomeEditor {
             .gene_library
             .dna_to_traits(self.player_dna.dna_type, &bit_vec);
         self.player_dna = new_dna.3;
-        self.gene_items = GenomeEditor::build_gene_items(
+        self.gene_items = Self::build_gene_items(
             &self.player_dna,
             self.layout.x1 + 1,
             self.layout.y1 + MID_ROW_Y_OFFSET + 1,

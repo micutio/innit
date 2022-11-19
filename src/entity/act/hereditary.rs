@@ -1,6 +1,6 @@
 //! This module contains all actions that can be acquired via genes.
 
-use crate::entity::act::*;
+use crate::entity::act::{Action, ActionResult, Debug, ObjectFeedback, Target, TargetCategory};
 use crate::entity::ai;
 use crate::entity::control;
 use crate::entity::genetics;
@@ -71,8 +71,8 @@ pub struct Move {
 
 impl Move {
     // TODO: use level
-    pub fn new() -> Self {
-        Move {
+    pub const fn new() -> Self {
+        Self {
             lvl: 0,
             direction: Target::Center,
         }
@@ -88,18 +88,18 @@ impl Action for Move {
         owner: &mut Object,
     ) -> ActionResult {
         let target_pos = owner.pos.get_translated(&self.direction.to_pos());
-        if !&objects.is_pos_blocked(&target_pos) {
-            owner.pos.move_to(&target_pos);
-            let callback = if owner.physics.is_visible {
-                ObjectFeedback::Render
-            } else {
-                ObjectFeedback::NoFeedback
-            };
-            ActionResult::Success { callback }
-        } else {
+        if objects.is_pos_blocked(&target_pos) {
             // object cannot move because it's blocked
-            ActionResult::Failure // this might cause infinite loops of failure
+            return ActionResult::Failure; // this might cause infinite loops of failure
         }
+
+        owner.pos.move_to(&target_pos);
+        let callback = if owner.physics.is_visible {
+            ObjectFeedback::Render
+        } else {
+            ObjectFeedback::NoFeedback
+        };
+        ActionResult::Success { callback }
     }
 
     fn set_target(&mut self, target: Target) {
@@ -138,8 +138,8 @@ pub struct RepairStructure {
 }
 
 impl RepairStructure {
-    pub fn new() -> Self {
-        RepairStructure { lvl: 0 }
+    pub const fn new() -> Self {
+        Self { lvl: 0 }
     }
 }
 
@@ -161,7 +161,7 @@ impl Action for RepairStructure {
                 450.0,
                 0.0,
                 (1.0, 1.0),
-            )
+            );
         }
         ActionResult::Success {
             callback: ObjectFeedback::NoFeedback,
@@ -203,8 +203,8 @@ pub struct Attack {
 }
 
 impl Attack {
-    pub fn new() -> Self {
-        Attack {
+    pub const fn new() -> Self {
+        Self {
             lvl: 0,
             target: Target::Center,
         }
@@ -230,43 +230,40 @@ impl Action for Attack {
             .flatten()
             .find(|o| o.physics.is_blocking && o.pos.is_equal(&target_pos));
 
-        match valid_target {
-            Some(t) => {
-                // deal damage
-                t.actuators.hp -= self.lvl;
-                debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
-                if owner.physics.is_visible {
-                    state.log.add(
-                        format!(
-                            "{} attacked {} for {} damage",
-                            &owner.visual.name, &t.visual.name, self.lvl
-                        ),
-                        game::msg::MsgClass::Info,
-                    );
-                    // show particle effect
-                    ui::register_particle(
-                        t.pos,
-                        ui::Rgba::new(200, 10, 10, 180), // TODO:
-                        ui::palette().col_transparent,
-                        'x',
-                        250.0,
-                        0.0,
-                        (1.0, 1.0),
-                    )
-                }
+        if let Some(t) = valid_target {
+            // deal damage
+            t.actuators.hp -= self.lvl;
+            debug!("target hp: {}/{}", t.actuators.hp, t.actuators.max_hp);
+            if owner.physics.is_visible {
+                state.log.add(
+                    format!(
+                        "{} attacked {} for {} damage",
+                        &owner.visual.name, &t.visual.name, self.lvl
+                    ),
+                    game::msg::Class::Info,
+                );
+                // show particle effect
+                ui::register_particle(
+                    t.pos,
+                    ui::Rgba::new(200, 10, 10, 180), // TODO:
+                    ui::palette().col_transparent,
+                    'x',
+                    250.0,
+                    0.0,
+                    (1.0, 1.0),
+                );
+            }
 
-                ActionResult::Success {
-                    callback: ObjectFeedback::NoFeedback,
-                }
+            ActionResult::Success {
+                callback: ObjectFeedback::NoFeedback,
             }
-            None => {
-                if owner.is_player() {
-                    state
-                        .log
-                        .add("Nothing to attack here", game::msg::MsgClass::Info);
-                }
-                ActionResult::Failure
+        } else {
+            if owner.is_player() {
+                state
+                    .log
+                    .add("Nothing to attack here", game::msg::Class::Info);
             }
+            ActionResult::Failure
         }
     }
 
@@ -313,7 +310,7 @@ pub struct InjectRnaVirus {
 
 impl InjectRnaVirus {
     pub fn new(target: Target, dna: Vec<u8>) -> Self {
-        InjectRnaVirus {
+        Self {
             lvl: 0,
             target,
             rna: dna,
@@ -336,14 +333,14 @@ impl Action for InjectRnaVirus {
             // check whether the virus can attach to the object and whether the object is an actual
             // cell and not a plasmid or another virus
             // if yes, replace the control and force the cell to produce viruses
-            let has_infected = if target
+            let is_target_not_virus = target
                 .processors
                 .receptors
                 .iter()
                 .any(|e| owner.processors.receptors.contains(e))
                 && (target.dna.dna_type == genetics::DnaType::Nucleus
-                    || target.dna.dna_type == genetics::DnaType::Nucleoid)
-            {
+                    || target.dna.dna_type == genetics::DnaType::Nucleoid);
+            if is_target_not_virus {
                 if target.is_player()
                     || target.physics.is_visible
                     || owner.is_player()
@@ -355,13 +352,13 @@ impl Action for InjectRnaVirus {
                             "{0} {1} infected {2} with virus RNA",
                             owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 let original_ai = target.control.take();
                 // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
-                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
+                    control::Controller::Npc(Box::new(ai::ForcedVirusProduction::new_duration(
                         original_ai,
                         4,
                         Some(owner.dna.raw.clone()),
@@ -373,24 +370,12 @@ impl Action for InjectRnaVirus {
                 // The virus 'dies' symbolically.
                 owner.die(state, objects);
                 // Funny, because it's still debated as to whether viruses are alive to begin.
-                true
-            } else {
-                false
-            };
+            }
 
             objects.replace(index, target);
-            if has_infected {
-                return ActionResult::Success {
-                    callback: ObjectFeedback::NoFeedback,
-                };
-            }
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
-            }
-        } else {
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
-            }
+        }
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
         }
     }
 
@@ -434,8 +419,8 @@ pub struct InjectRetrovirus {
 }
 
 impl InjectRetrovirus {
-    pub fn _new() -> Self {
-        InjectRetrovirus {
+    pub const fn _new() -> Self {
+        Self {
             lvl: 0,
             target: Target::Center,
         }
@@ -476,7 +461,7 @@ impl Action for InjectRetrovirus {
                             "{0} {1} infected {2} with virus RNA",
                             owner.visual.name, verb, target.visual.name
                         ),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 // insert virus dna into target dna
@@ -492,7 +477,7 @@ impl Action for InjectRetrovirus {
                 let original_ai = target.control.take();
                 // TODO: Determine the duration of "infection" dynamically.
                 let overriding_ai =
-                    control::Controller::Npc(Box::new(ai::AiForceVirusProduction::new_duration(
+                    control::Controller::Npc(Box::new(ai::ForcedVirusProduction::new_duration(
                         original_ai,
                         4,
                         Some(owner.dna.raw.clone()),
@@ -515,19 +500,15 @@ impl Action for InjectRetrovirus {
                     callback: ObjectFeedback::NoFeedback,
                 };
             }
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
-            }
-        } else {
-            ActionResult::Success {
-                callback: ObjectFeedback::NoFeedback,
-            }
+        }
+        ActionResult::Success {
+            callback: ObjectFeedback::NoFeedback,
         }
     }
 
     /// NOP, because this action can only be self-targeted.
     fn set_target(&mut self, t: Target) {
-        self.target = t
+        self.target = t;
     }
 
     fn set_level(&mut self, lvl: i32) {
@@ -570,8 +551,8 @@ pub struct ProduceVirion {
 }
 
 impl ProduceVirion {
-    pub fn new(virus_rna: Option<Vec<u8>>) -> Self {
-        ProduceVirion { lvl: 0, virus_rna }
+    pub const fn new(virus_rna: Option<Vec<u8>>) -> Self {
+        Self { lvl: 0, virus_rna }
     }
 }
 
@@ -600,7 +581,7 @@ impl Action for ProduceVirion {
                     };
                     state.log.add(
                         format!("{0} {1} forced to produce virions", owner.visual.name, verb),
-                        game::msg::MsgClass::Alert,
+                        game::msg::Class::Alert,
                     );
                 }
                 owner.inventory.items.push(
@@ -615,7 +596,7 @@ impl Action for ProduceVirion {
                                 .gene_library
                                 .dna_to_traits(genetics::DnaType::Rna, dna),
                         )
-                        .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
+                        .control(control::Controller::Npc(Box::new(ai::Virus {}))),
                 );
             }
             None => {
@@ -646,7 +627,7 @@ impl Action for ProduceVirion {
                                         .gene_library
                                         .dna_to_traits(genetics::DnaType::Rna, &dna_from_seq),
                                 )
-                                .control(control::Controller::Npc(Box::new(ai::AiVirus {}))),
+                                .control(control::Controller::Npc(Box::new(ai::Virus {}))),
                             // TODO: Separate Ai for retroviruses?
                         );
                     }
@@ -694,8 +675,8 @@ pub struct EditGenome {
 }
 
 impl EditGenome {
-    pub fn new() -> Self {
-        EditGenome { lvl: 0 }
+    pub const fn new() -> Self {
+        Self { lvl: 0 }
     }
 }
 
@@ -751,8 +732,8 @@ pub struct KillSwitch {
 }
 
 impl KillSwitch {
-    pub fn new() -> Self {
-        KillSwitch {
+    pub const fn new() -> Self {
+        Self {
             target: Target::Center,
             lvl: 0,
         }
@@ -767,50 +748,46 @@ impl Action for KillSwitch {
         objects: &mut ObjectStore,
         owner: &mut Object,
     ) -> ActionResult {
-        match self.target {
-            Target::Center => {
-                owner.die(state, objects);
-                let callback = if owner.physics.is_visible {
+        if self.target == Target::Center {
+            owner.die(state, objects);
+            let callback = if owner.physics.is_visible {
+                ObjectFeedback::Render
+            } else {
+                ObjectFeedback::NoFeedback
+            };
+
+            ActionResult::Success { callback }
+        } else {
+            let t_pos: Position = owner.pos.get_translated(&self.target.to_pos());
+            if let Some((index, Some(mut target))) = objects.extract_non_tile_by_pos(&t_pos) {
+                // kill switches of other cells can only be activated if they have both
+                // a) the killswitch gene
+                // b) a matching receptor that the owner can use to connect to the target
+                let has_killswitch = target
+                    .dna
+                    .simplified
+                    .iter()
+                    .any(|d| d.trait_name == "Kill Switch");
+                let has_matching_receptor = target
+                    .processors
+                    .receptors
+                    .iter()
+                    .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
+                if has_killswitch && has_matching_receptor {
+                    target.die(state, objects);
+                }
+
+                let callback = if !target.alive && target.physics.is_visible {
                     ObjectFeedback::Render
                 } else {
                     ObjectFeedback::NoFeedback
                 };
 
+                objects.replace(index, target);
+
                 ActionResult::Success { callback }
-            }
-
-            _ => {
-                let t_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-                if let Some((index, Some(mut target))) = objects.extract_non_tile_by_pos(&t_pos) {
-                    // kill switches of other cells can only be activated if they have both
-                    // a) the killswitch gene
-                    // b) a matching receptor that the owner can use to connect to the target
-                    let has_killswitch = target
-                        .dna
-                        .simplified
-                        .iter()
-                        .any(|d| d.trait_name == "Kill Switch");
-                    let has_matching_receptor = target
-                        .processors
-                        .receptors
-                        .iter()
-                        .any(|e1| owner.processors.receptors.iter().any(|e2| e1.typ == e2.typ));
-                    if has_killswitch && has_matching_receptor {
-                        target.die(state, objects);
-                    }
-
-                    let callback = if !target.alive && target.physics.is_visible {
-                        ObjectFeedback::Render
-                    } else {
-                        ObjectFeedback::NoFeedback
-                    };
-
-                    objects.replace(index, target);
-
-                    ActionResult::Success { callback }
-                } else {
-                    ActionResult::Failure
-                }
+            } else {
+                ActionResult::Failure
             }
         }
     }
@@ -854,8 +831,8 @@ pub struct BinaryFission {
 }
 
 impl BinaryFission {
-    pub fn new() -> Self {
-        BinaryFission {
+    pub const fn new() -> Self {
+        Self {
             target: Target::Center,
             lvl: 0,
         }
@@ -863,6 +840,7 @@ impl BinaryFission {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
+#[allow(clippy::too_many_lines)]
 impl Action for BinaryFission {
     fn perform(
         &self,
@@ -873,137 +851,127 @@ impl Action for BinaryFission {
         // If the acting cell is a tile, turn a floor tile into a wall tile and insert a copy of
         // this one's (mutated) genome.
         let target_pos: Position = owner.pos.get_translated(&self.target.to_pos());
-        let is_pos_available = !objects.is_pos_occupied(&target_pos);
+        let is_pos_unavailable = objects.is_pos_occupied(&target_pos);
 
-        if is_pos_available {
-            let child_obj =
-                if let Some((idx, Some(mut t))) = objects.extract_tile_by_pos(&target_pos) {
-                    if owner.tile.is_some() && owner.physics.is_blocking {
-                        if !t.physics.is_blocking {
-                            // turn into wall
-                            t.set_tile_to_wall();
-                            // insert (mutated) genome
-                            t.set_dna(owner.dna.clone());
-                            t.update_genome_from_dna(state);
-                            t.processors.life_elapsed = 0;
+        if is_pos_unavailable {
+            return ActionResult::Failure;
+        }
 
-                            // play a little particle effect
-                            if t.physics.is_visible {
-                                // cover up the new cell as long as the creation particles play
-                                let fg = ui::palette().world_bg_floor_fov_false;
-                                let bg = ui::palette().world_bg_floor_fov_false;
-                                ui::register_particle(t.pos, fg, bg, '○', 800.0, 0.0, (1.0, 1.0));
-                                let o_fg = owner.visual.fg_color;
-                                let o_bg = owner.visual.bg_color;
-                                ui::register_particles(
-                                    particle::ParticleBuilder::new(
-                                        owner.pos.x() as f32,
-                                        owner.pos.y() as f32,
-                                        o_fg,
-                                        o_bg,
-                                        owner.visual.glyph,
-                                        800.0,
-                                    )
-                                    .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
-                                    .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
-                                    .with_scale((0.0, 0.0), (1.0, 1.0)),
-                                )
-                            }
+        let child_obj = if let Some((idx, Some(mut t))) = objects.extract_tile_by_pos(&target_pos) {
+            let is_this_wall_tile = owner.tile.is_some() && owner.physics.is_blocking;
+            if is_this_wall_tile {
+                if !t.physics.is_blocking {
+                    // turn into wall
+                    t.set_tile_to_wall();
+                    // insert (mutated) genome
+                    t.set_dna(owner.dna.clone());
+                    t.update_genome_from_dna(state);
+                    t.processors.life_elapsed = 0;
 
-                            objects.replace(idx, t);
-                            // return prematurely because we don't need to insert anything new into
-                            // the object vector
-                            return ActionResult::Success {
-                                callback: ObjectFeedback::NoFeedback,
-                            };
-                        } else {
-                            objects.replace(idx, t);
-                            None
-                        }
-                    } else {
-                        // create a new object
-                        let child_ctrl = match &owner.control {
-                            Some(ctrl) => match ctrl {
-                                control::Controller::Npc(ai) => {
-                                    Some(control::Controller::Npc(ai.clone()))
-                                }
-                                control::Controller::Player(_) => {
-                                    Some(control::Controller::Player(control::Player::new()))
-                                }
-                            },
-                            None => None,
-                        };
-                        let mut child = Object::new()
-                            .position(&t.pos)
-                            .living(true)
-                            .visualize(
-                                owner.visual.name.as_str(),
+                    // play a little particle effect
+                    if t.physics.is_visible {
+                        // cover up the new cell as long as the creation particles play
+                        let fg = ui::palette().world_bg_floor_fov_false;
+                        let bg = ui::palette().world_bg_floor_fov_false;
+                        ui::register_particle(t.pos, fg, bg, '○', 800.0, 0.0, (1.0, 1.0));
+                        let o_fg = owner.visual.fg_color;
+                        let o_bg = owner.visual.bg_color;
+                        ui::register_particles(
+                            particle::Builder::new(
+                                owner.pos.x() as f32,
+                                owner.pos.y() as f32,
+                                o_fg,
+                                o_bg,
                                 owner.visual.glyph,
-                                owner.visual.fg_color,
+                                800.0,
                             )
-                            .genome(
-                                owner.gene_stability,
-                                state
-                                    .gene_library
-                                    .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
-                            )
-                            .control_opt(child_ctrl)
-                            .living(true);
-                        child.physics.is_visible = t.physics.is_visible;
-                        // play a little particle effect
-                        if child.physics.is_visible {
-                            // cover up the new cell as long as the creation particles play
-                            let t_fg = t.visual.fg_color;
-                            let t_bg = t.visual.bg_color;
-                            ui::register_particle(
-                                t.pos,
-                                t_fg,
-                                t_bg,
-                                t.visual.glyph,
-                                600.0,
-                                0.0,
-                                (1.0, 1.0),
-                            );
-                            let fg = owner.visual.fg_color;
-                            let bg = owner.visual.bg_color;
-                            let start_x =
-                                owner.pos.x() as f32 + ((t.pos.x() - owner.pos.x()) as f32 * 0.5);
-                            let start_y =
-                                owner.pos.y() as f32 + ((t.pos.y() - owner.pos.y()) as f32 * 0.5);
-                            ui::register_particles(
-                                particle::ParticleBuilder::new(
-                                    start_x,
-                                    start_y,
-                                    fg,
-                                    bg,
-                                    child.visual.glyph,
-                                    600.0,
-                                )
-                                .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
-                                .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
-                                .with_scale((0.0, 0.0), (1.0, 1.0)),
-                            )
-                        }
-                        objects.replace(idx, t);
-                        Some(child)
+                            .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
+                            .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                            .with_scale((0.0, 0.0), (1.0, 1.0)),
+                        );
                     }
-                } else {
-                    None
-                };
 
-            // finally place the 'child' cell into the world
-            if let Some(child) = child_obj {
-                let callback = if child.physics.is_visible && !game::env().is_debug_mode {
-                    ObjectFeedback::Render
-                } else {
-                    ObjectFeedback::NoFeedback
-                };
-                objects.push(child);
-
-                ActionResult::Success { callback }
+                    objects.replace(idx, t);
+                    // return prematurely because we don't need to insert anything new into
+                    // the object vector
+                    return ActionResult::Success {
+                        callback: ObjectFeedback::NoFeedback,
+                    };
+                }
+                objects.replace(idx, t);
+                None
             } else {
-                ActionResult::Failure
+                // create a new object
+                let child_ctrl = owner.control.as_ref().map(|ctrl| match ctrl {
+                    control::Controller::Npc(ai) => control::Controller::Npc(ai.clone()),
+                    control::Controller::Player(_) => {
+                        control::Controller::Player(control::Player::new())
+                    }
+                });
+
+                let mut child = Object::new()
+                    .position(&t.pos)
+                    .living(true)
+                    .visualize(
+                        owner.visual.name.as_str(),
+                        owner.visual.glyph,
+                        owner.visual.fg_color,
+                    )
+                    .genome(
+                        owner.gene_stability,
+                        state
+                            .gene_library
+                            .dna_to_traits(owner.dna.dna_type, &owner.dna.raw),
+                    )
+                    .control_opt(child_ctrl)
+                    .living(true);
+                child.physics.is_visible = t.physics.is_visible;
+                // play a little particle effect
+                if child.physics.is_visible {
+                    // cover up the new cell as long as the creation particles play
+                    let t_fg = t.visual.fg_color;
+                    let t_bg = t.visual.bg_color;
+                    ui::register_particle(
+                        t.pos,
+                        t_fg,
+                        t_bg,
+                        t.visual.glyph,
+                        600.0,
+                        0.0,
+                        (1.0, 1.0),
+                    );
+                    let fg = owner.visual.fg_color;
+                    let bg = owner.visual.bg_color;
+                    let start_x =
+                        ((t.pos.x() - owner.pos.x()) as f32).mul_add(0.5, owner.pos.x() as f32);
+                    let start_y =
+                        ((t.pos.y() - owner.pos.y()) as f32).mul_add(0.5, owner.pos.y() as f32);
+                    ui::register_particles(
+                        particle::Builder::new(start_x, start_y, fg, bg, child.visual.glyph, 600.0)
+                            .with_moving_to(t.pos.x() as f32, t.pos.y() as f32)
+                            .with_end_color((180, 255, 180, 180), (0, 0, 0, 0))
+                            .with_scale((0.0, 0.0), (1.0, 1.0)),
+                    );
+                }
+                objects.replace(idx, t);
+                Some(child)
             }
+        } else {
+            None
+        };
+
+        // finally place the 'child' cell into the world
+        if let Some(child) = child_obj {
+            let callback = if child.physics.is_visible
+                && matches!(game::env().debug_mode, game::env::GameOption::Disabled)
+            {
+                ObjectFeedback::Render
+            } else {
+                ObjectFeedback::NoFeedback
+            };
+            objects.push(child);
+
+            ActionResult::Success { callback }
         } else {
             ActionResult::Failure
         }

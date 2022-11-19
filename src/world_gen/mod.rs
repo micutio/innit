@@ -12,7 +12,7 @@ use crate::{game, ui};
 use serde::{Deserialize, Serialize};
 
 /// The world generation trait only requests to implement a method that
-/// manipulated the world tiles provided in the GameObject struct.
+/// manipulated the world tiles provided in the `GameObject` struct.
 pub trait WorldGen {
     /// Populate the world with tiles, objects and the player.
     /// Returns a runstate, which would be either `Runstate::Ticking` or `Runstate::WorldGen` to
@@ -22,7 +22,7 @@ pub trait WorldGen {
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::template::ObjectTemplate],
+        object_templates: &[raws::templating::ObjectTemplate],
     ) -> game::RunState;
 
     /// Returns the position of where the player was placed.
@@ -37,11 +37,11 @@ pub enum TileType {
 }
 
 impl TileType {
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         match self {
-            TileType::Wall => "tissue cell",
-            TileType::Floor => "floor tile",
-            TileType::Void => "void tile",
+            Self::Wall => "tissue cell",
+            Self::Floor => "floor tile",
+            Self::Void => "void tile",
         }
     }
 }
@@ -51,46 +51,46 @@ impl TileType {
 pub struct Tile {
     pub typ: TileType,
     pub morphogen: f64, // growth protein that controls where walls can 'grow'
-    pub complement: entity::complement::ComplementProteins,
+    pub complement: entity::complement::Proteins,
 }
 
 impl Tile {
     pub fn new_wall(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col;
-        let bg_col;
-        if game::env().is_debug_mode {
-            fg_col = ui::palette().world_fg_wall_fov_true;
-            bg_col = ui::palette().world_bg_wall_fov_true;
-        } else {
-            fg_col = ui::palette().world_fg_wall_fov_false;
-            bg_col = ui::palette().world_bg_wall_fov_false;
-        }
+        let dbg = game::env().debug_mode;
+        let fg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_fg_wall_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_fg_wall_fov_false,
+        };
+        let bg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_bg_wall_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_bg_wall_fov_false,
+        };
         Object::new()
             .position_xy(x, y)
             .living(true)
             .visualize_bg(TileType::Wall.as_str(), '○', fg_col, bg_col)
             .physical(true, true, is_visible)
             .tile(TileType::Wall)
-            .control(control::Controller::Npc(Box::new(ai::AiWallTile)))
+            .control(control::Controller::Npc(Box::new(ai::WallTile)))
     }
 
     pub fn new_floor(x: i32, y: i32, is_visible: bool) -> Object {
-        let fg_col;
-        let bg_col;
-        if game::env().is_debug_mode {
-            fg_col = ui::palette().world_fg_floor_fov_true;
-            bg_col = ui::palette().world_bg_floor_fov_true;
-        } else {
-            fg_col = ui::palette().world_fg_floor_fov_false;
-            bg_col = ui::palette().world_bg_floor_fov_false;
-        }
+        let dbg = game::env().debug_mode;
+        let fg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_fg_floor_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_fg_floor_fov_false,
+        };
+        let bg_col = match dbg {
+            game::env::GameOption::Enabled => ui::palette().world_bg_floor_fov_true,
+            game::env::GameOption::Disabled => ui::palette().world_bg_floor_fov_false,
+        };
         Object::new()
             .position_xy(x, y)
             .living(true)
             .visualize_bg(TileType::Floor.as_str(), ' ', fg_col, bg_col)
             .physical(false, false, is_visible)
             .tile(TileType::Floor)
-            .control(control::Controller::Npc(Box::new(ai::AiFloorTile)))
+            .control(control::Controller::Npc(Box::new(ai::FloorTile)))
     }
 
     pub fn new_void(x: i32, y: i32, is_visible: bool) -> Object {

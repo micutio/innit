@@ -8,7 +8,7 @@ use crate::entity::act::{self, Action};
 use crate::entity::control::{self, Ai};
 use crate::entity::{genetics, Object};
 use crate::game::{self, ObjectStore, State};
-use crate::util::rng::RngExtended;
+use crate::util::random::RngExtended;
 
 use rand::seq::{IteratorRandom, SliceRandom};
 use serde::{Deserialize, Serialize};
@@ -19,10 +19,10 @@ use std::fmt::Debug;
 /// which saves some more CPU cycles.
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
-pub struct AiPassive;
+pub struct Passive;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiPassive {
+impl Ai for Passive {
     fn act(
         &mut self,
         _state: &mut State,
@@ -36,16 +36,16 @@ impl Ai for AiPassive {
 /// Each turn chooses a random valid action with a random valid target
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
-pub struct AiRandom;
+pub struct RandomAction;
 
-impl AiRandom {
-    pub fn new() -> Self {
-        AiRandom {}
+impl RandomAction {
+    pub const fn new() -> Self {
+        Self {}
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiRandom {
+impl Ai for RandomAction {
     fn act(
         &mut self,
         state: &mut State,
@@ -88,7 +88,7 @@ impl Ai for AiRandom {
 
         // b) no empty targets available
         if !adjacent_targets.iter().any(|t| !t.physics.is_blocking) {
-            valid_targets.retain(|t| *t != act::TargetCategory::EmptyObject)
+            valid_targets.retain(|t| *t != act::TargetCategory::EmptyObject);
         }
 
         // d) no blocking targets available => remove blocking from selection
@@ -118,7 +118,7 @@ impl Ai for AiRandom {
                         .filter(|at| at.physics.is_blocking)
                         .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos));
                     }
                 }
                 act::TargetCategory::EmptyObject => {
@@ -127,12 +127,12 @@ impl Ai for AiRandom {
                         .filter(|at| !at.physics.is_blocking)
                         .choose(&mut state.rng)
                     {
-                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos));
                     }
                 }
                 act::TargetCategory::Any => {
                     if let Some(target_obj) = adjacent_targets.choose(&mut state.rng) {
-                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos))
+                        boxed_action.set_target(act::Target::from_pos(&owner.pos, &target_obj.pos));
                     }
                 }
             }
@@ -144,10 +144,10 @@ impl Ai for AiRandom {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AiRandomWalk;
+pub struct RandomWalk;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiRandomWalk {
+impl Ai for RandomWalk {
     fn act(
         &mut self,
         state: &mut State,
@@ -177,16 +177,16 @@ impl Ai for AiRandomWalk {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AiVirus;
+pub struct Virus;
 
-impl AiVirus {
-    pub fn new() -> Self {
-        AiVirus {}
+impl Virus {
+    pub const fn new() -> Self {
+        Self {}
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiVirus {
+impl Ai for Virus {
     fn act(
         &mut self,
         state: &mut State,
@@ -272,20 +272,20 @@ impl Ai for AiVirus {
 
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
-pub struct AiForceVirusProduction {
+pub struct ForcedVirusProduction {
     original_ai: Option<control::Controller>,
     turns_active: Option<i32>,
     current_turn: i32,
     rna: Option<Vec<u8>>,
 }
 
-impl AiForceVirusProduction {
-    pub fn new_duration(
+impl ForcedVirusProduction {
+    pub const fn new_duration(
         original_ai: Option<control::Controller>,
         duration_turns: i32,
         rna: Option<Vec<u8>>,
     ) -> Self {
-        AiForceVirusProduction {
+        Self {
             original_ai,
             turns_active: Some(duration_turns),
             current_turn: 0,
@@ -293,8 +293,8 @@ impl AiForceVirusProduction {
         }
     }
 
-    fn _new_forever(original_ai: Option<control::Controller>, rna: Option<Vec<u8>>) -> Self {
-        AiForceVirusProduction {
+    const fn _new_forever(original_ai: Option<control::Controller>, rna: Option<Vec<u8>>) -> Self {
+        Self {
             original_ai,
             turns_active: None,
             current_turn: 0,
@@ -304,7 +304,7 @@ impl AiForceVirusProduction {
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiForceVirusProduction {
+impl Ai for ForcedVirusProduction {
     fn act(
         &mut self,
         _state: &mut State,
@@ -326,10 +326,10 @@ impl Ai for AiForceVirusProduction {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AiWallTile;
+pub struct WallTile;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiWallTile {
+impl Ai for WallTile {
     fn act(
         &mut self,
         state: &mut State,
@@ -369,11 +369,9 @@ impl Ai for AiWallTile {
                 .into_iter()
                 .flatten()
                 .filter(|obj| {
-                    if let Some(_tile) = &obj.tile {
+                    obj.tile.as_ref().map_or(false, |_tile| {
                         !obj.physics.is_blocking || !objects.is_pos_occupied(&obj.pos)
-                    } else {
-                        false
-                    }
+                    })
                 })
                 .choose(&mut state.rng);
             if let Some(target) = target_cell {
@@ -391,10 +389,10 @@ impl Ai for AiWallTile {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AiFloorTile;
+pub struct FloorTile;
 
 #[cfg_attr(not(target_arch = "wasm32"), typetag::serde)]
-impl Ai for AiFloorTile {
+impl Ai for FloorTile {
     fn act(
         &mut self,
         _state: &mut State,

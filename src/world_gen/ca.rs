@@ -1,7 +1,7 @@
 use crate::entity::Object;
 use crate::entity::{act, ai, control, genetics, inventory};
 use crate::game::{self, ObjectStore, State};
-use crate::util::rng::RngExtended;
+use crate::util::random::RngExtended;
 use crate::world_gen::WorldGen;
 use crate::{raws, world_gen};
 
@@ -11,15 +11,15 @@ const CA_CYCLES: i32 = 150;
 /// blood vessels, branching fractal-like lungs, spongy tissue and more.
 // TODO: Rename into game::consts::world_gen_ca::CaWorldGenerator and extract ca construction into dedicated file
 //       once we have more than one CA variant.
-pub struct CaBased {
+pub struct WorldGenerator {
     player_start: (i32, i32),
     ca_cycle_count: i32,
     ca: Option<casim::ca::Simulation<CaCell>>,
 }
 
-impl CaBased {
-    pub fn new() -> Self {
-        CaBased {
+impl WorldGenerator {
+    pub const fn new() -> Self {
+        Self {
             player_start: (0, 0),
             ca_cycle_count: 0,
             ca: None,
@@ -27,14 +27,14 @@ impl CaBased {
     }
 }
 
-impl WorldGen for CaBased {
+impl WorldGen for WorldGenerator {
     // Idea: use level to scale length of dna of generated entities
     fn make_world(
         &mut self,
         state: &mut State,
         objects: &mut ObjectStore,
         spawns: &[raws::spawn::Spawn],
-        object_templates: &[raws::template::ObjectTemplate],
+        object_templates: &[raws::templating::ObjectTemplate],
     ) -> game::RunState {
         // step 1: create ca, if not already there
         if self.ca.is_none() {
@@ -57,17 +57,17 @@ impl WorldGen for CaBased {
                             t.morphogen = cell.morphogen;
                             if t.morphogen < 0.3 {
                                 if let world_gen::TileType::Wall = t.typ {
-                                    tile_obj.set_tile_to_floor()
+                                    tile_obj.set_tile_to_floor();
                                 }
                             } else if let world_gen::TileType::Floor = t.typ {
-                                tile_obj.set_tile_to_wall()
+                                tile_obj.set_tile_to_wall();
                             }
                         }
                     }
                 }
             }
             self.ca_cycle_count += 1;
-            if game::env().is_debug_mode {
+            if matches!(game::env().debug_mode, game::env::GameOption::Enabled) {
                 return game::RunState::WorldGen;
             }
         }
@@ -122,7 +122,10 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
     let mid_y = game::consts::WORLD_HEIGHT / 2;
     // let max_dist =
     //     f64::sqrt((game::consts::WORLD_WIDTH * game::consts::WORLD_WIDTH) as f64 + (game::consts::WORLD_HEIGHT * game::consts::WORLD_HEIGHT) as f64);
-    let max_dist = i32::max(game::consts::WORLD_WIDTH, game::consts::WORLD_HEIGHT) as f64;
+    let max_dist = f64::from(i32::max(
+        game::consts::WORLD_WIDTH,
+        game::consts::WORLD_HEIGHT,
+    ));
     for y in 0..game::consts::WORLD_HEIGHT {
         for x in 0..game::consts::WORLD_WIDTH {
             let idx = casim::ca::coord_to_idx(game::consts::WORLD_WIDTH, x, y);
@@ -134,7 +137,7 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
             let dist_to_y_border = i32::min(y, game::consts::WORLD_HEIGHT - y);
             let min_dist_border = i32::min(dist_to_x_border, dist_to_y_border);
 
-            let morphogen = (((min_dist_border * 2) as f64 / max_dist) * 0.20) + 0.50;
+            let morphogen = (f64::from(min_dist_border * 2) / max_dist).mul_add(0.20, 0.50);
             let morph_clamped = f64::min(f64::max(morphogen, 0.01), 1.0);
             if state.rng.flip_with_prob(morph_clamped) {
                 cell.state = CellState::Green;
@@ -188,10 +191,10 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
         // burnt cells always have zero mophogen content, this is to maintain the shape of the
         // generated world
         if let CellState::Burnt = cell.state {
-            cell.morphogen = 0.0
+            cell.morphogen = 0.0;
         } else {
             // propagate morphogen
-            let avg_morphogen = neigh_morphogen / neigh_count as f64;
+            let avg_morphogen = neigh_morphogen / f64::from(neigh_count);
             let diffusion = 0.05 * (avg_morphogen - cell.morphogen);
             cell.morphogen += diffusion;
         }
@@ -206,11 +209,12 @@ fn make_ca(state: &mut State) -> casim::ca::Simulation<CaCell> {
     )
 }
 
+#[allow(clippy::option_if_let_else)]
 fn place_objects(
     state: &mut State,
     objects: &mut ObjectStore,
     spawns: &[raws::spawn::Spawn],
-    object_templates: &[raws::template::ObjectTemplate],
+    object_templates: &[raws::templating::ObjectTemplate],
 ) {
     use rand::distributions::WeightedIndex;
     use rand::prelude::*;
@@ -234,105 +238,114 @@ fn place_objects(
     let npc_count = state.rng.gen_range(0..npc_upper_limit);
     for _ in 0..npc_count {
         // choose random spot for this npc
-        let tile = objects
+        let opt_tile = objects
             .get_tiles()
             .iter()
             .flatten()
             .filter(|t| !t.physics.is_blocking)
             .choose(&mut state.rng);
 
-        if let Some(t) = tile {
+        if let Some(tile) = opt_tile {
             let npc_type = npc_chances[npc_dist.sample(&mut state.rng)].0;
             if let Some(template) = object_templates.iter().find(|t| t.npc.eq(npc_type)) {
-                // assign controller
-                use control::Controller;
-                let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
-                    match ctrl.as_str() {
-                        "player" => Some(Controller::Player(control::Player::new())),
-                        "AiPassive" => Some(Controller::Npc(Box::new(ai::AiPassive))),
-                        "AiRandom" => Some(Controller::Npc(Box::new(ai::AiRandom::new()))),
-                        "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::AiRandomWalk))),
-                        "AiVirus" => Some(Controller::Npc(Box::new(ai::AiVirus::new()))),
-                        s => {
-                            error! {"Unknown controller type '{}'", s};
-                            // Controller::Npc(Box::new(AiPassive))
-                            continue;
-                        }
-                    }
-                } else {
-                    None
-                };
-
-                // generate DNA, either probabilistically or from a template
-                use raws::template::DnaTemplate;
-                let raw_dna = match &template.dna_template {
-                    DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
-                        &mut state.rng,
-                        template.dna_type == genetics::DnaType::Rna,
-                        *genome_len,
-                    ),
-                    DnaTemplate::Distributed {
-                        s_rate,
-                        p_rate,
-                        a_rate,
-                        genome_len,
-                    } => state.gene_library.dna_from_distribution(
-                        &mut state.rng,
-                        &[*s_rate, *p_rate, *a_rate],
-                        &[
-                            genetics::TraitFamily::Sensing,
-                            genetics::TraitFamily::Processing,
-                            genetics::TraitFamily::Actuating,
-                        ],
-                        template.dna_type == genetics::DnaType::Rna,
-                        *genome_len,
-                    ),
-                    DnaTemplate::Defined { traits } => state
-                        .gene_library
-                        .dna_from_trait_strs(&mut state.rng, traits),
-                };
-
-                // populate inventory if present
-                let inventory_item = if let Some(item) = &template.item {
-                    let action_instance = if item.action.is_empty() {
-                        None
-                    } else {
-                        match act::action_from_string(item.action.as_ref()) {
-                            Ok(action) => Some(action.clone()),
-                            Err(msg) => {
-                                error!("error getting action from string: {}", msg);
-                                continue;
-                            }
-                        }
-                    };
-                    Some(inventory::Item::new(&item.name, action_instance))
-                } else {
-                    None
-                };
-
-                // finally cobble everything together and insert the new object into the world
-                let new_npc = Object::new()
-                    .position(&t.pos)
-                    .living(true)
-                    .visualize(template.npc.as_str(), template.glyph, template.color)
-                    .physical(
-                        template.physics.is_blocking,
-                        template.physics.is_blocking_sight,
-                        template.physics.is_always_visible,
-                    )
-                    .control_opt(controller)
-                    .genome(
-                        template.stability,
-                        state
-                            .gene_library
-                            .dna_to_traits(template.dna_type, &raw_dna),
-                    )
-                    .itemize(inventory_item);
-
-                objects.push(new_npc);
+                if let Some(new_npc) = try_create_new_npc(state, template, tile) {
+                    objects.push(new_npc);
+                }
             } else {
                 error!("No object template found for NPC type '{}'", npc_type);
             }
         }
     }
+}
+
+fn try_create_new_npc(
+    state: &mut State,
+    template: &raws::templating::ObjectTemplate,
+    tile: &Object,
+) -> Option<Object> {
+    // assign controller
+    use control::Controller;
+    let controller: Option<Controller> = if let Some(ctrl) = &template.controller {
+        match ctrl.as_str() {
+            "player" => Some(Controller::Player(control::Player::new())),
+            "AiPassive" => Some(Controller::Npc(Box::new(ai::Passive))),
+            "AiRandom" => Some(Controller::Npc(Box::new(ai::RandomAction::new()))),
+            "AiRandomWalk" => Some(Controller::Npc(Box::new(ai::RandomWalk))),
+            "AiVirus" => Some(Controller::Npc(Box::new(ai::Virus::new()))),
+            c => {
+                error! {"Unknown controller type '{}'", c};
+                // Controller::Npc(Box::new(AiPassive))
+                return None;
+            }
+        }
+    } else {
+        None
+    };
+
+    // generate DNA, either probabilistically or from a template
+    let raw_dna = match &template.dna_template {
+        raws::templating::DnaTemplate::Random { genome_len } => state.gene_library.dna_from_size(
+            &mut state.rng,
+            template.dna_type == genetics::DnaType::Rna,
+            *genome_len,
+        ),
+        raws::templating::DnaTemplate::Distributed {
+            s_rate,
+            p_rate,
+            a_rate,
+            genome_len,
+        } => state.gene_library.dna_from_distribution(
+            &mut state.rng,
+            &[*s_rate, *p_rate, *a_rate],
+            &[
+                genetics::TraitFamily::Sensing,
+                genetics::TraitFamily::Processing,
+                genetics::TraitFamily::Actuating,
+            ],
+            template.dna_type == genetics::DnaType::Rna,
+            *genome_len,
+        ),
+        raws::templating::DnaTemplate::Defined { traits } => state
+            .gene_library
+            .dna_from_trait_strs(&mut state.rng, traits),
+    };
+
+    // populate inventory if present
+    let inventory_item = if let Some(item) = &template.item {
+        let action_instance = if item.action.is_empty() {
+            None
+        } else {
+            match act::action_from_string(item.action.as_ref()) {
+                Ok(action) => Some(action.clone()),
+                Err(msg) => {
+                    error!("error getting action from string: {}", msg);
+                    return None;
+                }
+            }
+        };
+        Some(inventory::Item::new(&item.name, action_instance))
+    } else {
+        None
+    };
+
+    // finally cobble everything together and insert the new object into the world
+    let new_npc = Object::new()
+        .position(&tile.pos)
+        .living(true)
+        .visualize(template.npc.as_str(), template.glyph, template.color)
+        .physical(
+            template.physics.is_blocking,
+            template.physics.is_blocking_sight,
+            template.physics.is_always_visible,
+        )
+        .control_opt(controller)
+        .genome(
+            template.stability,
+            state
+                .gene_library
+                .dna_to_traits(template.dna_type, &raw_dna),
+        )
+        .itemize(inventory_item);
+
+    Some(new_npc)
 }

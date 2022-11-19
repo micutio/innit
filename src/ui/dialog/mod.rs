@@ -16,14 +16,14 @@ impl InfoBox {
     pub fn new(title: String, lines: Vec<String>) -> Self {
         let box_width: i32 = usize::max(
             title.len() + 5,
-            lines.iter().map(|l| l.len()).max().unwrap() + 1,
+            lines.iter().map(std::string::String::len).max().unwrap() + 1,
         ) as i32;
         let box_height = lines.len() as i32 + 1;
         let x1 = (game::consts::SCREEN_WIDTH / 2) - (box_width / 2);
         let y1 = (game::consts::SCREEN_HEIGHT / 2) - (box_height / 2);
         let x2 = x1 + box_width;
         let y2 = y1 + box_height;
-        InfoBox {
+        Self {
             title,
             lines,
             layout: rltk::Rect::with_exact(x1, y1, x2, y2),
@@ -68,14 +68,14 @@ impl InfoBox {
     ///     - starting a new game
     ///     - loading an existing game
     ///     - quitting the game
-    pub fn display(self, ctx: &mut rltk::BTerm) -> Option<InfoBox> {
+    pub fn display(self, ctx: &mut rltk::BTerm) -> Option<Self> {
         // render current menu
         self.render();
 
         // wait for user input
         // a) keyboard input
         // if we have a key activity, process and return immediately
-        if let Some(rltk::VirtualKeyCode::Escape) = ctx.key {
+        if ctx.key == Some(rltk::VirtualKeyCode::Escape) {
             return None;
         }
 

@@ -1,8 +1,8 @@
 use crate::game::{self, ObjectStore, State};
-use crate::ui::menu::{Menu, MenuItem};
+use crate::ui::menu::{Item, Menu};
 
 #[derive(Copy, Clone, Debug)]
-pub enum MainMenuItem {
+pub enum MenuItem {
     NewGame,
     Resume,
     // Controls,
@@ -10,26 +10,26 @@ pub enum MainMenuItem {
     Quit,
 }
 
-impl MenuItem for MainMenuItem {
+impl Item for MenuItem {
     fn process(
         _state: &mut State,
         _objects: &mut ObjectStore,
-        _menu: &mut Menu<MainMenuItem>,
-        item: &MainMenuItem,
+        _menu: &mut Menu<Self>,
+        item: &Self,
     ) -> game::RunState {
         match item {
-            MainMenuItem::NewGame => game::RunState::NewGame,
-            MainMenuItem::Resume => game::RunState::LoadGame,
-            MainMenuItem::Quit => quit(),
+            Self::NewGame => game::RunState::NewGame,
+            Self::Resume => game::RunState::LoadGame,
+            Self::Quit => quit(),
         }
     }
 }
 
-pub fn new() -> Menu<MainMenuItem> {
-    Menu::new(vec![
-        (MainMenuItem::NewGame, "New Game".to_string()),
-        (MainMenuItem::Resume, "Resume Last Game".to_string()),
-        (MainMenuItem::Quit, "Quit".to_string()),
+pub fn new() -> Menu<MenuItem> {
+    Menu::new(&[
+        (MenuItem::NewGame, "New Game".to_string()),
+        (MenuItem::Resume, "Resume Last Game".to_string()),
+        (MenuItem::Quit, "Quit".to_string()),
     ])
 }
 
