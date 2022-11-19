@@ -23,6 +23,8 @@ extern crate serde_json;
 use bracket_lib::prelude as rltk;
 
 // For game testing run with `RUST_LOG=innit=trace RUST_BACKTRACE=1 cargo run`.
+// For additional compile information run with `RUSTFLAGS=-Ztime-passes cargo build --release`.
+
 // Check [https://nnethercote.github.io/perf-book/title-page.html] for optimisation strategies.
 // Check [https://bfnightly.bracketproductions.com/rustbook/webbuild.html] for building as WASM.
 
