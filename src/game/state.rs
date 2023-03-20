@@ -216,10 +216,10 @@ impl State {
         if random::RngExtended::flip_with_prob(&mut self.rng, 1.0 - actor.gene_stability) {
             // mutate the object's genome by randomly flipping a bit
             let gene_width = 3;
-            let trait_count = actor.dna.raw.len() / gene_width as usize;
+            let trait_count = actor.dna.raw.len() / gene_width;
             let trait_start = self.rng.gen_range(0..trait_count) * gene_width;
-            let trait_end = trait_start + gene_width as usize;
-            let gene_pos = self.rng.gen_range(0..gene_width as usize);
+            let trait_end = trait_start + gene_width;
+            let gene_pos = self.rng.gen_range(0..gene_width);
             let position = trait_start + gene_pos;
             let old_gene = actor.dna.raw[position];
             let old_trait = actor.dna.raw[trait_start..trait_end].to_vec();
@@ -237,7 +237,7 @@ impl State {
             );
 
             if actor.is_player() {
-                let gene_no = (trait_start / gene_width as usize) + 1; // start from 1 instead of 0
+                let gene_no = (trait_start / gene_width) + 1; // start from 1 instead of 0
                 let old_trait_dna = &self
                     .gene_library
                     .dna_to_traits(actor.dna.dna_type, &old_trait)

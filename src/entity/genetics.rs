@@ -428,7 +428,7 @@ impl GeneLibrary {
                 trait_num,
                 self.gray_code[trait_num]
             );
-            dna.push(self.gray_code[trait_num] as u8);
+            dna.push(self.gray_code[trait_num]);
             //
             // // add random attribute value
             // dna.push(game_rng.gen_range(0, 16) as u8);

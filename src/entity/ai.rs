@@ -198,7 +198,6 @@ impl Ai for Virus {
         // tile tissue.
         if !objects
             .get_neighborhood_tiles(owner.pos)
-            .into_iter()
             .flatten()
             .any(|t| !t.physics.is_blocking)
         {
@@ -210,7 +209,6 @@ impl Ai for Virus {
         // println!("neighborhood START");
         if let Some(target) = objects
             .get_neighborhood_tiles(owner.pos)
-            .into_iter()
             .flatten()
             .chain(
                 objects
@@ -249,7 +247,6 @@ impl Ai for Virus {
                 .collect();
             let target_position = objects
                 .get_neighborhood_tiles(owner.pos)
-                .into_iter()
                 .flatten()
                 .filter(|obj| !obj.physics.is_blocking && !blocking_entity_pos.contains(&obj.pos))
                 .map(|obj| obj.pos)
@@ -366,7 +363,6 @@ impl Ai for WallTile {
 
             let target_cell = objects
                 .get_neighborhood_tiles(owner.pos)
-                .into_iter()
                 .flatten()
                 .filter(|obj| {
                     obj.tile.as_ref().map_or(false, |_tile| {

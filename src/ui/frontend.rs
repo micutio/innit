@@ -283,7 +283,6 @@ impl ShaderCell {
 
 pub fn create_shader(objects: &ObjectStore) -> Vec<ShaderCell> {
     (0..objects.get_vector().len())
-        .into_iter()
         .map(|i| {
             let (x, y) = game::objects::idx_to_coord(consts::WORLD_WIDTH as usize, i);
             ShaderCell::new(x, y)

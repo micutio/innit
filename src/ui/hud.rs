@@ -769,7 +769,7 @@ pub fn render_log(state: &State, layout: rltk::Rect, draw_batch: &mut rltk::Draw
             rltk::to_cp437(' '),
         );
         draw_batch.print_color(
-            rltk::Point::new(layout.x1, y as i32),
+            rltk::Point::new(layout.x1, y),
             &l.0,
             rltk::ColorPair::new(l.1, l.2),
         );

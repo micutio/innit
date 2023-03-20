@@ -61,7 +61,7 @@ pub fn text_to_width(text: &str, line_width: usize) -> Vec<String> {
     let mut current_width = 0;
     for word in text.split(' ') {
         current_width += word.len() + 1;
-        if current_width <= line_width as usize + 1 {
+        if current_width <= line_width + 1 {
             current_line.push(word);
         } else {
             lines.push(current_line.join(" "));
