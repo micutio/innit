@@ -43,7 +43,7 @@ pub fn main() -> color_eyre::Result<()> {
       /\/ /_ | | | | | | | | |_ 
       \____/ |_| |_|_| |_|_|\__|  
 
-      2019 - 2022 Michael Wagner
+      2019 - 2023 Michael Wagner
     "#
     );
 
