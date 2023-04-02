@@ -26,7 +26,7 @@ criterion = "0.4"
 
 [dependencies]
 casim = { git = "https://github.com/micutio/casim", branch = "main" }
-bracket-lib = {git = "https://github.com/amethyst/bracket-lib", branch="master"}
+bracket-lib = {git = "https://github.com/amethyst/bracket-lib", branch="master", features=["webgpu"]}
 # bracket-lib = {git = "https://github.com/jasonjmcghee/bracket-lib", branch="issue_254_webgl_missing-features"} # testing
 
 cpuprofiler = "0.0.4"
@@ -43,7 +43,7 @@ serde_json = "1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 typetag = "0.2"
-dirs = "4.0"
+dirs = "5.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
