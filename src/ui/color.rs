@@ -64,49 +64,49 @@ pub struct Palette {
 
 pub const DEFAULT_PALETTE: Palette = Palette {
     // base color palette
-    /// Main color, used as base for the UI and the world, probably.
+    // Main color, used as base for the UI and the world, probably.
     col_main: ui::Rgba {
         r: 124,
         g: 59,
         b: 8,
         a: 255,
     },
-    /// Main complementary color
+    // Main complementary color
     col_comp: ui::Rgba {
         r: 9,
         g: 124,
         b: 172,
         a: 255,
     },
-    /// Accent color 1
+    // Accent color 1
     col_acc1: ui::Rgba {
         r: 157,
         g: 213,
         b: 194,
         a: 255,
     },
-    /// Accent color 2
+    // Accent color 2
     col_acc2: ui::Rgba {
         r: 182,
         g: 191,
         b: 118,
         a: 255,
     },
-    /// Accent color 3
+    // Accent color 3
     col_acc3: ui::Rgba {
         r: 220,
         g: 98,
         b: 42,
         a: 255,
     },
-    /// Accent color 4
+    // Accent color 4
     col_acc4: ui::Rgba {
         r: 100,
         g: 180,
         b: 240,
         a: 255,
     },
-    /// transparent color
+    // transparent color
     col_transparent: ui::Rgba {
         r: 255,
         g: 255,

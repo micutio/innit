@@ -1,7 +1,5 @@
-/*!
-The genome editor provides the facilities for the player to manipulate their own DNA, provided
-they have a plasmid that allows this.
-*/
+//! The genome editor provides the facilities for the player to manipulate their own DNA, provided
+//! they have a plasmid that allows this.
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{self, ObjectStore, State};
@@ -28,11 +26,11 @@ pub enum EditingState {
 
 #[derive(Debug)]
 struct EditFunction {
-    layout: rltk::Rect,
+    layout:     rltk::Rect,
     is_enabled: bool,
-    state: EditingState,
-    idx: usize,
-    title: String,
+    state:      EditingState,
+    idx:        usize,
+    title:      String,
 }
 
 impl EditFunction {
@@ -55,10 +53,10 @@ impl EditFunction {
 
 #[derive(Debug, Clone)]
 struct GeneItem {
-    layout: rltk::Rect,
+    layout:   rltk::Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color: ui::Rgba,
+    color:    ui::Rgba,
 }
 
 impl GeneItem {
@@ -80,19 +78,19 @@ impl GeneItem {
 ///   - values and additional info about the trait
 #[derive(Debug)]
 pub struct GenomeEditor {
-    layout: rltk::Rect,
+    layout:                rltk::Rect,
     gene_selection_locked: bool,
     /// Not all plasmids offer the same capabilities.
     /// The used plasmid determines which operations the genome editor can perform.
     /// How many operations can be performed with the editor.
     /// Plasmids are consumed when using the editor to avoid infinite amounts of gene editing.
-    plasmid_charges: usize,
-    selected_gene: usize,
-    selected_function: usize,
-    pub state: EditingState,
-    pub player_dna: Dna,
-    edit_functions: Vec<EditFunction>,
-    gene_items: Vec<GeneItem>,
+    plasmid_charges:       usize,
+    selected_gene:         usize,
+    selected_function:     usize,
+    pub state:             EditingState,
+    pub player_dna:        Dna,
+    edit_functions:        Vec<EditFunction>,
+    gene_items:            Vec<GeneItem>,
 }
 
 impl GenomeEditor {
@@ -139,7 +137,7 @@ impl GenomeEditor {
         );
 
         let layout_top_row = rltk::Rect::with_size(layout.x1, layout.y1 + TOP_ROW_Y_OFFSET, 0, 1);
-        for mut item in &mut edit_functions {
+        for item in &mut edit_functions {
             item.layout = item.layout.add(layout_top_row);
         }
 
