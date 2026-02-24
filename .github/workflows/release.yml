@@ -80,7 +80,7 @@ jobs:
           dest: ${{ matrix.asset_name }}.zip
 
       - name: Upload Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.asset_name }}.zip
         env:
