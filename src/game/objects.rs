@@ -325,7 +325,7 @@ impl ObjectStore {
         &mut self.objects[..self.world_tile_count]
     }
 
-    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood {
+    pub fn get_neighborhood_tiles(&self, pos: Position) -> Neighborhood<'_> {
         Neighborhood::new(pos, self.get_vector())
     }
 
