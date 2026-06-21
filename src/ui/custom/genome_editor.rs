@@ -3,11 +3,12 @@
 
 use crate::entity::genetics::{Dna, GeneticTrait, TraitAttribute, TraitFamily};
 use crate::game::{self, ObjectStore, State};
-use crate::rand::Rng;
+
 use crate::ui;
 use crate::util::random::RngExtended;
 
 use bracket_lib::prelude as rltk;
+use rand::Rng;
 use std::ops::Add;
 
 const TOP_ROW_Y_OFFSET: i32 = 1;
@@ -26,11 +27,11 @@ pub enum EditingState {
 
 #[derive(Debug)]
 struct EditFunction {
-    layout:     rltk::Rect,
+    layout: rltk::Rect,
     is_enabled: bool,
-    state:      EditingState,
-    idx:        usize,
-    title:      String,
+    state: EditingState,
+    idx: usize,
+    title: String,
 }
 
 impl EditFunction {
@@ -53,10 +54,10 @@ impl EditFunction {
 
 #[derive(Debug, Clone)]
 struct GeneItem {
-    layout:   rltk::Rect,
+    layout: rltk::Rect,
     /// position of the represented gene within the genome
     gene_idx: usize,
-    color:    ui::Rgba,
+    color: ui::Rgba,
 }
 
 impl GeneItem {
@@ -78,19 +79,19 @@ impl GeneItem {
 ///   - values and additional info about the trait
 #[derive(Debug)]
 pub struct GenomeEditor {
-    layout:                rltk::Rect,
+    layout: rltk::Rect,
     gene_selection_locked: bool,
     /// Not all plasmids offer the same capabilities.
     /// The used plasmid determines which operations the genome editor can perform.
     /// How many operations can be performed with the editor.
     /// Plasmids are consumed when using the editor to avoid infinite amounts of gene editing.
-    plasmid_charges:       usize,
-    selected_gene:         usize,
-    selected_function:     usize,
-    pub state:             EditingState,
-    pub player_dna:        Dna,
-    edit_functions:        Vec<EditFunction>,
-    gene_items:            Vec<GeneItem>,
+    plasmid_charges: usize,
+    selected_gene: usize,
+    selected_function: usize,
+    pub state: EditingState,
+    pub player_dna: Dna,
+    edit_functions: Vec<EditFunction>,
+    gene_items: Vec<GeneItem>,
 }
 
 impl GenomeEditor {

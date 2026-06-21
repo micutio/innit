@@ -4,6 +4,7 @@ use crate::raws;
 use crate::ui::menu::main::new;
 use crate::ui::palette;
 use crate::world_gen::{Tile, WorldGen};
+
 use rand::Rng;
 use std::{cmp, thread, time};
 

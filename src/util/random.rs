@@ -1,7 +1,6 @@
-use rand::seq::SliceRandom;
-use rand::{Rng, RngCore, SeedableRng};
-use rand_core::{impls, Error};
-use rand_isaac::isaac64::Isaac64Rng;
+use rand::{Rng, SeedableRng};
+use rand_core::RngCore;
+use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::mem;
 
@@ -18,7 +17,7 @@ pub struct SerializableRng<T> {
     inner: T,
 }
 
-impl<T: Rng + 'static> SerializableRng<T> {
+impl<T: 'static> SerializableRng<T> {
     pub const fn new(inner: T) -> SerializableRng<T> {
         SerializableRng { inner }
     }
@@ -32,7 +31,7 @@ impl<T: SeedableRng + 'static> SerializableRng<T> {
     }
 }
 
-impl<T: SeedableRng + Rng + 'static> SeedableRng for SerializableRng<T> {
+impl<T: SeedableRng + 'static> SeedableRng for SerializableRng<T> {
     // For implementing seed refer to: https://rust-random.github.io/rand/rand_core/trait.SeedableRng.html
     type Seed = <T as SeedableRng>::Seed;
 
@@ -42,7 +41,7 @@ impl<T: SeedableRng + Rng + 'static> SeedableRng for SerializableRng<T> {
     }
 }
 
-impl<T: Rng + 'static> Serialize for SerializableRng<T> {
+impl<T: RngCore + 'static> Serialize for SerializableRng<T> {
     /// Serialize the rng as a binary blob.
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         let mut vec = Vec::new();
@@ -58,7 +57,7 @@ impl<T: Rng + 'static> Serialize for SerializableRng<T> {
     }
 }
 
-impl<'a, T: Rng + 'static> Deserialize<'a> for SerializableRng<T> {
+impl<'a, T: RngCore + 'static> Deserialize<'a> for SerializableRng<T> {
     /// Deserialize the rng from a binary blob.
     fn deserialize<D: serde::Deserializer<'a>>(d: D) -> Result<Self, D::Error> {
         let bin_blob: Vec<u8> = serde::Deserialize::deserialize(d)?;
@@ -75,7 +74,7 @@ impl<'a, T: Rng + 'static> Deserialize<'a> for SerializableRng<T> {
     }
 }
 
-impl<T: Rng> RngCore for SerializableRng<T> {
+impl<T: RngCore> RngCore for SerializableRng<T> {
     fn next_u32(&mut self) -> u32 {
         self.inner.next_u32()
     }
@@ -85,12 +84,13 @@ impl<T: Rng> RngCore for SerializableRng<T> {
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
+        use rand_core::impls;
         impls::fill_bytes_via_next(self, dest);
     }
 
-    #[allow(clippy::unit_arg)]
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        Ok(self.fill_bytes(dest))
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+        self.fill_bytes(dest);
+        Ok(())
     }
 }
 
@@ -104,7 +104,7 @@ pub trait RngExtended {
     fn random_bit(&mut self) -> u8;
 }
 
-impl<T: Rng> RngExtended for SerializableRng<T> {
+impl<T: RngCore> RngExtended for SerializableRng<T> {
     fn coinflip(&mut self) -> bool {
         self.gen_bool(0.5)
     }
@@ -114,6 +114,7 @@ impl<T: Rng> RngExtended for SerializableRng<T> {
     }
 
     fn random_bit(&mut self) -> u8 {
+        use rand::seq::SliceRandom;
         *vec![1, 2, 4, 8, 16, 32, 64, 128].choose(self).unwrap()
     }
 }

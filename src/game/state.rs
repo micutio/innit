@@ -4,7 +4,7 @@ use crate::game::msg::MessageLog;
 use crate::game::{self, consts, msg, ObjectStore};
 use crate::util::random;
 
-use rand::{Rng, RngCore};
+use rand::Rng;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +26,7 @@ impl State {
     pub fn new(level: u32) -> Self {
         let rng_seed = game::env()
             .seed
-            .map_or_else(|| rand::thread_rng().next_u64(), |seed_param| seed_param);
+            .map_or_else(|| rand::thread_rng().gen::<u64>(), |seed_param| seed_param);
 
         info!("using rng seed: {}", rng_seed);
 

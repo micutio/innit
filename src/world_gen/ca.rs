@@ -216,8 +216,9 @@ fn place_objects(
     spawns: &[raws::spawn::Spawn],
     object_templates: &[raws::templating::ObjectTemplate],
 ) {
-    use rand::distributions::WeightedIndex;
-    use rand::prelude::*;
+    use rand::distributions::{Distribution, WeightedIndex};
+    use rand::seq::IteratorRandom;
+    use rand::Rng;
 
     // TODO: Set npc number per level via transitions.
     let npc_upper_limit = 25;

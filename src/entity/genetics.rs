@@ -36,7 +36,8 @@ use crate::util;
 
 use core::fmt;
 use rand::distributions::WeightedIndex;
-use rand::prelude::{Distribution, SliceRandom};
+use rand::prelude::Distribution;
+use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::cmp;

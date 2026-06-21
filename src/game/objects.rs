@@ -1,11 +1,12 @@
 use crate::entity::{genetics, Object};
 use crate::game::world_gen;
 use crate::game::Position;
-use crate::rand::Rng;
+
 use crate::util::random;
 use crate::{game, util};
 
 use bracket_lib::prelude as rltk;
+use rand::Rng;
 use std::ops::{Index, IndexMut};
 
 #[cfg(not(target_arch = "wasm32"))]
